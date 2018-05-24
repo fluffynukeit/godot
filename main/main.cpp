@@ -58,6 +58,7 @@
 #include "main/splash.gen.h"
 #include "main/splash_editor.gen.h"
 #include "main/tests/test_main.h"
+#include "modules/flex/flex_particle_physics_server.h"
 #include "modules/register_module_types.h"
 #include "platform/register_platform_apis.h"
 #include "scene/main/scene_tree.h"
@@ -77,8 +78,6 @@
 #include "editor/editor_settings.h"
 #include "editor/project_manager.h"
 #endif
-
-/* Static members */
 
 // Singletons
 
@@ -101,6 +100,7 @@ static AudioServer *audio_server = NULL;
 static ARVRServer *arvr_server = NULL;
 static PhysicsServer *physics_server = NULL;
 static Physics2DServer *physics_2d_server = NULL;
+static ParticlePhysicsServer *particle_physics_server = NULL;
 // We error out if setup2() doesn't turn this true
 static bool _start_success = false;
 
@@ -185,6 +185,10 @@ void initialize_physics() {
 	}
 	ERR_FAIL_COND(!physics_2d_server);
 	physics_2d_server->init();
+
+	particle_physics_server = memnew(FlexParticlePhysicsServer);
+	ERR_FAIL_COND(!particle_physics_server);
+	particle_physics_server->init();
 }
 
 void finalize_physics() {
