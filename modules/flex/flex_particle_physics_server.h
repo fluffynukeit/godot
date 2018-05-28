@@ -44,6 +44,8 @@ class FlexParticlePhysicsServer : public ParticlePhysicsServer {
 
 public:
 	virtual void init();
+	virtual void terminate();
+	virtual void sync();
 	virtual void step(float p_delta_time);
 
 	FlexParticlePhysicsServer();

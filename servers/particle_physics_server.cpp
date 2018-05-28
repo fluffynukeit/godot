@@ -9,7 +9,7 @@ ParticlePhysicsServer *ParticlePhysicsServer::get_singleton() {
 
 ParticlePhysicsServer::ParticlePhysicsServer() :
 		Object() {
-	ERR_FAIL_COND(!singleton);
+	ERR_FAIL_COND(singleton);
 	singleton = this;
 }
 

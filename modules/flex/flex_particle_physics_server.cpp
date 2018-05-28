@@ -36,25 +36,44 @@
 	@author AndreaCatania
 */
 
+#define DEVICE 0
+
+NvFlexErrorSeverity error_severity; // contain last error severity
+
 void ErrorCallback(NvFlexErrorSeverity severity, const char *msg, const char *file, int line) {
 
 	print_error(String("Flex error: ") + msg + ", FILE: " + file + ", LINE: " + String::num(line, 0));
+	error_severity = severity;
+}
+
+bool has_error() {
+	return error_severity == NvFlexErrorSeverity::eNvFlexLogError;
 }
 
 void FlexParticlePhysicsServer::init() {
 
 	ERR_FAIL_COND(flex_lib);
 
-	// TODO Justa a test to check library linking
 	NvFlexInitDesc desc;
-	desc.deviceIndex = 0;
-	desc.enableExtensions = false;
-	desc.renderDevice = 0;
+	desc.deviceIndex = DEVICE;
+	desc.enableExtensions = true;
+	desc.renderDevice = DEVICE;
 	desc.renderContext = 0;
 	desc.computeContext = 0;
 	desc.computeType = eNvFlexCUDA;
+	desc.runOnRenderContext = false;
 
 	flex_lib = NvFlexInit(NV_FLEX_VERSION, ErrorCallback, &desc);
+	ERR_FAIL_COND(!flex_lib);
+	ERR_FAIL_COND(!has_error());
+}
+
+void FlexParticlePhysicsServer::terminate() {
+	ERR_FAIL_COND(!flex_lib);
+	NvFlexShutdown(flex_lib);
+}
+
+void FlexParticlePhysicsServer::sync() {
 }
 
 void FlexParticlePhysicsServer::step(float p_delta_time) {
