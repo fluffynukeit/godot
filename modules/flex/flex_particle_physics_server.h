@@ -46,7 +46,8 @@ public:
 	virtual void init();
 	virtual void terminate();
 	virtual void sync();
-	virtual void step(float p_delta_time);
+	virtual void flush_queries();
+	virtual void step(real_t p_delta_time);
 
 	FlexParticlePhysicsServer();
 	virtual ~FlexParticlePhysicsServer();

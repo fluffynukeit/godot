@@ -76,7 +76,11 @@ void FlexParticlePhysicsServer::terminate() {
 void FlexParticlePhysicsServer::sync() {
 }
 
-void FlexParticlePhysicsServer::step(float p_delta_time) {
+void FlexParticlePhysicsServer::flush_queries() {
+}
+
+void FlexParticlePhysicsServer::step(real_t p_delta_time) {
+	print_line(String::num(p_delta_time) + " <- Particle P server DT");
 }
 
 FlexParticlePhysicsServer::FlexParticlePhysicsServer() :
