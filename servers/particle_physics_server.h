@@ -16,7 +16,8 @@ public:
 	virtual void init() = 0;
 	virtual void terminate() = 0;
 	virtual void sync() = 0; // Must be called before "step" function in order to wait eventually running tasks
-	virtual void step(float p_delta_time) = 0;
+	virtual void flush_queries() = 0;
+	virtual void step(real_t p_delta_time) = 0;
 
 	ParticlePhysicsServer();
 	virtual ~ParticlePhysicsServer();
