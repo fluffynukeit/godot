@@ -29,7 +29,10 @@
 /*************************************************************************/
 
 #include "flex_particle_physics_server.h"
-#include "NvFlex.h"
+
+#include "flex/include/NvFlex.h"
+#include "flex_maths.h"
+
 #include "string.h"
 
 /**
@@ -52,6 +55,7 @@ bool has_error() {
 
 void FlexParticlePhysicsServer::init() {
 
+	// Init library
 	ERR_FAIL_COND(flex_lib);
 
 	NvFlexInitDesc desc;
@@ -66,9 +70,25 @@ void FlexParticlePhysicsServer::init() {
 	flex_lib = NvFlexInit(NV_FLEX_VERSION, ErrorCallback, &desc);
 	ERR_FAIL_COND(!flex_lib);
 	ERR_FAIL_COND(!has_error());
+
+	// Init solvert
+	ERR_FAIL_COND(solver);
+
+	NvFlexSolverDesc solver_desc;
+	solver_desc.featureMode = eNvFlexFeatureModeDefault; // All modes enabled (Solid|Fluids) // TODO should be customizable
+	solver_desc.maxParticles = 1000; // TODO should be customizable
+	solver_desc.maxDiffuseParticles = 1000; // TODO should be customizable
+	solver_desc.maxNeighborsPerParticle = 32; // TODO should be customizable
+	solver_desc.maxContactsPerParticle = 10; // TODO should be customizable
+
+	solver = NvFlexCreateSolver(flex_lib, &solver_desc);
 }
 
 void FlexParticlePhysicsServer::terminate() {
+
+	ERR_FAIL_COND(!solver);
+	NvFlexDestroySolver(solver);
+
 	ERR_FAIL_COND(!flex_lib);
 	NvFlexShutdown(flex_lib);
 }

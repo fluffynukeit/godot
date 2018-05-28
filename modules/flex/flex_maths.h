@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  flex_particle_physics_server.h                                       */
+/*  flex_maths.h                                                         */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,30 +28,30 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef FLEX_PARTICLE_PHYSICS_SERVER_H
-#define FLEX_PARTICLE_PHYSICS_SERVER_H
-
-#include "servers/particle_physics_server.h"
-
 /**
 	@author AndreaCatania
 */
 
-class FlexParticlePhysicsServer : public ParticlePhysicsServer {
-	GDCLASS(FlexParticlePhysicsServer, ParticlePhysicsServer);
+#ifndef FLEX_MATH_H
+#define FLEX_MATH_H
 
-	class NvFlexLibrary *flex_lib;
-	class NvFlexSolver *solver;
+// Change the name used intenally by flex in order to avoid colliding with Godot
+#define Vector2 FlVector2
+#define Vec2 FlVec2
+#define Vector3 FlVector3
+#define Vec3 FlVec3
+#define Quat FlQuat
+#define Plane FlPlane
+#define Transform FlTransform
 
-public:
-	virtual void init();
-	virtual void terminate();
-	virtual void sync();
-	virtual void flush_queries();
-	virtual void step(real_t p_delta_time);
+#include "flex/core/maths.h"
 
-	FlexParticlePhysicsServer();
-	virtual ~FlexParticlePhysicsServer();
-};
+#undef Vector2
+#undef Vec2
+#undef Vector3
+#undef Vec3
+#undef Quat
+#undef Plane
+#undef Transform
 
-#endif // FLEX_PARTICLE_PHYSICS_SERVER_H
+#endif // FLEX_MATH_H
