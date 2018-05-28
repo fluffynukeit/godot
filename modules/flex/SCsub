@@ -5,13 +5,19 @@ Import('env_modules')
 
 env_flex = env_modules.Clone()
 
+flex_base = "#thirdparty/flex"
+flex_lib = flex_base + "/lib"
+flex_include = flex_base + "/flexInclude"
+
+cuda_lib = "/usr/local/cuda-9.2/lib64"
+
 # TODO change according to realease and debug version of godot
 FLEX_LIBS = ["NvFlexDebugCUDA_x64", "NvFlexDeviceDebug_x64", "NvFlexExtDebugCUDA_x64"]
 
 # TODO make platform agnostic
 env.Prepend(LIBS=["cudart"])
 env.Prepend(LIBS=["-l:" + file_name + ".a" for file_name in FLEX_LIBS])
-env.Prepend(LIBPATH=["#thirdparty/flex/lib/linux64", "/usr/local/cuda-9.2/lib64"])
+env.Prepend(LIBPATH=[flex_lib + "/linux64", cuda_lib])
 
-env_flex.Append(CPPPATH=["#thirdparty/flex/include", "#thirdparty/flex/include/core"])
+env_flex.Append(CPPPATH=[flex_include])
 env_flex.add_source_files(env.modules_sources, "*.cpp")
