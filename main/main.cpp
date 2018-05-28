@@ -192,6 +192,11 @@ void initialize_physics() {
 }
 
 void finalize_physics() {
+
+	particle_physics_server->terminate();
+	memdelete(particle_physics_server);
+	particle_physics_server = NULL;
+
 	physics_server->finish();
 	memdelete(physics_server);
 
