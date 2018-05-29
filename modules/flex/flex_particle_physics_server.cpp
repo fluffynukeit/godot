@@ -30,8 +30,7 @@
 
 #include "flex_particle_physics_server.h"
 
-#include "flex/include/NvFlex.h"
-#include "flex_maths.h"
+#include "thirdparty/flex/include/NvFlex.h"
 
 #include "string.h"
 
