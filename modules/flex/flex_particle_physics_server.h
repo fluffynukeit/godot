@@ -50,7 +50,7 @@ struct FlexBuffers {
 	// TODO this is just an initial test, implement a better memory handling in order to avoid brute force update
 	NvFlexVector<FlVector4> positions;
 	NvFlexVector<FlVector3> velocities;
-	NvFlexVector<int> phases;
+	NvFlexVector<int> phases; // This is a flag that specify behaviour of particle like collision etc.. https://docs.nvidia.com/gameworks/content/gameworkslibrary/physx/flex/manual.html#phase
 
 	FlexBuffers();
 
