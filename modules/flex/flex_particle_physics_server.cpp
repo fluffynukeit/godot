@@ -42,39 +42,25 @@
 #define FS FlexParticlePhysicsServer::singleton
 
 FlexBuffers::FlexBuffers() :
-		positions(NULL),
-		velocities(NULL),
-		phases(NULL) {
-}
+		// Allocation is managed automatically
+		positions(FS->flex_lib),
+		velocities(FS->flex_lib),
+		phases(FS->flex_lib) {
 
-void FlexBuffers::allocate() {
-
+	ERR_EXPLAIN("ERROR! Before initialize buffers you must initialize Flex library.");
 	ERR_FAIL_COND(!FS->flex_lib);
-
-	ERR_FAIL_COND(positions);
-	ERR_FAIL_COND(velocities);
-	ERR_FAIL_COND(phases);
-
-	positions = NvFlexAllocBuffer(FS->flex_lib, MAXPARTICLES, sizeof(FlVector4), eNvFlexBufferHost);
-	velocities = NvFlexAllocBuffer(FS->flex_lib, MAXPARTICLES, sizeof(FlVector3), eNvFlexBufferHost);
-	phases = NvFlexAllocBuffer(FS->flex_lib, MAXPARTICLES, sizeof(int), eNvFlexBufferHost);
-}
-
-void FlexBuffers::deallocate() {
-	NvFlexFreeBuffer(positions);
-	positions = NULL;
-
-	NvFlexFreeBuffer(velocities);
-	velocities = NULL;
-
-	NvFlexFreeBuffer(phases);
-	phases = NULL;
 }
 
 void FlexBuffers::map() {
+	positions.map(eNvFlexMapWait);
+	velocities.map(eNvFlexMapWait);
+	phases.map(eNvFlexMapWait);
 }
 
 void FlexBuffers::unmap() {
+	positions.unmap();
+	velocities.unmap();
+	phases.unmap();
 }
 
 // TODO use a class
@@ -120,13 +106,11 @@ void FlexParticlePhysicsServer::init() {
 	solver = NvFlexCreateSolver(flex_lib, &solver_desc);
 
 	buffers = memnew(FlexBuffers);
-	buffers->allocate();
 }
 
 void FlexParticlePhysicsServer::terminate() {
 
 	ERR_FAIL_COND(!buffers);
-	buffers->deallocate();
 	memdelete(buffers);
 	buffers = NULL;
 
