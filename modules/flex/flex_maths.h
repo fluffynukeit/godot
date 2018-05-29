@@ -46,7 +46,7 @@
 #define Plane FlPlane
 #define Transform FlTransform
 
-#include "flex/core/maths.h"
+#include "thirdparty/flex/core/maths.h"
 
 #undef Vector2
 #undef Vec2

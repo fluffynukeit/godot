@@ -7,7 +7,8 @@ env_flex = env_modules.Clone()
 
 flex_base = "#thirdparty/flex"
 flex_lib = flex_base + "/lib"
-flex_include = flex_base + "/flexInclude"
+flex_include = flex_base + "/include"
+flex_core = flex_base + "/core"
 
 cuda_lib = "/usr/local/cuda-9.2/lib64"
 
@@ -19,5 +20,5 @@ env.Prepend(LIBS=["cudart"])
 env.Prepend(LIBS=["-l:" + file_name + ".a" for file_name in FLEX_LIBS])
 env.Prepend(LIBPATH=[flex_lib + "/linux64", cuda_lib])
 
-env_flex.Append(CPPPATH=[flex_include])
+env_flex.Append(CPPPATH=[flex_include, flex_core])
 env_flex.add_source_files(env.modules_sources, "*.cpp")

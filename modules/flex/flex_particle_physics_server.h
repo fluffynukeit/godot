@@ -33,6 +33,8 @@
 
 #include "servers/particle_physics_server.h"
 
+#include "flex_maths.h"
+
 /**
 	@author AndreaCatania
 */
