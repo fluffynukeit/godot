@@ -140,14 +140,13 @@ void FlexParticlePhysicsServer::terminate() {
 void FlexParticlePhysicsServer::sync() {
 
 	buffers->map();
-
-	// Perform here buffer writes
 	if (!buffers->positions.size()) {
-		buffers->positions.push_back(FlVector4(0, 0, 0, 0));
+
+		real_t mass = 2;
+		buffers->positions.push_back(FlVector4(0, 0, 0, 1 / mass));
 		buffers->velocities.push_back(FlVector3(0, 10, 0));
 		buffers->phases.push_back(0);
 	}
-
 	buffers->unmap();
 	buffers->applyBuffers();
 }
@@ -155,11 +154,24 @@ void FlexParticlePhysicsServer::sync() {
 void FlexParticlePhysicsServer::flush_queries() {
 
 	/// PERFORM READ OPERATIONS
+
+	NvFlexCopyDesc copy_desc;
+	copy_desc.srcOffset = 0;
+	copy_desc.dstOffset = 0;
+	copy_desc.elementCount = 1;
+
+	if (buffers->positions.size()) {
+		NvFlexGetParticles(solver, buffers->positions.buffer, &copy_desc);
+		print_line(String::num(buffers->positions[0].y));
+	}
 }
 
 void FlexParticlePhysicsServer::step(real_t p_delta_time) {
 	//print_line(String::num(p_delta_time) + " <- Particle P server DT");
 	// Step solver
+	const int substep = 2;
+	const bool enable_timer = false; // Used for profiling
+	NvFlexUpdateSolver(solver, p_delta_time, substep, enable_timer);
 }
 
 FlexParticlePhysicsServer::FlexParticlePhysicsServer() :
