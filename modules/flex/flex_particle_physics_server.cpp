@@ -63,6 +63,18 @@ void FlexBuffers::unmap() {
 	phases.unmap();
 }
 
+void FlexBuffers::applyBuffers() {
+
+	NvFlexCopyDesc copy_desc;
+	copy_desc.srcOffset = 0;
+	copy_desc.dstOffset = 0;
+	copy_desc.elementCount = positions.size();
+
+	NvFlexSetParticles(FS->solver, positions.buffer, &copy_desc);
+	NvFlexSetVelocities(FS->solver, velocities.buffer, &copy_desc);
+	NvFlexSetPhases(FS->solver, phases.buffer, &copy_desc);
+}
+
 // TODO use a class
 NvFlexErrorSeverity error_severity; // contain last error severity
 void ErrorCallback(NvFlexErrorSeverity severity, const char *msg, const char *file, int line) {
@@ -105,6 +117,8 @@ void FlexParticlePhysicsServer::init() {
 
 	solver = NvFlexCreateSolver(flex_lib, &solver_desc);
 
+	// Init buffers
+	ERR_FAIL_COND(buffers);
 	buffers = memnew(FlexBuffers);
 }
 
@@ -125,26 +139,17 @@ void FlexParticlePhysicsServer::terminate() {
 
 void FlexParticlePhysicsServer::sync() {
 
-	// Wait for previous iteration to finish then get access to solver buffer
-	//float4 *particles = (float4 *)NvFlexMap(particleBuffer, eNvFlexMapWait);
-	//float3 *velocities = (float3 *)NvFlexMap(velocityBuffer, eNvFlexMapWait);
-	//int *phases = (int *)NvFlexMap(phaseBuffer, eNvFlexMapWait);
+	buffers->map();
+
+	// Perform here buffer writes
+
+	buffers->unmap();
+	buffers->applyBuffers();
 }
 
 void FlexParticlePhysicsServer::flush_queries() {
 
-	/// PERFORM WRITE OPERATIONS
-	// Add / Remove particle body from buffers
-
-	// Chane particle
-	//UpdateBuffers(particles, velocities, phases);
-
-	// Get here particle body info (Like position etc..)
-
-	// unmap buffers
-	//NvFlexUnmap(particleBuffer);
-	//NvFlexUnmap(velocityBuffer);
-	//NvFlexUnmap(phaseBuffer);
+	/// PERFORM READ OPERATIONS
 }
 
 void FlexParticlePhysicsServer::step(real_t p_delta_time) {
