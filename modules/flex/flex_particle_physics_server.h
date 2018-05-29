@@ -53,8 +53,11 @@ struct FlexBuffers {
 	NvFlexVector<int> phases;
 
 	FlexBuffers();
+
+	// TODO perform all this operation inside server, use this structure only to store data
 	void map();
 	void unmap();
+	void applyBuffers();
 };
 
 class FlexParticlePhysicsServer : public ParticlePhysicsServer {
