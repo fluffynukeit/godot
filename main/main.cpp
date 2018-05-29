@@ -1877,12 +1877,12 @@ bool Main::iteration() {
 
 		message_queue->flush();
 
+		ParticlePhysicsServer::get_singleton()->step(frame_slice * time_scale);
+
 		PhysicsServer::get_singleton()->step(frame_slice * time_scale);
 
 		Physics2DServer::get_singleton()->end_sync();
 		Physics2DServer::get_singleton()->step(frame_slice * time_scale);
-
-		ParticlePhysicsServer::get_singleton()->step(frame_slice * time_scale);
 
 		message_queue->flush();
 
