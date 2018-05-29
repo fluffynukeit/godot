@@ -34,6 +34,7 @@
 #include "servers/particle_physics_server.h"
 
 #include "flex_maths.h"
+#include "thirdparty/flex/include/NvFlexExt.h"
 
 /**
 	@author AndreaCatania
@@ -46,14 +47,12 @@ class NvFlexBuffer;
 
 struct FlexBuffers {
 
-	// TODO this is just an initial test, is better to use NvFlexVector and then implement a better memory handling in order to avoid brute force update
-	NvFlexBuffer *positions;
-	NvFlexBuffer *velocities;
-	NvFlexBuffer *phases;
+	// TODO this is just an initial test, implement a better memory handling in order to avoid brute force update
+	NvFlexVector<FlVector4> positions;
+	NvFlexVector<FlVector3> velocities;
+	NvFlexVector<int> phases;
 
 	FlexBuffers();
-	void allocate();
-	void deallocate();
 	void map();
 	void unmap();
 };
