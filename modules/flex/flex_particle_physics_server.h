@@ -48,14 +48,13 @@ class NvFlexBuffer;
 struct FlexBuffers {
 
 	// TODO this is just an initial test, implement a better memory handling in order to avoid brute force update
-	NvFlexVector<FlVector4> particle; // XYZ world position, W inverse mass
+    NvFlexVector<FlVector4> particles; // XYZ world position, W inverse mass
 	NvFlexVector<FlVector3> velocities;
 	NvFlexVector<int> phases; // This is a flag that specify behaviour of particle like collision etc.. https://docs.nvidia.com/gameworks/content/gameworkslibrary/physx/flex/manual.html#phase
 	NvFlexVector<int> active_particles;
 
 	FlexBuffers();
 
-	// TODO perform all this operation inside server, use this structure only to store data
 	void map();
 	void unmap();
 };
@@ -69,6 +68,8 @@ class FlexParticlePhysicsServer : public ParticlePhysicsServer {
 	class NvFlexLibrary *flex_lib;
 	class NvFlexSolver *solver;
 	FlexBuffers *buffers;
+
+    int active_particle_count;
 
 public:
 	virtual void init();
