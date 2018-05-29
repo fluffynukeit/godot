@@ -40,6 +40,8 @@
 #define Vec2 FlVec2
 #define Vector3 FlVector3
 #define Vec3 FlVec3
+#define Vector4 FlVector4
+#define Vec4 FlVec4
 #define Quat FlQuat
 #define Plane FlPlane
 #define Transform FlTransform
@@ -50,6 +52,8 @@
 #undef Vec2
 #undef Vector3
 #undef Vec3
+#undef Vector4
+#undef Vec4
 #undef Quat
 #undef Plane
 #undef Transform

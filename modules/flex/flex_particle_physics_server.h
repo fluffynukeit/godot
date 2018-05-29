@@ -37,11 +37,34 @@
 	@author AndreaCatania
 */
 
+#define MAXPARTICLES 10
+
+class FlexparticlePhysicsServer;
+class NvFlexBuffer;
+
+struct FlexBuffers {
+
+	// TODO this is just an initial test, is better to use NvFlexVector and then implement a better memory handling in order to avoid brute force update
+	NvFlexBuffer *positions;
+	NvFlexBuffer *velocities;
+	NvFlexBuffer *phases;
+
+	FlexBuffers();
+	void allocate();
+	void deallocate();
+	void map();
+	void unmap();
+};
+
 class FlexParticlePhysicsServer : public ParticlePhysicsServer {
 	GDCLASS(FlexParticlePhysicsServer, ParticlePhysicsServer);
 
+	friend class FlexBuffers;
+	static FlexParticlePhysicsServer *singleton;
+
 	class NvFlexLibrary *flex_lib;
 	class NvFlexSolver *solver;
+	FlexBuffers *buffers;
 
 public:
 	virtual void init();

@@ -40,18 +40,55 @@
 */
 
 #define DEVICE 0
+#define FS FlexParticlePhysicsServer::singleton
 
+FlexBuffers::FlexBuffers() :
+		positions(NULL),
+		velocities(NULL),
+		phases(NULL) {
+}
+
+void FlexBuffers::allocate() {
+
+	ERR_FAIL_COND(!FS->flex_lib);
+
+	ERR_FAIL_COND(positions);
+	ERR_FAIL_COND(velocities);
+	ERR_FAIL_COND(phases);
+
+	positions = NvFlexAllocBuffer(FS->flex_lib, MAXPARTICLES, sizeof(FlVector4), eNvFlexBufferHost);
+	velocities = NvFlexAllocBuffer(FS->flex_lib, MAXPARTICLES, sizeof(FlVector3), eNvFlexBufferHost);
+	phases = NvFlexAllocBuffer(FS->flex_lib, MAXPARTICLES, sizeof(int), eNvFlexBufferHost);
+}
+
+void FlexBuffers::deallocate() {
+	NvFlexFreeBuffer(positions);
+	positions = NULL;
+
+	NvFlexFreeBuffer(velocities);
+	velocities = NULL;
+
+	NvFlexFreeBuffer(phases);
+	phases = NULL;
+}
+
+void FlexBuffers::map() {
+}
+
+void FlexBuffers::unmap() {
+}
+
+// TODO use a class
 NvFlexErrorSeverity error_severity; // contain last error severity
-
 void ErrorCallback(NvFlexErrorSeverity severity, const char *msg, const char *file, int line) {
-
 	print_error(String("Flex error: ") + msg + ", FILE: " + file + ", LINE: " + String::num(line, 0));
 	error_severity = severity;
 }
-
 bool has_error() {
 	return error_severity == NvFlexErrorSeverity::eNvFlexLogError;
 }
+
+FlexParticlePhysicsServer *FlexParticlePhysicsServer::singleton = NULL;
 
 void FlexParticlePhysicsServer::init() {
 
@@ -82,30 +119,61 @@ void FlexParticlePhysicsServer::init() {
 	solver_desc.maxContactsPerParticle = 10; // TODO should be customizable
 
 	solver = NvFlexCreateSolver(flex_lib, &solver_desc);
+
+	buffers = memnew(FlexBuffers);
+	buffers->allocate();
 }
 
 void FlexParticlePhysicsServer::terminate() {
 
+	ERR_FAIL_COND(!buffers);
+	buffers->deallocate();
+	memdelete(buffers);
+	buffers = NULL;
+
 	ERR_FAIL_COND(!solver);
 	NvFlexDestroySolver(solver);
+	solver = NULL;
 
 	ERR_FAIL_COND(!flex_lib);
 	NvFlexShutdown(flex_lib);
+	flex_lib = NULL;
 }
 
 void FlexParticlePhysicsServer::sync() {
+
+	// Wait for previous iteration to finish then get access to solver buffer
+	//float4 *particles = (float4 *)NvFlexMap(particleBuffer, eNvFlexMapWait);
+	//float3 *velocities = (float3 *)NvFlexMap(velocityBuffer, eNvFlexMapWait);
+	//int *phases = (int *)NvFlexMap(phaseBuffer, eNvFlexMapWait);
 }
 
 void FlexParticlePhysicsServer::flush_queries() {
+
+	/// PERFORM WRITE OPERATIONS
+	// Add / Remove particle body from buffers
+
+	// Chane particle
+	//UpdateBuffers(particles, velocities, phases);
+
+	// Get here particle body info (Like position etc..)
+
+	// unmap buffers
+	//NvFlexUnmap(particleBuffer);
+	//NvFlexUnmap(velocityBuffer);
+	//NvFlexUnmap(phaseBuffer);
 }
 
 void FlexParticlePhysicsServer::step(real_t p_delta_time) {
-	print_line(String::num(p_delta_time) + " <- Particle P server DT");
+	//print_line(String::num(p_delta_time) + " <- Particle P server DT");
+	// Step solver
 }
 
 FlexParticlePhysicsServer::FlexParticlePhysicsServer() :
 		ParticlePhysicsServer(),
 		flex_lib(NULL) {
+	ERR_FAIL_COND(singleton);
+	singleton = this;
 }
 
 FlexParticlePhysicsServer::~FlexParticlePhysicsServer() {
