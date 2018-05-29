@@ -142,6 +142,11 @@ void FlexParticlePhysicsServer::sync() {
 	buffers->map();
 
 	// Perform here buffer writes
+	if (!buffers->positions.size()) {
+		buffers->positions.push_back(FlVector4(0, 0, 0, 0));
+		buffers->velocities.push_back(FlVector3(0, 10, 0));
+		buffers->phases.push_back(0);
+	}
 
 	buffers->unmap();
 	buffers->applyBuffers();
