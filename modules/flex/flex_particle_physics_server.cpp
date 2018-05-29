@@ -43,7 +43,7 @@
 
 FlexBuffers::FlexBuffers() :
 		// Allocation is managed automatically
-		particle(FS->flex_lib),
+        particles(FS->flex_lib),
 		velocities(FS->flex_lib),
 		phases(FS->flex_lib),
 		active_particles(FS->flex_lib) {
@@ -53,17 +53,17 @@ FlexBuffers::FlexBuffers() :
 }
 
 void FlexBuffers::map() {
-	particle.map(eNvFlexMapWait);
+    particles.map(eNvFlexMapWait);
 	velocities.map(eNvFlexMapWait);
 	phases.map(eNvFlexMapWait);
-	active_particles.map(eNvFlexMapWait);
+    active_particles.map(eNvFlexMapWait);
 }
 
 void FlexBuffers::unmap() {
-	particle.unmap();
+    particles.unmap();
 	velocities.unmap();
 	phases.unmap();
-	active_particles.unmap();
+    active_particles.unmap();
 }
 
 // TODO use a class
@@ -138,53 +138,77 @@ void FlexParticlePhysicsServer::terminate() {
 
 void FlexParticlePhysicsServer::sync() {
 
-	buffers->map();
+    buffers->map();
 
-	const int num_active = NvFlexGetActiveCount(solver);
+    // Read operation
+    if (active_particle_count > 0) {
+        print_line("X: " + String::num(buffers->particles[0].x) + " Y: " + String::num(buffers->particles[0].y) + " Z: " + String::num(buffers->particles[0].z));
+    }
 
-	// Write operation
-	if (!buffers->particle.size()) {
+    bool require_write = false;
+    // Write operation
+    if (!buffers->particles.size()) { // TODO just a test
 
-		real_t mass = 2;
-		buffers->particle.push_back(FlVector4(0, 0, 0, 1 / mass));
-		buffers->velocities.push_back(FlVector3());
-		const int group = 0;
-		const int phase = NvFlexMakePhase(group, eNvFlexPhaseSelfCollide | eNvFlexPhaseSelfCollideFilter);
-		buffers->phases.push_back(phase);
-		buffers->active_particles.push_back(0); // index of particle
-	}
+        require_write = true;
 
-	// Read operation
+        real_t mass = 2;
+        buffers->particles.push_back(FlVector4(0, 0, 0, 1 / mass));
+        buffers->velocities.push_back(FlVector3());
+        const int group = 0;
+        const int phase = NvFlexMakePhase(group, eNvFlexPhaseSelfCollide | eNvFlexPhaseSelfCollideFilter);
+        buffers->phases.push_back(phase);
+        buffers->active_particles.push_back(0); // index of particle
+    }
 
-	buffers->unmap();
+    buffers->unmap();
 
-	NvFlexSetParticles(solver, buffers->particle.buffer, NULL);
-	NvFlexSetVelocities(solver, buffers->velocities.buffer, NULL);
-	NvFlexSetPhases(solver, buffers->phases.buffer, NULL);
-	NvFlexSetActive(solver, buffers->active_particles.buffer, NULL);
-	NvFlexSetActiveCount(solver, buffers->active_particles.size());
+    NvFlexCopyDesc copy_desc;
+    copy_desc.srcOffset = 0;
+    copy_desc.dstOffset = 0;
+    copy_desc.elementCount = buffers->particles.size();
+
+    if (require_write) {
+        // Write buffer to GPU (command)
+        NvFlexSetParticles(solver, buffers->particles.buffer, &copy_desc);
+        NvFlexSetVelocities(solver, buffers->velocities.buffer, &copy_desc);
+        NvFlexSetPhases(solver, buffers->phases.buffer, &copy_desc);
+        NvFlexSetActive(solver, buffers->active_particles.buffer, &copy_desc);
+        NvFlexSetActiveCount(solver, buffers->active_particles.size());
+    }
 }
 
 void FlexParticlePhysicsServer::flush_queries() {}
 
 void FlexParticlePhysicsServer::step(real_t p_delta_time) {
 
-	//print_line(String::num(p_delta_time) + " <- Particle P server DT");
+    active_particle_count = NvFlexGetActiveCount(solver);
 
-	// Step solver
+    // Step solver (command)
 	const int substep = 2;
-	const bool enable_timer = false; // Used for profiling
+    const bool enable_timer = true; // Used for profiling
 	NvFlexUpdateSolver(solver, p_delta_time, substep, enable_timer);
 
-	// Get command
-	NvFlexGetParticles(solver, buffers->particle.buffer, NULL);
-	NvFlexGetVelocities(solver, buffers->velocities.buffer, NULL);
-	NvFlexGetPhases(solver, buffers->phases.buffer, NULL);
+    // Write back to buffer (command)
+    if (active_particle_count > 0) {
+
+        NvFlexCopyDesc copy_desc;
+        copy_desc.srcOffset = 0;
+        copy_desc.dstOffset = 0;
+        copy_desc.elementCount = buffers->particles.size();
+
+        NvFlexGetParticles(solver, buffers->particles.buffer, &copy_desc);
+        NvFlexGetVelocities(solver, buffers->velocities.buffer, &copy_desc);
+        NvFlexGetPhases(solver, buffers->phases.buffer, &copy_desc);
+    }
 }
 
 FlexParticlePhysicsServer::FlexParticlePhysicsServer() :
 		ParticlePhysicsServer(),
-		flex_lib(NULL) {
+        flex_lib(NULL),
+        solver(NULL),
+        buffers(NULL),
+        active_particle_count(0) {
+
 	ERR_FAIL_COND(singleton);
 	singleton = this;
 }
