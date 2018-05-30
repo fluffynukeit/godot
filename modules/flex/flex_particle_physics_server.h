@@ -48,7 +48,7 @@ class FlexParticlePhysicsServer : public ParticlePhysicsServer {
     mutable RID_Owner<FlexSpace> space_owner;
     mutable RID_Owner<FlexParticleBody> body_owner;
 
-    char active_space_count;
+    char last_space_index;
     Vector<FlexSpace *> active_spaces;
 
 public:

@@ -262,6 +262,9 @@ RID World::get_space() const {
 
 	return space;
 }
+RID World::get_particle_space() const {
+    return particle_space;
+}
 RID World::get_scenario() const {
 
 	return scenario;
@@ -310,6 +313,7 @@ void World::get_camera_list(List<Camera *> *r_cameras) {
 void World::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("get_space"), &World::get_space);
+    ClassDB::bind_method(D_METHOD("get_particle_space"), &World::get_particle_space);
 	ClassDB::bind_method(D_METHOD("get_scenario"), &World::get_scenario);
 	ClassDB::bind_method(D_METHOD("set_environment", "env"), &World::set_environment);
 	ClassDB::bind_method(D_METHOD("get_environment"), &World::get_environment);
@@ -326,13 +330,16 @@ void World::_bind_methods() {
 World::World() {
 
 	space = PhysicsServer::get_singleton()->space_create();
-	scenario = VisualServer::get_singleton()->scenario_create();
+    particle_space = ParticlePhysicsServer::get_singleton()->space_create();
+    scenario = VisualServer::get_singleton()->scenario_create();
 
-	PhysicsServer::get_singleton()->space_set_active(space, true);
+    PhysicsServer::get_singleton()->space_set_active(space, true);
 	PhysicsServer::get_singleton()->area_set_param(space, PhysicsServer::AREA_PARAM_GRAVITY, GLOBAL_DEF("physics/3d/default_gravity", 9.8));
 	PhysicsServer::get_singleton()->area_set_param(space, PhysicsServer::AREA_PARAM_GRAVITY_VECTOR, GLOBAL_DEF("physics/3d/default_gravity_vector", Vector3(0, -1, 0)));
 	PhysicsServer::get_singleton()->area_set_param(space, PhysicsServer::AREA_PARAM_LINEAR_DAMP, GLOBAL_DEF("physics/3d/default_linear_damp", 0.1));
 	PhysicsServer::get_singleton()->area_set_param(space, PhysicsServer::AREA_PARAM_ANGULAR_DAMP, GLOBAL_DEF("physics/3d/default_angular_damp", 0.1));
+
+    PhysicsServer::get_singleton()->space_set_active(particle_space, true);
 
 #ifdef _3D_DISABLED
 	indexer = NULL;
@@ -344,6 +351,7 @@ World::World() {
 World::~World() {
 
 	PhysicsServer::get_singleton()->free(space);
+    ParticlePhysicsServer::get_singleton()->free(particle_space);
 	VisualServer::get_singleton()->free(scenario);
 
 #ifndef _3D_DISABLED

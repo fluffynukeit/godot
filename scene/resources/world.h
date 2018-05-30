@@ -33,6 +33,7 @@
 
 #include "core/resource.h"
 #include "scene/resources/environment.h"
+#include "servers/particle_physics_server.h"
 #include "servers/physics_server.h"
 #include "servers/visual_server.h"
 
@@ -46,6 +47,7 @@ class World : public Resource {
 
 private:
 	RID space;
+    RID particle_space;
 	RID scenario;
 	SpatialIndexer *indexer;
 	Ref<Environment> environment;
@@ -69,6 +71,7 @@ protected:
 
 public:
 	RID get_space() const;
+    RID get_particle_space() const;
 	RID get_scenario() const;
 
 	void set_environment(const Ref<Environment> &p_environment);
