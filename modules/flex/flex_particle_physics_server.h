@@ -33,9 +33,6 @@
 
 #include "servers/particle_physics_server.h"
 
-#include "flex_maths.h"
-#include "thirdparty/flex/include/NvFlexExt.h"
-
 #include "flex_particle_body.h"
 #include "flex_space.h"
 
@@ -43,55 +40,34 @@
 	@author AndreaCatania
 */
 
-class FlexparticlePhysicsServer;
-class NvFlexBuffer;
-
-struct FlexBuffers {
-
-	// TODO this is just an initial test, implement a better memory handling in order to avoid brute force update
-    NvFlexVector<FlVector4> particles; // XYZ world position, W inverse mass
-    NvFlexVector<FlVector3> velocities;
-	NvFlexVector<int> phases; // This is a flag that specify behaviour of particle like collision etc.. https://docs.nvidia.com/gameworks/content/gameworkslibrary/physx/flex/manual.html#phase
-	NvFlexVector<int> active_particles;
-
-	FlexBuffers();
-
-    void init();
-    void terminate();
-
-    void map();
-    void unmap();
-};
-
 class FlexParticlePhysicsServer : public ParticlePhysicsServer {
 	GDCLASS(FlexParticlePhysicsServer, ParticlePhysicsServer);
 
-	friend class FlexBuffers;
 	static FlexParticlePhysicsServer *singleton;
 
-    RID_Owner<FlexSpace> space_owner;
-    RID_Owner<FlexParticleBody> body_owner;
+    mutable RID_Owner<FlexSpace> space_owner;
+    mutable RID_Owner<FlexParticleBody> body_owner;
 
-	class NvFlexLibrary *flex_lib;
-	class NvFlexSolver *solver;
-	FlexBuffers *buffers;
-    int active_particle_count;
+    char active_space_count;
+    Vector<FlexSpace *> active_spaces;
 
 public:
+    FlexParticlePhysicsServer();
+    virtual ~FlexParticlePhysicsServer();
+
     virtual RID space_create();
+    virtual void space_set_active(RID p_space, bool p_active);
+    virtual bool space_is_active(const RID p_space) const;
 
     virtual RID body_create();
 
     virtual void free(RID p_rid);
 
-	virtual void init();
-	virtual void terminate();
-	virtual void sync();
-	virtual void flush_queries();
-	virtual void step(real_t p_delta_time);
-
-	FlexParticlePhysicsServer();
-	virtual ~FlexParticlePhysicsServer();
+    virtual void init();
+    virtual void terminate();
+    virtual void sync();
+    virtual void flush_queries();
+    virtual void step(real_t p_delta_time);
 };
 
 #endif // FLEX_PARTICLE_PHYSICS_SERVER_H
