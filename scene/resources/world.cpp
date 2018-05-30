@@ -339,7 +339,7 @@ World::World() {
 	PhysicsServer::get_singleton()->area_set_param(space, PhysicsServer::AREA_PARAM_LINEAR_DAMP, GLOBAL_DEF("physics/3d/default_linear_damp", 0.1));
 	PhysicsServer::get_singleton()->area_set_param(space, PhysicsServer::AREA_PARAM_ANGULAR_DAMP, GLOBAL_DEF("physics/3d/default_angular_damp", 0.1));
 
-    PhysicsServer::get_singleton()->space_set_active(particle_space, true);
+    ParticlePhysicsServer::get_singleton()->space_set_active(particle_space, true);
 
 #ifdef _3D_DISABLED
 	indexer = NULL;

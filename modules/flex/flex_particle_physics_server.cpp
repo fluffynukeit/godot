@@ -44,7 +44,7 @@ FlexParticlePhysicsServer *FlexParticlePhysicsServer::singleton = NULL;
 
 FlexParticlePhysicsServer::FlexParticlePhysicsServer() :
         ParticlePhysicsServer(),
-        last_space_index(0) {
+        last_space_index(-1) {
 
     ERR_FAIL_COND(singleton);
     singleton = this;
@@ -70,7 +70,7 @@ void FlexParticlePhysicsServer::space_set_active(RID p_space, bool p_active) {
     } else {
         active_spaces.erase(space);
     }
-    last_space_index = static_cast<char>(active_spaces.size() - 1);
+    last_space_index = static_cast<short>(active_spaces.size() - 1);
 }
 
 bool FlexParticlePhysicsServer::space_is_active(const RID p_space) const {
@@ -105,7 +105,7 @@ void FlexParticlePhysicsServer::init() {}
 void FlexParticlePhysicsServer::terminate() {}
 
 void FlexParticlePhysicsServer::sync() {
-    for (char i = last_space_index; 0 <= i; --i) {
+    for (short i = last_space_index; 0 <= i; --i) {
         active_spaces[i]->sync();
     }
 }
@@ -113,7 +113,7 @@ void FlexParticlePhysicsServer::sync() {
 void FlexParticlePhysicsServer::flush_queries() {}
 
 void FlexParticlePhysicsServer::step(real_t p_delta_time) {
-    for (char i = last_space_index; 0 <= i; --i) {
+    for (short i = last_space_index; 0 <= i; --i) {
         active_spaces[i]->step(p_delta_time);
     }
 }
