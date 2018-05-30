@@ -52,6 +52,24 @@ FlexBuffers::FlexBuffers() :
 	ERR_FAIL_COND(!FS->flex_lib);
 }
 
+void FlexBuffers::init() {
+    map();
+
+    particles.resize(0);
+    velocities.resize(0);
+    phases.resize(0);
+    active_particles.resize(0);
+
+    unmap();
+}
+
+void FlexBuffers::terminate() {
+    particles.destroy();
+    velocities.destroy();
+    phases.destroy();
+    active_particles.destroy();
+}
+
 void FlexBuffers::map() {
     particles.map(eNvFlexMapWait);
 	velocities.map(eNvFlexMapWait);
@@ -100,30 +118,39 @@ void FlexParticlePhysicsServer::init() {
 	ERR_FAIL_COND(solver);
 
 	NvFlexSolverDesc solver_desc;
+
+    NvFlexSetSolverDescDefaults(&solver_desc);
 	solver_desc.featureMode = eNvFlexFeatureModeDefault; // All modes enabled (Solid|Fluids) // TODO should be customizable
 	solver_desc.maxParticles = 1000; // TODO should be customizable
 	solver_desc.maxDiffuseParticles = 1000; // TODO should be customizable
 	solver_desc.maxNeighborsPerParticle = 32; // TODO should be customizable
 	solver_desc.maxContactsPerParticle = 10; // TODO should be customizable
 
-	solver = NvFlexCreateSolver(flex_lib, &solver_desc);
+    solver = NvFlexCreateSolver(flex_lib, &solver_desc);
 
 	// Init buffers
 	ERR_FAIL_COND(buffers);
 	buffers = memnew(FlexBuffers);
+    buffers->init();
 
 	NvFlexParams params;
 	params.gravity[0] = 0.0;
-	params.gravity[1] = -10.0;
+    params.gravity[1] = -10.0;
 	params.gravity[2] = 0.0;
 	params.radius = 0.1;
 	params.numIterations = 3;
+    params.maxSpeed = FLT_MAX;
+    params.maxAcceleration = 100.0; // Gravity * 10 // TODO use a variable multiplication
+    params.relaxationMode = eNvFlexRelaxationLocal;
+    params.relaxationFactor = 1.0f;
+    params.solidPressure = 1.0f;
 	NvFlexSetParams(solver, &params);
 }
 
 void FlexParticlePhysicsServer::terminate() {
 
 	ERR_FAIL_COND(!buffers);
+    buffers->terminate();
 	memdelete(buffers);
 	buffers = NULL;
 
@@ -142,7 +169,9 @@ void FlexParticlePhysicsServer::sync() {
 
     // Read operation
     if (active_particle_count > 0) {
-        print_line("X: " + String::num(buffers->particles[0].x) + " Y: " + String::num(buffers->particles[0].y) + " Z: " + String::num(buffers->particles[0].z));
+        Vector3 particle0(buffers->particles[0].x, buffers->particles[0].y, buffers->particles[0].z);
+        print_line("X: " + String::num_real(particle0.x) + " Y: " + String::num_real(particle0.y) + " Z: " + String::num_real(particle0.z));
+        //print_line("X: " + String::num_real(buffers->particles[0].x) + " Y: " + String::num_real(buffers->particles[0].y) + " Z: " + String::num_real(buffers->particles[0].z));
     }
 
     bool require_write = false;
@@ -162,12 +191,13 @@ void FlexParticlePhysicsServer::sync() {
 
     buffers->unmap();
 
-    NvFlexCopyDesc copy_desc;
-    copy_desc.srcOffset = 0;
-    copy_desc.dstOffset = 0;
-    copy_desc.elementCount = buffers->particles.size();
-
     if (require_write) {
+
+        NvFlexCopyDesc copy_desc;
+        copy_desc.srcOffset = 0;
+        copy_desc.dstOffset = 0;
+        copy_desc.elementCount = buffers->particles.size();
+
         // Write buffer to GPU (command)
         NvFlexSetParticles(solver, buffers->particles.buffer, &copy_desc);
         NvFlexSetVelocities(solver, buffers->velocities.buffer, &copy_desc);
@@ -183,14 +213,14 @@ void FlexParticlePhysicsServer::step(real_t p_delta_time) {
 
     active_particle_count = NvFlexGetActiveCount(solver);
 
-    // Step solver (command)
-	const int substep = 2;
-    const bool enable_timer = true; // Used for profiling
-	NvFlexUpdateSolver(solver, p_delta_time, substep, enable_timer);
-
-    // Write back to buffer (command)
     if (active_particle_count > 0) {
 
+        // Step solver (command)
+        const int substep = 2;
+        const bool enable_timer = false; // Used for profiling
+        NvFlexUpdateSolver(solver, p_delta_time, substep, enable_timer);
+
+        // Write back to buffer (command)
         NvFlexCopyDesc copy_desc;
         copy_desc.srcOffset = 0;
         copy_desc.dstOffset = 0;

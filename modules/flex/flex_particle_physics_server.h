@@ -55,8 +55,11 @@ struct FlexBuffers {
 
 	FlexBuffers();
 
-	void map();
-	void unmap();
+    void init();
+    void terminate();
+
+    void map();
+    void unmap();
 };
 
 class FlexParticlePhysicsServer : public ParticlePhysicsServer {
