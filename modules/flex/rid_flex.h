@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  flex_particle_physics_server.h                                       */
+/*  rid_flex.h                                                           */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,64 +28,26 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef FLEX_PARTICLE_PHYSICS_SERVER_H
-#define FLEX_PARTICLE_PHYSICS_SERVER_H
+#ifndef RID_FLEX_H
+#define RID_FLEX_H
 
-#include "servers/particle_physics_server.h"
-
-#include "flex_maths.h"
-#include "thirdparty/flex/include/NvFlexExt.h"
-
-#include "flex_particle_body.h"
+#include "core/rid.h"
 
 /**
-	@author AndreaCatania
+    @author AndreaCatania
 */
 
-class FlexparticlePhysicsServer;
-class NvFlexBuffer;
+class FlexParticlePhysicsServer;
 
-struct FlexBuffers {
-
-	// TODO this is just an initial test, implement a better memory handling in order to avoid brute force update
-    NvFlexVector<FlVector4> particles; // XYZ world position, W inverse mass
-    NvFlexVector<FlVector3> velocities;
-	NvFlexVector<int> phases; // This is a flag that specify behaviour of particle like collision etc.. https://docs.nvidia.com/gameworks/content/gameworkslibrary/physx/flex/manual.html#phase
-	NvFlexVector<int> active_particles;
-
-	FlexBuffers();
-
-    void init();
-    void terminate();
-
-    void map();
-    void unmap();
-};
-
-class FlexParticlePhysicsServer : public ParticlePhysicsServer {
-	GDCLASS(FlexParticlePhysicsServer, ParticlePhysicsServer);
-
-	friend class FlexBuffers;
-	static FlexParticlePhysicsServer *singleton;
-
-    RID_Owner<FlexParticleBody> body_owner;
-
-	class NvFlexLibrary *flex_lib;
-	class NvFlexSolver *solver;
-	FlexBuffers *buffers;
-    int active_particle_count;
+class RIDFlex : public RID_Data {
+    RID self;
+    FlexParticlePhysicsServer *physicsServer;
 
 public:
-    virtual RID body_create();
+    _FORCE_INLINE_ void __set_self(const RID &p_self) { self = p_self; }
+    _FORCE_INLINE_ RID get_self() const { return self; }
 
-	virtual void init();
-	virtual void terminate();
-	virtual void sync();
-	virtual void flush_queries();
-	virtual void step(real_t p_delta_time);
-
-	FlexParticlePhysicsServer();
-	virtual ~FlexParticlePhysicsServer();
+    _FORCE_INLINE_ void __set_physics_server(FlexParticlePhysicsServer *p_physicsServer) { physicsServer = p_physicsServer; }
+    _FORCE_INLINE_ FlexParticlePhysicsServer *get_physics_server() const { return physicsServer; }
 };
-
-#endif // FLEX_PARTICLE_PHYSICS_SERVER_H
+#endif

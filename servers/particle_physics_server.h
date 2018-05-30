@@ -13,6 +13,8 @@ public:
 	static ParticlePhysicsServer *get_singleton();
 
 public:
+    virtual RID body_create() = 0;
+
 	virtual void init() = 0;
 	virtual void terminate() = 0;
 	virtual void sync() = 0; // Must be called before "step" function in order to wait eventually running tasks

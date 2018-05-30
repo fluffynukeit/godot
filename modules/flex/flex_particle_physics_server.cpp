@@ -43,6 +43,12 @@
 #define DEVICE_ID 0
 #define FS FlexParticlePhysicsServer::singleton
 
+#define CreateThenReturnRID(owner, rid_data) \
+    RID rid = owner.make_rid(rid_data);      \
+    rid_data->__set_self(rid);               \
+    rid_data->__set_physics_server(this);    \
+    return rid;
+
 // TODO use a class
 NvFlexErrorSeverity error_severity = eNvFlexLogInfo; // contain last error severity
 void ErrorCallback(NvFlexErrorSeverity severity, const char *msg, const char *file, int line) {
@@ -91,6 +97,11 @@ void FlexBuffers::unmap() {
 }
 
 FlexParticlePhysicsServer *FlexParticlePhysicsServer::singleton = NULL;
+
+RID FlexParticlePhysicsServer::body_create() {
+    FlexParticleBody *particle_body = memnew(FlexParticleBody);
+    CreateThenReturnRID(body_owner, particle_body);
+}
 
 void FlexParticlePhysicsServer::init() {
 
