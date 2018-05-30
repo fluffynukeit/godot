@@ -80,6 +80,12 @@ bool FlexParticlePhysicsServer::space_is_active(const RID p_space) const {
     return active_spaces.find(space) != -1;
 }
 
+void FlexParticlePhysicsServer::space_add_particle_body(RID p_space, RID p_body) {
+}
+
+void FlexParticlePhysicsServer::space_remove_particle_body(RID p_space, RID p_body) {
+}
+
 RID FlexParticlePhysicsServer::body_create() {
     FlexParticleBody *particle_body = memnew(FlexParticleBody);
     CreateThenReturnRID(body_owner, particle_body);
