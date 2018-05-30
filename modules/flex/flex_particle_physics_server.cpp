@@ -38,8 +38,20 @@
 	@author AndreaCatania
 */
 
-#define DEVICE 0
+#define MAXPARTICLES 10
+
+#define DEVICE_ID 0
 #define FS FlexParticlePhysicsServer::singleton
+
+// TODO use a class
+NvFlexErrorSeverity error_severity = eNvFlexLogInfo; // contain last error severity
+void ErrorCallback(NvFlexErrorSeverity severity, const char *msg, const char *file, int line) {
+    print_error(String("Flex error file: ") + file + " - LINE: " + String::num(line) + " - MSG: " + msg);
+    error_severity = severity;
+}
+bool has_error() {
+    return error_severity == NvFlexErrorSeverity::eNvFlexLogError;
+}
 
 FlexBuffers::FlexBuffers() :
 		// Allocation is managed automatically
@@ -52,16 +64,7 @@ FlexBuffers::FlexBuffers() :
 	ERR_FAIL_COND(!FS->flex_lib);
 }
 
-void FlexBuffers::init() {
-    map();
-
-    particles.resize(0);
-    velocities.resize(0);
-    phases.resize(0);
-    active_particles.resize(0);
-
-    unmap();
-}
+void FlexBuffers::init() {}
 
 void FlexBuffers::terminate() {
     particles.destroy();
@@ -72,26 +75,19 @@ void FlexBuffers::terminate() {
 
 void FlexBuffers::map() {
     particles.map(eNvFlexMapWait);
-	velocities.map(eNvFlexMapWait);
-	phases.map(eNvFlexMapWait);
+    velocities.map(eNvFlexMapWait);
+    phases.map(eNvFlexMapWait);
     active_particles.map(eNvFlexMapWait);
+    if (has_error()) {
+        print_error("Has error");
+    }
 }
 
 void FlexBuffers::unmap() {
     particles.unmap();
-	velocities.unmap();
-	phases.unmap();
+    velocities.unmap();
+    phases.unmap();
     active_particles.unmap();
-}
-
-// TODO use a class
-NvFlexErrorSeverity error_severity; // contain last error severity
-void ErrorCallback(NvFlexErrorSeverity severity, const char *msg, const char *file, int line) {
-	print_error(String("Flex error: ") + msg + ", FILE: " + file + ", LINE: " + String::num(line, 0));
-	error_severity = severity;
-}
-bool has_error() {
-	return error_severity == NvFlexErrorSeverity::eNvFlexLogError;
 }
 
 FlexParticlePhysicsServer *FlexParticlePhysicsServer::singleton = NULL;
@@ -102,17 +98,17 @@ void FlexParticlePhysicsServer::init() {
 	ERR_FAIL_COND(flex_lib);
 
 	NvFlexInitDesc desc;
-	desc.deviceIndex = DEVICE;
+    desc.deviceIndex = DEVICE_ID;
 	desc.enableExtensions = true;
-	desc.renderDevice = DEVICE;
-	desc.renderContext = 0;
-	desc.computeContext = 0;
+    desc.renderDevice = NULL;
+    desc.renderContext = NULL;
+    desc.computeContext = NULL;
 	desc.computeType = eNvFlexCUDA;
-	desc.runOnRenderContext = false;
+    desc.runOnRenderContext = false;
 
-	flex_lib = NvFlexInit(NV_FLEX_VERSION, ErrorCallback, &desc);
+    flex_lib = NvFlexInit(NV_FLEX_VERSION, ErrorCallback, &desc);
 	ERR_FAIL_COND(!flex_lib);
-	ERR_FAIL_COND(!has_error());
+    ERR_FAIL_COND(has_error());
 
 	// Init solvert
 	ERR_FAIL_COND(solver);
@@ -120,20 +116,23 @@ void FlexParticlePhysicsServer::init() {
 	NvFlexSolverDesc solver_desc;
 
     NvFlexSetSolverDescDefaults(&solver_desc);
-	solver_desc.featureMode = eNvFlexFeatureModeDefault; // All modes enabled (Solid|Fluids) // TODO should be customizable
-	solver_desc.maxParticles = 1000; // TODO should be customizable
-	solver_desc.maxDiffuseParticles = 1000; // TODO should be customizable
-	solver_desc.maxNeighborsPerParticle = 32; // TODO should be customizable
-	solver_desc.maxContactsPerParticle = 10; // TODO should be customizable
+    solver_desc.featureMode = eNvFlexFeatureModeDefault; // All modes enabled (Solid|Fluids) // TODO should be customizable
+    solver_desc.maxParticles = MAXPARTICLES; // TODO should be customizable
+    solver_desc.maxDiffuseParticles = MAXPARTICLES; // TODO should be customizable
+    solver_desc.maxNeighborsPerParticle = 32; // TODO should be customizable
+    solver_desc.maxContactsPerParticle = 10; // TODO should be customizable
 
     solver = NvFlexCreateSolver(flex_lib, &solver_desc);
+    ERR_FAIL_COND(has_error());
 
 	// Init buffers
 	ERR_FAIL_COND(buffers);
 	buffers = memnew(FlexBuffers);
     buffers->init();
 
-	NvFlexParams params;
+    NvFlexParams params;
+    // Initialize solver parameter
+    NvFlexGetParams(solver, &params);
 	params.gravity[0] = 0.0;
     params.gravity[1] = -10.0;
 	params.gravity[2] = 0.0;
@@ -142,14 +141,16 @@ void FlexParticlePhysicsServer::init() {
     params.maxSpeed = FLT_MAX;
     params.maxAcceleration = 100.0; // Gravity * 10 // TODO use a variable multiplication
     params.relaxationMode = eNvFlexRelaxationLocal;
-    params.relaxationFactor = 1.0f;
-    params.solidPressure = 1.0f;
+    params.relaxationFactor = 1.0;
+    params.solidPressure = 1.0;
 	NvFlexSetParams(solver, &params);
+
+    ERR_FAIL_COND(has_error());
 }
 
 void FlexParticlePhysicsServer::terminate() {
 
-	ERR_FAIL_COND(!buffers);
+    ERR_FAIL_COND(!buffers);
     buffers->terminate();
 	memdelete(buffers);
 	buffers = NULL;
@@ -169,9 +170,8 @@ void FlexParticlePhysicsServer::sync() {
 
     // Read operation
     if (active_particle_count > 0) {
-        Vector3 particle0(buffers->particles[0].x, buffers->particles[0].y, buffers->particles[0].z);
-        print_line("X: " + String::num_real(particle0.x) + " Y: " + String::num_real(particle0.y) + " Z: " + String::num_real(particle0.z));
-        //print_line("X: " + String::num_real(buffers->particles[0].x) + " Y: " + String::num_real(buffers->particles[0].y) + " Z: " + String::num_real(buffers->particles[0].z));
+
+        print_line("X: " + String::num_real(buffers->particles[0].x) + " Y: " + String::num_real(buffers->particles[0].y) + " Z: " + String::num_real(buffers->particles[0].z));
     }
 
     bool require_write = false;
@@ -180,9 +180,9 @@ void FlexParticlePhysicsServer::sync() {
 
         require_write = true;
 
-        real_t mass = 2;
-        buffers->particles.push_back(FlVector4(0, 0, 0, 1 / mass));
-        buffers->velocities.push_back(FlVector3());
+        real_t mass = 2.0;
+        buffers->particles.push_back(FlVector4(0.0, 0.0, 0.0, 1.0 / mass));
+        buffers->velocities.push_back(FlVector3(0.0, 0.0, 0.0));
         const int group = 0;
         const int phase = NvFlexMakePhase(group, eNvFlexPhaseSelfCollide | eNvFlexPhaseSelfCollideFilter);
         buffers->phases.push_back(phase);
@@ -216,7 +216,7 @@ void FlexParticlePhysicsServer::step(real_t p_delta_time) {
     if (active_particle_count > 0) {
 
         // Step solver (command)
-        const int substep = 2;
+        const int substep = 1;
         const bool enable_timer = false; // Used for profiling
         NvFlexUpdateSolver(solver, p_delta_time, substep, enable_timer);
 
