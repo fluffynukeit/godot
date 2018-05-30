@@ -98,9 +98,29 @@ void FlexBuffers::unmap() {
 
 FlexParticlePhysicsServer *FlexParticlePhysicsServer::singleton = NULL;
 
+RID FlexParticlePhysicsServer::space_create() {
+    FlexSpace *space = memnew(FlexSpace);
+    CreateThenReturnRID(space_owner, space);
+}
+
 RID FlexParticlePhysicsServer::body_create() {
     FlexParticleBody *particle_body = memnew(FlexParticleBody);
     CreateThenReturnRID(body_owner, particle_body);
+}
+
+void FlexParticlePhysicsServer::free(RID p_rid) {
+    if (space_owner.owns(p_rid)) {
+        FlexSpace *space = space_owner.get(p_rid);
+        space_owner.free(p_rid);
+        memdelete(space);
+    } else if (body_owner.owns(p_rid)) {
+        FlexParticleBody *body = body_owner.get(p_rid);
+        body_owner.free(p_rid);
+        memdelete(body);
+    } else {
+        ERR_EXPLAIN("Can't delete RID, owner not found");
+        ERR_FAIL();
+    }
 }
 
 void FlexParticlePhysicsServer::init() {

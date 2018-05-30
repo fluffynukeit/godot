@@ -13,7 +13,11 @@ public:
 	static ParticlePhysicsServer *get_singleton();
 
 public:
+    virtual RID space_create() = 0;
+
     virtual RID body_create() = 0;
+
+    virtual void free(RID p_rid) = 0;
 
 	virtual void init() = 0;
 	virtual void terminate() = 0;
