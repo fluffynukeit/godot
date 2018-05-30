@@ -37,9 +37,44 @@
 
 #include "rid_flex.h"
 
+#include "flex_maths.h"
+#include "thirdparty/flex/include/NvFlexExt.h"
+
+#include "math_defs.h"
+
+class NvFlexLibrary;
+class NvFlexSolver;
+
+struct FlexBuffers {
+    // TODO this is just an initial test, implement a better memory handling in order to avoid brute force update
+    NvFlexVector<FlVector4> particles; // XYZ world position, W inverse mass
+    NvFlexVector<FlVector3> velocities;
+    NvFlexVector<int> phases; // This is a flag that specify behaviour of particle like collision etc.. https://docs.nvidia.com/gameworks/content/gameworkslibrary/physx/flex/manual.html#phase
+    NvFlexVector<int> active_particles;
+
+    FlexBuffers(NvFlexLibrary *p_flex_lib);
+};
+
 class FlexSpace : public RIDFlex {
+    friend class FlexBuffers;
+
+    NvFlexLibrary *flex_lib;
+    NvFlexSolver *solver;
+    FlexBuffers *buffers;
+    int active_particle_count;
+
 public:
     FlexSpace();
+    ~FlexSpace();
+
+    void init();
+    void terminate();
+    void sync();
+    void step(real_t p_delta_time);
+
+    void terminate_buffers(FlexBuffers *p_buffers);
+    void map_buffers(FlexBuffers *p_buffers);
+    void unmap_buffers(FlexBuffers *p_buffers);
 };
 
 #endif // FLEX_SPACE_H
