@@ -99,12 +99,24 @@ void ParticleBodiesMemory::set_particle(const Stack *p_stack, int p_particle_ind
     particles[p_stack->get_begin_index() + p_particle_index] = p_particle;
 }
 
+const FlVector4 &ParticleBodiesMemory::get_particle(const Stack *p_stack, int p_particle_index) const {
+    return particles[p_stack->get_begin_index() + p_particle_index];
+}
+
 void ParticleBodiesMemory::set_velocity(const Stack *p_stack, int p_particle_index, FlVector3 p_velocity) {
     velocities[p_stack->get_begin_index() + p_particle_index] = p_velocity;
 }
 
+const FlVector3 &ParticleBodiesMemory::get_velocity(const Stack *p_stack, int p_particle_index) const {
+    return velocities[p_stack->get_begin_index() + p_particle_index];
+}
+
 void ParticleBodiesMemory::set_phase(const Stack *p_stack, int p_particle_index, int p_phase) {
     phases[p_stack->get_begin_index() + p_particle_index] = p_phase;
+}
+
+int ParticleBodiesMemory::get_phase(const Stack *p_stack, int p_particle_index) const {
+    return phases[p_stack->get_begin_index() + p_particle_index];
 }
 
 void ParticleBodiesMemory::set_active_particles(const Stack *p_stack, int p_particle_index, int p_index) {
@@ -209,7 +221,9 @@ void FlexSpace::sync() {
     // Read operation
     if (active_particle_count > 0) {
 
-        print_line("X: " + String::num_real(particle_bodies_memory->particles[0].x) + " Y: " + String::num_real(particle_bodies_memory->particles[0].y) + " Z: " + String::num_real(particle_bodies_memory->particles[0].z));
+        const FlVector4 &particle = particle_bodies_memory->get_particle(test_stack2, 0);
+        const FlVector3 &velocity = particle_bodies_memory->get_velocity(test_stack2, 0);
+        print_line("X: " + String::num_real(particle.x) + " Y: " + String::num_real(particle.y) + " Z: " + String::num_real(particle.z) + " ---- " + "X: " + String::num_real(velocity.x) + " Y: " + String::num_real(velocity.y) + " Z: " + String::num_real(velocity.z));
     }
 
     bool require_write = false;
@@ -218,17 +232,25 @@ void FlexSpace::sync() {
 
         // TODO remove, just a test
         particle_bodies_allocator->reserve(1); // Set max memory to 1
-        test_stack = particle_bodies_allocator->allocate(1); // allocate for 1 buffer
+        test_stack1 = particle_bodies_allocator->allocate(1); // allocate for 1 particle
+
+        particle_bodies_allocator->reserve(2); // Set max memory to 2
+        test_stack2 = particle_bodies_allocator->allocate(1); // allocate for 1 particle
 
         require_write = true;
 
         real_t mass = 2.0;
-        particle_bodies_memory->set_particle(test_stack, 0, FlVector4(0.0, 0.0, 0.0, 1.0 / mass));
-        particle_bodies_memory->set_velocity(test_stack, 0, FlVector3(0.0, 0.0, 0.0));
+        particle_bodies_memory->set_particle(test_stack1, 0, FlVector4(0.0, 0.0, 0.0, 1.0 / mass));
+        particle_bodies_memory->set_velocity(test_stack1, 0, FlVector3(0.0, 0.0, 0.0));
         const int group = 0;
         const int phase = NvFlexMakePhase(group, eNvFlexPhaseSelfCollide | eNvFlexPhaseSelfCollideFilter);
-        particle_bodies_memory->set_phase(test_stack, 0, phase);
-        particle_bodies_memory->set_active_particles(test_stack, 0, 0);
+        particle_bodies_memory->set_phase(test_stack1, 0, phase);
+        particle_bodies_memory->set_active_particles(test_stack1, 0, 0);
+
+        particle_bodies_memory->set_particle(test_stack2, 0, FlVector4(0.0, 10.0, 0.0, 1.0 / mass));
+        particle_bodies_memory->set_velocity(test_stack2, 0, FlVector3(0.0, 0.0, 0.0));
+        particle_bodies_memory->set_phase(test_stack2, 0, phase);
+        particle_bodies_memory->set_active_particles(test_stack2, 0, 1);
     }
 
     particle_bodies_memory->unmap();
@@ -241,6 +263,7 @@ void FlexSpace::sync() {
         copy_desc.elementCount = particle_bodies_memory->particles.size();
 
         // Write buffer to GPU (command)
+        // TODO write only necessary (part of buffer or just skip an entire buffer if not necessary)
         NvFlexSetParticles(solver, particle_bodies_memory->particles.buffer, &copy_desc);
         NvFlexSetVelocities(solver, particle_bodies_memory->velocities.buffer, &copy_desc);
         NvFlexSetPhases(solver, particle_bodies_memory->phases.buffer, &copy_desc);
@@ -264,8 +287,9 @@ void FlexSpace::step(real_t p_delta_time) {
         NvFlexCopyDesc copy_desc;
         copy_desc.srcOffset = 0;
         copy_desc.dstOffset = 0;
-        copy_desc.elementCount = active_particle_count;
+        copy_desc.elementCount = particle_bodies_memory->particles.size();
 
+        // TODO read only necessary (part of buffer or just skip an entire buffer if not necessary)
         NvFlexGetParticles(solver, particle_bodies_memory->particles.buffer, &copy_desc);
         NvFlexGetVelocities(solver, particle_bodies_memory->velocities.buffer, &copy_desc);
         NvFlexGetPhases(solver, particle_bodies_memory->phases.buffer, &copy_desc);

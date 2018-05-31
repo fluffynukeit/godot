@@ -114,9 +114,9 @@ public:
     // Allocate memory, return null if no more space available
     Stack *allocate(int p_size);
 
-#define deallocateStack(flex_memory, p_stack) \
-    flex_memory.__deallocate(p_stack);        \
-    p_stack = NULL
+#define deallocate(p_stack) \
+    __deallocate(p_stack);  \
+    p_stack = NULL;
 
     /// IMPORTANT Don't call it directly, Use macro deallocateStack
     void __deallocate(Stack *p_stack);
