@@ -40,10 +40,20 @@
 #include "flex_maths.h"
 #include "thirdparty/flex/include/NvFlexExt.h"
 
+#include "flex_memory_allocator.h"
 #include "math_defs.h"
 
 class NvFlexLibrary;
 class NvFlexSolver;
+
+class ParticleBodyBuffer : public FlexMemory {
+    int buffers[10];
+
+public:
+    virtual void resize(int p_size);
+    virtual void shift_back(int p_from, int p_to, int p_shift);
+    virtual void set_data(int p_pos, int p_data);
+};
 
 struct FlexBuffers {
     // TODO this is just an initial test, implement a better memory handling in order to avoid brute force update
@@ -62,6 +72,8 @@ class FlexSpace : public RIDFlex {
     NvFlexSolver *solver;
     FlexBuffers *buffers;
     int active_particle_count;
+
+    FlexMemoryAllocator buf;
 
 public:
     FlexSpace();
