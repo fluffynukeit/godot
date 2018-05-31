@@ -39,11 +39,10 @@
 
 class FlexMemory {
 public:
-    virtual void resize(int p_size) = 0;
-    // Move bits by shifting in the memory
-    // p_shift could be only negative
+    virtual void reserve(int p_size) = 0;
+    /// Move bits by shifting in the memory
+    /// p_shift could be only negative
     virtual void shift_back(int p_from, int p_to, int p_shift) = 0;
-    virtual void set_data(int p_pos, int set_data) = 0;
 };
 
 struct Stack {
@@ -80,8 +79,21 @@ private:
         is_free = p_is_free;
         size = p_end_index - p_begin_index + 1;
     }
+
+public:
+    _FORCE_INLINE_ int get_begin_index() const { return begin_index; }
 };
 
+/// This class is responsible for memory management.
+/// It's possible to allocate and deallocate memory.
+/// When you allocate the memory it returns a pointer to an object Stack that represent the portion of memory allocated
+///
+/// I've created this class with the idea to have a unique class that is able to handle all kind of buffer structure
+/// For this reason this class doesn't perform any real memory allocation.
+/// This task is performed on FlexMemory object.
+/// FlexMemory is an interface that each buffer should implement.
+/// As you can see neither FlexMemoryAllocator nor FlexMemory define how to set data in the buffer,
+/// infact this should be implemented by the child of FlexMemory
 class FlexMemoryAllocator {
 
     Vector<Stack *> memory_table;
@@ -95,7 +107,8 @@ class FlexMemoryAllocator {
 
 public:
     FlexMemoryAllocator(FlexMemory *p_memory, int p_size);
-    bool resize(int p_size);
+    ~FlexMemoryAllocator();
+    bool reserve(int p_size);
     void trim(bool want_update_cache = true); // Remove free stack between used memory
 
     // Allocate memory, return null if no more space available
@@ -107,9 +120,6 @@ public:
 
     /// IMPORTANT Don't call it directly, Use macro deallocateStack
     void __deallocate(Stack *p_stack);
-
-    // TODO Just a test
-    void set_data(Stack *p_stack, int p_data);
 
 private:
     bool redux_memory(int p_size);

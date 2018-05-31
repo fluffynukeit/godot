@@ -52,34 +52,72 @@ bool has_error() {
     return error_severity == eNvFlexLogError;
 }
 
-void ParticleBodyBuffer::resize(int p_size) {
-}
-
-void ParticleBodyBuffer::shift_back(int p_from, int p_to, int p_shift) {
-    for (int i(p_from); i <= p_to; ++i) {
-        buffers[i - p_shift] = buffers[i];
-    }
-}
-
-void ParticleBodyBuffer::set_data(int p_pos, int p_data) {
-    buffers[p_pos] = p_data;
-}
-
-FlexBuffers::FlexBuffers(NvFlexLibrary *p_flex_lib) :
-        // Allocation is managed automatically
+ParticleBodiesMemory::ParticleBodiesMemory(NvFlexLibrary *p_flex_lib) :
         particles(p_flex_lib),
         velocities(p_flex_lib),
         phases(p_flex_lib),
         active_particles(p_flex_lib) {
 }
 
+void ParticleBodiesMemory::reserve(int p_size) {
+    particles.resize(p_size);
+    velocities.resize(p_size);
+    phases.resize(p_size);
+    active_particles.resize(p_size);
+}
+
+void ParticleBodiesMemory::shift_back(int p_from, int p_to, int p_shift) {
+    for (int i(p_from); i <= p_to; ++i) {
+        particles[i - p_shift] = particles[i];
+        velocities[i - p_shift] = velocities[i];
+        phases[i - p_shift] = phases[i];
+    }
+}
+
+void ParticleBodiesMemory::map() {
+    particles.map(eNvFlexMapWait);
+    velocities.map(eNvFlexMapWait);
+    phases.map(eNvFlexMapWait);
+    active_particles.map(eNvFlexMapWait);
+}
+
+void ParticleBodiesMemory::unmap() {
+    particles.unmap();
+    velocities.unmap();
+    phases.unmap();
+    active_particles.unmap();
+}
+
+void ParticleBodiesMemory::terminate() {
+    particles.destroy();
+    velocities.destroy();
+    phases.destroy();
+    active_particles.destroy();
+}
+
+void ParticleBodiesMemory::set_particle(const Stack *p_stack, int p_particle_index, FlVector4 p_particle) {
+    particles[p_stack->get_begin_index() + p_particle_index] = p_particle;
+}
+
+void ParticleBodiesMemory::set_velocity(const Stack *p_stack, int p_particle_index, FlVector3 p_velocity) {
+    velocities[p_stack->get_begin_index() + p_particle_index] = p_velocity;
+}
+
+void ParticleBodiesMemory::set_phase(const Stack *p_stack, int p_particle_index, int p_phase) {
+    phases[p_stack->get_begin_index() + p_particle_index] = p_phase;
+}
+
+void ParticleBodiesMemory::set_active_particles(const Stack *p_stack, int p_particle_index, int p_index) {
+    active_particles[p_stack->get_begin_index() + p_particle_index] = p_index;
+}
+
 FlexSpace::FlexSpace() :
         RIDFlex(),
         flex_lib(NULL),
         solver(NULL),
-        buffers(NULL),
-        active_particle_count(0),
-        buf(new ParticleBodyBuffer, 10) {
+        particle_bodies_allocator(NULL),
+        particle_bodies_memory(NULL),
+        active_particle_count(0) {
     init();
 }
 
@@ -88,18 +126,6 @@ FlexSpace::~FlexSpace() {
 }
 
 void FlexSpace::init() {
-
-    Stack *stack1 = buf.allocate(2);
-    Stack *stack2 = buf.allocate(2);
-    Stack *stack3 = buf.allocate(2);
-    buf.set_data(stack1, 1);
-    buf.set_data(stack2, 2);
-    buf.set_data(stack3, 3);
-
-    deallocateStack(buf, stack2);
-
-    Stack *stack4 = buf.allocate(6);
-    buf.set_data(stack4, 4);
 
     // Init library
     ERR_FAIL_COND(flex_lib);
@@ -133,8 +159,10 @@ void FlexSpace::init() {
     ERR_FAIL_COND(has_error());
 
     // Init buffers
-    ERR_FAIL_COND(buffers);
-    buffers = memnew(FlexBuffers(flex_lib));
+    ERR_FAIL_COND(particle_bodies_memory);
+    ERR_FAIL_COND(particle_bodies_allocator);
+    particle_bodies_memory = memnew(ParticleBodiesMemory(flex_lib));
+    particle_bodies_allocator = memnew(FlexMemoryAllocator(particle_bodies_memory, 0));
 
     NvFlexParams params;
     // Initialize solver parameter
@@ -156,10 +184,14 @@ void FlexSpace::init() {
 
 void FlexSpace::terminate() {
 
-    ERR_FAIL_COND(!buffers);
-    terminate_buffers(buffers);
-    memdelete(buffers);
-    buffers = NULL;
+    ERR_FAIL_COND(!particle_bodies_memory);
+    particle_bodies_memory->terminate();
+    memdelete(particle_bodies_memory);
+    particle_bodies_memory = NULL;
+
+    ERR_FAIL_COND(!particle_bodies_allocator);
+    memdelete(particle_bodies_allocator);
+    particle_bodies_allocator = NULL;
 
     ERR_FAIL_COND(!solver);
     NvFlexDestroySolver(solver);
@@ -172,44 +204,48 @@ void FlexSpace::terminate() {
 
 void FlexSpace::sync() {
 
-    map_buffers(buffers);
+    particle_bodies_memory->map();
 
     // Read operation
     if (active_particle_count > 0) {
 
-        print_line("X: " + String::num_real(buffers->particles[0].x) + " Y: " + String::num_real(buffers->particles[0].y) + " Z: " + String::num_real(buffers->particles[0].z));
+        print_line("X: " + String::num_real(particle_bodies_memory->particles[0].x) + " Y: " + String::num_real(particle_bodies_memory->particles[0].y) + " Z: " + String::num_real(particle_bodies_memory->particles[0].z));
     }
 
     bool require_write = false;
     // Write operation
-    if (!buffers->particles.size()) { // TODO just a test
+    if (!particle_bodies_memory->particles.size()) { // TODO just a test
+
+        // TODO remove, just a test
+        particle_bodies_allocator->reserve(1); // Set max memory to 1
+        test_stack = particle_bodies_allocator->allocate(1); // allocate for 1 buffer
 
         require_write = true;
 
         real_t mass = 2.0;
-        buffers->particles.push_back(FlVector4(0.0, 0.0, 0.0, 1.0 / mass));
-        buffers->velocities.push_back(FlVector3(0.0, 0.0, 0.0));
+        particle_bodies_memory->set_particle(test_stack, 0, FlVector4(0.0, 0.0, 0.0, 1.0 / mass));
+        particle_bodies_memory->set_velocity(test_stack, 0, FlVector3(0.0, 0.0, 0.0));
         const int group = 0;
         const int phase = NvFlexMakePhase(group, eNvFlexPhaseSelfCollide | eNvFlexPhaseSelfCollideFilter);
-        buffers->phases.push_back(phase);
-        buffers->active_particles.push_back(0); // index of particle
+        particle_bodies_memory->set_phase(test_stack, 0, phase);
+        particle_bodies_memory->set_active_particles(test_stack, 0, 0);
     }
 
-    unmap_buffers(buffers);
+    particle_bodies_memory->unmap();
 
     if (require_write) {
 
         NvFlexCopyDesc copy_desc;
         copy_desc.srcOffset = 0;
         copy_desc.dstOffset = 0;
-        copy_desc.elementCount = buffers->particles.size();
+        copy_desc.elementCount = particle_bodies_memory->particles.size();
 
         // Write buffer to GPU (command)
-        NvFlexSetParticles(solver, buffers->particles.buffer, &copy_desc);
-        NvFlexSetVelocities(solver, buffers->velocities.buffer, &copy_desc);
-        NvFlexSetPhases(solver, buffers->phases.buffer, &copy_desc);
-        NvFlexSetActive(solver, buffers->active_particles.buffer, &copy_desc);
-        NvFlexSetActiveCount(solver, buffers->active_particles.size());
+        NvFlexSetParticles(solver, particle_bodies_memory->particles.buffer, &copy_desc);
+        NvFlexSetVelocities(solver, particle_bodies_memory->velocities.buffer, &copy_desc);
+        NvFlexSetPhases(solver, particle_bodies_memory->phases.buffer, &copy_desc);
+        NvFlexSetActive(solver, particle_bodies_memory->active_particles.buffer, &copy_desc);
+        NvFlexSetActiveCount(solver, particle_bodies_memory->active_particles.size());
     }
 }
 
@@ -228,31 +264,10 @@ void FlexSpace::step(real_t p_delta_time) {
         NvFlexCopyDesc copy_desc;
         copy_desc.srcOffset = 0;
         copy_desc.dstOffset = 0;
-        copy_desc.elementCount = buffers->particles.size();
+        copy_desc.elementCount = active_particle_count;
 
-        NvFlexGetParticles(solver, buffers->particles.buffer, &copy_desc);
-        NvFlexGetVelocities(solver, buffers->velocities.buffer, &copy_desc);
-        NvFlexGetPhases(solver, buffers->phases.buffer, &copy_desc);
+        NvFlexGetParticles(solver, particle_bodies_memory->particles.buffer, &copy_desc);
+        NvFlexGetVelocities(solver, particle_bodies_memory->velocities.buffer, &copy_desc);
+        NvFlexGetPhases(solver, particle_bodies_memory->phases.buffer, &copy_desc);
     }
-}
-
-void FlexSpace::terminate_buffers(FlexBuffers *p_buffers) {
-    p_buffers->particles.destroy();
-    p_buffers->velocities.destroy();
-    p_buffers->phases.destroy();
-    p_buffers->active_particles.destroy();
-}
-
-void FlexSpace::map_buffers(FlexBuffers *p_buffers) {
-    p_buffers->particles.map(eNvFlexMapWait);
-    p_buffers->velocities.map(eNvFlexMapWait);
-    p_buffers->phases.map(eNvFlexMapWait);
-    p_buffers->active_particles.map(eNvFlexMapWait);
-}
-
-void FlexSpace::unmap_buffers(FlexBuffers *p_buffers) {
-    p_buffers->particles.unmap();
-    p_buffers->velocities.unmap();
-    p_buffers->phases.unmap();
-    p_buffers->active_particles.unmap();
 }

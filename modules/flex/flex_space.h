@@ -46,23 +46,26 @@
 class NvFlexLibrary;
 class NvFlexSolver;
 
-class ParticleBodyBuffer : public FlexMemory {
-    int buffers[10];
-
+class ParticleBodiesMemory : public FlexMemory {
 public:
-    virtual void resize(int p_size);
-    virtual void shift_back(int p_from, int p_to, int p_shift);
-    virtual void set_data(int p_pos, int p_data);
-};
-
-struct FlexBuffers {
-    // TODO this is just an initial test, implement a better memory handling in order to avoid brute force update
     NvFlexVector<FlVector4> particles; // XYZ world position, W inverse mass
     NvFlexVector<FlVector3> velocities;
     NvFlexVector<int> phases; // This is a flag that specify behaviour of particle like collision etc.. https://docs.nvidia.com/gameworks/content/gameworkslibrary/physx/flex/manual.html#phase
-    NvFlexVector<int> active_particles;
+    NvFlexVector<int> active_particles; // TODO this function can't stay here, should be handled outside this buffer.
 
-    FlexBuffers(NvFlexLibrary *p_flex_lib);
+    ParticleBodiesMemory(NvFlexLibrary *p_flex_lib);
+
+    virtual void reserve(int p_size);
+    virtual void shift_back(int p_from, int p_to, int p_shift);
+
+    void map();
+    void unmap();
+    void terminate();
+
+    void set_particle(const Stack *p_stack, int p_particle_index, FlVector4 p_particle);
+    void set_velocity(const Stack *p_stack, int p_particle_index, FlVector3 p_velocity);
+    void set_phase(const Stack *p_stack, int p_particle_index, int p_phase);
+    void set_active_particles(const Stack *p_stack, int p_particle_index, int p_index);
 };
 
 class FlexSpace : public RIDFlex {
@@ -70,10 +73,11 @@ class FlexSpace : public RIDFlex {
 
     NvFlexLibrary *flex_lib;
     NvFlexSolver *solver;
-    FlexBuffers *buffers;
+    FlexMemoryAllocator *particle_bodies_allocator;
+    ParticleBodiesMemory *particle_bodies_memory;
     int active_particle_count;
 
-    FlexMemoryAllocator buf;
+    Stack *test_stack;
 
 public:
     FlexSpace();
@@ -83,10 +87,6 @@ public:
     void terminate();
     void sync();
     void step(real_t p_delta_time);
-
-    void terminate_buffers(FlexBuffers *p_buffers);
-    void map_buffers(FlexBuffers *p_buffers);
-    void unmap_buffers(FlexBuffers *p_buffers);
 };
 
 #endif // FLEX_SPACE_H

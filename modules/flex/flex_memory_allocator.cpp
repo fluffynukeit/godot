@@ -41,10 +41,17 @@ FlexMemoryAllocator::FlexMemoryAllocator(FlexMemory *p_memory, int p_size) :
 
     cache.occupied_memory = 0;
     cache.biggest_stack_size = 0;
-    resize(p_size);
+    reserve(p_size);
 }
 
-bool FlexMemoryAllocator::resize(int p_size) {
+FlexMemoryAllocator::~FlexMemoryAllocator() {
+    // Delete all Stack
+    for (int i(memory_table.size() - 1); i <= 0; --i) {
+        delete memory_table[i];
+    }
+}
+
+bool FlexMemoryAllocator::reserve(int p_size) {
     if (memory_size == p_size)
         return true;
 
@@ -70,7 +77,7 @@ bool FlexMemoryAllocator::resize(int p_size) {
             }
         }
         memory_size = p_size;
-        memory->resize(p_size);
+        memory->reserve(p_size);
     }
 
     update_cache();
@@ -133,8 +140,10 @@ Stack *FlexMemoryAllocator::allocate(int p_size) {
         }
     }
 
-    if (!space_available)
+    if (!space_available) {
+        print_error("No space available in this memory!");
         return NULL;
+    }
 
     const int size(memory_table.size());
     for (int i = 0; i < size; ++i) {
@@ -151,6 +160,7 @@ Stack *FlexMemoryAllocator::allocate(int p_size) {
         return memory_table[i];
     }
 
+    print_error("No space available in this memory!");
     return NULL;
 }
 
@@ -162,12 +172,6 @@ void FlexMemoryAllocator::__deallocate(Stack *p_stack) {
     if (cache.biggest_stack_size < p_stack->size) {
         cache.biggest_stack_size = p_stack->size;
     }
-}
-
-void FlexMemoryAllocator::set_data(Stack *p_stack, int p_data) {
-
-    ERR_FAIL_COND(p_stack->is_free);
-    memory->set_data(p_stack->begin_index, p_data);
 }
 
 bool FlexMemoryAllocator::redux_memory(int p_size) {
@@ -185,7 +189,7 @@ bool FlexMemoryAllocator::redux_memory(int p_size) {
                 last_stack->set(last_stack->begin_index, p_size - 1, true);
             }
             memory_size = p_size;
-            memory->resize(p_size);
+            memory->reserve(p_size);
             return true;
         }
         return false;
