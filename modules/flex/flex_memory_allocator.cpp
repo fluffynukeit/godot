@@ -35,23 +35,23 @@
 #include "flex_memory_allocator.h"
 #include "print_string.h"
 
-FlexMemoryAllocator::FlexMemoryAllocator(FlexMemory *p_memory, int p_size) :
+FlexMemoryAllocator::FlexMemoryAllocator(FlexMemory *p_memory, FlexUnit p_size) :
         memory(p_memory),
         memory_size(0) {
 
     cache.occupied_memory = 0;
-    cache.biggest_stack_size = 0;
-    reserve(p_size);
+    cache.biggest_chunk_size = 0;
+    resize_memory(p_size);
 }
 
 FlexMemoryAllocator::~FlexMemoryAllocator() {
-    // Delete all Stack
-    for (int i(memory_table.size() - 1); i <= 0; --i) {
+    // Delete all chunk
+    for (FlexUnit i(memory_table.size() - 1); i <= 0; --i) {
         delete memory_table[i];
     }
 }
 
-bool FlexMemoryAllocator::reserve(int p_size) {
+bool FlexMemoryAllocator::resize_memory(FlexUnit p_size) {
     if (memory_size == p_size)
         return true;
 
@@ -60,38 +60,38 @@ bool FlexMemoryAllocator::reserve(int p_size) {
         ERR_FAIL_COND_V(cache.occupied_memory > p_size, false);
 
         if (!redux_memory(p_size)) { // Try to redux size without trim
-            trim(false);
+            sanitize(false);
             ERR_FAIL_COND_V(redux_memory(p_size), false);
         }
     } else {
         // just increase memory space
 
         if (memory_table.size() <= 0) {
-            insert_stack()->set(memory_size, p_size - 1, true);
+            create_chunk()->set(memory_size, p_size - 1, true);
         } else {
-            Stack *last_stack = memory_table[memory_table.size() - 1];
-            if (last_stack->is_free) {
-                last_stack->set(last_stack->begin_index, p_size - 1, true);
+            MemoryChunk *last_chunk = memory_table[memory_table.size() - 1];
+            if (last_chunk->is_free) {
+                last_chunk->set(last_chunk->begin_index, p_size - 1, true);
             } else {
-                insert_stack()->set(last_stack->end_index + 1, p_size - 1, true);
+                create_chunk()->set(last_chunk->end_index + 1, p_size - 1, true);
             }
         }
         memory_size = p_size;
-        memory->reserve(p_size);
+        memory->resize_memory(p_size);
     }
 
-    update_cache();
+    find_biggest_chunk_size();
     return true;
 }
 
-void FlexMemoryAllocator::trim(bool want_update_cache) {
+void FlexMemoryAllocator::sanitize(bool p_want_update_cache, bool p_trim) {
 
-    int msize(memory_table.size());
-    for (int i(0); i < msize; ++i) {
+    FlexUnit msize(memory_table.size());
+    for (FlexUnit i(0); i < msize; ++i) {
         if (!memory_table[i]->is_free)
             continue;
 
-        const int next_i = i + 1;
+        const FlexUnit next_i = i + 1;
         if (next_i >= msize)
             break; // End of memory table
 
@@ -99,44 +99,43 @@ void FlexMemoryAllocator::trim(bool want_update_cache) {
 
             // MERGE
             memory_table[i]->set(memory_table[i]->begin_index, memory_table[next_i]->end_index, true);
-            remove_stack(next_i);
+            delete_chunk(next_i);
             msize = memory_table.size();
-            --i; // This is required in order to refetch this stack.
+            --i; // This is required in order to refetch this chunk.
         } else {
 
+            if (!p_trim)
+                continue;
+
             // SWAP
-            const Stack i_stack_cpy(*memory_table[i]);
-            const Stack next_i_stack_cpy(*memory_table[next_i]);
+            const MemoryChunk i_chunk_cpy(*memory_table[i]);
+            const MemoryChunk next_i_chunk_cpy(*memory_table[next_i]);
 
-            // TODO remove
-            Stack *a = memory_table[i];
-            Stack *b = memory_table[next_i];
+            memory_table[next_i]->set(i_chunk_cpy.begin_index, i_chunk_cpy.begin_index + next_i_chunk_cpy.size - 1, false);
+            memory_table[i]->set(memory_table[next_i]->end_index + 1, next_i_chunk_cpy.end_index, true);
 
-            memory_table[next_i]->set(i_stack_cpy.begin_index, i_stack_cpy.begin_index + next_i_stack_cpy.size - 1, false);
-            memory_table[i]->set(memory_table[next_i]->end_index + 1, next_i_stack_cpy.end_index, true);
-
-            Stack *i_stack = memory_table[i];
+            MemoryChunk *i_chunk = memory_table[i];
             memory_table[i] = memory_table[next_i];
-            memory_table[next_i] = i_stack;
+            memory_table[next_i] = i_chunk;
 
-            memory->shift_back(next_i_stack_cpy.begin_index, next_i_stack_cpy.end_index, /*shift <- */ i_stack_cpy.size);
+            memory->shift_back(next_i_chunk_cpy.begin_index, next_i_chunk_cpy.end_index, /*shift <- */ i_chunk_cpy.size);
         }
     }
 
-    if (want_update_cache)
-        update_cache();
+    if (p_want_update_cache)
+        find_biggest_chunk_size();
 }
 
-Stack *FlexMemoryAllocator::allocate(int p_size) {
+MemoryChunk *FlexMemoryAllocator::allocate(FlexUnit p_size) {
     bool space_available = false;
-    if (p_size <= cache.biggest_stack_size) {
+    if (p_size <= cache.biggest_chunk_size) {
         space_available = true;
     } else {
         const int total_space = memory_size - cache.occupied_memory;
         if (total_space >= p_size) {
             // Space is available but require trim
             space_available = true;
-            trim(false);
+            sanitize(false);
         }
     }
 
@@ -145,18 +144,18 @@ Stack *FlexMemoryAllocator::allocate(int p_size) {
         return NULL;
     }
 
-    const int size(memory_table.size());
-    for (int i = 0; i < size; ++i) {
+    const FlexUnit size(memory_table.size());
+    for (FlexUnit i = 0; i < size; ++i) {
         if (!memory_table[i]->is_free || memory_table[i]->size < p_size)
             continue;
 
         if (memory_table[i]->size != p_size) {
-            // Perform split of current stack
-            insert_stack(i + 1)->set(memory_table[i]->begin_index + p_size, memory_table[i]->end_index, true);
+            // Perform split of current chunk
+            create_chunk(i + 1)->set(memory_table[i]->begin_index + p_size, memory_table[i]->end_index, true);
         }
         memory_table[i]->set(memory_table[i]->begin_index, memory_table[i]->begin_index + p_size - 1, false);
         cache.occupied_memory += memory_table[i]->size;
-        update_cache();
+        find_biggest_chunk_size();
         return memory_table[i];
     }
 
@@ -164,32 +163,34 @@ Stack *FlexMemoryAllocator::allocate(int p_size) {
     return NULL;
 }
 
-void FlexMemoryAllocator::__deallocate(Stack *p_stack) {
-    p_stack->is_free = true;
+void FlexMemoryAllocator::__deallocate(MemoryChunk *p_chunk) {
+    p_chunk->is_free = true;
 
-    cache.occupied_memory -= p_stack->size;
+    sanitize(false, false); // Merge only, no cache update, no trim
+
+    cache.occupied_memory -= p_chunk->size;
     // update cache
-    if (cache.biggest_stack_size < p_stack->size) {
-        cache.biggest_stack_size = p_stack->size;
+    if (cache.biggest_chunk_size < p_chunk->size) {
+        cache.biggest_chunk_size = p_chunk->size;
     }
 }
 
-bool FlexMemoryAllocator::redux_memory(int p_size) {
+bool FlexMemoryAllocator::redux_memory(FlexUnit p_size) {
     if (memory_table.size() > 0) {
-        const int last_stack_index = memory_table.size() - 1;
-        Stack *last_stack = memory_table[last_stack_index];
-        if (last_stack->is_free && last_stack->begin_index >= p_size) {
+        const FlexUnit last_chunk_index = memory_table.size() - 1;
+        MemoryChunk *last_chunk = memory_table[last_chunk_index];
+        if (last_chunk->is_free && last_chunk->begin_index >= p_size) {
 
-            // The last free stack fits in the new size
-            if (last_stack->begin_index == p_size) {
-                // When the last stack begin is equal to the new size, no more space available
-                remove_stack(last_stack_index);
+            // The last free chunk fits in the new size
+            if (last_chunk->begin_index == p_size) {
+                // When the last chunk begin is equal to the new size, no more space available
+                delete_chunk(last_chunk_index);
             } else {
-                // When the last stack begin is less then new size, space is available
-                last_stack->set(last_stack->begin_index, p_size - 1, true);
+                // When the last chunk begin is less then new size, space is available
+                last_chunk->set(last_chunk->begin_index, p_size - 1, true);
             }
             memory_size = p_size;
-            memory->reserve(p_size);
+            memory->resize_memory(p_size);
             return true;
         }
         return false;
@@ -198,27 +199,27 @@ bool FlexMemoryAllocator::redux_memory(int p_size) {
     }
 }
 
-void FlexMemoryAllocator::update_cache() {
+void FlexMemoryAllocator::find_biggest_chunk_size() {
 
-    // Get biggest stack size
-    cache.biggest_stack_size = 0;
-    for (int i = memory_table.size() - 1; i >= 0; --i) {
-        if (memory_table[i]->is_free && cache.biggest_stack_size < memory_table[i]->size) {
-            cache.biggest_stack_size = memory_table[i]->size;
+    // Get biggest chunk size
+    cache.biggest_chunk_size = 0;
+    for (FlexUnit i = memory_table.size() - 1; i >= 0; --i) {
+        if (memory_table[i]->is_free && cache.biggest_chunk_size < memory_table[i]->size) {
+            cache.biggest_chunk_size = memory_table[i]->size;
         }
     }
 }
 
-Stack *FlexMemoryAllocator::insert_stack(int p_pos) {
-    Stack *stack = new Stack;
+MemoryChunk *FlexMemoryAllocator::create_chunk(FlexUnit p_pos) {
+    MemoryChunk *chunk = new MemoryChunk;
     if (p_pos == -1)
-        memory_table.push_back(stack);
+        memory_table.push_back(chunk);
     else
-        memory_table.insert(p_pos, stack);
-    return stack;
+        memory_table.insert(p_pos, chunk);
+    return chunk;
 }
 
-void FlexMemoryAllocator::remove_stack(int p_pos) {
+void FlexMemoryAllocator::delete_chunk(FlexUnit p_pos) {
     delete memory_table[p_pos];
     memory_table.remove(p_pos);
 }

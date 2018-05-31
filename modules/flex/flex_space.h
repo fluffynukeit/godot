@@ -55,7 +55,7 @@ public:
 
     ParticleBodiesMemory(NvFlexLibrary *p_flex_lib);
 
-    virtual void reserve(int p_size);
+    virtual void resize_memory(int p_size);
     virtual void shift_back(int p_from, int p_to, int p_shift);
 
     void map();
@@ -63,16 +63,16 @@ public:
     void terminate();
 
     // These functions must be called only if the buffers are mapped
-    void set_particle(const Stack *p_stack, int p_particle_index, FlVector4 p_particle);
-    const FlVector4 &get_particle(const Stack *p_stack, int p_particle_index) const;
+    void set_particle(const MemoryChunk *p_chunk, int p_particle_index, FlVector4 p_particle);
+    const FlVector4 &get_particle(const MemoryChunk *p_chunk, int p_particle_index) const;
 
-    void set_velocity(const Stack *p_stack, int p_particle_index, FlVector3 p_velocity);
-    const FlVector3 &get_velocity(const Stack *p_stack, int p_particle_index) const;
+    void set_velocity(const MemoryChunk *p_chunk, int p_particle_index, FlVector3 p_velocity);
+    const FlVector3 &get_velocity(const MemoryChunk *p_chunk, int p_particle_index) const;
 
-    void set_phase(const Stack *p_stack, int p_particle_index, int p_phase);
-    int get_phase(const Stack *p_stack, int p_particle_index) const;
+    void set_phase(const MemoryChunk *p_chunk, int p_particle_index, int p_phase);
+    int get_phase(const MemoryChunk *p_chunk, int p_particle_index) const;
 
-    void set_active_particles(const Stack *p_stack, int p_particle_index, int p_index);
+    void set_active_particles(const MemoryChunk *p_chunk, int p_particle_index, int p_index);
 };
 
 class FlexSpace : public RIDFlex {
@@ -84,8 +84,9 @@ class FlexSpace : public RIDFlex {
     ParticleBodiesMemory *particle_bodies_memory;
     int active_particle_count;
 
-    Stack *test_stack1;
-    Stack *test_stack2;
+    MemoryChunk *test_chunk1;
+    MemoryChunk *test_chunk2;
+    MemoryChunk *test_chunk3;
 
 public:
     FlexSpace();

@@ -37,43 +37,45 @@
 
 #include "vector.h"
 
+typedef int FlexUnit;
+
 class FlexMemory {
 public:
-    virtual void reserve(int p_size) = 0;
+    virtual void resize_memory(FlexUnit p_size) = 0;
     /// Move bits by shifting in the memory
     /// p_shift could be only negative
-    virtual void shift_back(int p_from, int p_to, int p_shift) = 0;
+    virtual void shift_back(FlexUnit p_from, FlexUnit p_to, FlexUnit p_shift) = 0;
 };
 
-struct Stack {
+struct MemoryChunk {
     friend class FlexMemoryAllocator;
 
 private:
-    int begin_index;
-    int end_index;
+    FlexUnit begin_index;
+    FlexUnit end_index;
     bool is_free;
-    int size;
+    FlexUnit size;
 
-    Stack() :
+    MemoryChunk() :
             begin_index(0),
             end_index(0),
             is_free(true),
             size(0) {}
 
-    Stack(int p_begin_index, int p_end_index, bool p_is_free) :
+    MemoryChunk(FlexUnit p_begin_index, FlexUnit p_end_index, bool p_is_free) :
             begin_index(p_begin_index),
             end_index(p_end_index),
             is_free(p_is_free),
             size(p_end_index - p_begin_index + 1) {
     }
 
-    Stack(const Stack &other) :
+    MemoryChunk(const MemoryChunk &other) :
             begin_index(other.begin_index),
             end_index(other.end_index),
             is_free(other.is_free),
             size(other.size) {}
 
-    void set(int p_begin_index, int p_end_index, bool p_is_free) {
+    void set(FlexUnit p_begin_index, FlexUnit p_end_index, bool p_is_free) {
         begin_index = p_begin_index;
         end_index = p_end_index;
         is_free = p_is_free;
@@ -81,52 +83,68 @@ private:
     }
 
 public:
-    _FORCE_INLINE_ int get_begin_index() const { return begin_index; }
+    _FORCE_INLINE_ FlexUnit get_begin_index() const { return begin_index; }
 };
 
 /// This class is responsible for memory management.
-/// It's possible to allocate and deallocate memory.
-/// When you allocate the memory it returns a pointer to an object Stack that represent the portion of memory allocated
 ///
-/// I've created this class with the idea to have a unique class that is able to handle all kind of buffer structure
-/// For this reason this class doesn't perform any real memory allocation.
-/// This task is performed on FlexMemory object.
-/// FlexMemory is an interface that each buffer should implement.
-/// As you can see neither FlexMemoryAllocator nor FlexMemory define how to set data in the buffer,
-/// infact this should be implemented by the child of FlexMemory
+/// The memory has a fixed size, this size can be increased or decreased.
+/// It's possible to allocate and deallocate memory chunk, and this class will take care where to put the datas.
+///
+/// Since this class was created with the idea to be a general purpose memory manager it doesn't
+/// handle memory per byte but instead use a FlexUnit.
+/// A FlexUnit can be represented by any kind of information (without any size or type restriction) depending on the implementation of FlexMemory.
+///
+/// FlexMemory is an interface that must be implemented in order to define memory structure and then store information.
+/// As you can see neither FlexMemoryAllocator nor FlexMemory define how to set data in the memory,
+/// infact this must be implemented by extending FlexMemory.
+///
+/// So FlexMemoryAllocator is just a class that manage memory chunk allocation.
+///
+///This is the structure of memory
+///
+///  Memory
+///     |-Chunk <----------------------------------------------------- [Resource 1] (Size of resource = 1)
+///     |   L--- ITEM 1 (one of more info for each item)
+///     |
+///     |-Chunk <----------------------------------------------------- [Resource 2] (Size of resource = 3)
+///     |   |--- ITEM 1 (one of more info for each item)
+///     |   |--- ITEM 2 (one of more info for each item)
+///     |   L--- ITEM 3 (one of more info for each item)
+///
 class FlexMemoryAllocator {
 
-    Vector<Stack *> memory_table;
-    int memory_size;
+    Vector<MemoryChunk *> memory_table;
+    FlexUnit memory_size;
     struct {
-        int occupied_memory;
-        int biggest_stack_size;
+        FlexUnit occupied_memory;
+        FlexUnit biggest_chunk_size;
     } cache;
 
     FlexMemory *memory;
 
 public:
-    FlexMemoryAllocator(FlexMemory *p_memory, int p_size);
+    FlexMemoryAllocator(FlexMemory *p_memory, FlexUnit p_size);
     ~FlexMemoryAllocator();
-    bool reserve(int p_size);
-    void trim(bool want_update_cache = true); // Remove free stack between used memory
+    bool resize_memory(FlexUnit p_size);
+    void sanitize(bool p_want_update_cache = true, bool p_trim = true);
 
     // Allocate memory, return null if no more space available
-    Stack *allocate(int p_size);
+    MemoryChunk *allocate(FlexUnit p_size);
 
-#define deallocate(p_stack) \
-    __deallocate(p_stack);  \
-    p_stack = NULL;
+#define deallocate(p_chunk) \
+    __deallocate(p_chunk);  \
+    p_chunk = NULL;
 
-    /// IMPORTANT Don't call it directly, Use macro deallocateStack
-    void __deallocate(Stack *p_stack);
+    /// IMPORTANT Don't call it directly, Use macro deallocatechunk
+    void __deallocate(MemoryChunk *p_chunk);
 
 private:
-    bool redux_memory(int p_size);
-    void update_cache();
+    bool redux_memory(FlexUnit p_size);
+    void find_biggest_chunk_size();
 
-    Stack *insert_stack(int p_pos = -1);
-    void remove_stack(int p_pos);
+    MemoryChunk *create_chunk(FlexUnit p_pos = -1);
+    void delete_chunk(FlexUnit p_pos);
 };
 
 #endif // FLEX_MEMORY_ALLOCATOR_H
