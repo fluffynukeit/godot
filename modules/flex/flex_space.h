@@ -62,9 +62,16 @@ public:
     void unmap();
     void terminate();
 
+    // These functions must be called only if the buffers are mapped
     void set_particle(const Stack *p_stack, int p_particle_index, FlVector4 p_particle);
+    const FlVector4 &get_particle(const Stack *p_stack, int p_particle_index) const;
+
     void set_velocity(const Stack *p_stack, int p_particle_index, FlVector3 p_velocity);
+    const FlVector3 &get_velocity(const Stack *p_stack, int p_particle_index) const;
+
     void set_phase(const Stack *p_stack, int p_particle_index, int p_phase);
+    int get_phase(const Stack *p_stack, int p_particle_index) const;
+
     void set_active_particles(const Stack *p_stack, int p_particle_index, int p_index);
 };
 
@@ -77,7 +84,8 @@ class FlexSpace : public RIDFlex {
     ParticleBodiesMemory *particle_bodies_memory;
     int active_particle_count;
 
-    Stack *test_stack;
+    Stack *test_stack1;
+    Stack *test_stack2;
 
 public:
     FlexSpace();
