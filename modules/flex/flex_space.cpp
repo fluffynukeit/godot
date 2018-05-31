@@ -59,7 +59,7 @@ ParticleBodiesMemory::ParticleBodiesMemory(NvFlexLibrary *p_flex_lib) :
         active_particles(p_flex_lib) {
 }
 
-void ParticleBodiesMemory::reserve(int p_size) {
+void ParticleBodiesMemory::resize_memory(int p_size) {
     particles.resize(p_size);
     velocities.resize(p_size);
     phases.resize(p_size);
@@ -95,32 +95,32 @@ void ParticleBodiesMemory::terminate() {
     active_particles.destroy();
 }
 
-void ParticleBodiesMemory::set_particle(const Stack *p_stack, int p_particle_index, FlVector4 p_particle) {
-    particles[p_stack->get_begin_index() + p_particle_index] = p_particle;
+void ParticleBodiesMemory::set_particle(const MemoryChunk *p_chunk, int p_particle_index, FlVector4 p_particle) {
+    particles[p_chunk->get_begin_index() + p_particle_index] = p_particle;
 }
 
-const FlVector4 &ParticleBodiesMemory::get_particle(const Stack *p_stack, int p_particle_index) const {
-    return particles[p_stack->get_begin_index() + p_particle_index];
+const FlVector4 &ParticleBodiesMemory::get_particle(const MemoryChunk *p_chunk, int p_particle_index) const {
+    return particles[p_chunk->get_begin_index() + p_particle_index];
 }
 
-void ParticleBodiesMemory::set_velocity(const Stack *p_stack, int p_particle_index, FlVector3 p_velocity) {
-    velocities[p_stack->get_begin_index() + p_particle_index] = p_velocity;
+void ParticleBodiesMemory::set_velocity(const MemoryChunk *p_chunk, int p_particle_index, FlVector3 p_velocity) {
+    velocities[p_chunk->get_begin_index() + p_particle_index] = p_velocity;
 }
 
-const FlVector3 &ParticleBodiesMemory::get_velocity(const Stack *p_stack, int p_particle_index) const {
-    return velocities[p_stack->get_begin_index() + p_particle_index];
+const FlVector3 &ParticleBodiesMemory::get_velocity(const MemoryChunk *p_chunk, int p_particle_index) const {
+    return velocities[p_chunk->get_begin_index() + p_particle_index];
 }
 
-void ParticleBodiesMemory::set_phase(const Stack *p_stack, int p_particle_index, int p_phase) {
-    phases[p_stack->get_begin_index() + p_particle_index] = p_phase;
+void ParticleBodiesMemory::set_phase(const MemoryChunk *p_chunk, int p_particle_index, int p_phase) {
+    phases[p_chunk->get_begin_index() + p_particle_index] = p_phase;
 }
 
-int ParticleBodiesMemory::get_phase(const Stack *p_stack, int p_particle_index) const {
-    return phases[p_stack->get_begin_index() + p_particle_index];
+int ParticleBodiesMemory::get_phase(const MemoryChunk *p_chunk, int p_particle_index) const {
+    return phases[p_chunk->get_begin_index() + p_particle_index];
 }
 
-void ParticleBodiesMemory::set_active_particles(const Stack *p_stack, int p_particle_index, int p_index) {
-    active_particles[p_stack->get_begin_index() + p_particle_index] = p_index;
+void ParticleBodiesMemory::set_active_particles(const MemoryChunk *p_chunk, int p_particle_index, int p_index) {
+    active_particles[p_chunk->get_begin_index() + p_particle_index] = p_index;
 }
 
 FlexSpace::FlexSpace() :
@@ -221,8 +221,8 @@ void FlexSpace::sync() {
     // Read operation
     if (active_particle_count > 0) {
 
-        const FlVector4 &particle = particle_bodies_memory->get_particle(test_stack2, 0);
-        const FlVector3 &velocity = particle_bodies_memory->get_velocity(test_stack2, 0);
+        const FlVector4 &particle = particle_bodies_memory->get_particle(test_chunk3, 0);
+        const FlVector3 &velocity = particle_bodies_memory->get_velocity(test_chunk3, 0);
         print_line("X: " + String::num_real(particle.x) + " Y: " + String::num_real(particle.y) + " Z: " + String::num_real(particle.z) + " ---- " + "X: " + String::num_real(velocity.x) + " Y: " + String::num_real(velocity.y) + " Z: " + String::num_real(velocity.z));
     }
 
@@ -231,26 +231,37 @@ void FlexSpace::sync() {
     if (!particle_bodies_memory->particles.size()) { // TODO just a test
 
         // TODO remove, just a test
-        particle_bodies_allocator->reserve(1); // Set max memory to 1
-        test_stack1 = particle_bodies_allocator->allocate(1); // allocate for 1 particle
+        particle_bodies_allocator->resize_memory(10); // Set max memory to 10
+        test_chunk1 = particle_bodies_allocator->allocate(1); // allocate for 1 particle
 
-        particle_bodies_allocator->reserve(2); // Set max memory to 2
-        test_stack2 = particle_bodies_allocator->allocate(1); // allocate for 1 particle
+        particle_bodies_allocator->resize_memory(2); // Set max memory to 2
+        test_chunk2 = particle_bodies_allocator->allocate(1); // allocate for 1 particle
+
+        particle_bodies_allocator->resize_memory(3); // Set max memory to 3
+        test_chunk3 = particle_bodies_allocator->allocate(1); // allocate for 1 particle
 
         require_write = true;
 
         real_t mass = 2.0;
-        particle_bodies_memory->set_particle(test_stack1, 0, FlVector4(0.0, 0.0, 0.0, 1.0 / mass));
-        particle_bodies_memory->set_velocity(test_stack1, 0, FlVector3(0.0, 0.0, 0.0));
+        particle_bodies_memory->set_particle(test_chunk1, 0, FlVector4(0.0, 0.0, 0.0, 1.0 / mass));
+        particle_bodies_memory->set_velocity(test_chunk1, 0, FlVector3(0.0, 0.0, 0.0));
         const int group = 0;
         const int phase = NvFlexMakePhase(group, eNvFlexPhaseSelfCollide | eNvFlexPhaseSelfCollideFilter);
-        particle_bodies_memory->set_phase(test_stack1, 0, phase);
-        particle_bodies_memory->set_active_particles(test_stack1, 0, 0);
+        particle_bodies_memory->set_phase(test_chunk1, 0, phase);
+        particle_bodies_memory->set_active_particles(test_chunk1, 0, 0);
 
-        particle_bodies_memory->set_particle(test_stack2, 0, FlVector4(0.0, 10.0, 0.0, 1.0 / mass));
-        particle_bodies_memory->set_velocity(test_stack2, 0, FlVector3(0.0, 0.0, 0.0));
-        particle_bodies_memory->set_phase(test_stack2, 0, phase);
-        particle_bodies_memory->set_active_particles(test_stack2, 0, 1);
+        particle_bodies_memory->set_particle(test_chunk2, 0, FlVector4(0.0, 10.0, 0.0, 1.0 / mass));
+        particle_bodies_memory->set_velocity(test_chunk2, 0, FlVector3(0.0, 0.0, 0.0));
+        particle_bodies_memory->set_phase(test_chunk2, 0, phase);
+        particle_bodies_memory->set_active_particles(test_chunk2, 0, 1);
+
+        particle_bodies_allocator->deallocate(test_chunk2);
+        particle_bodies_allocator->deallocate(test_chunk1);
+
+        particle_bodies_memory->set_particle(test_chunk3, 0, FlVector4(0.0, 50.0, 0.0, 1.0 / mass));
+        particle_bodies_memory->set_velocity(test_chunk3, 0, FlVector3(0.0, 0.0, 0.0));
+        particle_bodies_memory->set_phase(test_chunk3, 0, phase);
+        particle_bodies_memory->set_active_particles(test_chunk3, 0, 2);
     }
 
     particle_bodies_memory->unmap();
