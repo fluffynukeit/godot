@@ -1711,7 +1711,7 @@ EXTERN_C const IID IID_IDXGISwapChain;
             /* [in] */ UINT Flags) = 0;
         
         virtual HRESULT STDMETHODCALLTYPE GetBuffer( 
-            /* [in] */ UINT Buffer,
+            /* [in] */ UINT FlexMemory,
             /* [annotation][in] */ 
             _In_  REFIID riid,
             /* [annotation][out][in] */ 

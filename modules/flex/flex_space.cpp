@@ -52,6 +52,19 @@ bool has_error() {
     return error_severity == eNvFlexLogError;
 }
 
+void ParticleBodyBuffer::resize(int p_size) {
+}
+
+void ParticleBodyBuffer::shift_back(int p_from, int p_to, int p_shift) {
+    for (int i(p_from); i <= p_to; ++i) {
+        buffers[i - p_shift] = buffers[i];
+    }
+}
+
+void ParticleBodyBuffer::set_data(int p_pos, int p_data) {
+    buffers[p_pos] = p_data;
+}
+
 FlexBuffers::FlexBuffers(NvFlexLibrary *p_flex_lib) :
         // Allocation is managed automatically
         particles(p_flex_lib),
@@ -65,7 +78,8 @@ FlexSpace::FlexSpace() :
         flex_lib(NULL),
         solver(NULL),
         buffers(NULL),
-        active_particle_count(0) {
+        active_particle_count(0),
+        buf(new ParticleBodyBuffer, 10) {
     init();
 }
 
@@ -74,6 +88,18 @@ FlexSpace::~FlexSpace() {
 }
 
 void FlexSpace::init() {
+
+    Stack *stack1 = buf.allocate(2);
+    Stack *stack2 = buf.allocate(2);
+    Stack *stack3 = buf.allocate(2);
+    buf.set_data(stack1, 1);
+    buf.set_data(stack2, 2);
+    buf.set_data(stack3, 3);
+
+    deallocateStack(buf, stack2);
+
+    Stack *stack4 = buf.allocate(6);
+    buf.set_data(stack4, 4);
 
     // Init library
     ERR_FAIL_COND(flex_lib);
