@@ -76,9 +76,9 @@ bool FlexMemoryAllocator::resize_memory(FlexUnit p_size) {
                 create_chunk()->set(last_chunk->end_index + 1, p_size - 1, true);
             }
         }
-        memory_size = p_size;
-        memory->resize_memory(p_size);
     }
+    memory_size = p_size;
+    memory->resize_memory(p_size);
 
     find_biggest_chunk_size();
     return true;
