@@ -68,4 +68,7 @@ typedef int ParticleRef; // Particle Ref id relative to body never change
 #define CreateParticle(position, mass) \
     FlVector4(position.x, position.y, position.z, mass ? (1 / mass) : 0);
 
+#define gvec3_from_fvec4(particle) \
+    Vector3(particle[0], particle[1], particle[2])
+
 #endif // FLEX_UTILITY_H

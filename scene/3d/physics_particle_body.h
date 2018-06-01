@@ -61,9 +61,13 @@ public:
     ParticleBody();
 
     void add_particle(const Vector3 &p_local_position, real_t p_mass);
+    void remove_particle(int p_particle_id);
 
 protected:
     void _notification(int p_what);
+    void _on_script_changed();
+    // Write
+    void _commands_process_internal(Object *p_cmds);
 };
 
 #endif // PARTICLE_BODY_H

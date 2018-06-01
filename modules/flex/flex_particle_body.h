@@ -35,8 +35,14 @@
 #ifndef FLEX_PARTICLE_BODY_H
 #define FLEX_PARTICLE_BODY_H
 
+#include "flex_particle_physics_server.h"
 #include "flex_utility.h"
 #include "rid_flex.h"
+#include "string_db.h"
+
+class FlexParticleBody;
+class FlexSpace;
+class Object;
 
 struct ParticleToAdd {
     FlVector4 particle;
@@ -50,8 +56,6 @@ struct ParticleToAdd {
     }
 };
 
-class FlexSpace;
-
 /// This class represent a group of particles that are constrained each other and form a body.
 /// This body can be rigid or soft.
 ///
@@ -63,11 +67,17 @@ class FlexSpace;
 class FlexParticleBody : public RIDFlex {
 
     friend class FlexSpace;
+    friend class FlexParticleBodyCommands;
+
+    struct {
+        Object *receiver; // Use pointer directly to speed up the process, but it's a bit risky
+        StringName method;
+    } sync_callback;
 
     struct {
         Vector<ParticleToAdd> particle_to_add;
-        Vector<ParticleID> particle_to_remove;
-    } commands;
+        Set<ParticleID> particle_to_remove;
+    } delayed_commands;
 
     FlexSpace *space;
     MemoryChunk *memory_chunk;
@@ -77,14 +87,18 @@ public:
 
     _FORCE_INLINE_ FlexSpace *get_space() { return space; }
 
-    // [COMMAND]
-    void add_particle(const Vector3 &p_local_position, real_t p_mass);
-    // [COMMAND]
-    void remove_particle(ParticleID p_particle);
+    /// IMPORTANT Remember to remove it if Object will be destroyed
+    void set_sync_callback(Object *p_receiver, const StringName &p_method);
 
-    void clear_commands();
+    void add_particle(const Vector3 &p_local_position, real_t p_mass);
+    void remove_particle(ParticleID p_particle);
+    Vector3 get_particle_position(ParticleID p_particle) const;
 
     bool is_owner(ParticleID) const;
+
+private:
+    void dispatch_sync_callback();
+    void clear_commands();
 };
 
 #endif // FLEX_PARTICLE_BODY_H

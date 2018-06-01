@@ -64,6 +64,8 @@ public:
     /// |
     /// V
 
+    void copy(const MemoryChunk *p_chunk, ParticleID p_from_particle_index, ParticleID p_to_particle_index);
+
     void set_particle(const MemoryChunk *p_chunk, ParticleID p_particle_index, FlVector4 p_particle);
     const FlVector4 &get_particle(const MemoryChunk *p_chunk, ParticleID p_particle_index) const;
 
