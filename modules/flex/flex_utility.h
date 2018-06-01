@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  flex_maths.h                                                         */
+/*  flex_utility.h                                                        */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -32,8 +32,8 @@
 	@author AndreaCatania
 */
 
-#ifndef FLEX_MATH_H
-#define FLEX_MATH_H
+#ifndef FLEX_UTILITY_H
+#define FLEX_UTILITY_H
 
 // Change the name used intenally by flex in order to avoid colliding with Godot
 #define Vector2 FlVector2
@@ -58,4 +58,14 @@
 #undef Plane
 #undef Transform
 
-#endif // FLEX_MATH_H
+#include "flex_memory_allocator.h"
+#include "math_defs.h"
+#include "vector3.h"
+
+typedef int ParticleID; // Particle id relative to body, can change during time
+typedef int ParticleRef; // Particle Ref id relative to body never change
+
+#define CreateParticle(position, mass) \
+    FlVector4(position.x, position.y, position.z, mass ? (1 / mass) : 0);
+
+#endif // FLEX_UTILITY_H
