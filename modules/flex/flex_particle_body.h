@@ -35,11 +35,52 @@
 #ifndef FLEX_PARTICLE_BODY_H
 #define FLEX_PARTICLE_BODY_H
 
+#include "flex_utility.h"
 #include "rid_flex.h"
 
+struct ParticleToAdd {
+    FlVector4 particle;
+    bool want_reference;
+
+    ParticleToAdd() {}
+
+    ParticleToAdd(const Vector3 &p_position, real_t p_mass) {
+        particle = CreateParticle(p_position, p_mass);
+        want_reference = false;
+    }
+};
+
+class FlexSpace;
+
+/// This class represent a group of particles that are constrained each other and form a body.
+/// This body can be rigid or soft.
+///
+/// It's possible to add and remove particles, since the particles internally can change its buffer position and then its ID
+/// if you need to track a specific particle over time you can create a reference, when you add it.
+/// The reference is an ID that don't change during time, and with it is possible to get the current ID of particle and then interrogate it.
+///
+/// [COMMAND] All functions marked with this label are commands and will be executed in the next tick.
 class FlexParticleBody : public RIDFlex {
+
+    friend class FlexSpace;
+
+    struct {
+        Vector<ParticleToAdd> particle_to_add;
+        Vector<ParticleID> particle_to_remove;
+    } waiting;
+
+    FlexSpace *space;
+    MemoryChunk *memory_chunk;
+
 public:
     FlexParticleBody();
+
+    // [COMMAND]
+    void add_particle(const Vector3 &p_position, real_t p_mass);
+    // [COMMAND]
+    void remove_particle(ParticleID p_particle);
+
+    bool is_owner(ParticleID) const;
 };
 
 #endif // FLEX_PARTICLE_BODY_H

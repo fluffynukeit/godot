@@ -81,6 +81,10 @@ bool FlexParticlePhysicsServer::space_is_active(const RID p_space) const {
 }
 
 void FlexParticlePhysicsServer::space_add_particle_body(RID p_space, RID p_body) {
+    FlexSpace *space = space_owner.get(p_space);
+    FlexParticleBody *particle_body = body_owner.get(p_body);
+    ERR_FAIL_COND(!space);
+    ERR_FAIL_COND(!particle_body);
 }
 
 void FlexParticlePhysicsServer::space_remove_particle_body(RID p_space, RID p_body) {

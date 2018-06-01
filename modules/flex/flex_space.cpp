@@ -36,9 +36,11 @@
 
 #include "thirdparty/flex/include/NvFlex.h"
 
+#include "flex_memory.h"
+#include "flex_particle_body.h"
 #include "print_string.h"
 
-#define MAXPARTICLES 10
+#define MAXPARTICLES 1000
 
 #define DEVICE_ID 0
 
@@ -50,77 +52,6 @@ void ErrorCallback(NvFlexErrorSeverity severity, const char *msg, const char *fi
 }
 bool has_error() {
     return error_severity == eNvFlexLogError;
-}
-
-ParticleBodiesMemory::ParticleBodiesMemory(NvFlexLibrary *p_flex_lib) :
-        particles(p_flex_lib),
-        velocities(p_flex_lib),
-        phases(p_flex_lib),
-        active_particles(p_flex_lib) {
-}
-
-void ParticleBodiesMemory::resize_memory(int p_size) {
-    particles.resize(p_size);
-    velocities.resize(p_size);
-    phases.resize(p_size);
-    active_particles.resize(p_size);
-}
-
-void ParticleBodiesMemory::shift_back(int p_from, int p_to, int p_shift) {
-    for (int i(p_from); i <= p_to; ++i) {
-        particles[i - p_shift] = particles[i];
-        velocities[i - p_shift] = velocities[i];
-        phases[i - p_shift] = phases[i];
-    }
-}
-
-void ParticleBodiesMemory::map() {
-    particles.map(eNvFlexMapWait);
-    velocities.map(eNvFlexMapWait);
-    phases.map(eNvFlexMapWait);
-    active_particles.map(eNvFlexMapWait);
-}
-
-void ParticleBodiesMemory::unmap() {
-    particles.unmap();
-    velocities.unmap();
-    phases.unmap();
-    active_particles.unmap();
-}
-
-void ParticleBodiesMemory::terminate() {
-    particles.destroy();
-    velocities.destroy();
-    phases.destroy();
-    active_particles.destroy();
-}
-
-void ParticleBodiesMemory::set_particle(const MemoryChunk *p_chunk, int p_particle_index, FlVector4 p_particle) {
-    particles[p_chunk->get_begin_index() + p_particle_index] = p_particle;
-}
-
-const FlVector4 &ParticleBodiesMemory::get_particle(const MemoryChunk *p_chunk, int p_particle_index) const {
-    return particles[p_chunk->get_begin_index() + p_particle_index];
-}
-
-void ParticleBodiesMemory::set_velocity(const MemoryChunk *p_chunk, int p_particle_index, FlVector3 p_velocity) {
-    velocities[p_chunk->get_begin_index() + p_particle_index] = p_velocity;
-}
-
-const FlVector3 &ParticleBodiesMemory::get_velocity(const MemoryChunk *p_chunk, int p_particle_index) const {
-    return velocities[p_chunk->get_begin_index() + p_particle_index];
-}
-
-void ParticleBodiesMemory::set_phase(const MemoryChunk *p_chunk, int p_particle_index, int p_phase) {
-    phases[p_chunk->get_begin_index() + p_particle_index] = p_phase;
-}
-
-int ParticleBodiesMemory::get_phase(const MemoryChunk *p_chunk, int p_particle_index) const {
-    return phases[p_chunk->get_begin_index() + p_particle_index];
-}
-
-void ParticleBodiesMemory::set_active_particles(const MemoryChunk *p_chunk, int p_particle_index, int p_index) {
-    active_particles[p_chunk->get_begin_index() + p_particle_index] = p_index;
 }
 
 FlexSpace::FlexSpace() :
@@ -174,7 +105,8 @@ void FlexSpace::init() {
     ERR_FAIL_COND(particle_bodies_memory);
     ERR_FAIL_COND(particle_bodies_allocator);
     particle_bodies_memory = memnew(ParticleBodiesMemory(flex_lib));
-    particle_bodies_allocator = memnew(FlexMemoryAllocator(particle_bodies_memory, 0));
+    particle_bodies_allocator = memnew(FlexMemoryAllocator(particle_bodies_memory, ((FlexUnit)(MAXPARTICLES / 3))));
+    particle_bodies_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
 
     NvFlexParams params;
     // Initialize solver parameter
@@ -218,69 +150,12 @@ void FlexSpace::sync() {
 
     particle_bodies_memory->map();
 
-    // Read operation
-    if (active_particle_count > 0) {
-
-        const FlVector4 &particle = particle_bodies_memory->get_particle(test_chunk3, 0);
-        const FlVector3 &velocity = particle_bodies_memory->get_velocity(test_chunk3, 0);
-        print_line("X: " + String::num_real(particle.x) + " Y: " + String::num_real(particle.y) + " Z: " + String::num_real(particle.z) + " ---- " + "X: " + String::num_real(velocity.x) + " Y: " + String::num_real(velocity.y) + " Z: " + String::num_real(velocity.z));
-    }
-
-    bool require_write = false;
-    // Write operation
-    if (!particle_bodies_memory->particles.size()) { // TODO just a test
-
-        // TODO remove, just a test
-        particle_bodies_allocator->resize_memory(10); // Set max memory to 10
-        test_chunk1 = particle_bodies_allocator->allocate(1); // allocate for 1 particle
-
-        particle_bodies_allocator->resize_memory(2); // Set max memory to 2
-        test_chunk2 = particle_bodies_allocator->allocate(1); // allocate for 1 particle
-
-        particle_bodies_allocator->resize_memory(3); // Set max memory to 3
-        test_chunk3 = particle_bodies_allocator->allocate(1); // allocate for 1 particle
-
-        require_write = true;
-
-        real_t mass = 2.0;
-        particle_bodies_memory->set_particle(test_chunk1, 0, FlVector4(0.0, 0.0, 0.0, 1.0 / mass));
-        particle_bodies_memory->set_velocity(test_chunk1, 0, FlVector3(0.0, 0.0, 0.0));
-        const int group = 0;
-        const int phase = NvFlexMakePhase(group, eNvFlexPhaseSelfCollide | eNvFlexPhaseSelfCollideFilter);
-        particle_bodies_memory->set_phase(test_chunk1, 0, phase);
-        particle_bodies_memory->set_active_particles(test_chunk1, 0, 0);
-
-        particle_bodies_memory->set_particle(test_chunk2, 0, FlVector4(0.0, 10.0, 0.0, 1.0 / mass));
-        particle_bodies_memory->set_velocity(test_chunk2, 0, FlVector3(0.0, 0.0, 0.0));
-        particle_bodies_memory->set_phase(test_chunk2, 0, phase);
-        particle_bodies_memory->set_active_particles(test_chunk2, 0, 1);
-
-        particle_bodies_allocator->deallocate(test_chunk2);
-        particle_bodies_allocator->deallocate(test_chunk1);
-
-        particle_bodies_memory->set_particle(test_chunk3, 0, FlVector4(0.0, 50.0, 0.0, 1.0 / mass));
-        particle_bodies_memory->set_velocity(test_chunk3, 0, FlVector3(0.0, 0.0, 0.0));
-        particle_bodies_memory->set_phase(test_chunk3, 0, phase);
-        particle_bodies_memory->set_active_particles(test_chunk3, 0, 2);
-    }
+    read_operations();
+    write_operations();
 
     particle_bodies_memory->unmap();
 
-    if (require_write) {
-
-        NvFlexCopyDesc copy_desc;
-        copy_desc.srcOffset = 0;
-        copy_desc.dstOffset = 0;
-        copy_desc.elementCount = particle_bodies_memory->particles.size();
-
-        // Write buffer to GPU (command)
-        // TODO write only necessary (part of buffer or just skip an entire buffer if not necessary)
-        NvFlexSetParticles(solver, particle_bodies_memory->particles.buffer, &copy_desc);
-        NvFlexSetVelocities(solver, particle_bodies_memory->velocities.buffer, &copy_desc);
-        NvFlexSetPhases(solver, particle_bodies_memory->phases.buffer, &copy_desc);
-        NvFlexSetActive(solver, particle_bodies_memory->active_particles.buffer, &copy_desc);
-        NvFlexSetActiveCount(solver, particle_bodies_memory->active_particles.size());
-    }
+    write_commands();
 }
 
 void FlexSpace::step(real_t p_delta_time) {
@@ -294,15 +169,94 @@ void FlexSpace::step(real_t p_delta_time) {
         const bool enable_timer = false; // Used for profiling
         NvFlexUpdateSolver(solver, p_delta_time, substep, enable_timer);
 
+        read_commands();
+    }
+}
+
+void FlexSpace::read_operations() {
+    for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
+        const FlVector4 &particle = particle_bodies_memory->get_particle(particle_bodies[i]->memory_chunk, 0);
+        const FlVector3 &velocity = particle_bodies_memory->get_velocity(particle_bodies[i]->memory_chunk, 0);
+        print_line("X: " + String::num_real(particle.x) + " Y: " + String::num_real(particle.y) + " Z: " + String::num_real(particle.z) + " ---- " + "X: " + String::num_real(velocity.x) + " Y: " + String::num_real(velocity.y) + " Z: " + String::num_real(velocity.z));
+    }
+}
+
+void FlexSpace::read_commands() {
+    NvFlexCopyDesc copy_desc;
+    for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
+
         // Write back to buffer (command)
-        NvFlexCopyDesc copy_desc;
-        copy_desc.srcOffset = 0;
-        copy_desc.dstOffset = 0;
-        copy_desc.elementCount = particle_bodies_memory->particles.size();
+        copy_desc.srcOffset = particle_bodies[i]->memory_chunk->get_begin_index();
+        copy_desc.dstOffset = particle_bodies[i]->memory_chunk->get_begin_index();
+        copy_desc.elementCount = particle_bodies[i]->memory_chunk->get_size();
 
         // TODO read only necessary (part of buffer or just skip an entire buffer if not necessary)
         NvFlexGetParticles(solver, particle_bodies_memory->particles.buffer, &copy_desc);
         NvFlexGetVelocities(solver, particle_bodies_memory->velocities.buffer, &copy_desc);
         NvFlexGetPhases(solver, particle_bodies_memory->phases.buffer, &copy_desc);
     }
+}
+
+void FlexSpace::write_operations() {
+    for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
+
+        FlexParticleBody *body = particle_bodies[i];
+        if (body->waiting.particle_to_add.size()) {
+
+            // Allocate memory
+            if (body->memory_chunk) {
+                // Resize memory chunk
+                particle_bodies_allocator->resize_chunk(body->memory_chunk, body->memory_chunk->get_size() + body->waiting.particle_to_add.size());
+            } else {
+                // Allocate new one
+                body->memory_chunk = particle_bodies_allocator->allocate_chunk(body->waiting.particle_to_add.size());
+            }
+
+            // Write on memory
+            ERR_FAIL_COND(!body->memory_chunk);
+            for (int p(body->waiting.particle_to_add.size() - 1); 0 <= p; --p) {
+
+                particle_bodies_memory->set_particle(body->memory_chunk, p, body->waiting.particle_to_add[p].particle);
+                particle_bodies_memory->set_velocity(body->memory_chunk, p, FlVector3());
+                // TODO add here all parameter correctly
+                const int group = 0;
+                const int phase = NvFlexMakePhase(group, eNvFlexPhaseSelfCollide | eNvFlexPhaseSelfCollideFilter);
+                particle_bodies_memory->set_phase(body->memory_chunk, p, phase);
+                particle_bodies_memory->set_active_particle(body->memory_chunk, p);
+            }
+        }
+
+        if (body->waiting.particle_to_remove.size()) {
+            // Remove particles
+            // TODO implement
+        }
+    }
+}
+
+void FlexSpace::write_commands() {
+    NvFlexCopyDesc copy_desc;
+    for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
+
+        FlexParticleBody *body = particle_bodies[i];
+        copy_desc.srcOffset = body->memory_chunk->get_begin_index();
+        copy_desc.dstOffset = body->memory_chunk->get_begin_index();
+        copy_desc.elementCount = body->memory_chunk->get_size();
+
+        // TODO write only necessary (part of buffer or just skip an entire buffer if not necessary)
+        NvFlexSetParticles(solver, particle_bodies_memory->particles.buffer, &copy_desc);
+        NvFlexSetVelocities(solver, particle_bodies_memory->velocities.buffer, &copy_desc);
+        NvFlexSetPhases(solver, particle_bodies_memory->phases.buffer, &copy_desc);
+        NvFlexSetActive(solver, particle_bodies_memory->active_particles.buffer, &copy_desc);
+        NvFlexSetActiveCount(solver, particle_bodies_memory->active_particles.size());
+    }
+}
+
+void FlexSpace::add_particle_body(FlexParticleBody *p_body) {
+    ERR_FAIL_COND(!p_body->space);
+    p_body->space = this;
+    particle_bodies.push_back(p_body);
+}
+
+void FlexSpace::remove_particle_body(FlexParticleBody *p_body) {
+    // TODO implement
 }
