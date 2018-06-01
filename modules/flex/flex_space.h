@@ -37,43 +37,13 @@
 
 #include "rid_flex.h"
 
-#include "flex_maths.h"
-#include "thirdparty/flex/include/NvFlexExt.h"
-
-#include "flex_memory_allocator.h"
-#include "math_defs.h"
+#include "flex_utility.h"
 
 class NvFlexLibrary;
 class NvFlexSolver;
-
-class ParticleBodiesMemory : public FlexMemory {
-public:
-    NvFlexVector<FlVector4> particles; // XYZ world position, W inverse mass
-    NvFlexVector<FlVector3> velocities;
-    NvFlexVector<int> phases; // This is a flag that specify behaviour of particle like collision etc.. https://docs.nvidia.com/gameworks/content/gameworkslibrary/physx/flex/manual.html#phase
-    NvFlexVector<int> active_particles; // TODO this function can't stay here, should be handled outside this buffer.
-
-    ParticleBodiesMemory(NvFlexLibrary *p_flex_lib);
-
-    virtual void resize_memory(int p_size);
-    virtual void shift_back(int p_from, int p_to, int p_shift);
-
-    void map();
-    void unmap();
-    void terminate();
-
-    // These functions must be called only if the buffers are mapped
-    void set_particle(const MemoryChunk *p_chunk, int p_particle_index, FlVector4 p_particle);
-    const FlVector4 &get_particle(const MemoryChunk *p_chunk, int p_particle_index) const;
-
-    void set_velocity(const MemoryChunk *p_chunk, int p_particle_index, FlVector3 p_velocity);
-    const FlVector3 &get_velocity(const MemoryChunk *p_chunk, int p_particle_index) const;
-
-    void set_phase(const MemoryChunk *p_chunk, int p_particle_index, int p_phase);
-    int get_phase(const MemoryChunk *p_chunk, int p_particle_index) const;
-
-    void set_active_particles(const MemoryChunk *p_chunk, int p_particle_index, int p_index);
-};
+class FlexParticleBody;
+class FlexMemoryAllocator;
+class ParticleBodiesMemory;
 
 class FlexSpace : public RIDFlex {
     friend class FlexBuffers;
@@ -84,9 +54,7 @@ class FlexSpace : public RIDFlex {
     ParticleBodiesMemory *particle_bodies_memory;
     int active_particle_count;
 
-    MemoryChunk *test_chunk1;
-    MemoryChunk *test_chunk2;
-    MemoryChunk *test_chunk3;
+    Vector<FlexParticleBody *> particle_bodies;
 
 public:
     FlexSpace();
@@ -96,6 +64,16 @@ public:
     void terminate();
     void sync();
     void step(real_t p_delta_time);
+
+private:
+    void read_operations();
+    void read_commands();
+    void write_operations();
+    void write_commands();
+
+public:
+    void add_particle_body(FlexParticleBody *p_body);
+    void remove_particle_body(FlexParticleBody *p_body);
 };
 
 #endif // FLEX_SPACE_H

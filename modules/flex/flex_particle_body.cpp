@@ -33,7 +33,24 @@
 */
 
 #include "flex_particle_body.h"
+#include "flex_memory.h"
 
 FlexParticleBody::FlexParticleBody() :
-        RIDFlex() {
+        RIDFlex(),
+        space(NULL),
+        memory_chunk(NULL) {
+}
+
+void FlexParticleBody::add_particle(const Vector3 &p_position, real_t p_mass) {
+
+    waiting.particle_to_add.push_back(ParticleToAdd(p_position, p_mass));
+}
+
+void FlexParticleBody::remove_particle(ParticleID p_particle) {
+    ERR_FAIL_COND(!is_owner(p_particle));
+    waiting.particle_to_remove.push_back(p_particle);
+}
+
+bool FlexParticleBody::is_owner(ParticleID p_particle) const {
+    return (memory_chunk && (memory_chunk->get_begin_index() + p_particle) <= memory_chunk->get_end_index());
 }
