@@ -124,11 +124,6 @@ void FlexSpace::init() {
     NvFlexSetParams(solver, &params);
 
     ERR_FAIL_COND(has_error());
-
-    p = memnew(FlexParticleBody);
-    add_particle_body(p);
-
-    p->add_particle(Vector3(0, 0, 0), 1);
 }
 
 void FlexSpace::terminate() {

@@ -46,7 +46,7 @@ FlexMemoryAllocator::FlexMemoryAllocator(FlexMemory *p_memory, FlexUnit p_size) 
 
 FlexMemoryAllocator::~FlexMemoryAllocator() {
     // Delete all chunk
-    for (FlexUnit i(memory_table.size() - 1); i <= 0; --i) {
+    for (FlexUnit i(memory_table.size() - 1); 0 <= i; --i) {
         delete memory_table[i];
     }
 }
