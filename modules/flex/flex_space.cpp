@@ -124,6 +124,11 @@ void FlexSpace::init() {
     NvFlexSetParams(solver, &params);
 
     ERR_FAIL_COND(has_error());
+
+    p = memnew(FlexParticleBody);
+    add_particle_body(p);
+
+    p->add_particle(Vector3(0, 0, 0), 1);
 }
 
 void FlexSpace::terminate() {
@@ -162,19 +167,18 @@ void FlexSpace::step(real_t p_delta_time) {
 
     active_particle_count = NvFlexGetActiveCount(solver);
 
-    if (active_particle_count > 0) {
+    // Step solver (command)
+    const int substep = 1;
+    const bool enable_timer = false; // Used for profiling
+    NvFlexUpdateSolver(solver, p_delta_time, substep, enable_timer);
 
-        // Step solver (command)
-        const int substep = 1;
-        const bool enable_timer = false; // Used for profiling
-        NvFlexUpdateSolver(solver, p_delta_time, substep, enable_timer);
-
-        read_commands();
-    }
+    read_commands();
 }
 
 void FlexSpace::read_operations() {
     for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
+        if (!particle_bodies[i]->memory_chunk)
+            continue;
         const FlVector4 &particle = particle_bodies_memory->get_particle(particle_bodies[i]->memory_chunk, 0);
         const FlVector3 &velocity = particle_bodies_memory->get_velocity(particle_bodies[i]->memory_chunk, 0);
         print_line("X: " + String::num_real(particle.x) + " Y: " + String::num_real(particle.y) + " Z: " + String::num_real(particle.z) + " ---- " + "X: " + String::num_real(velocity.x) + " Y: " + String::num_real(velocity.y) + " Z: " + String::num_real(velocity.z));
@@ -194,6 +198,8 @@ void FlexSpace::read_commands() {
         NvFlexGetParticles(solver, particle_bodies_memory->particles.buffer, &copy_desc);
         NvFlexGetVelocities(solver, particle_bodies_memory->velocities.buffer, &copy_desc);
         NvFlexGetPhases(solver, particle_bodies_memory->phases.buffer, &copy_desc);
+
+        particle_bodies[i]->clear_commands();
     }
 }
 
@@ -201,22 +207,22 @@ void FlexSpace::write_operations() {
     for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
 
         FlexParticleBody *body = particle_bodies[i];
-        if (body->waiting.particle_to_add.size()) {
+        if (body->commands.particle_to_add.size()) {
 
             // Allocate memory
             if (body->memory_chunk) {
                 // Resize memory chunk
-                particle_bodies_allocator->resize_chunk(body->memory_chunk, body->memory_chunk->get_size() + body->waiting.particle_to_add.size());
+                particle_bodies_allocator->resize_chunk(body->memory_chunk, body->memory_chunk->get_size() + body->commands.particle_to_add.size());
             } else {
                 // Allocate new one
-                body->memory_chunk = particle_bodies_allocator->allocate_chunk(body->waiting.particle_to_add.size());
+                body->memory_chunk = particle_bodies_allocator->allocate_chunk(body->commands.particle_to_add.size());
             }
 
             // Write on memory
             ERR_FAIL_COND(!body->memory_chunk);
-            for (int p(body->waiting.particle_to_add.size() - 1); 0 <= p; --p) {
+            for (int p(body->commands.particle_to_add.size() - 1); 0 <= p; --p) {
 
-                particle_bodies_memory->set_particle(body->memory_chunk, p, body->waiting.particle_to_add[p].particle);
+                particle_bodies_memory->set_particle(body->memory_chunk, p, body->commands.particle_to_add[p].particle);
                 particle_bodies_memory->set_velocity(body->memory_chunk, p, FlVector3());
                 // TODO add here all parameter correctly
                 const int group = 0;
@@ -226,7 +232,7 @@ void FlexSpace::write_operations() {
             }
         }
 
-        if (body->waiting.particle_to_remove.size()) {
+        if (body->commands.particle_to_remove.size()) {
             // Remove particles
             // TODO implement
         }
@@ -252,7 +258,7 @@ void FlexSpace::write_commands() {
 }
 
 void FlexSpace::add_particle_body(FlexParticleBody *p_body) {
-    ERR_FAIL_COND(!p_body->space);
+    ERR_FAIL_COND(p_body->space);
     p_body->space = this;
     particle_bodies.push_back(p_body);
 }

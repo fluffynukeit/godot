@@ -43,12 +43,17 @@ FlexParticleBody::FlexParticleBody() :
 
 void FlexParticleBody::add_particle(const Vector3 &p_position, real_t p_mass) {
 
-    waiting.particle_to_add.push_back(ParticleToAdd(p_position, p_mass));
+    commands.particle_to_add.push_back(ParticleToAdd(p_position, p_mass));
 }
 
 void FlexParticleBody::remove_particle(ParticleID p_particle) {
     ERR_FAIL_COND(!is_owner(p_particle));
-    waiting.particle_to_remove.push_back(p_particle);
+    commands.particle_to_remove.push_back(p_particle);
+}
+
+void FlexParticleBody::clear_commands() {
+    commands.particle_to_add.clear();
+    commands.particle_to_remove.clear();
 }
 
 bool FlexParticleBody::is_owner(ParticleID p_particle) const {

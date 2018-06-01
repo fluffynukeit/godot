@@ -55,6 +55,8 @@ class FlexSpace : public RIDFlex {
     int active_particle_count;
 
     Vector<FlexParticleBody *> particle_bodies;
+    // TODO test
+    FlexParticleBody *p;
 
 public:
     FlexSpace();
