@@ -19,10 +19,10 @@ public:
     virtual RID space_create() = 0;
     virtual void space_set_active(RID p_space, bool p_active) = 0;
     virtual bool space_is_active(const RID p_space) const = 0;
-    virtual void space_add_particle_body(RID p_space, RID p_body) = 0;
-    virtual void space_remove_particle_body(RID p_space, RID p_body) = 0;
 
     virtual RID body_create() = 0;
+    virtual void body_add_particle(RID p_body, const Vector3 &p_local_position, real_t p_mass) = 0;
+    virtual void body_set_space(RID p_body, RID p_space) = 0;
 
     virtual void free(RID p_rid) = 0;
 
