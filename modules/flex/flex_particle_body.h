@@ -67,7 +67,7 @@ class FlexParticleBody : public RIDFlex {
     struct {
         Vector<ParticleToAdd> particle_to_add;
         Vector<ParticleID> particle_to_remove;
-    } waiting;
+    } commands;
 
     FlexSpace *space;
     MemoryChunk *memory_chunk;
@@ -79,6 +79,8 @@ public:
     void add_particle(const Vector3 &p_position, real_t p_mass);
     // [COMMAND]
     void remove_particle(ParticleID p_particle);
+
+    void clear_commands();
 
     bool is_owner(ParticleID) const;
 };
