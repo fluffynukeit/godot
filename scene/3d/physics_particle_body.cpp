@@ -58,14 +58,13 @@ void ParticleBody::_notification(int p_what) {
     switch (p_what) {
         case NOTIFICATION_ENTER_WORLD: {
             RID space = get_world()->get_particle_space();
-            ParticlePhysicsServer::get_singleton()->space_add_particle_body(space, rid);
+            ParticlePhysicsServer::get_singleton()->body_set_space(rid, space);
         } break;
         case NOTIFICATION_TRANSFORM_CHANGED: {
 
         } break;
         case NOTIFICATION_EXIT_WORLD: {
-            RID space = get_world()->get_particle_space();
-            ParticlePhysicsServer::get_singleton()->space_remove_particle_body(space, rid);
+            ParticlePhysicsServer::get_singleton()->body_set_space(rid, RID());
         } break;
     }
 }
