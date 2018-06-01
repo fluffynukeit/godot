@@ -75,6 +75,8 @@ class FlexParticleBody : public RIDFlex {
 public:
     FlexParticleBody();
 
+    _FORCE_INLINE_ FlexSpace *get_space() { return space; }
+
     // [COMMAND]
     void add_particle(const Vector3 &p_local_position, real_t p_mass);
     // [COMMAND]

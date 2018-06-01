@@ -92,10 +92,9 @@ void FlexParticlePhysicsServer::body_set_space(RID p_body, RID p_space) {
 
     if (p_space == RID()) {
         // Remove
-        body->get_space()
-                FlexSpace *space = space_owner.get(p_space);
-        ERR_FAIL_COND(!space);
-        space->add_particle_body(body);
+        if (body->get_space()) {
+            body->get_space()->remove_particle_body(body);
+        }
     } else {
         // Add
         FlexSpace *space = space_owner.get(p_space);
