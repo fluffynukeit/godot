@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  flex_space.h                                                         */
+/*  physics_particle_body.h                                              */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -29,51 +29,25 @@
 /*************************************************************************/
 
 /**
-    @author AndreaCatania
-*/
+ * @author AndreaCatania
+ */
 
-#ifndef FLEX_SPACE_H
-#define FLEX_SPACE_H
+#ifndef PARTICLE_BODY_H
+#define PARTICLE_BODY_H
 
-#include "rid_flex.h"
+#include "spatial.h"
 
-#include "flex_utility.h"
-
-class NvFlexLibrary;
-class NvFlexSolver;
-class FlexParticleBody;
-class FlexMemoryAllocator;
-class ParticleBodiesMemory;
-
-class FlexSpace : public RIDFlex {
-    friend class FlexBuffers;
-
-    NvFlexLibrary *flex_lib;
-    NvFlexSolver *solver;
-    FlexMemoryAllocator *particle_bodies_allocator;
-    ParticleBodiesMemory *particle_bodies_memory;
-    int active_particle_count;
-
-    Vector<FlexParticleBody *> particle_bodies;
+class ParticleObject : public Spatial {
+    GDCLASS(ParticleObject, Spatial);
 
 public:
-    FlexSpace();
-    ~FlexSpace();
-
-    void init();
-    void terminate();
-    void sync();
-    void step(real_t p_delta_time);
-
-private:
-    void read_operations();
-    void read_commands();
-    void write_operations();
-    void write_commands();
-
-public:
-    void add_particle_body(FlexParticleBody *p_body);
-    void remove_particle_body(FlexParticleBody *p_body);
 };
 
-#endif // FLEX_SPACE_H
+class ParticleBody : public ParticleObject {
+    GDCLASS(ParticleBody, ParticleObject);
+
+public:
+    ParticleBody();
+};
+
+#endif // PARTICLE_BODY_H
