@@ -34,5 +34,38 @@
 
 #include "physics_particle_body.h"
 
-ParticleBody::ParticleBody() {
+void ParticleObject::_bind_methods() {
+    ClassDB::bind_method(D_METHOD("get_rid"), &ParticleBody::get_rid);
+}
+
+ParticleObject::ParticleObject(RID p_rid) :
+        rid(p_rid) {
+}
+
+void ParticleBody::_bind_methods() {
+    ClassDB::bind_method(D_METHOD("add_particle", "local_position", "mass"), &ParticleBody::add_particle);
+}
+
+ParticleBody::ParticleBody() :
+        ParticleObject(ParticlePhysicsServer::get_singleton()->body_create()) {
+}
+
+void ParticleBody::add_particle(const Vector3 &p_local_position, real_t p_mass) {
+    ParticlePhysicsServer::get_singleton()->body_add_particle(rid, p_local_position, p_mass);
+}
+
+void ParticleBody::_notification(int p_what) {
+    switch (p_what) {
+        case NOTIFICATION_ENTER_WORLD: {
+            RID space = get_world()->get_particle_space();
+            ParticlePhysicsServer::get_singleton()->space_add_particle_body(space, rid);
+        } break;
+        case NOTIFICATION_TRANSFORM_CHANGED: {
+
+        } break;
+        case NOTIFICATION_EXIT_WORLD: {
+            RID space = get_world()->get_particle_space();
+            ParticlePhysicsServer::get_singleton()->space_remove_particle_body(space, rid);
+        } break;
+    }
 }

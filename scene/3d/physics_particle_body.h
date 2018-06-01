@@ -40,14 +40,30 @@
 class ParticleObject : public Spatial {
     GDCLASS(ParticleObject, Spatial);
 
+protected:
+    RID rid;
+
+    static void _bind_methods();
+
 public:
+    ParticleObject(RID p_rid);
+
+    _FORCE_INLINE_ RID get_rid() { return rid; }
 };
 
 class ParticleBody : public ParticleObject {
     GDCLASS(ParticleBody, ParticleObject);
 
+protected:
+    static void _bind_methods();
+
 public:
     ParticleBody();
+
+    void add_particle(const Vector3 &p_local_position, real_t p_mass);
+
+protected:
+    void _notification(int p_what);
 };
 
 #endif // PARTICLE_BODY_H

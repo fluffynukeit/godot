@@ -41,9 +41,9 @@ FlexParticleBody::FlexParticleBody() :
         memory_chunk(NULL) {
 }
 
-void FlexParticleBody::add_particle(const Vector3 &p_position, real_t p_mass) {
+void FlexParticleBody::add_particle(const Vector3 &p_local_position, real_t p_mass) {
 
-    commands.particle_to_add.push_back(ParticleToAdd(p_position, p_mass));
+    commands.particle_to_add.push_back(ParticleToAdd(p_local_position, p_mass));
 }
 
 void FlexParticleBody::remove_particle(ParticleID p_particle) {

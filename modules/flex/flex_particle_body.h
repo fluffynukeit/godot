@@ -76,7 +76,7 @@ public:
     FlexParticleBody();
 
     // [COMMAND]
-    void add_particle(const Vector3 &p_position, real_t p_mass);
+    void add_particle(const Vector3 &p_local_position, real_t p_mass);
     // [COMMAND]
     void remove_particle(ParticleID p_particle);
 

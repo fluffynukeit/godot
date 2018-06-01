@@ -80,19 +80,35 @@ bool FlexParticlePhysicsServer::space_is_active(const RID p_space) const {
     return active_spaces.find(space) != -1;
 }
 
-void FlexParticlePhysicsServer::space_add_particle_body(RID p_space, RID p_body) {
-    FlexSpace *space = space_owner.get(p_space);
-    FlexParticleBody *particle_body = body_owner.get(p_body);
-    ERR_FAIL_COND(!space);
-    ERR_FAIL_COND(!particle_body);
-}
-
-void FlexParticlePhysicsServer::space_remove_particle_body(RID p_space, RID p_body) {
-}
-
 RID FlexParticlePhysicsServer::body_create() {
     FlexParticleBody *particle_body = memnew(FlexParticleBody);
     CreateThenReturnRID(body_owner, particle_body);
+}
+
+void FlexParticlePhysicsServer::body_set_space(RID p_body, RID p_space) {
+
+    FlexParticleBody *body = body_owner.get(p_body);
+    ERR_FAIL_COND(!body);
+
+    if (p_space == RID()) {
+        // Remove
+        body->get_space()
+                FlexSpace *space = space_owner.get(p_space);
+        ERR_FAIL_COND(!space);
+        space->add_particle_body(body);
+    } else {
+        // Add
+        FlexSpace *space = space_owner.get(p_space);
+        ERR_FAIL_COND(!space);
+        space->add_particle_body(body);
+    }
+}
+
+void FlexParticlePhysicsServer::body_add_particle(RID p_body, const Vector3 &p_local_position, real_t p_mass) {
+    FlexParticleBody *body = body_owner.get(p_body);
+    ERR_FAIL_COND(!body);
+
+    body->add_particle(p_local_position, p_mass);
 }
 
 void FlexParticlePhysicsServer::free(RID p_rid) {
