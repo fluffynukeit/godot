@@ -118,7 +118,8 @@ void FlexMemoryAllocator::sanitize(bool p_want_update_cache, bool p_trim) {
             memory_table[i] = memory_table[next_i];
             memory_table[next_i] = i_chunk;
 
-            memory->shift_back(next_i_chunk_cpy.begin_index, next_i_chunk_cpy.end_index, /*shift <- */ i_chunk_cpy.size);
+            // Shift back data, even if the chunks collides it will work because the copy is performed incrementally (in the opposite way of the swap [free space] <- [data])
+            memory->copy(next_i_chunk_cpy.begin_index, next_i_chunk_cpy.size, memory_table[i]->begin_index);
         }
     }
 
@@ -126,7 +127,7 @@ void FlexMemoryAllocator::sanitize(bool p_want_update_cache, bool p_trim) {
         find_biggest_chunk_size();
 }
 
-MemoryChunk *FlexMemoryAllocator::allocate(FlexUnit p_size) {
+MemoryChunk *FlexMemoryAllocator::allocate_chunk(FlexUnit p_size) {
     bool space_available = false;
     if (p_size <= cache.biggest_chunk_size) {
         space_available = true;
@@ -163,16 +164,50 @@ MemoryChunk *FlexMemoryAllocator::allocate(FlexUnit p_size) {
     return NULL;
 }
 
-void FlexMemoryAllocator::__deallocate(MemoryChunk *p_chunk) {
-    p_chunk->is_free = true;
+void FlexMemoryAllocator::deallocate_chunk(MemoryChunk *&r_chunk) {
+    r_chunk->is_free = true;
 
     sanitize(false, false); // Merge only, no cache update, no trim
 
-    cache.occupied_memory -= p_chunk->size;
+    cache.occupied_memory -= r_chunk->size;
     // update cache
-    if (cache.biggest_chunk_size < p_chunk->size) {
-        cache.biggest_chunk_size = p_chunk->size;
+    if (cache.biggest_chunk_size < r_chunk->size) {
+        cache.biggest_chunk_size = r_chunk->size;
     }
+
+    r_chunk = NULL;
+}
+
+void FlexMemoryAllocator::resize_chunk(MemoryChunk *&r_chunk, FlexUnit p_size) {
+    if (r_chunk->size == p_size)
+        return;
+    else if (r_chunk->size > p_size) {
+
+        /// Redux memory, don't need reallocation
+        // 1. Split chunk
+        FlexUnit chunk_index = memory_table.find(r_chunk);
+        ERR_FAIL_COND(chunk_index == -1);
+
+        FlexUnit new_chunk_size = r_chunk->size - p_size;
+        MemoryChunk *new_chunk = create_chunk(chunk_index + 1);
+        new_chunk->set(r_chunk->end_index - new_chunk_size + 1, r_chunk->end_index, true);
+
+        // 2. Redux
+        r_chunk->set(r_chunk->begin_index, new_chunk->begin_index - 1, false);
+
+    } else {
+
+        // Re allocate all chunk
+        MemoryChunk *new_chunk = allocate_chunk(p_size);
+        copy_chunk(r_chunk, new_chunk);
+        deallocate_chunk(r_chunk);
+        r_chunk = new_chunk;
+    }
+}
+
+void FlexMemoryAllocator::copy_chunk(MemoryChunk *p_from, MemoryChunk *p_to) {
+    FlexUnit copy_size = MIN(p_from->size, p_to->size);
+    memory->copy(p_from->begin_index, copy_size, p_to->begin_index);
 }
 
 bool FlexMemoryAllocator::redux_memory(FlexUnit p_size) {

@@ -42,9 +42,8 @@ typedef int FlexUnit;
 class FlexMemory {
 public:
     virtual void resize_memory(FlexUnit p_size) = 0;
-    /// Move bits by shifting in the memory
-    /// p_shift could be only negative
-    virtual void shift_back(FlexUnit p_from, FlexUnit p_to, FlexUnit p_shift) = 0;
+    // MUST Perform an incremental linear copy from 0 to size
+    virtual void copy(FlexUnit p_from_begin_index, FlexUnit p_size, FlexUnit p_to_begin_index) = 0;
 };
 
 struct MemoryChunk {
@@ -84,6 +83,8 @@ private:
 
 public:
     _FORCE_INLINE_ FlexUnit get_begin_index() const { return begin_index; }
+    _FORCE_INLINE_ FlexUnit get_end_index() const { return end_index; }
+    _FORCE_INLINE_ FlexUnit get_size() const { return size; }
 };
 
 /// This class is responsible for memory management.
@@ -130,14 +131,12 @@ public:
     void sanitize(bool p_want_update_cache = true, bool p_trim = true);
 
     // Allocate memory, return null if no more space available
-    MemoryChunk *allocate(FlexUnit p_size);
+    MemoryChunk *allocate_chunk(FlexUnit p_size);
+    void deallocate_chunk(MemoryChunk *&r_chunk);
+    void resize_chunk(MemoryChunk *&r_chunk, FlexUnit p_size);
 
-#define deallocate(p_chunk) \
-    __deallocate(p_chunk);  \
-    p_chunk = NULL;
-
-    /// IMPORTANT Don't call it directly, Use macro deallocatechunk
-    void __deallocate(MemoryChunk *p_chunk);
+    // If the chunks have different sizes the copy will be performed only by the size of smaller chunk
+    void copy_chunk(MemoryChunk *p_from, MemoryChunk *p_to);
 
 private:
     bool redux_memory(FlexUnit p_size);
