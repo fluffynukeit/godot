@@ -77,6 +77,12 @@ void ParticleBodiesMemory::terminate() {
     active_particles.destroy();
 }
 
+void ParticleBodiesMemory::copy(const MemoryChunk *p_chunk, ParticleID p_from_particle_index, ParticleID p_to_particle_index) {
+    particles[p_chunk->get_begin_index() + p_from_particle_index] = particles[p_chunk->get_begin_index() + p_to_particle_index];
+    velocities[p_chunk->get_begin_index() + p_from_particle_index] = velocities[p_chunk->get_begin_index() + p_to_particle_index];
+    phases[p_chunk->get_begin_index() + p_from_particle_index] = phases[p_chunk->get_begin_index() + p_to_particle_index];
+}
+
 void ParticleBodiesMemory::set_particle(const MemoryChunk *p_chunk, ParticleID p_particle_index, FlVector4 p_particle) {
     particles[p_chunk->get_begin_index() + p_particle_index] = p_particle;
 }

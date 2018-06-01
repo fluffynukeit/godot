@@ -47,6 +47,7 @@ class ParticleBodiesMemory;
 
 class FlexSpace : public RIDFlex {
     friend class FlexBuffers;
+    friend class FlexParticleBodyCommands;
 
     NvFlexLibrary *flex_lib;
     NvFlexSolver *solver;
@@ -65,11 +66,14 @@ public:
     void sync();
     void step(real_t p_delta_time);
 
+    _FORCE_INLINE_ const ParticleBodiesMemory *get_particle_bodies_memory() { particle_bodies_memory; }
+
 private:
-    void read_operations();
-    void read_commands();
-    void write_operations();
-    void write_commands();
+    void dispatch_callbacks();
+    void execute_delayed_commands();
+
+    void write_to_gpu_commands();
+    void read_from_gpu_commands();
 
 public:
     void add_particle_body(FlexParticleBody *p_body);

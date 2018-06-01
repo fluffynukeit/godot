@@ -34,28 +34,50 @@
 
 #include "flex_particle_body.h"
 #include "flex_memory.h"
+#include "flex_space.h"
+#include "object.h"
 
 FlexParticleBody::FlexParticleBody() :
         RIDFlex(),
         space(NULL),
         memory_chunk(NULL) {
+    sync_callback.receiver = NULL;
+}
+
+void FlexParticleBody::set_sync_callback(Object *p_receiver, const StringName &p_method) {
+    if (p_receiver) {
+        ERR_FAIL_COND(!p_receiver->has_method(p_method));
+    }
+    sync_callback.receiver = p_receiver;
+    sync_callback.method = p_method;
+}
+
+void FlexParticleBody::dispatch_sync_callback() {
+    if (!sync_callback.receiver || !memory_chunk)
+        return;
+    sync_callback.receiver->call(sync_callback.method, FlexParticlePhysicsServer::singleton->get_particle_body_commands(this));
 }
 
 void FlexParticleBody::add_particle(const Vector3 &p_local_position, real_t p_mass) {
 
-    commands.particle_to_add.push_back(ParticleToAdd(p_local_position, p_mass));
+    delayed_commands.particle_to_add.push_back(ParticleToAdd(p_local_position, p_mass));
 }
 
 void FlexParticleBody::remove_particle(ParticleID p_particle) {
     ERR_FAIL_COND(!is_owner(p_particle));
-    commands.particle_to_remove.push_back(p_particle);
+    delayed_commands.particle_to_remove.insert(p_particle);
 }
 
-void FlexParticleBody::clear_commands() {
-    commands.particle_to_add.clear();
-    commands.particle_to_remove.clear();
+Vector3 FlexParticleBody::get_particle_position(ParticleID p_particle) const {
+    const FlVector4 &p(space->get_particle_bodies_memory()->get_particle(memory_chunk, p_particle));
+    return gvec3_from_fvec4(p);
 }
 
 bool FlexParticleBody::is_owner(ParticleID p_particle) const {
     return (memory_chunk && (memory_chunk->get_begin_index() + p_particle) <= memory_chunk->get_end_index());
+}
+
+void FlexParticleBody::clear_commands() {
+    delayed_commands.particle_to_add.clear();
+    delayed_commands.particle_to_remove.clear();
 }

@@ -40,10 +40,15 @@
     rid_data->__set_physics_server(this);    \
     return rid;
 
+Vector3 FlexParticleBodyCommands::get_particle_position(int p_particle_id) {
+    return body->get_particle_position(p_particle_id);
+}
+
 FlexParticlePhysicsServer *FlexParticlePhysicsServer::singleton = NULL;
 
 FlexParticlePhysicsServer::FlexParticlePhysicsServer() :
         ParticlePhysicsServer(),
+        is_active(true),
         last_space_index(-1) {
 
     ERR_FAIL_COND(singleton);
@@ -103,11 +108,25 @@ void FlexParticlePhysicsServer::body_set_space(RID p_body, RID p_space) {
     }
 }
 
+void FlexParticlePhysicsServer::body_set_sync_callback(RID p_body, Object *p_receiver, const StringName &p_method) {
+    FlexParticleBody *body = body_owner.get(p_body);
+    ERR_FAIL_COND(!body);
+
+    body->set_sync_callback(p_receiver, p_method);
+}
+
 void FlexParticlePhysicsServer::body_add_particle(RID p_body, const Vector3 &p_local_position, real_t p_mass) {
     FlexParticleBody *body = body_owner.get(p_body);
     ERR_FAIL_COND(!body);
 
     body->add_particle(p_local_position, p_mass);
+}
+
+void FlexParticlePhysicsServer::body_remove_particle(RID p_body, int p_particle_id) {
+    FlexParticleBody *body = body_owner.get(p_body);
+    ERR_FAIL_COND(!body);
+
+    body->remove_particle(p_particle_id);
 }
 
 void FlexParticlePhysicsServer::free(RID p_rid) {
@@ -125,11 +144,24 @@ void FlexParticlePhysicsServer::free(RID p_rid) {
     }
 }
 
-void FlexParticlePhysicsServer::init() {}
+void FlexParticlePhysicsServer::init() {
+    particle_body_commands = memnew(FlexParticleBodyCommands);
+}
 
-void FlexParticlePhysicsServer::terminate() {}
+void FlexParticlePhysicsServer::terminate() {
+    memdelete(particle_body_commands);
+    particle_body_commands = NULL;
+}
+
+void FlexParticlePhysicsServer::set_active(bool p_active) {
+    is_active = p_active;
+}
 
 void FlexParticlePhysicsServer::sync() {
+
+    if (!is_active)
+        return;
+
     for (short i = last_space_index; 0 <= i; --i) {
         active_spaces[i]->sync();
     }
@@ -138,6 +170,10 @@ void FlexParticlePhysicsServer::sync() {
 void FlexParticlePhysicsServer::flush_queries() {}
 
 void FlexParticlePhysicsServer::step(real_t p_delta_time) {
+
+    if (!is_active)
+        return;
+
     for (short i = last_space_index; 0 <= i; --i) {
         active_spaces[i]->step(p_delta_time);
     }

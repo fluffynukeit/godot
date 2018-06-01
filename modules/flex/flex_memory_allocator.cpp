@@ -179,6 +179,9 @@ void FlexMemoryAllocator::deallocate_chunk(MemoryChunk *&r_chunk) {
 }
 
 void FlexMemoryAllocator::resize_chunk(MemoryChunk *&r_chunk, FlexUnit p_size) {
+
+    ERR_FAIL_COND(p_size < 0);
+
     if (r_chunk->size == p_size)
         return;
     else if (r_chunk->size > p_size) {

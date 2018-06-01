@@ -40,20 +40,39 @@
 	@author AndreaCatania
 */
 
+class FlexParticleBodyCommands : public ParticleBodyCommands {
+    GDCLASS(FlexParticleBodyCommands, ParticleBodyCommands);
+
+public:
+    FlexParticleBody *body;
+
+    Vector3 get_particle_position(int p_particle_id);
+};
+
 class FlexParticlePhysicsServer : public ParticlePhysicsServer {
 	GDCLASS(FlexParticlePhysicsServer, ParticlePhysicsServer);
 
-	static FlexParticlePhysicsServer *singleton;
+public:
+    static FlexParticlePhysicsServer *singleton;
 
+private:
     mutable RID_Owner<FlexSpace> space_owner;
     mutable RID_Owner<FlexParticleBody> body_owner;
 
     short last_space_index;
     Vector<FlexSpace *> active_spaces;
 
+    bool is_active;
+    FlexParticleBodyCommands *particle_body_commands;
+
 public:
     FlexParticlePhysicsServer();
     virtual ~FlexParticlePhysicsServer();
+
+    _FORCE_INLINE_ FlexParticleBodyCommands *get_particle_body_commands(FlexParticleBody *body) {
+        particle_body_commands->body = body;
+        return particle_body_commands;
+    }
 
     virtual RID space_create();
     virtual void space_set_active(RID p_space, bool p_active);
@@ -61,12 +80,15 @@ public:
 
     virtual RID body_create();
     virtual void body_set_space(RID p_body, RID p_space);
+    virtual void body_set_sync_callback(RID p_body, Object *p_receiver, const StringName &p_method);
     virtual void body_add_particle(RID p_body, const Vector3 &p_local_position, real_t p_mass);
+    virtual void body_remove_particle(RID p_body, int p_particle_id);
 
     virtual void free(RID p_rid);
 
     virtual void init();
     virtual void terminate();
+    virtual void set_active(bool p_active);
     virtual void sync();
     virtual void flush_queries();
     virtual void step(real_t p_delta_time);
