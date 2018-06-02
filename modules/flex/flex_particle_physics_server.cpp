@@ -146,11 +146,13 @@ void FlexParticlePhysicsServer::free(RID p_rid) {
 
 void FlexParticlePhysicsServer::init() {
     particle_body_commands = memnew(FlexParticleBodyCommands);
+    particle_body_commands_variant = particle_body_commands;
 }
 
 void FlexParticlePhysicsServer::terminate() {
     memdelete(particle_body_commands);
     particle_body_commands = NULL;
+    particle_body_commands_variant = Variant();
 }
 
 void FlexParticlePhysicsServer::set_active(bool p_active) {

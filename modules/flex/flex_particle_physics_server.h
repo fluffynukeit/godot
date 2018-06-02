@@ -64,6 +64,7 @@ private:
 
     bool is_active;
     FlexParticleBodyCommands *particle_body_commands;
+    Variant particle_body_commands_variant;
 
 public:
     FlexParticlePhysicsServer();
@@ -72,6 +73,11 @@ public:
     _FORCE_INLINE_ FlexParticleBodyCommands *get_particle_body_commands(FlexParticleBody *body) {
         particle_body_commands->body = body;
         return particle_body_commands;
+    }
+
+    _FORCE_INLINE_ Variant *get_particle_body_commands_variant(FlexParticleBody *body) {
+        particle_body_commands->body = body;
+        return &particle_body_commands_variant;
     }
 
     virtual RID space_create();
