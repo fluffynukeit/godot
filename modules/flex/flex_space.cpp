@@ -210,7 +210,7 @@ void FlexSpace::execute_delayed_commands() {
 
             ParticleID last_id(body->memory_chunk->get_end_index());
             for (Set<ParticleID>::Element *e = body->delayed_commands.particle_to_remove.front(); e; e = e->next()) {
-                particle_bodies_memory->copy(body->memory_chunk, last_id, /*id_to_remove*/ e->get());
+                particle_bodies_memory->copy(body->memory_chunk->get_begin_index() + last_id, 1, /*id_to_remove*/ body->memory_chunk->get_begin_index() + e->get());
                 --last_id;
             }
             FlexUnit new_size = body->memory_chunk->get_size() - body->delayed_commands.particle_to_remove.size();
