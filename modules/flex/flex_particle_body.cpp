@@ -55,7 +55,9 @@ void FlexParticleBody::set_sync_callback(Object *p_receiver, const StringName &p
 void FlexParticleBody::dispatch_sync_callback() {
     if (!sync_callback.receiver || !memory_chunk)
         return;
-    sync_callback.receiver->call(sync_callback.method, FlexParticlePhysicsServer::singleton->get_particle_body_commands(this));
+    static Variant::CallError error;
+    const Variant *p = FlexParticlePhysicsServer::singleton->get_particle_body_commands_variant(this);
+    sync_callback.receiver->call(sync_callback.method, &p, 1, error);
 }
 
 void FlexParticleBody::add_particle(const Vector3 &p_local_position, real_t p_mass) {
@@ -68,8 +70,8 @@ void FlexParticleBody::remove_particle(ParticleID p_particle) {
     delayed_commands.particle_to_remove.insert(p_particle);
 }
 
-Vector3 FlexParticleBody::get_particle_position(ParticleID p_particle) const {
-    const FlVector4 &p(space->get_particle_bodies_memory()->get_particle(memory_chunk, p_particle));
+Vector3 FlexParticleBody::get_particle_position(ParticleID p_particle_index) const {
+    const FlVector4 &p(space->get_particle_bodies_memory()->get_particle(memory_chunk, p_particle_index));
     return gvec3_from_fvec4(p);
 }
 

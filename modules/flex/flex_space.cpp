@@ -59,8 +59,7 @@ FlexSpace::FlexSpace() :
         flex_lib(NULL),
         solver(NULL),
         particle_bodies_allocator(NULL),
-        particle_bodies_memory(NULL),
-        active_particle_count(0) {
+        particle_bodies_memory(NULL) {
     init();
 }
 
@@ -155,19 +154,17 @@ void FlexSpace::sync() {
 
     particle_bodies_memory->unmap();
 
-    write_to_gpu_commands();
+    commands_write_to_gpu();
 }
 
 void FlexSpace::step(real_t p_delta_time) {
-
-    active_particle_count = NvFlexGetActiveCount(solver);
 
     // Step solver (command)
     const int substep = 1;
     const bool enable_timer = false; // Used for profiling
     NvFlexUpdateSolver(solver, p_delta_time, substep, enable_timer);
 
-    read_from_gpu_commands();
+    commands_read_from_gpu();
 }
 
 void FlexSpace::dispatch_callbacks() {
@@ -222,7 +219,7 @@ void FlexSpace::execute_delayed_commands() {
     }
 }
 
-void FlexSpace::write_to_gpu_commands() {
+void FlexSpace::commands_write_to_gpu() {
     NvFlexCopyDesc copy_desc;
     for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
 
@@ -243,7 +240,7 @@ void FlexSpace::write_to_gpu_commands() {
     }
 }
 
-void FlexSpace::read_from_gpu_commands() {
+void FlexSpace::commands_read_from_gpu() {
     NvFlexCopyDesc copy_desc;
     for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
 
