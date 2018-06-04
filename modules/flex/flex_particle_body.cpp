@@ -53,7 +53,7 @@ void FlexParticleBody::set_sync_callback(Object *p_receiver, const StringName &p
 }
 
 void FlexParticleBody::dispatch_sync_callback() {
-    if (!sync_callback.receiver || !memory_chunk)
+    if (!sync_callback.receiver)
         return;
     static Variant::CallError error;
     const Variant *p = FlexParticlePhysicsServer::singleton->get_particle_body_commands_variant(this);
@@ -77,16 +77,22 @@ int FlexParticleBody::get_particle_count() const {
 }
 
 void FlexParticleBody::reset_particle(ParticleID p_particle_index, const Vector3 &p_position, real_t p_mass) {
+    if (!memory_chunk)
+        return;
     space->get_particle_bodies_memory()->set_particle(memory_chunk, p_particle_index, CreateParticle(p_position, p_mass));
     space->get_particle_bodies_memory()->set_velocity(memory_chunk, p_particle_index, FlVector3(0, 0, 0));
 }
 
 Vector3 FlexParticleBody::get_particle_position(ParticleID p_particle_index) const {
+    if (!memory_chunk)
+        return Vector3();
     const FlVector4 &p(space->get_particle_bodies_memory()->get_particle(memory_chunk, p_particle_index));
     return gvec3_from_fvec4(p);
 }
 
 bool FlexParticleBody::is_owner(ParticleID p_particle) const {
+    if (!memory_chunk)
+        return false;
     return (memory_chunk && (memory_chunk->get_begin_index() + p_particle) <= memory_chunk->get_end_index());
 }
 

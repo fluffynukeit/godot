@@ -59,6 +59,8 @@ void ParticleBody::_bind_methods() {
     BIND_VMETHOD(MethodInfo("_commands_process", PropertyInfo(Variant::OBJECT, "commands", PROPERTY_HINT_RESOURCE_TYPE, "ParticleBodyCommands")));
 
     ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "particle_shape", PROPERTY_HINT_RESOURCE_TYPE, "ParticleShape"), "set_particle_shape", "get_particle_shape");
+
+    ADD_SIGNAL(MethodInfo("resource_loaded"));
 }
 
 ParticleBody::ParticleBody() :
@@ -86,7 +88,7 @@ void ParticleBody::set_particle_shape(Ref<ParticleShape> p_shape) {
     if (particle_shape.is_valid())
         particle_shape->register_owner(this);
 
-    initialize_debug_resource();
+    resource_changed(particle_shape);
 }
 
 Ref<ParticleShape> ParticleBody::get_particle_shape() const {
@@ -105,7 +107,7 @@ void ParticleBody::_notification(int p_what) {
     switch (p_what) {
         case NOTIFICATION_ENTER_WORLD: {
             ParticlePhysicsServer::get_singleton()->body_set_space(rid, get_world()->get_particle_space());
-            initialize_debug_resource();
+            resource_changed(particle_shape);
         } break;
         case NOTIFICATION_TRANSFORM_CHANGED: {
 
@@ -173,6 +175,8 @@ void ParticleBody::reset_particles(ParticleBodyCommands *p_cmds) {
     for (int i(0); i < active_p_count; ++i) {
         p_cmds->reset_particle(i, get_global_transform().xform(particle_shape->get_particles()[i].relative_position), particle_shape->get_particles()[i].mass);
     }
+
+    emit_signal("resource_loaded");
 }
 
 void ParticleBody::initialize_debug_resource() {
@@ -196,6 +200,7 @@ void ParticleBody::update_debug_visual_instances(ParticleBodyCommands *p_cmds) {
 }
 
 void ParticleBody::resize_debug_particle_visual_instance(int new_size) {
+
     if (debug_particle_visual_instances.size() == new_size)
         return;
 
