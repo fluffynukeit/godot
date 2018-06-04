@@ -40,6 +40,10 @@
     rid_data->__set_physics_server(this);    \
     return rid;
 
+void FlexParticleBodyCommands::reset_particle(int p_particle_index, const Vector3 &p_position, real_t p_mass) {
+    body->reset_particle(p_particle_index, p_position, p_mass);
+}
+
 Vector3 FlexParticleBodyCommands::get_particle_position(int p_particle_id) {
     return body->get_particle_position(p_particle_id);
 }

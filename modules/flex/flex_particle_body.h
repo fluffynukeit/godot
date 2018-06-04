@@ -96,6 +96,7 @@ public:
     int get_particle_count() const;
 
     // CMD
+    void reset_particle(ParticleID p_particle, const Vector3 &p_position, real_t p_mass);
     Vector3 get_particle_position(ParticleID p_particle) const;
     // ~CMD
 

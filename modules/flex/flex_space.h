@@ -65,7 +65,8 @@ public:
     void sync();
     void step(real_t p_delta_time);
 
-    _FORCE_INLINE_ const ParticleBodiesMemory *get_particle_bodies_memory() { return particle_bodies_memory; }
+    _FORCE_INLINE_ const ParticleBodiesMemory *get_particle_bodies_memory() const { return particle_bodies_memory; }
+    _FORCE_INLINE_ ParticleBodiesMemory *get_particle_bodies_memory() { return particle_bodies_memory; }
 
 private:
     void dispatch_callbacks();

@@ -11,7 +11,8 @@ protected:
     static void _bind_methods();
 
 public:
-    virtual Vector3 get_particle_position(int p_particle_id) = 0;
+    virtual void reset_particle(int p_particle_index, const Vector3 &p_position, real_t p_mass) = 0;
+    virtual Vector3 get_particle_position(int p_particle_index) = 0;
 };
 
 class ParticlePhysicsServer : public Object {

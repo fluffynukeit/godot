@@ -56,9 +56,11 @@ public:
 class ParticleBody : public ParticleObject {
     GDCLASS(ParticleBody, ParticleObject);
 
-    Vector<RID> visual_instances;
-    Ref<SphereMesh> sphere_mesh;
+    bool reset_particles_to_base_shape;
     Ref<ParticleShape> particle_shape;
+
+    Vector<RID> debug_particle_visual_instances;
+    Ref<SphereMesh> debug_particle_mesh;
 
 protected:
     static void _bind_methods();
@@ -70,18 +72,21 @@ public:
     Ref<ParticleShape> get_particle_shape() const;
 
     void add_particle(const Vector3 &p_local_position, real_t p_mass);
-    void remove_particle(int p_particle_id);
+    void remove_particle(int p_particle_index);
 
 protected:
     void _notification(int p_what);
     void _on_script_changed();
     void resource_changed(const RES &p_res);
 
-    void parse_resource();
+    void commands_process_internal(Object *p_cmds);
+    void reset_particles(ParticleBodyCommands *p_cmds);
 
-    void _commands_process_internal(Object *p_cmds);
-
-    void _process_visual_instances(ParticleBodyCommands *p_cmds);
+private:
+    void initialize_debug_resource();
+    void update_debug_visual_instances(ParticleBodyCommands *p_cmds);
+    void resize_debug_particle_visual_instance(int new_size);
+    void reset_debug_particle_positions();
 };
 
 #endif // PARTICLE_BODY_H

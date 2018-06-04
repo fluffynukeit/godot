@@ -46,7 +46,8 @@ class FlexParticleBodyCommands : public ParticleBodyCommands {
 public:
     FlexParticleBody *body;
 
-    Vector3 get_particle_position(int p_particle_id);
+    virtual void reset_particle(int p_particle_index, const Vector3 &p_position, real_t p_mass);
+    virtual Vector3 get_particle_position(int p_particle_id);
 };
 
 class FlexParticlePhysicsServer : public ParticlePhysicsServer {
