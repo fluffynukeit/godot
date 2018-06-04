@@ -3,6 +3,7 @@
 
 #include "object.h"
 #include "resource.h"
+#include "scene/resources/particle_shape.h"
 
 class ParticleBodyCommands : public Object {
     GDCLASS(ParticleBodyCommands, Object);
@@ -11,6 +12,7 @@ protected:
     static void _bind_methods();
 
 public:
+    virtual void load_shape(Ref<ParticleShape> p_shape, const Transform &initial_transform) = 0;
     virtual void reset_particle(int p_particle_index, const Vector3 &p_position, real_t p_mass) = 0;
     virtual Vector3 get_particle_position(int p_particle_index) = 0;
 };

@@ -71,9 +71,37 @@ void FlexParticleBody::remove_particle(ParticleID p_particle) {
 }
 
 int FlexParticleBody::get_particle_count() const {
-    if (!memory_chunk)
-        return 0;
-    return memory_chunk->get_size();
+    return memory_chunk ? memory_chunk->get_size() : 0;
+}
+
+void FlexParticleBody::load_shape(Ref<ParticleShape> p_shape, const Transform &initial_transform) {
+
+    int active_p_count(get_particle_count());
+    const int resource_p_count(p_shape->get_particles().size());
+
+    if (active_p_count > resource_p_count) {
+
+        // Remove last
+        const int dif = active_p_count - resource_p_count;
+        for (int i(0); i < dif; ++i) {
+            remove_particle(active_p_count - i - 1);
+        }
+
+        active_p_count = resource_p_count;
+
+    } else {
+
+        // Add
+        const int dif = resource_p_count - active_p_count;
+        for (int i(0); i < dif; ++i) {
+            const int p(resource_p_count - i - 1);
+            add_particle(initial_transform.xform(p_shape->get_particles()[p].relative_position), p_shape->get_particles()[p].mass);
+        }
+    }
+
+    for (int i(0); i < active_p_count; ++i) {
+        reset_particle(i, initial_transform.xform(p_shape->get_particles()[i].relative_position), p_shape->get_particles()[i].mass);
+    }
 }
 
 void FlexParticleBody::reset_particle(ParticleID p_particle_index, const Vector3 &p_position, real_t p_mass) {
