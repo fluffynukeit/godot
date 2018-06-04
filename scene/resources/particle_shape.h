@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  physics_particle_body.h                                              */
+/*  shape.h                                                              */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -32,53 +32,44 @@
  * @author AndreaCatania
  */
 
-#ifndef PARTICLE_BODY_H
-#define PARTICLE_BODY_H
+#ifndef PARTICLE_SHAPE_H
+#define PARTICLE_SHAPE_H
 
-#include "scene/resources/particle_shape.h"
-#include "scene/resources/primitive_meshes.h"
-#include "spatial.h"
+#include "resource.h"
 
-class ParticleObject : public Spatial {
-    GDCLASS(ParticleObject, Spatial);
-
-protected:
-    RID rid;
-
-    static void _bind_methods();
+/// The particle shape is a resource that doesn't have a specific RID that identify the shape in the ParticlePhysicsServer
+/// Because it's not necessary
+class ParticleShape : public Resource {
+    GDCLASS(ParticleShape, Resource);
+    OBJ_SAVE_TYPE(ParticleShape);
+    RES_BASE_EXTENSION("particle_shape");
 
 public:
-    ParticleObject(RID p_rid);
+    struct Particle {
+        Vector3 relative_position;
+        real_t mass;
 
-    _FORCE_INLINE_ RID get_rid() { return rid; }
-};
-
-class ParticleBody : public ParticleObject {
-    GDCLASS(ParticleBody, ParticleObject);
-
-    Vector<RID> visual_instances;
-    Ref<SphereMesh> sphere_mesh;
-    Ref<ParticleShape> particle_shape;
+        Particle() :
+                relative_position(0, 0, 0),
+                mass(0) {}
+    };
 
 protected:
     static void _bind_methods();
 
-public:
-    ParticleBody();
-
-    void set_particle_shape(Ref<ParticleShape> p_shape);
-    Ref<ParticleShape> get_particle_shape() const;
-
-    void add_particle(const Vector3 &p_local_position, real_t p_mass);
-    void remove_particle(int p_particle_id);
+private:
+    Vector<Particle> particles;
 
 protected:
-    void _notification(int p_what);
-    void _on_script_changed();
+    bool _set(const StringName &p_name, const Variant &p_property);
+    bool _get(const StringName &p_name, Variant &r_property) const;
+    void _get_property_list(List<PropertyInfo> *p_list) const;
 
-    void _commands_process_internal(Object *p_cmds);
+public:
+    ParticleShape();
 
-    void process_visual_instances(ParticleBodyCommands *p_cmds);
+    void set_particles(Vector<Particle> &p_particles);
+    const Vector<Particle> &get_particles() const;
 };
 
-#endif // PARTICLE_BODY_H
+#endif // PARTICLE_SHAPE_H
