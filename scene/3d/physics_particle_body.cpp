@@ -91,5 +91,37 @@ void ParticleBody::_on_script_changed() {
 }
 
 void ParticleBody::_commands_process_internal(Object *p_cmds) {
+
+    ParticleBodyCommands *cmds(static_cast<ParticleBodyCommands *>(p_cmds));
+
+    process_visual_instances(cmds);
     call("_commands_process", p_cmds);
+}
+
+void ParticleBody::process_visual_instances(ParticleBodyCommands *p_cmds) {
+
+    if (sphere_mesh.is_null()) {
+        sphere_mesh.instance();
+        sphere_mesh->set_radius(0.1);
+        sphere_mesh->set_height(0.2);
+    }
+
+    const int particle_count = ParticlePhysicsServer::get_singleton()->body_get_particle_count(rid);
+    if (visual_instances.size() != particle_count)
+        visual_instances.resize(particle_count);
+
+    Transform transf;
+    for (int i = 0; i < particle_count; ++i) {
+
+        if (!visual_instances[i].is_valid()) {
+            visual_instances[i] = VisualServer::get_singleton()->instance_create();
+            VisualServer::get_singleton()->instance_set_scenario(visual_instances[i], get_world()->get_scenario());
+            VisualServer::get_singleton()->instance_set_base(visual_instances[i], sphere_mesh->get_rid());
+            VisualServer::get_singleton()->instance_set_visible(visual_instances[i], true);
+            VisualServer::get_singleton()->instance_set_layer_mask(visual_instances[i], 1);
+        }
+
+        transf.origin = p_cmds->get_particle_position(i);
+        VisualServer::get_singleton()->instance_set_transform(visual_instances[i], transf);
+    }
 }

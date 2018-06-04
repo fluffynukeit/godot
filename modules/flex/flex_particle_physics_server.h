@@ -89,6 +89,7 @@ public:
     virtual void body_set_sync_callback(RID p_body, Object *p_receiver, const StringName &p_method);
     virtual void body_add_particle(RID p_body, const Vector3 &p_local_position, real_t p_mass);
     virtual void body_remove_particle(RID p_body, int p_particle_id);
+    virtual int body_get_particle_count(RID p_body) const;
 
     virtual void free(RID p_rid);
 

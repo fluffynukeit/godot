@@ -70,6 +70,12 @@ void FlexParticleBody::remove_particle(ParticleID p_particle) {
     delayed_commands.particle_to_remove.insert(p_particle);
 }
 
+int FlexParticleBody::get_particle_count() const {
+    if (!memory_chunk)
+        return 0;
+    return memory_chunk->get_size();
+}
+
 Vector3 FlexParticleBody::get_particle_position(ParticleID p_particle_index) const {
     const FlVector4 &p(space->get_particle_bodies_memory()->get_particle(memory_chunk, p_particle_index));
     return gvec3_from_fvec4(p);
