@@ -193,7 +193,7 @@ void FlexSpace::execute_delayed_commands() {
             for (int p(body->delayed_commands.particle_to_add.size() - 1); 0 <= p; --p) {
 
                 particle_bodies_memory->set_particle(body->memory_chunk, p, body->delayed_commands.particle_to_add[p].particle);
-                particle_bodies_memory->set_velocity(body->memory_chunk, p, FlVector3());
+                particle_bodies_memory->set_velocity(body->memory_chunk, p, Vector3());
                 // TODO add here all parameter correctly
                 const int group = 0;
                 const int phase = NvFlexMakePhase(group, eNvFlexPhaseSelfCollide | eNvFlexPhaseSelfCollideFilter);
