@@ -133,50 +133,20 @@ void ParticleBody::resource_changed(const RES &p_res) {
 }
 
 void ParticleBody::commands_process_internal(Object *p_cmds) {
+
     ParticleBodyCommands *cmds(static_cast<ParticleBodyCommands *>(p_cmds));
-    reset_particles(cmds);
+
+    if (reset_particles_to_base_shape) {
+        reset_particles_to_base_shape = false;
+        cmds->load_shape(particle_shape, get_global_transform());
+        emit_signal("resource_loaded");
+    }
+
     update_debug_visual_instances(cmds);
 
     if (!get_script().is_null() && has_method("_commands_process")) {
         call("_commands_process", p_cmds);
     }
-}
-
-void ParticleBody::reset_particles(ParticleBodyCommands *p_cmds) {
-
-    if (!reset_particles_to_base_shape)
-        return;
-
-    reset_particles_to_base_shape = false;
-
-    int active_p_count(ParticlePhysicsServer::get_singleton()->body_get_particle_count(rid));
-    const int resource_p_count(particle_shape->get_particles().size());
-
-    if (active_p_count > resource_p_count) {
-
-        // Remove last
-        const int dif = active_p_count - resource_p_count;
-        for (int i(0); i < dif; ++i) {
-            remove_particle(active_p_count - i - 1);
-        }
-
-        active_p_count = resource_p_count;
-
-    } else {
-
-        // Add
-        const int dif = resource_p_count - active_p_count;
-        for (int i(0); i < dif; ++i) {
-            const int p(resource_p_count - i - 1);
-            add_particle(get_global_transform().xform(particle_shape->get_particles()[p].relative_position), particle_shape->get_particles()[p].mass);
-        }
-    }
-
-    for (int i(0); i < active_p_count; ++i) {
-        p_cmds->reset_particle(i, get_global_transform().xform(particle_shape->get_particles()[i].relative_position), particle_shape->get_particles()[i].mass);
-    }
-
-    emit_signal("resource_loaded");
 }
 
 void ParticleBody::initialize_debug_resource() {

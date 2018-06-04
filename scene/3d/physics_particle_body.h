@@ -80,7 +80,6 @@ protected:
     void resource_changed(const RES &p_res);
 
     void commands_process_internal(Object *p_cmds);
-    void reset_particles(ParticleBodyCommands *p_cmds);
 
 private:
     void initialize_debug_resource();
