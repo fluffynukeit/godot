@@ -35,6 +35,7 @@
 #ifndef PARTICLE_BODY_H
 #define PARTICLE_BODY_H
 
+#include "scene/resources/primitive_meshes.h"
 #include "spatial.h"
 
 class ParticleObject : public Spatial {
@@ -54,6 +55,9 @@ public:
 class ParticleBody : public ParticleObject {
     GDCLASS(ParticleBody, ParticleObject);
 
+    Vector<RID> visual_instances;
+    Ref<SphereMesh> sphere_mesh;
+
 protected:
     static void _bind_methods();
 
@@ -66,8 +70,10 @@ public:
 protected:
     void _notification(int p_what);
     void _on_script_changed();
-    // Write
+
     void _commands_process_internal(Object *p_cmds);
+
+    void process_visual_instances(ParticleBodyCommands *p_cmds);
 };
 
 #endif // PARTICLE_BODY_H

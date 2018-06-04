@@ -129,6 +129,13 @@ void FlexParticlePhysicsServer::body_remove_particle(RID p_body, int p_particle_
     body->remove_particle(p_particle_id);
 }
 
+int FlexParticlePhysicsServer::body_get_particle_count(RID p_body) const {
+    FlexParticleBody *body = body_owner.get(p_body);
+    ERR_FAIL_COND_V(!body, 0);
+
+    return body->get_particle_count();
+}
+
 void FlexParticlePhysicsServer::free(RID p_rid) {
     if (space_owner.owns(p_rid)) {
         FlexSpace *space = space_owner.get(p_rid);

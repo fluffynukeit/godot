@@ -92,7 +92,12 @@ public:
 
     void add_particle(const Vector3 &p_local_position, real_t p_mass);
     void remove_particle(ParticleID p_particle);
+
+    int get_particle_count() const;
+
+    // CMD
     Vector3 get_particle_position(ParticleID p_particle) const;
+    // ~CMD
 
     bool is_owner(ParticleID) const;
 
