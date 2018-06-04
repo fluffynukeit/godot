@@ -76,6 +76,11 @@ int FlexParticleBody::get_particle_count() const {
     return memory_chunk->get_size();
 }
 
+void FlexParticleBody::reset_particle(ParticleID p_particle_index, const Vector3 &p_position, real_t p_mass) {
+    space->get_particle_bodies_memory()->set_particle(memory_chunk, p_particle_index, CreateParticle(p_position, p_mass));
+    space->get_particle_bodies_memory()->set_velocity(memory_chunk, p_particle_index, FlVector3(0, 0, 0));
+}
+
 Vector3 FlexParticleBody::get_particle_position(ParticleID p_particle_index) const {
     const FlVector4 &p(space->get_particle_bodies_memory()->get_particle(memory_chunk, p_particle_index));
     return gvec3_from_fvec4(p);
