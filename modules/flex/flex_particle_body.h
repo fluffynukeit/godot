@@ -103,6 +103,9 @@ public:
 
     bool is_owner(ParticleID) const;
 
+    // This should be on physics server
+    void create_soft_body();
+
 private:
     void dispatch_sync_callback();
     void clear_commands();

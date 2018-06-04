@@ -124,6 +124,11 @@ bool FlexParticleBody::is_owner(ParticleID p_particle) const {
     return (memory_chunk && (memory_chunk->get_begin_index() + p_particle) <= memory_chunk->get_end_index());
 }
 
+void FlexParticleBody::create_soft_body() {
+    //NvFlexExtAsset *asset = NvFlexExtCreateSoftFromMesh();
+    //asset->2
+}
+
 void FlexParticleBody::clear_commands() {
     delayed_commands.particle_to_add.clear();
     delayed_commands.particle_to_remove.clear();
