@@ -48,8 +48,12 @@ void FlexParticleBodyCommands::reset_particle(int p_particle_index, const Vector
     body->reset_particle(p_particle_index, p_position, p_mass);
 }
 
-Vector3 FlexParticleBodyCommands::get_particle_position(int p_particle_id) {
+Vector3 FlexParticleBodyCommands::get_particle_position(int p_particle_id) const {
     return body->get_particle_position(p_particle_id);
+}
+
+Vector3 FlexParticleBodyCommands::get_particle_velocity(int p_particle_id) const {
+    return body->get_particle_velocity(p_particle_id);
 }
 
 FlexParticlePhysicsServer *FlexParticlePhysicsServer::singleton = NULL;

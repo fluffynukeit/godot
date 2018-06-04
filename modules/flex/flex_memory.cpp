@@ -85,11 +85,11 @@ const FlVector4 &ParticleBodiesMemory::get_particle(const MemoryChunk *p_chunk, 
     return particles[p_chunk->get_begin_index() + p_particle_index];
 }
 
-void ParticleBodiesMemory::set_velocity(const MemoryChunk *p_chunk, ParticleID p_particle_index, FlVector3 p_velocity) {
+void ParticleBodiesMemory::set_velocity(const MemoryChunk *p_chunk, ParticleID p_particle_index, Vector3 p_velocity) {
     velocities[p_chunk->get_begin_index() + p_particle_index] = p_velocity;
 }
 
-const FlVector3 &ParticleBodiesMemory::get_velocity(const MemoryChunk *p_chunk, ParticleID p_particle_index) const {
+const Vector3 &ParticleBodiesMemory::get_velocity(const MemoryChunk *p_chunk, ParticleID p_particle_index) const {
     return velocities[p_chunk->get_begin_index() + p_particle_index];
 }
 

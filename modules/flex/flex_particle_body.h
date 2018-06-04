@@ -99,6 +99,7 @@ public:
     void load_shape(Ref<ParticleShape> p_shape, const Transform &initial_transform);
     void reset_particle(ParticleID p_particle, const Vector3 &p_position, real_t p_mass);
     Vector3 get_particle_position(ParticleID p_particle) const;
+    Vector3 get_particle_velocity(ParticleID p_particle) const;
     // ~CMD
 
     bool is_owner(ParticleID) const;
