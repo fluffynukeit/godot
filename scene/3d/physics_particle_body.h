@@ -75,10 +75,13 @@ public:
 protected:
     void _notification(int p_what);
     void _on_script_changed();
+    void resource_changed(const RES &p_res);
+
+    void parse_resource();
 
     void _commands_process_internal(Object *p_cmds);
 
-    void process_visual_instances(ParticleBodyCommands *p_cmds);
+    void _process_visual_instances(ParticleBodyCommands *p_cmds);
 };
 
 #endif // PARTICLE_BODY_H

@@ -41,6 +41,7 @@ bool ParticleShape::_set(const StringName &p_name, const Variant &p_property) {
     if (p_name == "particle_count") {
         particles.resize(p_property);
         _change_notify();
+        notify_change_to_owners();
         return true;
     }
 
@@ -54,6 +55,7 @@ bool ParticleShape::_set(const StringName &p_name, const Variant &p_property) {
         } else if ("position" == s_name[2]) {
             particles[particle_index].relative_position = p_property;
         }
+        notify_change_to_owners();
         return true;
     }
 
