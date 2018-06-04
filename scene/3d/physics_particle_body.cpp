@@ -45,6 +45,9 @@ ParticleObject::ParticleObject(RID p_rid) :
 
 void ParticleBody::_bind_methods() {
 
+    ClassDB::bind_method(D_METHOD("set_particle_shape", "particle_shape"), &ParticleBody::set_particle_shape);
+    ClassDB::bind_method(D_METHOD("get_particle_shape"), &ParticleBody::get_particle_shape);
+
     ClassDB::bind_method(D_METHOD("add_particle", "local_position", "mass"), &ParticleBody::add_particle);
     ClassDB::bind_method(D_METHOD("remove_particle", "particle_id"), &ParticleBody::remove_particle);
 
@@ -52,11 +55,21 @@ void ParticleBody::_bind_methods() {
     ClassDB::bind_method(D_METHOD("_commands_process_internal", "commands"), &ParticleBody::_commands_process_internal);
 
     BIND_VMETHOD(MethodInfo("_commands_process", PropertyInfo(Variant::OBJECT, "commands", PROPERTY_HINT_RESOURCE_TYPE, "ParticleBodyCommands")));
+
+    ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "particle_shape", PROPERTY_HINT_RESOURCE_TYPE, "ParticleShape"), "set_particle_shape", "get_particle_shape");
 }
 
 ParticleBody::ParticleBody() :
         ParticleObject(ParticlePhysicsServer::get_singleton()->body_create()) {
     connect(CoreStringNames::get_singleton()->script_changed, this, "_on_script_changed");
+}
+
+void ParticleBody::set_particle_shape(Ref<ParticleShape> p_shape) {
+    particle_shape = p_shape;
+}
+
+Ref<ParticleShape> ParticleBody::get_particle_shape() const {
+    return particle_shape;
 }
 
 void ParticleBody::add_particle(const Vector3 &p_local_position, real_t p_mass) {

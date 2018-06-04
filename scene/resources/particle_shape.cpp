@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  physics_particle_body.h                                              */
+/*  shape.h                                                              */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -32,53 +32,73 @@
  * @author AndreaCatania
  */
 
-#ifndef PARTICLE_BODY_H
-#define PARTICLE_BODY_H
+#include "particle_shape.h"
 
-#include "scene/resources/particle_shape.h"
-#include "scene/resources/primitive_meshes.h"
-#include "spatial.h"
+void ParticleShape::_bind_methods() {
+}
 
-class ParticleObject : public Spatial {
-    GDCLASS(ParticleObject, Spatial);
+bool ParticleShape::_set(const StringName &p_name, const Variant &p_property) {
+    if (p_name == "particle_count") {
+        particles.resize(p_property);
+        _change_notify();
+        return true;
+    }
 
-protected:
-    RID rid;
+    Vector<String> s_name = String(p_name).split("/");
+    ERR_FAIL_COND_V(s_name.size() != 3, false);
 
-    static void _bind_methods();
+    if ("particle" == s_name[0]) {
+        const int particle_index = s_name[1].to_int();
+        if ("mass" == s_name[2]) {
+            particles[particle_index].mass = p_property;
+        } else if ("position" == s_name[2]) {
+            particles[particle_index].relative_position = p_property;
+        }
+        return true;
+    }
 
-public:
-    ParticleObject(RID p_rid);
+    return false;
+}
 
-    _FORCE_INLINE_ RID get_rid() { return rid; }
-};
+bool ParticleShape::_get(const StringName &p_name, Variant &r_property) const {
+    if (p_name == "particle_count") {
+        r_property = particles.size();
+        return true;
+    }
 
-class ParticleBody : public ParticleObject {
-    GDCLASS(ParticleBody, ParticleObject);
+    Vector<String> s_name = String(p_name).split("/");
+    ERR_FAIL_COND_V(s_name.size() != 3, false);
 
-    Vector<RID> visual_instances;
-    Ref<SphereMesh> sphere_mesh;
-    Ref<ParticleShape> particle_shape;
+    if ("particle" == s_name[0]) {
+        const int particle_index = s_name[1].to_int();
+        if ("mass" == s_name[2]) {
+            r_property = particles[particle_index].mass;
+        } else if ("position" == s_name[2]) {
+            r_property = particles[particle_index].relative_position;
+        }
+        return true;
+    }
 
-protected:
-    static void _bind_methods();
+    return false;
+}
 
-public:
-    ParticleBody();
+void ParticleShape::_get_property_list(List<PropertyInfo> *p_list) const {
 
-    void set_particle_shape(Ref<ParticleShape> p_shape);
-    Ref<ParticleShape> get_particle_shape() const;
+    p_list->push_back(PropertyInfo(Variant::INT, "particle_count", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT));
 
-    void add_particle(const Vector3 &p_local_position, real_t p_mass);
-    void remove_particle(int p_particle_id);
+    for (int i(0), s(particles.size()); i < s; ++i) {
+        p_list->push_back(PropertyInfo(Variant::INT, "particle/" + String::num(i) + "/mass"));
+        p_list->push_back(PropertyInfo(Variant::VECTOR3, "particle/" + String::num(i) + "/position"));
+    }
+}
 
-protected:
-    void _notification(int p_what);
-    void _on_script_changed();
+ParticleShape::ParticleShape() {
+}
 
-    void _commands_process_internal(Object *p_cmds);
+void ParticleShape::set_particles(Vector<Particle> &p_particles) {
+    particles = p_particles;
+}
 
-    void process_visual_instances(ParticleBodyCommands *p_cmds);
-};
-
-#endif // PARTICLE_BODY_H
+const Vector<ParticleShape::Particle> &ParticleShape::get_particles() const {
+    return particles;
+}
