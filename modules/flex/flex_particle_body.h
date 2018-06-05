@@ -125,10 +125,14 @@ public:
 
     // CMD
     void load_shape(Ref<ParticleShape> p_shape, const Transform &initial_transform);
+
     void reset_particle(ParticleID p_particle, const Vector3 &p_position, real_t p_mass);
     void reset_spring(SpringID p_spring, ParticleID p_particle_0, ParticleID p_particle_1, float p_length, float p_stiffness);
+
     Vector3 get_particle_position(ParticleID p_particle) const;
+
     const Vector3 &get_particle_velocity(ParticleID p_particle) const;
+    void set_particle_velocity(ParticleID p_particle, const Vector3 &p_velocity);
     // ~CMD
 
     bool is_owner_of_particle(ParticleID p_particle) const;

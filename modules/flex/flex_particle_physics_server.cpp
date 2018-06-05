@@ -56,6 +56,10 @@ const Vector3 &FlexParticleBodyCommands::get_particle_velocity(int p_particle_id
     return body->get_particle_velocity(p_particle_id);
 }
 
+void FlexParticleBodyCommands::set_particle_velocity(int p_particle_id, const Vector3 &p_velocity) {
+    body->set_particle_velocity(p_particle_id, p_velocity);
+}
+
 FlexParticlePhysicsServer *FlexParticlePhysicsServer::singleton = NULL;
 
 FlexParticlePhysicsServer::FlexParticlePhysicsServer() :

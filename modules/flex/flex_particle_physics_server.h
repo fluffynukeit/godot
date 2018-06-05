@@ -47,9 +47,13 @@ public:
     FlexParticleBody *body;
 
     virtual void load_shape(Ref<ParticleShape> p_shape, const Transform &initial_transform);
+
     virtual void reset_particle(int p_particle_index, const Vector3 &p_position, real_t p_mass);
+
     virtual Vector3 get_particle_position(int p_particle_id) const;
+
     virtual const Vector3 &get_particle_velocity(int p_particle_index) const;
+    virtual void set_particle_velocity(int p_particle_index, const Vector3 &p_velocity);
 };
 
 class FlexParticlePhysicsServer : public ParticlePhysicsServer {

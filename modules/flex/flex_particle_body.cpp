@@ -177,6 +177,12 @@ const Vector3 &FlexParticleBody::get_particle_velocity(ParticleID p_particle_ind
     return space->get_particle_bodies_memory()->get_velocity(particles_mchunk, p_particle_index);
 }
 
+void FlexParticleBody::set_particle_velocity(ParticleID p_particle_index, const Vector3 &p_velocity) {
+    if (!particles_mchunk)
+        return;
+    return space->get_particle_bodies_memory()->set_velocity(particles_mchunk, p_particle_index, p_velocity);
+}
+
 bool FlexParticleBody::is_owner_of_particle(ParticleID p_particle) const {
     if (!particles_mchunk)
         return false;
