@@ -47,6 +47,7 @@ class Object;
 struct ParticleToAdd {
     FlVector4 particle;
     bool want_reference;
+    Vector<ParticleID> link_with;
 
     ParticleToAdd() {}
 
@@ -80,7 +81,8 @@ class FlexParticleBody : public RIDFlex {
     } delayed_commands;
 
     FlexSpace *space;
-    MemoryChunk *memory_chunk;
+    MemoryChunk *particles_mchunk;
+    MemoryChunk *springs_mchunk;
 
 public:
     FlexParticleBody();

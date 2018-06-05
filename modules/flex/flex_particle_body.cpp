@@ -40,7 +40,8 @@
 FlexParticleBody::FlexParticleBody() :
         RIDFlex(),
         space(NULL),
-        memory_chunk(NULL) {
+        particles_mchunk(NULL),
+        springs_mchunk(NULL) {
     sync_callback.receiver = NULL;
 }
 
@@ -71,7 +72,7 @@ void FlexParticleBody::remove_particle(ParticleID p_particle) {
 }
 
 int FlexParticleBody::get_particle_count() const {
-    return memory_chunk ? memory_chunk->get_size() : 0;
+    return particles_mchunk ? particles_mchunk->get_size() : 0;
 }
 
 void FlexParticleBody::load_shape(Ref<ParticleShape> p_shape, const Transform &initial_transform) {
@@ -105,29 +106,29 @@ void FlexParticleBody::load_shape(Ref<ParticleShape> p_shape, const Transform &i
 }
 
 void FlexParticleBody::reset_particle(ParticleID p_particle_index, const Vector3 &p_position, real_t p_mass) {
-    if (!memory_chunk)
+    if (!particles_mchunk)
         return;
-    space->get_particle_bodies_memory()->set_particle(memory_chunk, p_particle_index, CreateParticle(p_position, p_mass));
-    space->get_particle_bodies_memory()->set_velocity(memory_chunk, p_particle_index, Vector3(0, 0, 0));
+    space->get_particle_bodies_memory()->set_particle(particles_mchunk, p_particle_index, CreateParticle(p_position, p_mass));
+    space->get_particle_bodies_memory()->set_velocity(particles_mchunk, p_particle_index, Vector3(0, 0, 0));
 }
 
 Vector3 FlexParticleBody::get_particle_position(ParticleID p_particle_index) const {
-    if (!memory_chunk)
+    if (!particles_mchunk)
         return return_err_vec3;
-    const FlVector4 &p(space->get_particle_bodies_memory()->get_particle(memory_chunk, p_particle_index));
+    const FlVector4 &p(space->get_particle_bodies_memory()->get_particle(particles_mchunk, p_particle_index));
     return gvec3_from_fvec4(p);
 }
 
 const Vector3 &FlexParticleBody::get_particle_velocity(ParticleID p_particle_index) const {
-    if (!memory_chunk)
+    if (!particles_mchunk)
         return return_err_vec3;
-    return space->get_particle_bodies_memory()->get_velocity(memory_chunk, p_particle_index);
+    return space->get_particle_bodies_memory()->get_velocity(particles_mchunk, p_particle_index);
 }
 
 bool FlexParticleBody::is_owner(ParticleID p_particle) const {
-    if (!memory_chunk)
+    if (!particles_mchunk)
         return false;
-    return (memory_chunk && (memory_chunk->get_begin_index() + p_particle) <= memory_chunk->get_end_index());
+    return (particles_mchunk && (particles_mchunk->get_begin_index() + p_particle) <= particles_mchunk->get_end_index());
 }
 
 void FlexParticleBody::create_soft_body() {
