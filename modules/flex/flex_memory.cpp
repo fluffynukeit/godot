@@ -101,7 +101,7 @@ void ParticleBodiesMemory::set_phase(const MemoryChunk *p_chunk, ParticleID p_pa
 }
 
 int ParticleBodiesMemory::get_phase(const MemoryChunk *p_chunk, ParticleID p_particle_index) const {
-    get_memory_index_V(return_err_int);
+    get_memory_index_V(0);
     return phases[index];
 }
 

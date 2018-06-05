@@ -95,7 +95,5 @@ struct Spring {
 static FlVector4 return_err_flvec4(0, 0, 0, 0);
 static Vector3 return_err_vec3(0, 0, 0);
 static Spring return_err_spring(0, 0);
-static float return_err_float(0);
-static int return_err_int(0);
 
 #endif // FLEX_UTILITY_H
