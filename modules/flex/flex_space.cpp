@@ -59,7 +59,9 @@ FlexSpace::FlexSpace() :
         flex_lib(NULL),
         solver(NULL),
         particle_bodies_allocator(NULL),
-        particle_bodies_memory(NULL) {
+        particle_bodies_memory(NULL),
+        spring_allocator(NULL),
+        spring_memory(NULL) {
     init();
 }
 
@@ -107,6 +109,12 @@ void FlexSpace::init() {
     particle_bodies_allocator = memnew(FlexMemoryAllocator(particle_bodies_memory, ((FlexUnit)(MAXPARTICLES / 3))));
     particle_bodies_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
 
+    ERR_FAIL_COND(spring_allocator);
+    ERR_FAIL_COND(spring_memory);
+    spring_memory = memnew(SpringMemory(flex_lib));
+    spring_allocator = memnew(FlexMemoryAllocator(spring_memory, ((FlexUnit)(MAXPARTICLES * 2))));
+    spring_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
+
     NvFlexParams params;
     // Initialize solver parameter
     NvFlexGetParams(solver, &params);
@@ -148,13 +156,18 @@ void FlexSpace::terminate() {
 void FlexSpace::sync() {
 
     particle_bodies_memory->map();
+    spring_memory->map();
 
     dispatch_callbacks();
     execute_delayed_commands();
 
     particle_bodies_memory->unmap();
 
-    commands_write_to_gpu();
+    if (spring_memory->was_changed())
+        spring_allocator->sanitize(); // This buffer should be compact when the GPU has to use it
+    spring_memory->unmap();
+
+    commands_write_buffer();
 }
 
 void FlexSpace::step(real_t p_delta_time) {
@@ -164,7 +177,7 @@ void FlexSpace::step(real_t p_delta_time) {
     const bool enable_timer = false; // Used for profiling
     NvFlexUpdateSolver(solver, p_delta_time, substep, enable_timer);
 
-    commands_read_from_gpu();
+    commands_read_buffer();
 }
 
 void FlexSpace::dispatch_callbacks() {
@@ -219,7 +232,7 @@ void FlexSpace::execute_delayed_commands() {
     }
 }
 
-void FlexSpace::commands_write_to_gpu() {
+void FlexSpace::commands_write_buffer() {
     NvFlexCopyDesc copy_desc;
     for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
 
@@ -238,9 +251,12 @@ void FlexSpace::commands_write_to_gpu() {
         NvFlexSetActive(solver, particle_bodies_memory->active_particles.buffer, &copy_desc);
         NvFlexSetActiveCount(solver, particle_bodies_memory->active_particles.size());
     }
+
+    if (spring_memory->was_changed())
+        NvFlexSetSprings(solver, spring_memory->springs.buffer, spring_memory->lengths.buffer, spring_memory->stiffness.buffer, spring_allocator->get_last_used_index() + 1);
 }
 
-void FlexSpace::commands_read_from_gpu() {
+void FlexSpace::commands_read_buffer() {
     NvFlexCopyDesc copy_desc;
     for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
 

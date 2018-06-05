@@ -141,6 +141,8 @@ public:
     // If the chunks have different sizes the copy will be performed only by the size of smaller chunk
     void copy_chunk(MemoryChunk *p_from, MemoryChunk *p_to);
 
+    FlexUnit get_last_used_index();
+
 private:
     bool redux_memory(FlexUnit p_size);
     void find_biggest_chunk_size();
