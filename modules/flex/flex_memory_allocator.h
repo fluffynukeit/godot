@@ -40,7 +40,9 @@
 typedef int FlexUnit;
 
 class FlexMemory {
-public:
+    friend class FlexMemoryAllocator;
+
+protected:
     virtual void resize_memory(FlexUnit p_size) = 0;
     virtual void copy_unit(FlexUnit p_to, FlexUnit p_from) = 0;
 
