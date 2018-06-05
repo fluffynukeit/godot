@@ -48,13 +48,23 @@ public:
     struct Particle {
         Vector3 relative_position;
         real_t mass;
-        Vector<int> link;
-        Vector<float> length;
-        Vector<float> stiffness;
 
         Particle() :
                 relative_position(0, 0, 0),
                 mass(0) {}
+    };
+
+    struct Constraint {
+        int particle_id_0;
+        int particle_id_1;
+        float length;
+        float stiffness;
+
+        Constraint() :
+                particle_id_0(0),
+                particle_id_1(0),
+                length(0),
+                stiffness(0) {}
     };
 
 protected:
@@ -62,6 +72,7 @@ protected:
 
 private:
     Vector<Particle> particles;
+    Vector<Constraint> constraints;
 
 protected:
     bool _set(const StringName &p_name, const Variant &p_property);
@@ -73,6 +84,9 @@ public:
 
     void set_particles(Vector<Particle> &p_particles);
     const Vector<Particle> &get_particles() const;
+
+    void set_constraints(const Vector<Constraint> &p_constraints);
+    const Vector<Constraint> &get_constraints() const;
 };
 
 #endif // PARTICLE_SHAPE_H

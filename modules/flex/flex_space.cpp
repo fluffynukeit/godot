@@ -60,8 +60,8 @@ FlexSpace::FlexSpace() :
         solver(NULL),
         particle_bodies_allocator(NULL),
         particle_bodies_memory(NULL),
-        spring_allocator(NULL),
-        spring_memory(NULL) {
+        springs_allocator(NULL),
+        springs_memory(NULL) {
     init();
 }
 
@@ -109,11 +109,11 @@ void FlexSpace::init() {
     particle_bodies_allocator = memnew(FlexMemoryAllocator(particle_bodies_memory, ((FlexUnit)(MAXPARTICLES / 3))));
     particle_bodies_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
 
-    ERR_FAIL_COND(spring_allocator);
-    ERR_FAIL_COND(spring_memory);
-    spring_memory = memnew(SpringMemory(flex_lib));
-    spring_allocator = memnew(FlexMemoryAllocator(spring_memory, ((FlexUnit)(MAXPARTICLES * 2))));
-    spring_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
+    ERR_FAIL_COND(springs_allocator);
+    ERR_FAIL_COND(springs_memory);
+    springs_memory = memnew(SpringMemory(flex_lib));
+    springs_allocator = memnew(FlexMemoryAllocator(springs_memory, ((FlexUnit)(MAXPARTICLES * 2))));
+    springs_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
 
     NvFlexParams params;
     // Initialize solver parameter
@@ -158,16 +158,16 @@ void FlexSpace::terminate() {
 void FlexSpace::sync() {
 
     particle_bodies_memory->map();
-    spring_memory->map();
+    springs_memory->map();
 
     dispatch_callbacks();
     execute_delayed_commands();
 
     particle_bodies_memory->unmap();
 
-    if (spring_memory->was_changed())
-        spring_allocator->sanitize(); // This buffer should be compact when the GPU has to use it
-    spring_memory->unmap();
+    if (springs_memory->was_changed())
+        springs_allocator->sanitize(); // This buffer should be compact when the GPU has to use it
+    springs_memory->unmap();
 
     commands_write_buffer();
 }
@@ -199,15 +199,14 @@ void FlexSpace::execute_delayed_commands() {
             // Allocate memory for particles
             if (body->particles_mchunk) {
                 previous_size = body->particles_mchunk->get_size();
-                // Resize memory chunk
-                particle_bodies_allocator->resize_chunk(body->particles_mchunk, body->particles_mchunk->get_size() + body->delayed_commands.particle_to_add.size());
+                // Resize existing memory chunk
+                particle_bodies_allocator->resize_chunk(body->particles_mchunk, previous_size + body->delayed_commands.particle_to_add.size());
             } else {
                 // Allocate new one
                 body->particles_mchunk = particle_bodies_allocator->allocate_chunk(body->delayed_commands.particle_to_add.size());
             }
 
             // Write on memory
-            ERR_FAIL_COND(!body->particles_mchunk);
             for (int p(body->delayed_commands.particle_to_add.size() - 1); 0 <= p; --p) {
 
                 particle_bodies_memory->set_particle(body->particles_mchunk, previous_size + p, body->delayed_commands.particle_to_add[p].particle);
@@ -220,11 +219,30 @@ void FlexSpace::execute_delayed_commands() {
             }
         }
 
-        if (body->delayed_commands.particle_to_remove.size()) {
+        if (body->delayed_commands.springs_to_add.size()) {
 
-            // Remove particles
-            if (!body->particles_mchunk)
-                continue;
+            int previous_size = 0;
+
+            // Allocate memory for springs
+            if (body->springs_mchunk) {
+                previous_size = body->springs_mchunk->get_size();
+                // Resize existing memory chunk
+                springs_allocator->resize_chunk(body->springs_mchunk, previous_size + body->delayed_commands.springs_to_add.size());
+            } else {
+                // Allocate new chunk
+                body->springs_mchunk = springs_allocator->allocate_chunk(body->delayed_commands.springs_to_add.size());
+            }
+
+            // Write on memory
+            for (int s(body->delayed_commands.springs_to_add.size() - 1); 0 <= s; --s) {
+                const SpringToAdd &sta(body->delayed_commands.springs_to_add[s]);
+                body->reset_spring(s, sta.particle_0, sta.particle_1, sta.length, sta.stiffness);
+            }
+        }
+
+        if (body->delayed_commands.particle_to_remove.size() && body->particles_mchunk) {
+
+            // Remove particles AND find associated springs
 
             ParticleID last_particle_index(body->particles_mchunk->get_end_index());
             for (Set<ParticleID>::Element *e = body->delayed_commands.particle_to_remove.front(); e; e = e->next()) {
@@ -234,22 +252,34 @@ void FlexSpace::execute_delayed_commands() {
                 particle_bodies_memory->copy(body->particles_mchunk->get_begin_index() + last_particle_index, 1, id_to_remove);
                 --last_particle_index;
 
-                if (!body->springs_mchunk)
-                    continue;
-
-                // Removes all springs of removed particle
-                SpringID last_spring_index(body->springs_mchunk->get_end_index());
-                for (int spring_id(body->springs_mchunk->get_size() - 1); 0 <= spring_id; --spring_id) {
-                    const Spring &spring = spring_memory->get_spring(body->springs_mchunk, spring_id);
-                    if (spring.id0 == id_to_remove || spring.id1 == id_to_remove) {
-                        spring_memory->copy(last_spring_index, 1, body->springs_mchunk->get_begin_index() + spring_id);
-                        --last_spring_index;
+                if (body->springs_mchunk) {
+                    // Find all springs associated to removed particle and put in the remove list
+                    for (int spring_id(body->springs_mchunk->get_size() - 1); 0 <= spring_id; --spring_id) {
+                        const Spring &spring = springs_memory->get_spring(body->springs_mchunk, spring_id);
+                        if (spring.id0 == id_to_remove || spring.id1 == id_to_remove) {
+                            body->remove_spring(spring_id);
+                        }
                     }
                 }
-                spring_allocator->resize_chunk(body->springs_mchunk, last_spring_index + 1);
             }
-            FlexUnit new_size = body->particles_mchunk->get_size() - body->delayed_commands.particle_to_remove.size();
+            const FlexUnit new_size = body->particles_mchunk->get_size() - body->delayed_commands.particle_to_remove.size();
             particle_bodies_allocator->resize_chunk(body->particles_mchunk, new_size);
+        }
+
+        if (body->delayed_commands.springs_to_remove.size() && body->springs_mchunk) {
+
+            // Remove springs
+
+            SpringID last_spring_index(body->springs_mchunk->get_end_index());
+            for (Set<SpringID>::Element *e = body->delayed_commands.springs_to_remove.front(); e; e = e->next()) {
+
+                // Copy the values of last ID to the ID to remove (lose order)
+                const int id_to_remove(body->springs_mchunk->get_begin_index() + e->get());
+                springs_memory->copy(body->springs_mchunk->get_begin_index() + last_spring_index, 1, id_to_remove);
+                --last_spring_index;
+            }
+            const FlexUnit new_size = body->springs_mchunk->get_size() - body->delayed_commands.springs_to_remove.size();
+            springs_allocator->resize_chunk(body->springs_mchunk, new_size);
         }
     }
 }
@@ -274,8 +304,8 @@ void FlexSpace::commands_write_buffer() {
         NvFlexSetActiveCount(solver, particle_bodies_memory->active_particles.size());
     }
 
-    if (spring_memory->was_changed())
-        NvFlexSetSprings(solver, spring_memory->springs.buffer, spring_memory->lengths.buffer, spring_memory->stiffness.buffer, spring_allocator->get_last_used_index() + 1);
+    if (springs_memory->was_changed())
+        NvFlexSetSprings(solver, springs_memory->springs.buffer, springs_memory->lengths.buffer, springs_memory->stiffness.buffer, springs_allocator->get_last_used_index() + 1);
 }
 
 void FlexSpace::commands_read_buffer() {
