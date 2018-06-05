@@ -2,10 +2,15 @@
 #include "particle_physics_server.h"
 
 void ParticleBodyCommands::_bind_methods() {
+
     ClassDB::bind_method(D_METHOD("load_shape", "shape", "initial_transform"), &ParticleBodyCommands::load_shape);
+
     ClassDB::bind_method(D_METHOD("reset_particle", "particle_index", "position", "mass"), &ParticleBodyCommands::reset_particle);
+
     ClassDB::bind_method(D_METHOD("get_particle_position", "particle_index"), &ParticleBodyCommands::get_particle_position);
+
     ClassDB::bind_method(D_METHOD("get_particle_velocity", "particle_index"), &ParticleBodyCommands::get_particle_velocity);
+    ClassDB::bind_method(D_METHOD("set_particle_velocity", "particle_index", "velocity"), &ParticleBodyCommands::set_particle_velocity);
 }
 
 ParticlePhysicsServer *ParticlePhysicsServer::singleton = NULL;
