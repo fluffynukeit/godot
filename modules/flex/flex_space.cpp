@@ -194,8 +194,11 @@ void FlexSpace::execute_delayed_commands() {
         FlexParticleBody *body = particle_bodies[i];
         if (body->delayed_commands.particle_to_add.size()) {
 
-            // Allocate memory
+            int previous_size = 0;
+
+            // Allocate memory for particles
             if (body->particles_mchunk) {
+                previous_size = body->particles_mchunk->get_size();
                 // Resize memory chunk
                 particle_bodies_allocator->resize_chunk(body->particles_mchunk, body->particles_mchunk->get_size() + body->delayed_commands.particle_to_add.size());
             } else {
@@ -207,13 +210,13 @@ void FlexSpace::execute_delayed_commands() {
             ERR_FAIL_COND(!body->particles_mchunk);
             for (int p(body->delayed_commands.particle_to_add.size() - 1); 0 <= p; --p) {
 
-                particle_bodies_memory->set_particle(body->particles_mchunk, p, body->delayed_commands.particle_to_add[p].particle);
-                particle_bodies_memory->set_velocity(body->particles_mchunk, p, Vector3());
+                particle_bodies_memory->set_particle(body->particles_mchunk, previous_size + p, body->delayed_commands.particle_to_add[p].particle);
+                particle_bodies_memory->set_velocity(body->particles_mchunk, previous_size + p, Vector3());
                 // TODO add here all parameter correctly
                 const int group = 0;
                 const int phase = NvFlexMakePhase(group, eNvFlexPhaseSelfCollide);
-                particle_bodies_memory->set_phase(body->particles_mchunk, p, phase);
-                particle_bodies_memory->set_active_particle(body->particles_mchunk, p);
+                particle_bodies_memory->set_phase(body->particles_mchunk, previous_size + p, phase);
+                particle_bodies_memory->set_active_particle(body->particles_mchunk, previous_size + p);
             }
         }
 
