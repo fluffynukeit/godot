@@ -113,14 +113,14 @@ void FlexParticleBody::reset_particle(ParticleID p_particle_index, const Vector3
 
 Vector3 FlexParticleBody::get_particle_position(ParticleID p_particle_index) const {
     if (!memory_chunk)
-        return Vector3();
+        return return_err_vec3;
     const FlVector4 &p(space->get_particle_bodies_memory()->get_particle(memory_chunk, p_particle_index));
     return gvec3_from_fvec4(p);
 }
 
-Vector3 FlexParticleBody::get_particle_velocity(ParticleID p_particle_index) const {
+const Vector3 &FlexParticleBody::get_particle_velocity(ParticleID p_particle_index) const {
     if (!memory_chunk)
-        return Vector3();
+        return return_err_vec3;
     return space->get_particle_bodies_memory()->get_velocity(memory_chunk, p_particle_index);
 }
 

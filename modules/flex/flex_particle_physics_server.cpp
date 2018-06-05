@@ -52,7 +52,7 @@ Vector3 FlexParticleBodyCommands::get_particle_position(int p_particle_id) const
     return body->get_particle_position(p_particle_id);
 }
 
-Vector3 FlexParticleBodyCommands::get_particle_velocity(int p_particle_id) const {
+const Vector3 &FlexParticleBodyCommands::get_particle_velocity(int p_particle_id) const {
     return body->get_particle_velocity(p_particle_id);
 }
 
