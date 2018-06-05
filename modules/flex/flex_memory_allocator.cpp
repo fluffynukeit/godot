@@ -35,6 +35,12 @@
 #include "flex_memory_allocator.h"
 #include "print_string.h"
 
+void FlexMemory::copy(FlexUnit p_from_begin_index, FlexUnit p_size, FlexUnit p_to_begin_index) {
+    for (int i(0); i < p_size; ++i) {
+        copy_unit(p_to_begin_index + i, p_from_begin_index + i);
+    }
+}
+
 FlexMemoryAllocator::FlexMemoryAllocator(FlexMemory *p_memory, FlexUnit p_size) :
         memory(p_memory),
         memory_size(0) {
