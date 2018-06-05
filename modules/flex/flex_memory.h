@@ -80,16 +80,23 @@ protected:
     virtual void copy_unit(FlexUnit p_to, FlexUnit p_from);
 };
 
-class SpringBodiesMemory : public FlexMemory {
+class SpringMemory : public FlexMemory {
 
     friend class FlexSpace;
 
     NvFlexVector<Spring> springs;
     NvFlexVector<float> lengths;
-    NvFlexVector<float> stifness;
+    NvFlexVector<float> stiffness;
+
+    bool changed;
 
 public:
-    SpringBodiesMemory(NvFlexLibrary *p_flex_lib);
+    SpringMemory(NvFlexLibrary *p_flex_lib);
+
+    void map();
+    void unmap();
+    void terminate();
+    bool was_changed() { return changed; }
 
     /// IMPORTANT
     /// These functions must be called only if the buffers are mapped

@@ -219,6 +219,15 @@ void FlexMemoryAllocator::copy_chunk(MemoryChunk *p_from, MemoryChunk *p_to) {
     memory->copy(p_from->begin_index, copy_size, p_to->begin_index);
 }
 
+FlexUnit FlexMemoryAllocator::get_last_used_index() {
+    for (int i(memory_table.size() - 1); i <= 0; --i) {
+        if (!memory_table[i]->is_free) {
+            return memory_table[i]->end_index;
+        }
+    }
+    return -1;
+}
+
 bool FlexMemoryAllocator::redux_memory(FlexUnit p_size) {
     if (memory_table.size() > 0) {
         const FlexUnit last_chunk_index = memory_table.size() - 1;

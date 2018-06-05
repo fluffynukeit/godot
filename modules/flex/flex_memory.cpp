@@ -110,35 +110,58 @@ void ParticleBodiesMemory::set_active_particle(const MemoryChunk *p_chunk, Parti
     active_particles[index] = p_chunk->get_begin_index() + p_particle_index;
 }
 
-SpringBodiesMemory::SpringBodiesMemory(NvFlexLibrary *p_flex_lib) :
+SpringMemory::SpringMemory(NvFlexLibrary *p_flex_lib) :
         springs(p_flex_lib),
         lengths(p_flex_lib),
-        stifness(p_flex_lib) {
+        stiffness(p_flex_lib),
+        changed(false) {
 }
 
-void SpringBodiesMemory::resize_memory(FlexUnit p_size) {
+void SpringMemory::map() {
+    springs.map(eNvFlexMapWait);
+    lengths.map(eNvFlexMapWait);
+    stiffness.map(eNvFlexMapWait);
+    changed = false;
+}
+
+void SpringMemory::unmap() {
+    springs.unmap();
+    lengths.unmap();
+    stiffness.unmap();
+}
+
+void SpringMemory::terminate() {
+    springs.destroy();
+    lengths.destroy();
+    stiffness.destroy();
+}
+
+void SpringMemory::resize_memory(FlexUnit p_size) {
     springs.resize(p_size);
     lengths.resize(p_size);
-    stifness.resize(p_size);
+    stiffness.resize(p_size);
 }
 
-void SpringBodiesMemory::copy_unit(FlexUnit p_to, FlexUnit p_from) {
+void SpringMemory::copy_unit(FlexUnit p_to, FlexUnit p_from) {
     springs[p_to] = springs[p_from];
     lengths[p_to] = lengths[p_from];
-    stifness[p_to] = stifness[p_from];
+    stiffness[p_to] = stiffness[p_from];
 }
 
-void SpringBodiesMemory::set_spring(const MemoryChunk *p_chunk, ParticleID p_particle_index, const Spring &p_spring) {
+void SpringMemory::set_spring(const MemoryChunk *p_chunk, ParticleID p_particle_index, const Spring &p_spring) {
     get_memory_index();
     springs[index] = p_spring;
+    changed = true;
 }
 
-void SpringBodiesMemory::set_length(const MemoryChunk *p_chunk, ParticleID p_particle_index, float p_length) {
+void SpringMemory::set_length(const MemoryChunk *p_chunk, ParticleID p_particle_index, float p_length) {
     get_memory_index();
     lengths[index] = p_length;
+    changed = true;
 }
 
-void SpringBodiesMemory::set_stifness(const MemoryChunk *p_chunk, ParticleID p_particle_index, float p_stifness) {
+void SpringMemory::set_stifness(const MemoryChunk *p_chunk, ParticleID p_particle_index, float p_stifness) {
     get_memory_index();
-    stifness[index] = p_stifness;
+    stiffness[index] = p_stifness;
+    changed = true;
 }

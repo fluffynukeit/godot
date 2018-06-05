@@ -44,6 +44,7 @@ class NvFlexSolver;
 class FlexParticleBody;
 class FlexMemoryAllocator;
 class ParticleBodiesMemory;
+class SpringMemory;
 
 class FlexSpace : public RIDFlex {
     friend class FlexBuffers;
@@ -53,6 +54,8 @@ class FlexSpace : public RIDFlex {
     NvFlexSolver *solver;
     FlexMemoryAllocator *particle_bodies_allocator;
     ParticleBodiesMemory *particle_bodies_memory;
+    FlexMemoryAllocator *spring_allocator;
+    SpringMemory *spring_memory;
 
     Vector<FlexParticleBody *> particle_bodies;
 
@@ -72,8 +75,8 @@ private:
     void dispatch_callbacks();
     void execute_delayed_commands();
 
-    void commands_write_to_gpu();
-    void commands_read_from_gpu();
+    void commands_write_buffer();
+    void commands_read_buffer();
 
 public:
     void add_particle_body(FlexParticleBody *p_body);
