@@ -67,41 +67,87 @@ void FlexParticleBody::add_particle(const Vector3 &p_local_position, real_t p_ma
 }
 
 void FlexParticleBody::remove_particle(ParticleID p_particle) {
-    ERR_FAIL_COND(!is_owner(p_particle));
+    ERR_FAIL_COND(!is_owner_of_particle(p_particle));
     delayed_commands.particle_to_remove.insert(p_particle);
+}
+
+void FlexParticleBody::add_spring(ParticleID p_particle_0, ParticleID p_particle_1, float p_length, float p_stiffness) {
+    ERR_FAIL_COND(!is_owner_of_particle(p_particle_0));
+    ERR_FAIL_COND(!is_owner_of_particle(p_particle_1));
+    delayed_commands.springs_to_add.push_back(SpringToAdd(p_particle_0, p_particle_1, p_length, p_stiffness));
+}
+
+void FlexParticleBody::remove_spring(SpringID p_spring_id) {
+    ERR_FAIL_COND(!is_owner_of_spring(p_spring_id));
+    delayed_commands.springs_to_remove.insert(p_spring_id);
 }
 
 int FlexParticleBody::get_particle_count() const {
     return particles_mchunk ? particles_mchunk->get_size() : 0;
 }
 
+int FlexParticleBody::get_spring_count() const {
+    return springs_mchunk ? springs_mchunk->get_size() : 0;
+}
+
 void FlexParticleBody::load_shape(Ref<ParticleShape> p_shape, const Transform &initial_transform) {
 
-    int active_p_count(get_particle_count());
-    const int resource_p_count(p_shape->get_particles().size());
+    { // Particle
+        int active_p_count(get_particle_count());
+        const int resource_p_count(p_shape->get_particles().size());
 
-    if (active_p_count > resource_p_count) {
+        if (active_p_count > resource_p_count) {
 
-        // Remove last
-        const int dif = active_p_count - resource_p_count;
-        for (int i(0); i < dif; ++i) {
-            remove_particle(active_p_count - i - 1);
+            // Remove last
+            const int dif = active_p_count - resource_p_count;
+            for (int i(0); i < dif; ++i) {
+                remove_particle(active_p_count - i - 1);
+            }
+
+            active_p_count = resource_p_count;
+
+        } else {
+
+            // Add
+            const int dif = resource_p_count - active_p_count;
+            for (int i(0); i < dif; ++i) {
+                const int p(resource_p_count - i - 1);
+                add_particle(initial_transform.xform(p_shape->get_particles()[p].relative_position), p_shape->get_particles()[p].mass);
+            }
         }
 
-        active_p_count = resource_p_count;
-
-    } else {
-
-        // Add
-        const int dif = resource_p_count - active_p_count;
-        for (int i(0); i < dif; ++i) {
-            const int p(resource_p_count - i - 1);
-            add_particle(initial_transform.xform(p_shape->get_particles()[p].relative_position), p_shape->get_particles()[p].mass);
+        for (int i(0); i < active_p_count; ++i) {
+            reset_particle(i, initial_transform.xform(p_shape->get_particles()[i].relative_position), p_shape->get_particles()[i].mass);
         }
     }
 
-    for (int i(0); i < active_p_count; ++i) {
-        reset_particle(i, initial_transform.xform(p_shape->get_particles()[i].relative_position), p_shape->get_particles()[i].mass);
+    { // Spring
+        int active_s_count(get_spring_count());
+        int resource_s_count(p_shape->get_constraints().size());
+
+        if (active_s_count > resource_s_count) {
+
+            // Remove last
+            const int dif = active_s_count - resource_s_count;
+            for (int i(0); i < dif; ++i) {
+                remove_spring(active_s_count - i - 1);
+            }
+
+            active_s_count = resource_s_count;
+
+        } else {
+
+            // Add
+            const int dif = resource_s_count - active_s_count;
+            for (int i(0); i < dif; ++i) {
+                const int s(resource_s_count - i - 1);
+                add_spring(p_shape->get_constraints()[s].particle_id_0, p_shape->get_constraints()[s].particle_id_1, p_shape->get_constraints()[s].length, p_shape->get_constraints()[s].stiffness);
+            }
+        }
+
+        for (int i(0); i < active_s_count; ++i) {
+            reset_spring(i, p_shape->get_constraints()[i].particle_id_0, p_shape->get_constraints()[i].particle_id_0, p_shape->get_constraints()[i].length, p_shape->get_constraints()[i].stiffness);
+        }
     }
 }
 
@@ -110,6 +156,14 @@ void FlexParticleBody::reset_particle(ParticleID p_particle_index, const Vector3
         return;
     space->get_particle_bodies_memory()->set_particle(particles_mchunk, p_particle_index, CreateParticle(p_position, p_mass));
     space->get_particle_bodies_memory()->set_velocity(particles_mchunk, p_particle_index, Vector3(0, 0, 0));
+}
+
+void FlexParticleBody::reset_spring(SpringID p_spring, ParticleID p_particle_0, ParticleID p_particle_1, float p_length, float p_stiffness) {
+    if (!springs_mchunk)
+        return;
+    space->get_springs_memory()->set_spring(springs_mchunk, p_spring, Spring(p_particle_0, p_particle_1));
+    space->get_springs_memory()->set_length(springs_mchunk, p_spring, p_length);
+    space->get_springs_memory()->set_stiffness(springs_mchunk, p_spring, p_stiffness);
 }
 
 Vector3 FlexParticleBody::get_particle_position(ParticleID p_particle_index) const {
@@ -125,10 +179,16 @@ const Vector3 &FlexParticleBody::get_particle_velocity(ParticleID p_particle_ind
     return space->get_particle_bodies_memory()->get_velocity(particles_mchunk, p_particle_index);
 }
 
-bool FlexParticleBody::is_owner(ParticleID p_particle) const {
+bool FlexParticleBody::is_owner_of_particle(ParticleID p_particle) const {
     if (!particles_mchunk)
         return false;
     return (particles_mchunk && (particles_mchunk->get_begin_index() + p_particle) <= particles_mchunk->get_end_index());
+}
+
+bool FlexParticleBody::is_owner_of_spring(SpringID p_spring) const {
+    if (!springs_mchunk)
+        return false;
+    return (springs_mchunk && (springs_mchunk->get_begin_index() + p_spring) <= springs_mchunk->get_end_index());
 }
 
 void FlexParticleBody::create_soft_body() {
@@ -138,5 +198,7 @@ void FlexParticleBody::create_soft_body() {
 
 void FlexParticleBody::clear_commands() {
     delayed_commands.particle_to_add.clear();
+    delayed_commands.springs_to_add.clear();
     delayed_commands.particle_to_remove.clear();
+    delayed_commands.springs_to_remove.clear();
 }

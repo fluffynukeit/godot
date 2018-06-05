@@ -54,8 +54,8 @@ class FlexSpace : public RIDFlex {
     NvFlexSolver *solver;
     FlexMemoryAllocator *particle_bodies_allocator;
     ParticleBodiesMemory *particle_bodies_memory;
-    FlexMemoryAllocator *spring_allocator;
-    SpringMemory *spring_memory;
+    FlexMemoryAllocator *springs_allocator;
+    SpringMemory *springs_memory;
 
     Vector<FlexParticleBody *> particle_bodies;
 
@@ -68,8 +68,8 @@ public:
     void sync();
     void step(real_t p_delta_time);
 
-    _FORCE_INLINE_ const ParticleBodiesMemory *get_particle_bodies_memory() const { return particle_bodies_memory; }
     _FORCE_INLINE_ ParticleBodiesMemory *get_particle_bodies_memory() { return particle_bodies_memory; }
+    _FORCE_INLINE_ SpringMemory *get_springs_memory() { return springs_memory; }
 
 private:
     void dispatch_callbacks();

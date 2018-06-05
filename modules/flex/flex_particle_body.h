@@ -47,13 +47,33 @@ class Object;
 struct ParticleToAdd {
     FlVector4 particle;
     bool want_reference;
-    Vector<ParticleID> link_with;
 
     ParticleToAdd() {}
 
     ParticleToAdd(const Vector3 &p_position, real_t p_mass) {
         particle = CreateParticle(p_position, p_mass);
         want_reference = false;
+    }
+};
+
+struct SpringToAdd {
+
+    ParticleID particle_0;
+    ParticleID particle_1;
+    float length;
+    float stiffness;
+
+    SpringToAdd() :
+            particle_0(-1),
+            particle_1(-1),
+            length(0),
+            stiffness(0) {}
+
+    SpringToAdd(ParticleID p_particle_0, ParticleID p_particle_1, float p_length, float p_stiffness) :
+            particle_0(p_particle_0),
+            particle_1(p_particle_1),
+            length(p_length),
+            stiffness(p_stiffness) {
     }
 };
 
@@ -77,7 +97,9 @@ class FlexParticleBody : public RIDFlex {
 
     struct {
         Vector<ParticleToAdd> particle_to_add;
+        Vector<SpringToAdd> springs_to_add;
         Set<ParticleID> particle_to_remove;
+        Set<SpringID> springs_to_remove;
     } delayed_commands;
 
     FlexSpace *space;
@@ -95,16 +117,22 @@ public:
     void add_particle(const Vector3 &p_local_position, real_t p_mass);
     void remove_particle(ParticleID p_particle);
 
+    void add_spring(ParticleID p_particle_0, ParticleID p_particle_1, float p_length, float p_stiffness);
+    void remove_spring(SpringID p_spring_id);
+
     int get_particle_count() const;
+    int get_spring_count() const;
 
     // CMD
     void load_shape(Ref<ParticleShape> p_shape, const Transform &initial_transform);
     void reset_particle(ParticleID p_particle, const Vector3 &p_position, real_t p_mass);
+    void reset_spring(SpringID p_spring, ParticleID p_particle_0, ParticleID p_particle_1, float p_length, float p_stiffness);
     Vector3 get_particle_position(ParticleID p_particle) const;
     const Vector3 &get_particle_velocity(ParticleID p_particle) const;
     // ~CMD
 
-    bool is_owner(ParticleID) const;
+    bool is_owner_of_particle(ParticleID p_particle) const;
+    bool is_owner_of_spring(SpringID p_spring) const;
 
     // This should be on physics server
     void create_soft_body();

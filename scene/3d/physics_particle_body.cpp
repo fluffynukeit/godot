@@ -207,6 +207,9 @@ void ParticleBody::resize_debug_particle_visual_instance(int new_size) {
 
 void ParticleBody::reset_debug_particle_positions() {
 
+    if (particle_shape.is_null())
+        return;
+
     if (debug_particle_visual_instances.size() == particle_shape->get_particles().size()) {
 
         Transform particle_relative_transf;
