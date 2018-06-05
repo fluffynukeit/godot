@@ -42,8 +42,9 @@ typedef int FlexUnit;
 class FlexMemory {
 public:
     virtual void resize_memory(FlexUnit p_size) = 0;
-    // MUST Perform an incremental linear copy from 0 to size
-    virtual void copy(FlexUnit p_from_begin_index, FlexUnit p_size, FlexUnit p_to_begin_index) = 0;
+    virtual void copy_unit(FlexUnit p_to, FlexUnit p_from) = 0;
+
+    void copy(FlexUnit p_from_begin_index, FlexUnit p_size, FlexUnit p_to_begin_index);
 };
 
 struct MemoryChunk {
