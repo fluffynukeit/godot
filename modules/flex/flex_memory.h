@@ -104,14 +104,14 @@ public:
     /// |
     /// V
 
-    void set_spring(const MemoryChunk *p_chunk, ParticleID p_particle_index, const Spring &p_spring);
-    const Spring &get_spring(const MemoryChunk *p_chunk, ParticleID p_particle_index);
+    void set_spring(const MemoryChunk *p_chunk, SpringID p_spring_index, const Spring &p_spring);
+    const Spring &get_spring(const MemoryChunk *p_chunk, SpringID p_spring_index) const;
 
-    void set_length(const MemoryChunk *p_chunk, ParticleID p_particle_index, float p_length);
-    float get_length(const MemoryChunk *p_chunk, ParticleID p_particle_index);
+    void set_length(const MemoryChunk *p_chunk, SpringID p_spring_index, float p_length);
+    float get_length(const MemoryChunk *p_chunk, SpringID p_spring_index) const;
 
-    void set_stifness(const MemoryChunk *p_chunk, ParticleID p_particle_index, float p_stifness);
-    float get_stifness(const MemoryChunk *p_chunk, ParticleID p_particle_index);
+    void set_stiffness(const MemoryChunk *p_chunk, SpringID p_spring_index, float p_stifness);
+    float get_stiffness(const MemoryChunk *p_chunk, SpringID p_spring_index) const;
 
 protected:
     virtual void resize_memory(FlexUnit p_size);
