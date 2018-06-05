@@ -220,7 +220,7 @@ void FlexMemoryAllocator::copy_chunk(MemoryChunk *p_from, MemoryChunk *p_to) {
 }
 
 FlexUnit FlexMemoryAllocator::get_last_used_index() {
-    for (int i(memory_table.size() - 1); i <= 0; --i) {
+    for (int i(memory_table.size() - 1); 0 <= i; --i) {
         if (!memory_table[i]->is_free) {
             return memory_table[i]->end_index;
         }

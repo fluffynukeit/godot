@@ -72,8 +72,6 @@ void FlexParticleBody::remove_particle(ParticleID p_particle) {
 }
 
 void FlexParticleBody::add_spring(ParticleID p_particle_0, ParticleID p_particle_1, float p_length, float p_stiffness) {
-    ERR_FAIL_COND(!is_owner_of_particle(p_particle_0));
-    ERR_FAIL_COND(!is_owner_of_particle(p_particle_1));
     delayed_commands.springs_to_add.push_back(SpringToAdd(p_particle_0, p_particle_1, p_length, p_stiffness));
 }
 
