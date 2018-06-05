@@ -84,4 +84,18 @@ struct Spring {
             id1(p_id1) {}
 };
 
+#define get_memory_index()                                     \
+    int index = p_chunk->get_begin_index() + p_particle_index; \
+    ERR_FAIL_COND(index > p_chunk->get_end_index());
+
+#define get_memory_index_V(ret)                                \
+    int index = p_chunk->get_begin_index() + p_particle_index; \
+    ERR_FAIL_COND_V(index > p_chunk->get_end_index(), ret);
+
+static FlVector4 return_err_flvec4(0, 0, 0, 0);
+static Vector3 return_err_vec3(0, 0, 0);
+static Spring return_err_spring(0, 0);
+static float return_err_float(0);
+static int return_err_int(0);
+
 #endif // FLEX_UTILITY_H
