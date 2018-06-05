@@ -48,6 +48,9 @@ public:
     struct Particle {
         Vector3 relative_position;
         real_t mass;
+        Vector<int> link;
+        Vector<float> length;
+        Vector<float> stiffness;
 
         Particle() :
                 relative_position(0, 0, 0),

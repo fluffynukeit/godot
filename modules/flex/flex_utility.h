@@ -64,6 +64,7 @@
 
 typedef int ParticleID; // Particle id relative to body, can change during time
 typedef int ParticleRef; // Particle Ref id relative to body never change
+typedef int SpringID; // Spring id relative to body, can change during time
 
 #define CreateParticle(position, mass) \
     FlVector4(position.x, position.y, position.z, mass ? (1 / mass) : 0)

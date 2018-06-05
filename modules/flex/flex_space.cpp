@@ -193,41 +193,58 @@ void FlexSpace::execute_delayed_commands() {
         if (body->delayed_commands.particle_to_add.size()) {
 
             // Allocate memory
-            if (body->memory_chunk) {
+            if (body->particles_mchunk) {
                 // Resize memory chunk
-                particle_bodies_allocator->resize_chunk(body->memory_chunk, body->memory_chunk->get_size() + body->delayed_commands.particle_to_add.size());
+                particle_bodies_allocator->resize_chunk(body->particles_mchunk, body->particles_mchunk->get_size() + body->delayed_commands.particle_to_add.size());
             } else {
                 // Allocate new one
-                body->memory_chunk = particle_bodies_allocator->allocate_chunk(body->delayed_commands.particle_to_add.size());
+                body->particles_mchunk = particle_bodies_allocator->allocate_chunk(body->delayed_commands.particle_to_add.size());
             }
 
             // Write on memory
-            ERR_FAIL_COND(!body->memory_chunk);
+            ERR_FAIL_COND(!body->particles_mchunk);
             for (int p(body->delayed_commands.particle_to_add.size() - 1); 0 <= p; --p) {
 
-                particle_bodies_memory->set_particle(body->memory_chunk, p, body->delayed_commands.particle_to_add[p].particle);
-                particle_bodies_memory->set_velocity(body->memory_chunk, p, Vector3());
+                particle_bodies_memory->set_particle(body->particles_mchunk, p, body->delayed_commands.particle_to_add[p].particle);
+                particle_bodies_memory->set_velocity(body->particles_mchunk, p, Vector3());
                 // TODO add here all parameter correctly
                 const int group = 0;
                 const int phase = NvFlexMakePhase(group, eNvFlexPhaseSelfCollide | eNvFlexPhaseSelfCollideFilter);
-                particle_bodies_memory->set_phase(body->memory_chunk, p, phase);
-                particle_bodies_memory->set_active_particle(body->memory_chunk, p);
+                particle_bodies_memory->set_phase(body->particles_mchunk, p, phase);
+                particle_bodies_memory->set_active_particle(body->particles_mchunk, p);
             }
         }
 
         if (body->delayed_commands.particle_to_remove.size()) {
 
             // Remove particles
-            if (!body->memory_chunk)
+            if (!body->particles_mchunk)
                 continue;
 
-            ParticleID last_id(body->memory_chunk->get_end_index());
+            ParticleID last_particle_index(body->particles_mchunk->get_end_index());
             for (Set<ParticleID>::Element *e = body->delayed_commands.particle_to_remove.front(); e; e = e->next()) {
-                particle_bodies_memory->copy(body->memory_chunk->get_begin_index() + last_id, 1, /*id_to_remove*/ body->memory_chunk->get_begin_index() + e->get());
-                --last_id;
+
+                // Copy the values of last ID to the ID to remove (lose order)
+                const int id_to_remove(body->particles_mchunk->get_begin_index() + e->get());
+                particle_bodies_memory->copy(body->particles_mchunk->get_begin_index() + last_particle_index, 1, id_to_remove);
+                --last_particle_index;
+
+                if (!body->springs_mchunk)
+                    continue;
+
+                // Removes all springs of removed particle
+                SpringID last_spring_index(body->springs_mchunk->get_end_index());
+                for (int spring_id(body->springs_mchunk->get_size() - 1); 0 <= spring_id; --spring_id) {
+                    const Spring &spring = spring_memory->get_spring(body->springs_mchunk, spring_id);
+                    if (spring.id0 == id_to_remove || spring.id1 == id_to_remove) {
+                        spring_memory->copy(last_spring_index, 1, body->springs_mchunk->get_begin_index() + spring_id);
+                        --last_spring_index;
+                    }
+                }
+                spring_allocator->resize_chunk(body->springs_mchunk, last_spring_index + 1);
             }
-            FlexUnit new_size = body->memory_chunk->get_size() - body->delayed_commands.particle_to_remove.size();
-            particle_bodies_allocator->resize_chunk(body->memory_chunk, new_size);
+            FlexUnit new_size = body->particles_mchunk->get_size() - body->delayed_commands.particle_to_remove.size();
+            particle_bodies_allocator->resize_chunk(body->particles_mchunk, new_size);
         }
     }
 }
@@ -237,12 +254,12 @@ void FlexSpace::commands_write_buffer() {
     for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
 
         FlexParticleBody *body = particle_bodies[i];
-        if (!body->memory_chunk)
+        if (!body->particles_mchunk)
             continue;
 
-        copy_desc.srcOffset = body->memory_chunk->get_begin_index();
-        copy_desc.dstOffset = body->memory_chunk->get_begin_index();
-        copy_desc.elementCount = body->memory_chunk->get_size();
+        copy_desc.srcOffset = body->particles_mchunk->get_begin_index();
+        copy_desc.dstOffset = body->particles_mchunk->get_begin_index();
+        copy_desc.elementCount = body->particles_mchunk->get_size();
 
         // TODO write only necessary (part of buffer or just skip an entire buffer if not necessary)
         NvFlexSetParticles(solver, particle_bodies_memory->particles.buffer, &copy_desc);
@@ -260,13 +277,13 @@ void FlexSpace::commands_read_buffer() {
     NvFlexCopyDesc copy_desc;
     for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
 
-        if (!particle_bodies[i]->memory_chunk)
+        if (!particle_bodies[i]->particles_mchunk)
             continue;
 
         // Write back to buffer (command)
-        copy_desc.srcOffset = particle_bodies[i]->memory_chunk->get_begin_index();
-        copy_desc.dstOffset = particle_bodies[i]->memory_chunk->get_begin_index();
-        copy_desc.elementCount = particle_bodies[i]->memory_chunk->get_size();
+        copy_desc.srcOffset = particle_bodies[i]->particles_mchunk->get_begin_index();
+        copy_desc.dstOffset = particle_bodies[i]->particles_mchunk->get_begin_index();
+        copy_desc.elementCount = particle_bodies[i]->particles_mchunk->get_size();
 
         // TODO read only necessary (part of buffer or just skip an entire buffer if not necessary)
         NvFlexGetParticles(solver, particle_bodies_memory->particles.buffer, &copy_desc);
