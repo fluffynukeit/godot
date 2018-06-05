@@ -68,8 +68,8 @@ ParticleBody::ParticleBody() :
         reset_particles_to_base_shape(true) {
 
     debug_particle_mesh.instance();
-    debug_particle_mesh->set_radius(0.1);
-    debug_particle_mesh->set_height(0.2);
+    debug_particle_mesh->set_radius(0.05);
+    debug_particle_mesh->set_height(0.1);
 
     connect(CoreStringNames::get_singleton()->script_changed, this, "_on_script_changed");
 

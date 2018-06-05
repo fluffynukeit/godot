@@ -122,9 +122,11 @@ void FlexSpace::init() {
     params.gravity[1] = -10.0;
     params.gravity[2] = 0.0;
     params.radius = 0.1;
+    params.solidRestDistance = params.radius * 0.9;
+    params.fluidRestDistance = params.radius * 0.5;
     params.numIterations = 3;
     params.maxSpeed = FLT_MAX;
-    params.maxAcceleration = 100.0; // Gravity * 10 // TODO use a variable multiplication
+    params.maxAcceleration = Vector3(params.gravity[0], params.gravity[1], params.gravity[2]).length() * 10.0;
     params.relaxationMode = eNvFlexRelaxationLocal;
     params.relaxationFactor = 1.0;
     params.solidPressure = 1.0;
@@ -209,7 +211,7 @@ void FlexSpace::execute_delayed_commands() {
                 particle_bodies_memory->set_velocity(body->particles_mchunk, p, Vector3());
                 // TODO add here all parameter correctly
                 const int group = 0;
-                const int phase = NvFlexMakePhase(group, eNvFlexPhaseSelfCollide | eNvFlexPhaseSelfCollideFilter);
+                const int phase = NvFlexMakePhase(group, eNvFlexPhaseSelfCollide);
                 particle_bodies_memory->set_phase(body->particles_mchunk, p, phase);
                 particle_bodies_memory->set_active_particle(body->particles_mchunk, p);
             }
