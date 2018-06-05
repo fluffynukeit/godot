@@ -43,16 +43,16 @@ typedef int ParticleID; // Particle id relative to body, can change during time
 typedef int ParticleRef; // Particle Ref id relative to body never change
 
 class ParticleBodiesMemory : public FlexMemory {
-public:
+
+    friend class FlexSpace;
+
     NvFlexVector<FlVector4> particles; // XYZ world position, W inverse mass
     NvFlexVector<Vector3> velocities;
     NvFlexVector<int> phases; // This is a flag that specify behaviour of particle like collision etc.. https://docs.nvidia.com/gameworks/content/gameworkslibrary/physx/flex/manual.html#phase
     NvFlexVector<int> active_particles; // TODO this function can't stay here, should be handled outside this buffer.
 
+public:
     ParticleBodiesMemory(NvFlexLibrary *p_flex_lib);
-
-    virtual void resize_memory(FlexUnit p_size);
-    virtual void copy(FlexUnit p_from, FlexUnit p_size, FlexUnit p_to);
 
     void map();
     void unmap();
@@ -74,6 +74,36 @@ public:
     int get_phase(const MemoryChunk *p_chunk, ParticleID p_particle_index) const;
 
     void set_active_particle(const MemoryChunk *p_chunk, ParticleID p_particle_index);
+
+protected:
+    virtual void resize_memory(FlexUnit p_size);
+    virtual void copy_unit(FlexUnit p_to, FlexUnit p_from);
+};
+
+class SpringBodiesMemory : public FlexMemory {
+
+    friend class FlexSpace;
+
+    NvFlexVector<Spring> springs;
+    NvFlexVector<float> lengths;
+    NvFlexVector<float> stifness;
+
+public:
+    SpringBodiesMemory(NvFlexLibrary *p_flex_lib);
+
+    /// IMPORTANT
+    /// These functions must be called only if the buffers are mapped
+    /// |
+    /// |
+    /// V
+
+    void set_spring(const MemoryChunk *p_chunk, ParticleID p_particle_index, const Spring &p_spring);
+    void set_length(const MemoryChunk *p_chunk, ParticleID p_particle_index, float p_length);
+    void set_stifness(const MemoryChunk *p_chunk, ParticleID p_particle_index, float p_stifness);
+
+protected:
+    virtual void resize_memory(FlexUnit p_size);
+    virtual void copy_unit(FlexUnit p_to, FlexUnit p_from);
 };
 
 #endif // FLEX_MEMORY_H

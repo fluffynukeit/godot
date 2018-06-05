@@ -71,4 +71,17 @@ typedef int ParticleRef; // Particle Ref id relative to body never change
 #define gvec3_from_fvec4(particle) \
     Vector3(particle[0], particle[1], particle[2])
 
+struct Spring {
+    ParticleID id0;
+    ParticleID id1;
+
+    Spring() :
+            id0(0),
+            id1(0) {}
+
+    Spring(ParticleID p_id0, ParticleID p_id1) :
+            id0(p_id0),
+            id1(p_id1) {}
+};
+
 #endif // FLEX_UTILITY_H
