@@ -41,19 +41,17 @@ ParticleBodiesMemory::ParticleBodiesMemory(NvFlexLibrary *p_flex_lib) :
         active_particles(p_flex_lib) {
 }
 
-void ParticleBodiesMemory::resize_memory(int p_size) {
+void ParticleBodiesMemory::resize_memory(FlexUnit p_size) {
     particles.resize(p_size);
     velocities.resize(p_size);
     phases.resize(p_size);
     active_particles.resize(p_size);
 }
 
-void ParticleBodiesMemory::copy(FlexUnit p_from_begin_index, FlexUnit p_size, FlexUnit p_to_begin_index) {
-    for (int i(0); i < p_size; ++i) {
-        particles[p_to_begin_index + i] = particles[p_from_begin_index + i];
-        velocities[p_to_begin_index + i] = velocities[p_from_begin_index + i];
-        phases[p_to_begin_index + i] = phases[p_from_begin_index + i];
-    }
+void ParticleBodiesMemory::copy_unit(FlexUnit p_to, FlexUnit p_from) {
+    particles[p_to] = particles[p_from];
+    velocities[p_to] = velocities[p_from];
+    phases[p_to] = phases[p_from];
 }
 
 void ParticleBodiesMemory::map() {
@@ -103,4 +101,34 @@ int ParticleBodiesMemory::get_phase(const MemoryChunk *p_chunk, ParticleID p_par
 
 void ParticleBodiesMemory::set_active_particle(const MemoryChunk *p_chunk, ParticleID p_particle_index) {
     active_particles[p_chunk->get_begin_index() + p_particle_index] = p_chunk->get_begin_index() + p_particle_index;
+}
+
+SpringBodiesMemory::SpringBodiesMemory(NvFlexLibrary *p_flex_lib) :
+        springs(p_flex_lib),
+        lengths(p_flex_lib),
+        stifness(p_flex_lib) {
+}
+
+void SpringBodiesMemory::resize_memory(FlexUnit p_size) {
+    springs.resize(p_size);
+    lengths.resize(p_size);
+    stifness.resize(p_size);
+}
+
+void SpringBodiesMemory::copy_unit(FlexUnit p_to, FlexUnit p_from) {
+    springs[p_to] = springs[p_from];
+    lengths[p_to] = lengths[p_from];
+    stifness[p_to] = stifness[p_from];
+}
+
+void SpringBodiesMemory::set_spring(const MemoryChunk *p_chunk, ParticleID p_particle_index, const Spring &p_spring) {
+    springs[p_chunk->get_begin_index() + p_particle_index] = p_spring;
+}
+
+void SpringBodiesMemory::set_length(const MemoryChunk *p_chunk, ParticleID p_particle_index, float p_length) {
+    lengths[p_chunk->get_begin_index() + p_particle_index] = p_length;
+}
+
+void SpringBodiesMemory::set_stifness(const MemoryChunk *p_chunk, ParticleID p_particle_index, float p_stifness) {
+    stifness[p_chunk->get_begin_index() + p_particle_index] = p_stifness;
 }
