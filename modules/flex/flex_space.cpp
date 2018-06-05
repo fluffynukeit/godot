@@ -304,8 +304,9 @@ void FlexSpace::commands_write_buffer() {
         NvFlexSetActiveCount(solver, particle_bodies_memory->active_particles.size());
     }
 
-    if (springs_memory->was_changed())
+    if (springs_memory->was_changed()) {
         NvFlexSetSprings(solver, springs_memory->springs.buffer, springs_memory->lengths.buffer, springs_memory->stiffness.buffer, springs_allocator->get_last_used_index() + 1);
+    }
 }
 
 void FlexSpace::commands_read_buffer() {
