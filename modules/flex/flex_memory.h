@@ -39,7 +39,7 @@
 #include "flex_utility.h"
 #include "thirdparty/flex/include/NvFlexExt.h"
 
-typedef int ParticleID; // Particle id relative to body, can change during time
+typedef int ParticleIndex; // Particle id relative to body, can change during time
 typedef int ParticleRef; // Particle Ref id relative to body never change
 
 class ParticleBodiesMemory : public FlexMemory {
@@ -64,16 +64,16 @@ public:
     /// |
     /// V
 
-    void set_particle(const MemoryChunk *p_chunk, ParticleID p_particle_index, FlVector4 p_particle);
-    const FlVector4 &get_particle(const MemoryChunk *p_chunk, ParticleID p_particle_index) const;
+    void set_particle(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, FlVector4 p_particle);
+    const FlVector4 &get_particle(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const;
 
-    void set_velocity(const MemoryChunk *p_chunk, ParticleID p_particle_index, Vector3 p_velocity);
-    const Vector3 &get_velocity(const MemoryChunk *p_chunk, ParticleID p_particle_index) const;
+    void set_velocity(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, Vector3 p_velocity);
+    const Vector3 &get_velocity(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const;
 
-    void set_phase(const MemoryChunk *p_chunk, ParticleID p_particle_index, int p_phase);
-    int get_phase(const MemoryChunk *p_chunk, ParticleID p_particle_index) const;
+    void set_phase(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, int p_phase);
+    int get_phase(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const;
 
-    void set_active_particle(const MemoryChunk *p_chunk, ParticleID p_particle_index);
+    void set_active_particle(const MemoryChunk *p_chunk, ParticleIndex p_particle_index);
 
 protected:
     virtual void resize_memory(FlexUnit p_size);
@@ -104,14 +104,14 @@ public:
     /// |
     /// V
 
-    void set_spring(const MemoryChunk *p_chunk, SpringID p_spring_index, const Spring &p_spring);
-    const Spring &get_spring(const MemoryChunk *p_chunk, SpringID p_spring_index) const;
+    void set_spring(const MemoryChunk *p_chunk, SpringIndex p_spring_index, const Spring &p_spring);
+    const Spring &get_spring(const MemoryChunk *p_chunk, SpringIndex p_spring_index) const;
 
-    void set_length(const MemoryChunk *p_chunk, SpringID p_spring_index, float p_length);
-    float get_length(const MemoryChunk *p_chunk, SpringID p_spring_index) const;
+    void set_length(const MemoryChunk *p_chunk, SpringIndex p_spring_index, float p_length);
+    float get_length(const MemoryChunk *p_chunk, SpringIndex p_spring_index) const;
 
-    void set_stiffness(const MemoryChunk *p_chunk, SpringID p_spring_index, float p_stifness);
-    float get_stiffness(const MemoryChunk *p_chunk, SpringID p_spring_index) const;
+    void set_stiffness(const MemoryChunk *p_chunk, SpringIndex p_spring_index, float p_stifness);
+    float get_stiffness(const MemoryChunk *p_chunk, SpringIndex p_spring_index) const;
 
 protected:
     virtual void resize_memory(FlexUnit p_size);

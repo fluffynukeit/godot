@@ -50,7 +50,7 @@ public:
 
     virtual void reset_particle(int p_particle_index, const Vector3 &p_position, real_t p_mass);
 
-    virtual Vector3 get_particle_position(int p_particle_id) const;
+    virtual Vector3 get_particle_position(int p_particle_index) const;
 
     virtual const Vector3 &get_particle_velocity(int p_particle_index) const;
     virtual void set_particle_velocity(int p_particle_index, const Vector3 &p_velocity);
@@ -99,7 +99,7 @@ public:
     virtual uint32_t body_get_collision_layer(RID p_body) const;
 
     virtual void body_add_particle(RID p_body, const Vector3 &p_local_position, real_t p_mass);
-    virtual void body_remove_particle(RID p_body, int p_particle_id);
+    virtual void body_remove_particle(RID p_body, int p_particle_index);
     virtual int body_get_particle_count(RID p_body) const;
 
     virtual void free(RID p_rid);

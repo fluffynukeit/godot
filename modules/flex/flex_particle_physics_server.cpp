@@ -48,16 +48,16 @@ void FlexParticleBodyCommands::reset_particle(int p_particle_index, const Vector
     body->reset_particle(p_particle_index, p_position, p_mass);
 }
 
-Vector3 FlexParticleBodyCommands::get_particle_position(int p_particle_id) const {
-    return body->get_particle_position(p_particle_id);
+Vector3 FlexParticleBodyCommands::get_particle_position(int p_particle_index) const {
+    return body->get_particle_position(p_particle_index);
 }
 
-const Vector3 &FlexParticleBodyCommands::get_particle_velocity(int p_particle_id) const {
-    return body->get_particle_velocity(p_particle_id);
+const Vector3 &FlexParticleBodyCommands::get_particle_velocity(int p_particle_index) const {
+    return body->get_particle_velocity(p_particle_index);
 }
 
-void FlexParticleBodyCommands::set_particle_velocity(int p_particle_id, const Vector3 &p_velocity) {
-    body->set_particle_velocity(p_particle_id, p_velocity);
+void FlexParticleBodyCommands::set_particle_velocity(int p_particle_index, const Vector3 &p_velocity) {
+    body->set_particle_velocity(p_particle_index, p_velocity);
 }
 
 FlexParticlePhysicsServer *FlexParticlePhysicsServer::singleton = NULL;
@@ -151,11 +151,11 @@ void FlexParticlePhysicsServer::body_add_particle(RID p_body, const Vector3 &p_l
     body->add_particle(p_local_position, p_mass);
 }
 
-void FlexParticlePhysicsServer::body_remove_particle(RID p_body, int p_particle_id) {
+void FlexParticlePhysicsServer::body_remove_particle(RID p_body, int p_particle_index) {
     FlexParticleBody *body = body_owner.get(p_body);
     ERR_FAIL_COND(!body);
 
-    body->remove_particle(p_particle_id);
+    body->remove_particle(p_particle_index);
 }
 
 int FlexParticlePhysicsServer::body_get_particle_count(RID p_body) const {
