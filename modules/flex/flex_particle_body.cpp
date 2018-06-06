@@ -171,6 +171,7 @@ void FlexParticleBody::reset_particle(ParticleIndex p_particle_index, const Vect
         return;
     space->get_particle_bodies_memory()->set_particle(particles_mchunk, p_particle_index, CreateParticle(p_position, p_mass));
     space->get_particle_bodies_memory()->set_velocity(particles_mchunk, p_particle_index, Vector3(0, 0, 0));
+    changed_parameters |= eChangedParameterPositionMass | eChangedParameterVelocity;
 }
 
 void FlexParticleBody::reset_spring(SpringIndex p_spring, ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness) {
