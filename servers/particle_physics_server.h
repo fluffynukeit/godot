@@ -41,6 +41,10 @@ public:
     virtual RID body_create() = 0;
     virtual void body_set_space(RID p_body, RID p_space) = 0;
     virtual void body_set_sync_callback(RID p_body, Object *p_receiver, const StringName &p_method) = 0;
+
+    virtual void body_set_collision_layer(RID p_body, uint32_t p_layer) = 0;
+    virtual uint32_t body_get_collision_layer(RID p_body) const = 0;
+
     virtual void body_add_particle(RID p_body, const Vector3 &p_local_position, real_t p_mass) = 0;
     virtual void body_remove_particle(RID p_body, int p_particle_id) = 0;
     virtual int body_get_particle_count(RID p_body) const = 0;

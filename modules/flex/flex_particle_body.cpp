@@ -41,7 +41,9 @@ FlexParticleBody::FlexParticleBody() :
         RIDFlex(),
         space(NULL),
         particles_mchunk(NULL),
-        springs_mchunk(NULL) {
+        springs_mchunk(NULL),
+        changed_parameters(0),
+        group(1) {
     sync_callback.receiver = NULL;
 }
 
@@ -53,12 +55,25 @@ void FlexParticleBody::set_sync_callback(Object *p_receiver, const StringName &p
     sync_callback.method = p_method;
 }
 
+void FlexParticleBody::reset_changed_parameters() {
+    changed_parameters = 0;
+}
+
 void FlexParticleBody::dispatch_sync_callback() {
     if (!sync_callback.receiver)
         return;
     static Variant::CallError error;
     const Variant *p = FlexParticlePhysicsServer::singleton->get_particle_body_commands_variant(this);
     sync_callback.receiver->call(sync_callback.method, &p, 1, error);
+}
+
+void FlexParticleBody::set_collision_group(uint32_t p_group) {
+    group = eNvFlexPhaseGroupMask & p_group;
+    changed_parameters |= eChangedParameterGroup;
+}
+
+uint32_t FlexParticleBody::get_collision_group() const {
+    return group;
 }
 
 void FlexParticleBody::add_particle(const Vector3 &p_local_position, real_t p_mass) {
