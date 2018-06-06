@@ -77,6 +77,10 @@ struct SpringToAdd {
     }
 };
 
+enum ChangedParameter {
+    eChangedParameterGroup = 1 << 0
+};
+
 /// This class represent a group of particles that are constrained each other and form a body.
 /// This body can be rigid or soft.
 ///
@@ -102,9 +106,13 @@ class FlexParticleBody : public RIDFlex {
         Set<SpringID> springs_to_remove;
     } delayed_commands;
 
-    FlexSpace *space;
+    uint32_t changed_parameters;
+
     MemoryChunk *particles_mchunk;
     MemoryChunk *springs_mchunk;
+
+    FlexSpace *space;
+    uint32_t group;
 
 public:
     FlexParticleBody();
@@ -113,6 +121,12 @@ public:
 
     /// IMPORTANT Remember to remove it if Object will be destroyed
     void set_sync_callback(Object *p_receiver, const StringName &p_method);
+
+    void reset_changed_parameters();
+    _FORCE_INLINE_ uint32_t get_changed_parameters() const { return changed_parameters; }
+
+    void set_collision_group(uint32_t p_layer);
+    uint32_t get_collision_group() const;
 
     void add_particle(const Vector3 &p_local_position, real_t p_mass);
     void remove_particle(ParticleID p_particle);

@@ -131,6 +131,19 @@ void FlexParticlePhysicsServer::body_set_sync_callback(RID p_body, Object *p_rec
     body->set_sync_callback(p_receiver, p_method);
 }
 
+void FlexParticlePhysicsServer::body_set_collision_layer(RID p_body, uint32_t p_layer) {
+    FlexParticleBody *body = body_owner.get(p_body);
+    ERR_FAIL_COND(!body);
+    body->set_collision_group(p_layer);
+}
+
+uint32_t FlexParticlePhysicsServer::body_get_collision_layer(RID p_body) const {
+    FlexParticleBody *body = body_owner.get(p_body);
+    ERR_FAIL_COND_V(!body, 0);
+
+    return body->get_collision_group();
+}
+
 void FlexParticlePhysicsServer::body_add_particle(RID p_body, const Vector3 &p_local_position, real_t p_mass) {
     FlexParticleBody *body = body_owner.get(p_body);
     ERR_FAIL_COND(!body);

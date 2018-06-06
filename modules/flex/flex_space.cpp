@@ -130,6 +130,9 @@ void FlexSpace::init() {
     params.relaxationMode = eNvFlexRelaxationLocal;
     params.relaxationFactor = 1.0;
     params.solidPressure = 1.0;
+    params.collisionDistance = MAX(params.solidRestDistance, params.fluidRestDistance) * 0.5;
+    params.shapeCollisionMargin = params.collisionDistance * 0.5;
+    params.particleFriction = params.dynamicFriction * 0.1;
     NvFlexSetParams(solver, &params);
 
     ERR_FAIL_COND(has_error());
@@ -211,10 +214,7 @@ void FlexSpace::execute_delayed_commands() {
 
                 particle_bodies_memory->set_particle(body->particles_mchunk, previous_size + p, body->delayed_commands.particle_to_add[p].particle);
                 particle_bodies_memory->set_velocity(body->particles_mchunk, previous_size + p, Vector3());
-                // TODO add here all parameter correctly
-                const int group = 0;
-                const int phase = NvFlexMakePhase(group, eNvFlexPhaseSelfCollide);
-                particle_bodies_memory->set_phase(body->particles_mchunk, previous_size + p, phase);
+                particle_bodies_memory->set_phase(body->particles_mchunk, previous_size + p, NvFlexMakePhase(body->get_collision_group(), 0));
                 particle_bodies_memory->set_active_particle(body->particles_mchunk, previous_size + p);
             }
         }
@@ -280,6 +280,16 @@ void FlexSpace::execute_delayed_commands() {
             }
             const FlexUnit new_size = body->springs_mchunk->get_size() - body->delayed_commands.springs_to_remove.size();
             springs_allocator->resize_chunk(body->springs_mchunk, new_size);
+        }
+
+        const uint32_t body_changed_parameters = body->get_changed_parameters();
+        if (body_changed_parameters != 0) {
+            for (int i(body->get_particle_count() - 1); 0 <= i; --i) {
+                if (body_changed_parameters & eChangedParameterGroup) {
+                    particle_bodies_memory->set_phase(body->particles_mchunk, i, NvFlexMakePhase(body->group, 0));
+                }
+            }
+            body->reset_changed_parameters();
         }
     }
 }

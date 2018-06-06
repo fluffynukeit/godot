@@ -48,6 +48,11 @@ void ParticleBody::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_particle_shape", "particle_shape"), &ParticleBody::set_particle_shape);
     ClassDB::bind_method(D_METHOD("get_particle_shape"), &ParticleBody::get_particle_shape);
 
+    ClassDB::bind_method(D_METHOD("set_collision_layer", "layer"), &ParticleBody::set_collision_layer);
+    ClassDB::bind_method(D_METHOD("get_collision_layer"), &ParticleBody::get_collision_layer);
+    ClassDB::bind_method(D_METHOD("set_collision_layer_bit", "bit", "value"), &ParticleBody::set_collision_layer_bit);
+    ClassDB::bind_method(D_METHOD("get_collision_layer_bit", "bit"), &ParticleBody::get_collision_layer_bit);
+
     ClassDB::bind_method(D_METHOD("add_particle", "local_position", "mass"), &ParticleBody::add_particle);
     ClassDB::bind_method(D_METHOD("remove_particle", "particle_id"), &ParticleBody::remove_particle);
 
@@ -60,12 +65,16 @@ void ParticleBody::_bind_methods() {
 
     ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "particle_shape", PROPERTY_HINT_RESOURCE_TYPE, "ParticleShape"), "set_particle_shape", "get_particle_shape");
 
+    ADD_GROUP("Collision", "collision_");
+    ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_layer", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collision_layer", "get_collision_layer");
+
     ADD_SIGNAL(MethodInfo("resource_loaded"));
 }
 
 ParticleBody::ParticleBody() :
         ParticleObject(ParticlePhysicsServer::get_singleton()->body_create()),
-        reset_particles_to_base_shape(true) {
+        reset_particles_to_base_shape(true),
+        collision_layer(1) {
 
     debug_particle_mesh.instance();
     debug_particle_mesh->set_radius(0.05);
@@ -101,6 +110,32 @@ void ParticleBody::add_particle(const Vector3 &p_local_position, real_t p_mass) 
 
 void ParticleBody::remove_particle(int p_particle_index) {
     ParticlePhysicsServer::get_singleton()->body_remove_particle(rid, p_particle_index);
+}
+
+void ParticleBody::set_collision_layer(uint32_t p_layer) {
+
+    collision_layer = p_layer;
+    ParticlePhysicsServer::get_singleton()->body_set_collision_layer(rid, p_layer);
+}
+
+uint32_t ParticleBody::get_collision_layer() const {
+
+    return collision_layer;
+}
+
+void ParticleBody::set_collision_layer_bit(int p_bit, bool p_value) {
+
+    uint32_t mask = get_collision_layer();
+    if (p_value)
+        mask |= 1 << p_bit;
+    else
+        mask &= ~(1 << p_bit);
+    set_collision_layer(mask);
+}
+
+bool ParticleBody::get_collision_layer_bit(int p_bit) const {
+
+    return get_collision_layer() & (1 << p_bit);
 }
 
 void ParticleBody::_notification(int p_what) {
