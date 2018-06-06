@@ -85,11 +85,11 @@ struct Spring {
             id1(p_id1) {}
 };
 
-#define get_memory_index(p_chunk, p_index)            \
+#define make_memory_index(p_chunk, p_index)            \
     int index = p_chunk->get_begin_index() + p_index; \
     ERR_FAIL_COND(index > p_chunk->get_end_index());
 
-#define get_memory_index_V(p_chunk, p_index, ret)     \
+#define make_memory_index_V(p_chunk, p_index, ret)     \
     int index = p_chunk->get_begin_index() + p_index; \
     ERR_FAIL_COND_V(index > p_chunk->get_end_index(), ret);
 
