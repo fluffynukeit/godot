@@ -107,7 +107,7 @@ void FlexParticleBody::load_shape(Ref<ParticleShape> p_shape, const Transform &i
 
     { // Particle
         int active_p_count(get_particle_count());
-        const int resource_p_count(p_shape->get_particles().size());
+        const int resource_p_count(p_shape.is_null() ? 0 : p_shape->get_particles().size());
 
         if (active_p_count > resource_p_count) {
 
@@ -136,7 +136,7 @@ void FlexParticleBody::load_shape(Ref<ParticleShape> p_shape, const Transform &i
 
     { // Spring
         int active_s_count(get_spring_count());
-        int resource_s_count(p_shape->get_constraints().size());
+        int resource_s_count(p_shape.is_null() ? 0 : p_shape->get_constraints().size());
 
         if (active_s_count > resource_s_count) {
 
