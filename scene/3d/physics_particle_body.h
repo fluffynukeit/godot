@@ -83,7 +83,6 @@ public:
 
 protected:
     void _notification(int p_what);
-    void _on_script_changed();
     void resource_changed(const RES &p_res);
 
     void commands_process_internal(Object *p_cmds);
