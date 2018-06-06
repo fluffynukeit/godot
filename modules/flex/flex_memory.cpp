@@ -37,15 +37,13 @@
 ParticleBodiesMemory::ParticleBodiesMemory(NvFlexLibrary *p_flex_lib) :
         particles(p_flex_lib),
         velocities(p_flex_lib),
-        phases(p_flex_lib),
-        active_particles(p_flex_lib) {
+        phases(p_flex_lib) {
 }
 
 void ParticleBodiesMemory::resize_memory(FlexUnit p_size) {
     particles.resize(p_size);
     velocities.resize(p_size);
     phases.resize(p_size);
-    active_particles.resize(p_size);
 }
 
 void ParticleBodiesMemory::copy_unit(FlexUnit p_to, FlexUnit p_from) {
@@ -58,21 +56,18 @@ void ParticleBodiesMemory::map() {
     particles.map(eNvFlexMapWait);
     velocities.map(eNvFlexMapWait);
     phases.map(eNvFlexMapWait);
-    active_particles.map(eNvFlexMapWait);
 }
 
 void ParticleBodiesMemory::unmap() {
     particles.unmap();
     velocities.unmap();
     phases.unmap();
-    active_particles.unmap();
 }
 
 void ParticleBodiesMemory::terminate() {
     particles.destroy();
     velocities.destroy();
     phases.destroy();
-    active_particles.destroy();
 }
 
 void ParticleBodiesMemory::set_particle(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, FlVector4 p_particle) {
@@ -105,9 +100,33 @@ int ParticleBodiesMemory::get_phase(const MemoryChunk *p_chunk, ParticleIndex p_
     return phases[index];
 }
 
-void ParticleBodiesMemory::set_active_particle(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) {
+ActiveParticlesMemory::ActiveParticlesMemory(NvFlexLibrary *p_flex_lib) :
+        active_particles(p_flex_lib) {
+}
+
+void ActiveParticlesMemory::map() {
+    active_particles.map(eNvFlexMapWait);
+}
+
+void ActiveParticlesMemory::unmap() {
+    active_particles.unmap();
+}
+
+void ActiveParticlesMemory::terminate() {
+    active_particles.destroy();
+}
+
+void ActiveParticlesMemory::set_active_particle(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) {
     make_memory_index(p_chunk, p_particle_index);
-    active_particles[index] = p_chunk->get_buffer_index(p_particle_index);
+    active_particles[index] = index;
+}
+
+void ActiveParticlesMemory::resize_memory(FlexUnit p_size) {
+    active_particles.resize(p_size);
+}
+
+void ActiveParticlesMemory::copy_unit(FlexUnit p_to, FlexUnit p_from) {
+    active_particles[p_to] = active_particles[p_from];
 }
 
 SpringMemory::SpringMemory(NvFlexLibrary *p_flex_lib) :
