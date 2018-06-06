@@ -60,6 +60,8 @@ void ParticleBody::_bind_methods() {
 
     ClassDB::bind_method(D_METHOD("commands_process_internal", "commands"), &ParticleBody::commands_process_internal);
 
+    ClassDB::bind_method(D_METHOD("_on_script_changed"), &ParticleBody::_on_script_changed);
+
     // Virtual methods
     BIND_VMETHOD(MethodInfo("_commands_process", PropertyInfo(Variant::OBJECT, "commands", PROPERTY_HINT_RESOURCE_TYPE, "ParticleBodyCommands")));
     BIND_VMETHOD(MethodInfo("_on_particle_index_change", PropertyInfo(Variant::OBJECT, "old_index"), PropertyInfo(Variant::OBJECT, "new_index")));
@@ -145,7 +147,6 @@ void ParticleBody::_notification(int p_what) {
         case NOTIFICATION_ENTER_WORLD: {
             ParticlePhysicsServer::get_singleton()->body_set_space(rid, get_world()->get_particle_space());
             ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SYNC, this, "commands_process_internal");
-            _on_script_changed();
             resource_changed(particle_shape);
         } break;
         case NOTIFICATION_TRANSFORM_CHANGED: {
