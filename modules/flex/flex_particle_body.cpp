@@ -80,6 +80,7 @@ uint32_t FlexParticleBody::get_collision_group() const {
 
 void FlexParticleBody::add_particle(const Vector3 &p_local_position, real_t p_mass) {
     delayed_commands.particle_to_add.push_back(ParticleToAdd(p_local_position, p_mass));
+    changed_parameters |= eChangedParameterPositionMass | eChangedParameterVelocity | eChangedParameterGroup | eChangedParameterActive;
 }
 
 void FlexParticleBody::remove_particle(ParticleIndex p_particle) {
@@ -196,7 +197,8 @@ const Vector3 &FlexParticleBody::get_particle_velocity(ParticleIndex p_particle_
 void FlexParticleBody::set_particle_velocity(ParticleIndex p_particle_index, const Vector3 &p_velocity) {
     if (!particles_mchunk)
         return;
-    return space->get_particle_bodies_memory()->set_velocity(particles_mchunk, p_particle_index, p_velocity);
+    space->get_particle_bodies_memory()->set_velocity(particles_mchunk, p_particle_index, p_velocity);
+    changed_parameters |= eChangedParameterVelocity;
 }
 
 bool FlexParticleBody::is_owner_of_particle(ParticleIndex p_particle) const {
