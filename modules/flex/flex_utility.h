@@ -58,6 +58,7 @@
 #undef Plane
 #undef Transform
 
+#include "core/string_db.h"
 #include "flex_memory_allocator.h"
 #include "math_defs.h"
 #include "vector3.h"
@@ -84,6 +85,14 @@ struct Spring {
     Spring(ParticleBufferIndex p_index0, ParticleBufferIndex p_index1) :
             index0(p_index0),
             index1(p_index1) {}
+};
+
+struct FlexCallBackData {
+    Object *receiver;
+    StringName method;
+
+    FlexCallBackData() :
+            receiver(NULL) {}
 };
 
 #define make_memory_index(p_chunk, p_index)         \

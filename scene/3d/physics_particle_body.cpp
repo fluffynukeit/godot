@@ -60,7 +60,10 @@ void ParticleBody::_bind_methods() {
 
     ClassDB::bind_method(D_METHOD("commands_process_internal", "commands"), &ParticleBody::commands_process_internal);
 
+    // Virtual methods
     BIND_VMETHOD(MethodInfo("_commands_process", PropertyInfo(Variant::OBJECT, "commands", PROPERTY_HINT_RESOURCE_TYPE, "ParticleBodyCommands")));
+    BIND_VMETHOD(MethodInfo("_on_particle_index_change", PropertyInfo(Variant::OBJECT, "old_index"), PropertyInfo(Variant::OBJECT, "new_index")));
+    BIND_VMETHOD(MethodInfo("_on_spring_index_change", PropertyInfo(Variant::OBJECT, "old_index"), PropertyInfo(Variant::OBJECT, "new_index")));
 
     ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "particle_shape", PROPERTY_HINT_RESOURCE_TYPE, "ParticleShape"), "set_particle_shape", "get_particle_shape");
 
@@ -80,6 +83,8 @@ ParticleBody::ParticleBody() :
     debug_particle_mesh->set_height(0.1);
 
     set_notify_transform(true);
+
+    connect(CoreStringNames::get_singleton()->script_changed, this, "_on_script_changed");
 }
 
 void ParticleBody::set_particle_shape(Ref<ParticleShape> p_shape) {
@@ -139,7 +144,8 @@ void ParticleBody::_notification(int p_what) {
     switch (p_what) {
         case NOTIFICATION_ENTER_WORLD: {
             ParticlePhysicsServer::get_singleton()->body_set_space(rid, get_world()->get_particle_space());
-            ParticlePhysicsServer::get_singleton()->body_set_sync_callback(rid, this, "commands_process_internal");
+            ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SYNC, this, "commands_process_internal");
+            _on_script_changed();
             resource_changed(particle_shape);
         } break;
         case NOTIFICATION_TRANSFORM_CHANGED: {
@@ -147,7 +153,7 @@ void ParticleBody::_notification(int p_what) {
             reset_debug_particle_positions();
         } break;
         case NOTIFICATION_EXIT_WORLD: {
-            ParticlePhysicsServer::get_singleton()->body_set_sync_callback(rid, NULL, "");
+            ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SYNC, NULL, "");
             ParticlePhysicsServer::get_singleton()->body_set_space(rid, RID());
             initialize_debug_resource();
         } break;
@@ -175,6 +181,20 @@ void ParticleBody::commands_process_internal(Object *p_cmds) {
 
     if (!get_script().is_null() && has_method("_commands_process")) {
         call("_commands_process", p_cmds);
+    }
+}
+
+void ParticleBody::_on_script_changed() {
+    if (has_method("_on_particle_index_change")) {
+        ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_PARTICLEINDEXCHANGED, this, "_on_particle_index_change");
+    } else {
+        ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_PARTICLEINDEXCHANGED, NULL, "");
+    }
+
+    if (has_method("_on_spring_index_change")) {
+        ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SPRINGINDEXCHANGED, this, "_on_spring_index_change");
+    } else {
+        ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SPRINGINDEXCHANGED, NULL, "");
     }
 }
 
