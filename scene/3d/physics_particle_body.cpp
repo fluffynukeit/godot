@@ -56,7 +56,6 @@ void ParticleBody::_bind_methods() {
     ClassDB::bind_method(D_METHOD("add_particle", "local_position", "mass"), &ParticleBody::add_particle);
     ClassDB::bind_method(D_METHOD("remove_particle", "particle_id"), &ParticleBody::remove_particle);
 
-    ClassDB::bind_method(D_METHOD("_on_script_changed"), &ParticleBody::_on_script_changed);
     ClassDB::bind_method(D_METHOD("resource_changed", "resource"), &ParticleBody::resource_changed);
 
     ClassDB::bind_method(D_METHOD("commands_process_internal", "commands"), &ParticleBody::commands_process_internal);
@@ -142,6 +141,7 @@ void ParticleBody::_notification(int p_what) {
     switch (p_what) {
         case NOTIFICATION_ENTER_WORLD: {
             ParticlePhysicsServer::get_singleton()->body_set_space(rid, get_world()->get_particle_space());
+            ParticlePhysicsServer::get_singleton()->body_set_sync_callback(rid, this, "commands_process_internal");
             resource_changed(particle_shape);
         } break;
         case NOTIFICATION_TRANSFORM_CHANGED: {
@@ -149,19 +149,15 @@ void ParticleBody::_notification(int p_what) {
             reset_debug_particle_positions();
         } break;
         case NOTIFICATION_EXIT_WORLD: {
+            ParticlePhysicsServer::get_singleton()->body_set_sync_callback(rid, NULL, "");
             ParticlePhysicsServer::get_singleton()->body_set_space(rid, RID());
             initialize_debug_resource();
         } break;
     }
 }
 
-void ParticleBody::_on_script_changed() {
-    ParticlePhysicsServer::get_singleton()->body_set_sync_callback(rid, this, "commands_process_internal");
-}
-
 void ParticleBody::resource_changed(const RES &p_res) {
-    Ref<ParticleShape> particle_shape = p_res;
-    if (particle_shape.is_valid()) {
+    if (particle_shape == p_res) {
         reset_particles_to_base_shape = true;
         initialize_debug_resource();
     }
