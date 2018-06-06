@@ -122,7 +122,6 @@ public:
     /// IMPORTANT Remember to remove it if Object will be destroyed
     void set_sync_callback(Object *p_receiver, const StringName &p_method);
 
-    void reset_changed_parameters();
     _FORCE_INLINE_ uint32_t get_changed_parameters() const { return changed_parameters; }
 
     void set_collision_group(uint32_t p_layer);
@@ -156,7 +155,10 @@ public:
     void create_soft_body();
 
 private:
+    void reset_changed_parameters();
     void dispatch_sync_callback();
+    void particle_index_changed(ParticleIndex p_old_particle_index, ParticleIndex p_new_particle_index);
+    void spring_index_changed(SpringIndex p_old_spring_index, SpringIndex p_new_spring_index);
     void clear_commands();
 };
 
