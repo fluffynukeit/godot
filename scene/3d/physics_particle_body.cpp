@@ -79,8 +79,6 @@ ParticleBody::ParticleBody() :
     debug_particle_mesh->set_radius(0.05);
     debug_particle_mesh->set_height(0.1);
 
-    connect(CoreStringNames::get_singleton()->script_changed, this, "_on_script_changed");
-
     set_notify_transform(true);
 }
 
