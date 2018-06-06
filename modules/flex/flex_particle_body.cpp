@@ -80,12 +80,13 @@ uint32_t FlexParticleBody::get_collision_group() const {
 
 void FlexParticleBody::add_particle(const Vector3 &p_local_position, real_t p_mass) {
     delayed_commands.particle_to_add.push_back(ParticleToAdd(p_local_position, p_mass));
-    changed_parameters |= eChangedParameterPositionMass | eChangedParameterVelocity | eChangedParameterGroup | eChangedParameterActive;
+    changed_parameters |= eChangedParameterForceFullSet;
 }
 
 void FlexParticleBody::remove_particle(ParticleIndex p_particle) {
     ERR_FAIL_COND(!is_owner_of_particle(p_particle));
     delayed_commands.particle_to_remove.insert(p_particle);
+    changed_parameters |= eChangedParameterForceFullSet;
 }
 
 void FlexParticleBody::add_spring(ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness) {
