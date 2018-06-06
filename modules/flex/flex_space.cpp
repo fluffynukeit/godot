@@ -248,7 +248,9 @@ void FlexSpace::execute_delayed_commands() {
             for (Set<ParticleID>::Element *e = body->delayed_commands.particle_to_remove.front(); e; e = e->next()) {
 
                 // Copy the values of last ID to the ID to remove (lose order)
-                const int id_to_remove(body->particles_mchunk->get_begin_index() + e->get());
+                // TODO notify ID changed
+                // TODO change spring ID
+                const ParticleBufferID id_to_remove(body->particles_mchunk->get_begin_index() + e->get());
                 particle_bodies_memory->copy(body->particles_mchunk->get_begin_index() + last_particle_index, 1, id_to_remove);
                 --last_particle_index;
 

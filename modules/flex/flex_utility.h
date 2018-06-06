@@ -63,7 +63,7 @@
 #include "vector3.h"
 
 typedef int ParticleID; // Particle id relative to body, can change during time
-typedef int ParticleRef; // Particle Ref id relative to body never change
+typedef int ParticleBufferID; // Particle global index
 typedef int SpringID; // Spring id relative to body, can change during time
 
 #define CreateParticle(position, mass) \
@@ -73,23 +73,23 @@ typedef int SpringID; // Spring id relative to body, can change during time
     Vector3(particle[0], particle[1], particle[2])
 
 struct Spring {
-    ParticleID id0;
-    ParticleID id1;
+    ParticleBufferID id0;
+    ParticleBufferID id1;
 
     Spring() :
             id0(0),
             id1(0) {}
 
-    Spring(ParticleID p_id0, ParticleID p_id1) :
+    Spring(ParticleBufferID p_id0, ParticleBufferID p_id1) :
             id0(p_id0),
             id1(p_id1) {}
 };
 
-#define make_memory_index(p_chunk, p_index)            \
+#define make_memory_index(p_chunk, p_index)           \
     int index = p_chunk->get_begin_index() + p_index; \
     ERR_FAIL_COND(index > p_chunk->get_end_index());
 
-#define make_memory_index_V(p_chunk, p_index, ret)     \
+#define make_memory_index_V(p_chunk, p_index, ret)    \
     int index = p_chunk->get_begin_index() + p_index; \
     ERR_FAIL_COND_V(index > p_chunk->get_end_index(), ret);
 
