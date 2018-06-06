@@ -44,6 +44,7 @@ class NvFlexSolver;
 class FlexParticleBody;
 class FlexMemoryAllocator;
 class ParticleBodiesMemory;
+class ActiveParticlesMemory;
 class SpringMemory;
 
 class FlexSpace : public RIDFlex {
@@ -52,8 +53,14 @@ class FlexSpace : public RIDFlex {
 
     NvFlexLibrary *flex_lib;
     NvFlexSolver *solver;
+
     FlexMemoryAllocator *particle_bodies_allocator;
     ParticleBodiesMemory *particle_bodies_memory;
+
+    FlexMemoryAllocator *active_particles_allocator;
+    ActiveParticlesMemory *active_particles_memory;
+    MemoryChunk *active_particles_mchunk;
+
     FlexMemoryAllocator *springs_allocator;
     SpringMemory *springs_memory;
 
@@ -79,6 +86,7 @@ public:
 private:
     void dispatch_callbacks();
     void execute_delayed_commands();
+    void finalize_sync();
 
     void commands_write_buffer();
     void commands_read_buffer();

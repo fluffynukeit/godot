@@ -49,7 +49,6 @@ class ParticleBodiesMemory : public FlexMemory {
     NvFlexVector<FlVector4> particles; // XYZ world position, W inverse mass
     NvFlexVector<Vector3> velocities;
     NvFlexVector<int> phases; // This is a flag that specify behaviour of particle like collision etc.. https://docs.nvidia.com/gameworks/content/gameworkslibrary/physx/flex/manual.html#phase
-    NvFlexVector<int> active_particles; // TODO this function can't stay here, should be handled outside this buffer.
 
 public:
     ParticleBodiesMemory(NvFlexLibrary *p_flex_lib);
@@ -72,6 +71,30 @@ public:
 
     void set_phase(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, int p_phase);
     int get_phase(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const;
+
+protected:
+    virtual void resize_memory(FlexUnit p_size);
+    virtual void copy_unit(FlexUnit p_to, FlexUnit p_from);
+};
+
+class ActiveParticlesMemory : public FlexMemory {
+
+    friend class FlexSpace;
+
+    NvFlexVector<int> active_particles; // TODO this function can't stay here, should be handled outside this buffer.
+
+public:
+    ActiveParticlesMemory(NvFlexLibrary *p_flex_lib);
+
+    void map();
+    void unmap();
+    void terminate();
+
+    /// IMPORTANT
+    /// These functions must be called only if the buffers are mapped
+    /// |
+    /// |
+    /// V
 
     void set_active_particle(const MemoryChunk *p_chunk, ParticleIndex p_particle_index);
 

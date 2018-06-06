@@ -77,10 +77,9 @@ struct SpringToAdd {
 };
 
 enum ChangedParameter {
-    eChangedParameterForceFullSet = 1 << 0,
-    eChangedParameterPositionMass = 1 << 1,
-    eChangedParameterVelocity = 1 << 2,
-    eChangedParameterGroup = 1 << 3
+    eChangedParameterPositionMass = 1 << 0,
+    eChangedParameterVelocity = 1 << 1,
+    eChangedParameterGroup = 1 << 2
 };
 
 /// This class represent a group of particles that are constrained each other and form a body.
