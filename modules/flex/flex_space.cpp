@@ -326,15 +326,19 @@ void FlexSpace::commands_write_buffer() {
             copy_desc.dstOffset = body->particles_mchunk->get_begin_index();
             copy_desc.elementCount = body->particles_mchunk->get_size();
 
-            if (changed_params & eChangedParameterPositionMass)
+            if (changed_params & eChangedParameterForceFullSet) {
                 NvFlexSetParticles(solver, particle_bodies_memory->particles.buffer, &copy_desc);
-            if (changed_params & eChangedParameterVelocity)
                 NvFlexSetVelocities(solver, particle_bodies_memory->velocities.buffer, &copy_desc);
-            if (changed_params & eChangedParameterGroup)
                 NvFlexSetPhases(solver, particle_bodies_memory->phases.buffer, &copy_desc);
-            if (changed_params & eChangedParameterActive) {
                 NvFlexSetActive(solver, particle_bodies_memory->active_particles.buffer, &copy_desc);
                 NvFlexSetActiveCount(solver, body->particles_mchunk->get_size());
+            } else {
+                if (changed_params & eChangedParameterPositionMass)
+                    NvFlexSetParticles(solver, particle_bodies_memory->particles.buffer, &copy_desc);
+                if (changed_params & eChangedParameterVelocity)
+                    NvFlexSetVelocities(solver, particle_bodies_memory->velocities.buffer, &copy_desc);
+                if (changed_params & eChangedParameterGroup)
+                    NvFlexSetPhases(solver, particle_bodies_memory->phases.buffer, &copy_desc);
             }
 
             body->reset_changed_parameters();
