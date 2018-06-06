@@ -148,7 +148,7 @@ void SpringMemory::copy_unit(FlexUnit p_to, FlexUnit p_from) {
     stiffness[p_to] = stiffness[p_from];
 }
 
-void SpringMemory::set_spring(const MemoryChunk *p_chunk, ParticleIndex p_spring_index, const Spring &p_spring) {
+void SpringMemory::set_spring(const MemoryChunk *p_chunk, SpringIndex p_spring_index, const Spring &p_spring) {
     make_memory_index(p_chunk, p_spring_index);
     springs[index] = p_spring;
     changed = true;
@@ -159,7 +159,7 @@ const Spring &SpringMemory::get_spring(const MemoryChunk *p_chunk, SpringIndex p
     return springs[index];
 }
 
-void SpringMemory::set_length(const MemoryChunk *p_chunk, ParticleIndex p_spring_index, float p_length) {
+void SpringMemory::set_length(const MemoryChunk *p_chunk, SpringIndex p_spring_index, float p_length) {
     make_memory_index(p_chunk, p_spring_index);
     lengths[index] = p_length;
     changed = true;
@@ -170,7 +170,7 @@ float SpringMemory::get_length(const MemoryChunk *p_chunk, SpringIndex p_spring_
     return lengths[index];
 }
 
-void SpringMemory::set_stiffness(const MemoryChunk *p_chunk, ParticleIndex p_spring_index, float p_stiffness) {
+void SpringMemory::set_stiffness(const MemoryChunk *p_chunk, SpringIndex p_spring_index, float p_stiffness) {
     make_memory_index(p_chunk, p_spring_index);
     stiffness[index] = p_stiffness;
     changed = true;

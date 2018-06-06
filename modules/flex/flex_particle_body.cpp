@@ -55,18 +55,6 @@ void FlexParticleBody::set_sync_callback(Object *p_receiver, const StringName &p
     sync_callback.method = p_method;
 }
 
-void FlexParticleBody::reset_changed_parameters() {
-    changed_parameters = 0;
-}
-
-void FlexParticleBody::dispatch_sync_callback() {
-    if (!sync_callback.receiver)
-        return;
-    static Variant::CallError error;
-    const Variant *p = FlexParticlePhysicsServer::singleton->get_particle_body_commands_variant(this);
-    sync_callback.receiver->call(sync_callback.method, &p, 1, error);
-}
-
 void FlexParticleBody::set_collision_group(uint32_t p_group) {
     group = eNvFlexPhaseGroupMask & p_group;
     changed_parameters |= eChangedParameterGroup;
@@ -213,6 +201,26 @@ bool FlexParticleBody::is_owner_of_spring(SpringIndex p_spring) const {
 void FlexParticleBody::create_soft_body() {
     //NvFlexExtAsset *asset = NvFlexExtCreateSoftFromMesh();
     //asset->2
+}
+
+void FlexParticleBody::reset_changed_parameters() {
+    changed_parameters = 0;
+}
+
+void FlexParticleBody::dispatch_sync_callback() {
+    if (!sync_callback.receiver)
+        return;
+    static Variant::CallError error;
+    const Variant *p = FlexParticlePhysicsServer::singleton->get_particle_body_commands_variant(this);
+    sync_callback.receiver->call(sync_callback.method, &p, 1, error);
+}
+
+void FlexParticleBody::particle_index_changed(ParticleIndex p_old_particle_index, ParticleIndex p_new_particle_index) {
+    // TODO call a callback
+}
+
+void FlexParticleBody::spring_index_changed(SpringIndex p_old_spring_index, SpringIndex p_new_spring_index) {
+    // TODO call a callback
 }
 
 void FlexParticleBody::clear_commands() {

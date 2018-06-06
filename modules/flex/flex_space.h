@@ -68,8 +68,13 @@ public:
     void sync();
     void step(real_t p_delta_time);
 
+    _FORCE_INLINE_ FlexMemoryAllocator *get_particle_bodies_allocator() { return particle_bodies_allocator; }
     _FORCE_INLINE_ ParticleBodiesMemory *get_particle_bodies_memory() { return particle_bodies_memory; }
+    _FORCE_INLINE_ FlexMemoryAllocator *get_springs_allocator() { return springs_allocator; }
     _FORCE_INLINE_ SpringMemory *get_springs_memory() { return springs_memory; }
+
+    void add_particle_body(FlexParticleBody *p_body);
+    void remove_particle_body(FlexParticleBody *p_body);
 
 private:
     void dispatch_callbacks();
@@ -78,9 +83,7 @@ private:
     void commands_write_buffer();
     void commands_read_buffer();
 
-public:
-    void add_particle_body(FlexParticleBody *p_body);
-    void remove_particle_body(FlexParticleBody *p_body);
+    void replace_particle_index_in_springs(FlexParticleBody *p_body, ParticleBufferIndex p_index_old, ParticleBufferIndex p_index_new);
 };
 
 #endif // FLEX_SPACE_H

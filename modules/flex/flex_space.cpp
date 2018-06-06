@@ -185,6 +185,19 @@ void FlexSpace::step(real_t p_delta_time) {
     commands_read_buffer();
 }
 
+void FlexSpace::add_particle_body(FlexParticleBody *p_body) {
+    ERR_FAIL_COND(p_body->space);
+    p_body->space = this;
+    particle_bodies.push_back(p_body);
+}
+
+void FlexSpace::remove_particle_body(FlexParticleBody *p_body) {
+    // TODO implement
+    print_error("remove_particle_body NOT YET IMPLEMENTED! ");
+    //p_body->space = NULL;
+    //particle_bodies.erase(p_body);
+}
+
 void FlexSpace::dispatch_callbacks() {
     for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
         particle_bodies[i]->dispatch_sync_callback();
@@ -244,24 +257,27 @@ void FlexSpace::execute_delayed_commands() {
 
             // Remove particles AND find associated springs
 
-            ParticleIndex last_particle_index(body->particles_mchunk->get_end_index());
+            ParticleIndex last_buffer_index(body->particles_mchunk->get_end_index());
             for (Set<ParticleIndex>::Element *e = body->delayed_commands.particle_to_remove.front(); e; e = e->next()) {
 
-                // Copy the values of last ID to the ID to remove (lose order)
-                // TODO notify ID changed
-                const ParticleBufferIndex id_to_remove(body->particles_mchunk->get_buffer_index(e->get()));
-                particle_bodies_memory->copy(body->particles_mchunk->get_buffer_index(last_particle_index), 1, id_to_remove);
-                --last_particle_index;
+                // Copy the values of last index to the index to remove (lose order)
+                const ParticleBufferIndex buffer_index_to_remove(body->particles_mchunk->get_buffer_index(e->get()));
 
+                // Find and remove springs associated to the particle to remove
                 if (body->springs_mchunk) {
                     // Find all springs associated to removed particle and put in the remove list
                     for (int spring_index(body->springs_mchunk->get_size() - 1); 0 <= spring_index; --spring_index) {
                         const Spring &spring = springs_memory->get_spring(body->springs_mchunk, spring_index);
-                        if (spring.index0 == id_to_remove || spring.index1 == id_to_remove) {
+                        if (spring.index0 == buffer_index_to_remove || spring.index1 == buffer_index_to_remove) {
                             body->remove_spring(spring_index);
                         }
                     }
                 }
+
+                particle_bodies_memory->copy(last_buffer_index, 1, buffer_index_to_remove);
+                replace_particle_index_in_springs(body, last_buffer_index, buffer_index_to_remove);
+                body->particle_index_changed(body->particles_mchunk->get_chunk_index(last_buffer_index), e->get());
+                --last_buffer_index;
             }
             const FlexUnit new_size = body->particles_mchunk->get_size() - body->delayed_commands.particle_to_remove.size();
             particle_bodies_allocator->resize_chunk(body->particles_mchunk, new_size);
@@ -271,14 +287,14 @@ void FlexSpace::execute_delayed_commands() {
 
             // Remove springs
 
-            SpringIndex last_spring_index(body->springs_mchunk->get_end_index());
+            SpringIndex last_buffer_index(body->springs_mchunk->get_end_index());
             for (Set<SpringIndex>::Element *e = body->delayed_commands.springs_to_remove.front(); e; e = e->next()) {
 
                 // Copy the values of last ID to the ID to remove (lose order)
-                // TODO change spring ID
-                const SpringBufferIndex id_to_remove(body->springs_mchunk->get_buffer_index(e->get()));
-                springs_memory->copy(body->springs_mchunk->get_buffer_index(last_spring_index), 1, id_to_remove);
-                --last_spring_index;
+                const SpringBufferIndex buffer_index_to_remove(body->springs_mchunk->get_buffer_index(e->get()));
+                springs_memory->copy(last_buffer_index, 1, buffer_index_to_remove);
+                body->spring_index_changed(body->springs_mchunk->get_chunk_index(last_buffer_index), e->get());
+                --last_buffer_index;
             }
             const FlexUnit new_size = body->springs_mchunk->get_size() - body->delayed_commands.springs_to_remove.size();
             springs_allocator->resize_chunk(body->springs_mchunk, new_size);
@@ -342,15 +358,20 @@ void FlexSpace::commands_read_buffer() {
     }
 }
 
-void FlexSpace::add_particle_body(FlexParticleBody *p_body) {
-    ERR_FAIL_COND(p_body->space);
-    p_body->space = this;
-    particle_bodies.push_back(p_body);
-}
+void FlexSpace::replace_particle_index_in_springs(FlexParticleBody *p_body, ParticleBufferIndex p_index_old, ParticleBufferIndex p_index_new) {
+    // Update the springs order
+    for (int i(p_body->springs_mchunk->get_size() - 1); 0 <= i; --i) {
 
-void FlexSpace::remove_particle_body(FlexParticleBody *p_body) {
-    // TODO implement
-    print_error("remove_particle_body NOT YET IMPLEMENTED! ");
-    //p_body->space = NULL;
-    //particle_bodies.erase(p_body);
+        const Spring &spring(springs_memory->get_spring(p_body->springs_mchunk, i));
+        if (spring.index0 == p_index_old) {
+
+            springs_memory->set_spring(p_body->springs_mchunk, i, Spring(p_index_new, spring.index1));
+        } else if (spring.index1 == p_index_old) {
+
+            springs_memory->set_spring(p_body->springs_mchunk, i, Spring(spring.index0, p_index_new));
+        }
+
+        const Spring &spring1(springs_memory->get_spring(p_body->springs_mchunk, i));
+        const Spring &spring2(springs_memory->get_spring(p_body->springs_mchunk, i));
+    }
 }
