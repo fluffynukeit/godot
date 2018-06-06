@@ -24,15 +24,19 @@ void ParticlePhysicsServer::_bind_methods() {
     ClassDB::bind_method(D_METHOD("body_create"), &ParticlePhysicsServer::body_create);
 
     ClassDB::bind_method(D_METHOD("body_set_space", "body", "space"), &ParticlePhysicsServer::body_set_space);
+    ClassDB::bind_method(D_METHOD("body_set_callback", "body", "callback_type", "receiver", "method"), &ParticlePhysicsServer::body_set_callback);
 
     ClassDB::bind_method(D_METHOD("body_set_collision_layer", "body", "layer"), &ParticlePhysicsServer::body_set_collision_layer);
     ClassDB::bind_method(D_METHOD("body_get_collision_layer", "body"), &ParticlePhysicsServer::body_get_collision_layer);
 
     ClassDB::bind_method(D_METHOD("body_add_particle", "body", "local_position", "mass"), &ParticlePhysicsServer::body_add_particle);
     ClassDB::bind_method(D_METHOD("body_remove_particle", "body", "particle_id"), &ParticlePhysicsServer::body_remove_particle);
-    ClassDB::bind_method(D_METHOD("body_set_sync_callback", "receiver", "method"), &ParticlePhysicsServer::body_set_sync_callback);
 
     ClassDB::bind_method(D_METHOD("free", "rid"), &ParticlePhysicsServer::free);
+
+    BIND_ENUM_CONSTANT(PARTICLE_BODY_CALLBACK_SYNC);
+    BIND_ENUM_CONSTANT(PARTICLE_BODY_CALLBACK_PARTICLEINDEXCHANGED);
+    BIND_ENUM_CONSTANT(PARTICLE_BODY_CALLBACK_SPRINGINDEXCHANGED);
 }
 
 ParticlePhysicsServer *ParticlePhysicsServer::get_singleton() {

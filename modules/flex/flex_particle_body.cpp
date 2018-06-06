@@ -47,12 +47,26 @@ FlexParticleBody::FlexParticleBody() :
     sync_callback.receiver = NULL;
 }
 
-void FlexParticleBody::set_sync_callback(Object *p_receiver, const StringName &p_method) {
+void FlexParticleBody::set_callback(ParticlePhysicsServer::ParticleBodyCallback p_callback_type, Object *p_receiver, const StringName &p_method) {
+
     if (p_receiver) {
         ERR_FAIL_COND(!p_receiver->has_method(p_method));
     }
-    sync_callback.receiver = p_receiver;
-    sync_callback.method = p_method;
+
+    switch (p_callback_type) {
+        case ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SYNC:
+            sync_callback.receiver = p_receiver;
+            sync_callback.method = p_method;
+            break;
+        case ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_PARTICLEINDEXCHANGED:
+            particle_index_changed_callback.receiver = p_receiver;
+            particle_index_changed_callback.method = p_method;
+            break;
+        case ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SPRINGINDEXCHANGED:
+            spring_index_changed_callback.receiver = p_receiver;
+            spring_index_changed_callback.method = p_method;
+            break;
+    }
 }
 
 void FlexParticleBody::set_collision_group(uint32_t p_group) {
@@ -65,7 +79,6 @@ uint32_t FlexParticleBody::get_collision_group() const {
 }
 
 void FlexParticleBody::add_particle(const Vector3 &p_local_position, real_t p_mass) {
-
     delayed_commands.particle_to_add.push_back(ParticleToAdd(p_local_position, p_mass));
 }
 
@@ -216,11 +229,15 @@ void FlexParticleBody::dispatch_sync_callback() {
 }
 
 void FlexParticleBody::particle_index_changed(ParticleIndex p_old_particle_index, ParticleIndex p_new_particle_index) {
-    // TODO call a callback
+    if (!particle_index_changed_callback.receiver)
+        return;
+    particle_index_changed_callback.receiver->call(particle_index_changed_callback.method, p_old_particle_index, p_new_particle_index);
 }
 
 void FlexParticleBody::spring_index_changed(SpringIndex p_old_spring_index, SpringIndex p_new_spring_index) {
-    // TODO call a callback
+    if (!spring_index_changed_callback.receiver)
+        return;
+    spring_index_changed_callback.receiver->call(spring_index_changed_callback.method, p_old_spring_index, p_new_spring_index);
 }
 
 void FlexParticleBody::clear_commands() {

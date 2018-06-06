@@ -88,6 +88,7 @@ protected:
     void commands_process_internal(Object *p_cmds);
 
 private:
+    void _on_script_changed();
     void initialize_debug_resource();
     void update_debug_visual_instances(ParticleBodyCommands *p_cmds);
     void resize_debug_particle_visual_instance(int new_size);

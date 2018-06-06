@@ -38,7 +38,6 @@
 #include "flex_particle_physics_server.h"
 #include "flex_utility.h"
 #include "rid_flex.h"
-#include "string_db.h"
 
 class FlexParticleBody;
 class FlexSpace;
@@ -94,10 +93,9 @@ class FlexParticleBody : public RIDFlex {
     friend class FlexSpace;
     friend class FlexParticleBodyCommands;
 
-    struct {
-        Object *receiver; // Use pointer directly to speed up the process, but it's a bit risky
-        StringName method;
-    } sync_callback;
+    FlexCallBackData sync_callback;
+    FlexCallBackData particle_index_changed_callback;
+    FlexCallBackData spring_index_changed_callback;
 
     struct {
         Vector<ParticleToAdd> particle_to_add;
@@ -120,7 +118,7 @@ public:
     _FORCE_INLINE_ FlexSpace *get_space() { return space; }
 
     /// IMPORTANT Remember to remove it if Object will be destroyed
-    void set_sync_callback(Object *p_receiver, const StringName &p_method);
+    void set_callback(ParticlePhysicsServer::ParticleBodyCallback p_callback_type, Object *p_receiver, const StringName &p_method);
 
     _FORCE_INLINE_ uint32_t get_changed_parameters() const { return changed_parameters; }
 

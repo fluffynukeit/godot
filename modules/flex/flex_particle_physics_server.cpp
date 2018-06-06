@@ -124,11 +124,11 @@ void FlexParticlePhysicsServer::body_set_space(RID p_body, RID p_space) {
     }
 }
 
-void FlexParticlePhysicsServer::body_set_sync_callback(RID p_body, Object *p_receiver, const StringName &p_method) {
+void FlexParticlePhysicsServer::body_set_callback(RID p_body, ParticleBodyCallback p_callback_type, Object *p_receiver, const StringName &p_method) {
+
     FlexParticleBody *body = body_owner.get(p_body);
     ERR_FAIL_COND(!body);
-
-    body->set_sync_callback(p_receiver, p_method);
+    body->set_callback(p_callback_type, p_receiver, p_method);
 }
 
 void FlexParticlePhysicsServer::body_set_collision_layer(RID p_body, uint32_t p_layer) {

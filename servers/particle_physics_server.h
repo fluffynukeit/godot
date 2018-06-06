@@ -38,9 +38,15 @@ public:
     virtual void space_set_active(RID p_space, bool p_active) = 0;
     virtual bool space_is_active(const RID p_space) const = 0;
 
+    enum ParticleBodyCallback {
+        PARTICLE_BODY_CALLBACK_SYNC,
+        PARTICLE_BODY_CALLBACK_PARTICLEINDEXCHANGED,
+        PARTICLE_BODY_CALLBACK_SPRINGINDEXCHANGED
+    };
+
     virtual RID body_create() = 0;
     virtual void body_set_space(RID p_body, RID p_space) = 0;
-    virtual void body_set_sync_callback(RID p_body, Object *p_receiver, const StringName &p_method) = 0;
+    virtual void body_set_callback(RID p_body, ParticleBodyCallback p_callback_type, Object *p_receiver, const StringName &p_method) = 0;
 
     virtual void body_set_collision_layer(RID p_body, uint32_t p_layer) = 0;
     virtual uint32_t body_get_collision_layer(RID p_body) const = 0;
@@ -63,5 +69,7 @@ public:
 	ParticlePhysicsServer();
 	virtual ~ParticlePhysicsServer();
 };
+
+VARIANT_ENUM_CAST(ParticlePhysicsServer::ParticleBodyCallback);
 
 #endif // PARTICLE_PHYSICS_SERVER_H
