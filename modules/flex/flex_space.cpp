@@ -334,7 +334,7 @@ void FlexSpace::commands_write_buffer() {
                 NvFlexSetPhases(solver, particle_bodies_memory->phases.buffer, &copy_desc);
             if (changed_params & eChangedParameterActive) {
                 NvFlexSetActive(solver, particle_bodies_memory->active_particles.buffer, &copy_desc);
-                NvFlexSetActiveCount(solver, particle_bodies_memory->active_particles.size());
+                NvFlexSetActiveCount(solver, body->particles_mchunk->get_size());
             }
 
             body->reset_changed_parameters();
