@@ -88,6 +88,8 @@ public:
     _FORCE_INLINE_ FlexUnit get_begin_index() const { return begin_index; }
     _FORCE_INLINE_ FlexUnit get_end_index() const { return end_index; }
     _FORCE_INLINE_ FlexUnit get_size() const { return size; }
+    /// Get chunk index (relative to this memory chunk) and return the global id (relative to the whole buffer)
+    _FORCE_INLINE_ FlexUnit get_buffer_index(FlexUnit p_chunk_index) const { return begin_index + p_chunk_index; }
 };
 
 /// This class is responsible for memory management.

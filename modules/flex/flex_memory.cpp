@@ -107,7 +107,7 @@ int ParticleBodiesMemory::get_phase(const MemoryChunk *p_chunk, ParticleID p_par
 
 void ParticleBodiesMemory::set_active_particle(const MemoryChunk *p_chunk, ParticleID p_particle_index) {
     make_memory_index(p_chunk, p_particle_index);
-    active_particles[index] = p_chunk->get_begin_index() + p_particle_index;
+    active_particles[index] = p_chunk->get_buffer_index(p_particle_index);
 }
 
 SpringMemory::SpringMemory(NvFlexLibrary *p_flex_lib) :

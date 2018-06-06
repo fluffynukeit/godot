@@ -174,7 +174,7 @@ void FlexParticleBody::reset_particle(ParticleID p_particle_index, const Vector3
 void FlexParticleBody::reset_spring(SpringID p_spring, ParticleID p_particle_0, ParticleID p_particle_1, float p_length, float p_stiffness) {
     if (!springs_mchunk)
         return;
-    space->get_springs_memory()->set_spring(springs_mchunk, p_spring, Spring(particles_mchunk->get_begin_index() + p_particle_0, particles_mchunk->get_begin_index() + p_particle_1));
+    space->get_springs_memory()->set_spring(springs_mchunk, p_spring, Spring(particles_mchunk->get_buffer_index(p_particle_0), particles_mchunk->get_buffer_index(p_particle_1)));
     space->get_springs_memory()->set_length(springs_mchunk, p_spring, p_length);
     space->get_springs_memory()->set_stiffness(springs_mchunk, p_spring, p_stiffness);
 }
@@ -201,13 +201,13 @@ void FlexParticleBody::set_particle_velocity(ParticleID p_particle_index, const 
 bool FlexParticleBody::is_owner_of_particle(ParticleID p_particle) const {
     if (!particles_mchunk)
         return false;
-    return (particles_mchunk && (particles_mchunk->get_begin_index() + p_particle) <= particles_mchunk->get_end_index());
+    return (particles_mchunk && (particles_mchunk->get_buffer_index(p_particle)) <= particles_mchunk->get_end_index());
 }
 
 bool FlexParticleBody::is_owner_of_spring(SpringID p_spring) const {
     if (!springs_mchunk)
         return false;
-    return (springs_mchunk && (springs_mchunk->get_begin_index() + p_spring) <= springs_mchunk->get_end_index());
+    return (springs_mchunk && (springs_mchunk->get_buffer_index(p_spring)) <= springs_mchunk->get_end_index());
 }
 
 void FlexParticleBody::create_soft_body() {

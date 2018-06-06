@@ -63,8 +63,9 @@
 #include "vector3.h"
 
 typedef int ParticleID; // Particle id relative to body, can change during time
-typedef int ParticleBufferID; // Particle global index
+typedef int ParticleBufferID; // Particle global index, can change during time
 typedef int SpringID; // Spring id relative to body, can change during time
+typedef int SpringBufferID; // Spring id global index, can change during time
 
 #define CreateParticle(position, mass) \
     FlVector4(position.x, position.y, position.z, mass ? (1 / mass) : 0)
@@ -85,12 +86,12 @@ struct Spring {
             id1(p_id1) {}
 };
 
-#define make_memory_index(p_chunk, p_index)           \
-    int index = p_chunk->get_begin_index() + p_index; \
+#define make_memory_index(p_chunk, p_index)         \
+    int index = p_chunk->get_buffer_index(p_index); \
     ERR_FAIL_COND(index > p_chunk->get_end_index());
 
-#define make_memory_index_V(p_chunk, p_index, ret)    \
-    int index = p_chunk->get_begin_index() + p_index; \
+#define make_memory_index_V(p_chunk, p_index, ret)  \
+    int index = p_chunk->get_buffer_index(p_index); \
     ERR_FAIL_COND_V(index > p_chunk->get_end_index(), ret);
 
 static FlVector4 return_err_flvec4(0, 0, 0, 0);
