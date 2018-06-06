@@ -308,7 +308,6 @@ void FlexSpace::execute_delayed_commands() {
                     particle_bodies_memory->set_phase(body->particles_mchunk, i, NvFlexMakePhase(body->group, 0));
                 }
             }
-            body->reset_changed_parameters();
         }
     }
 }
@@ -321,16 +320,25 @@ void FlexSpace::commands_write_buffer() {
         if (!body->particles_mchunk)
             continue;
 
-        copy_desc.srcOffset = body->particles_mchunk->get_begin_index();
-        copy_desc.dstOffset = body->particles_mchunk->get_begin_index();
-        copy_desc.elementCount = body->particles_mchunk->get_size();
+        const uint32_t changed_params(body->get_changed_parameters());
+        if (changed_params != 0) {
+            copy_desc.srcOffset = body->particles_mchunk->get_begin_index();
+            copy_desc.dstOffset = body->particles_mchunk->get_begin_index();
+            copy_desc.elementCount = body->particles_mchunk->get_size();
 
-        // TODO write only necessary (part of buffer or just skip an entire buffer if not necessary)
-        NvFlexSetParticles(solver, particle_bodies_memory->particles.buffer, &copy_desc);
-        NvFlexSetVelocities(solver, particle_bodies_memory->velocities.buffer, &copy_desc);
-        NvFlexSetPhases(solver, particle_bodies_memory->phases.buffer, &copy_desc);
-        NvFlexSetActive(solver, particle_bodies_memory->active_particles.buffer, &copy_desc);
-        NvFlexSetActiveCount(solver, particle_bodies_memory->active_particles.size());
+            if (changed_params & eChangedParameterPositionMass)
+                NvFlexSetParticles(solver, particle_bodies_memory->particles.buffer, &copy_desc);
+            if (changed_params & eChangedParameterVelocity)
+                NvFlexSetVelocities(solver, particle_bodies_memory->velocities.buffer, &copy_desc);
+            if (changed_params & eChangedParameterGroup)
+                NvFlexSetPhases(solver, particle_bodies_memory->phases.buffer, &copy_desc);
+            if (changed_params & eChangedParameterActive) {
+                NvFlexSetActive(solver, particle_bodies_memory->active_particles.buffer, &copy_desc);
+                NvFlexSetActiveCount(solver, particle_bodies_memory->active_particles.size());
+            }
+
+            body->reset_changed_parameters();
+        }
     }
 
     if (springs_memory->was_changed())
