@@ -282,6 +282,7 @@ void FlexSpace::execute_delayed_commands() {
             springs_allocator->resize_chunk(body->springs_mchunk, new_size);
         }
 
+        // Apply changed properties
         const uint32_t body_changed_parameters = body->get_changed_parameters();
         if (body_changed_parameters != 0) {
             for (int i(body->get_particle_count() - 1); 0 <= i; --i) {
