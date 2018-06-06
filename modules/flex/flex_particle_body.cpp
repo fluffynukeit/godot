@@ -81,18 +81,18 @@ void FlexParticleBody::add_particle(const Vector3 &p_local_position, real_t p_ma
     delayed_commands.particle_to_add.push_back(ParticleToAdd(p_local_position, p_mass));
 }
 
-void FlexParticleBody::remove_particle(ParticleID p_particle) {
+void FlexParticleBody::remove_particle(ParticleIndex p_particle) {
     ERR_FAIL_COND(!is_owner_of_particle(p_particle));
     delayed_commands.particle_to_remove.insert(p_particle);
 }
 
-void FlexParticleBody::add_spring(ParticleID p_particle_0, ParticleID p_particle_1, float p_length, float p_stiffness) {
+void FlexParticleBody::add_spring(ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness) {
     delayed_commands.springs_to_add.push_back(SpringToAdd(p_particle_0, p_particle_1, p_length, p_stiffness));
 }
 
-void FlexParticleBody::remove_spring(SpringID p_spring_id) {
-    ERR_FAIL_COND(!is_owner_of_spring(p_spring_id));
-    delayed_commands.springs_to_remove.insert(p_spring_id);
+void FlexParticleBody::remove_spring(SpringIndex p_spring_index) {
+    ERR_FAIL_COND(!is_owner_of_spring(p_spring_index));
+    delayed_commands.springs_to_remove.insert(p_spring_index);
 }
 
 int FlexParticleBody::get_particle_count() const {
@@ -154,24 +154,24 @@ void FlexParticleBody::load_shape(Ref<ParticleShape> p_shape, const Transform &i
             const int dif = resource_s_count - active_s_count;
             for (int i(0); i < dif; ++i) {
                 const int s(resource_s_count - i - 1);
-                add_spring(p_shape->get_constraints()[s].particle_id_0, p_shape->get_constraints()[s].particle_id_1, p_shape->get_constraints()[s].length, p_shape->get_constraints()[s].stiffness);
+                add_spring(p_shape->get_constraints()[s].particle_index_0, p_shape->get_constraints()[s].particle_index_1, p_shape->get_constraints()[s].length, p_shape->get_constraints()[s].stiffness);
             }
         }
 
         for (int i(0); i < active_s_count; ++i) {
-            reset_spring(i, p_shape->get_constraints()[i].particle_id_0, p_shape->get_constraints()[i].particle_id_0, p_shape->get_constraints()[i].length, p_shape->get_constraints()[i].stiffness);
+            reset_spring(i, p_shape->get_constraints()[i].particle_index_0, p_shape->get_constraints()[i].particle_index_0, p_shape->get_constraints()[i].length, p_shape->get_constraints()[i].stiffness);
         }
     }
 }
 
-void FlexParticleBody::reset_particle(ParticleID p_particle_index, const Vector3 &p_position, real_t p_mass) {
+void FlexParticleBody::reset_particle(ParticleIndex p_particle_index, const Vector3 &p_position, real_t p_mass) {
     if (!particles_mchunk)
         return;
     space->get_particle_bodies_memory()->set_particle(particles_mchunk, p_particle_index, CreateParticle(p_position, p_mass));
     space->get_particle_bodies_memory()->set_velocity(particles_mchunk, p_particle_index, Vector3(0, 0, 0));
 }
 
-void FlexParticleBody::reset_spring(SpringID p_spring, ParticleID p_particle_0, ParticleID p_particle_1, float p_length, float p_stiffness) {
+void FlexParticleBody::reset_spring(SpringIndex p_spring, ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness) {
     if (!springs_mchunk)
         return;
     space->get_springs_memory()->set_spring(springs_mchunk, p_spring, Spring(particles_mchunk->get_buffer_index(p_particle_0), particles_mchunk->get_buffer_index(p_particle_1)));
@@ -179,32 +179,32 @@ void FlexParticleBody::reset_spring(SpringID p_spring, ParticleID p_particle_0, 
     space->get_springs_memory()->set_stiffness(springs_mchunk, p_spring, p_stiffness);
 }
 
-Vector3 FlexParticleBody::get_particle_position(ParticleID p_particle_index) const {
+Vector3 FlexParticleBody::get_particle_position(ParticleIndex p_particle_index) const {
     if (!particles_mchunk)
         return return_err_vec3;
     const FlVector4 &p(space->get_particle_bodies_memory()->get_particle(particles_mchunk, p_particle_index));
     return gvec3_from_fvec4(p);
 }
 
-const Vector3 &FlexParticleBody::get_particle_velocity(ParticleID p_particle_index) const {
+const Vector3 &FlexParticleBody::get_particle_velocity(ParticleIndex p_particle_index) const {
     if (!particles_mchunk)
         return return_err_vec3;
     return space->get_particle_bodies_memory()->get_velocity(particles_mchunk, p_particle_index);
 }
 
-void FlexParticleBody::set_particle_velocity(ParticleID p_particle_index, const Vector3 &p_velocity) {
+void FlexParticleBody::set_particle_velocity(ParticleIndex p_particle_index, const Vector3 &p_velocity) {
     if (!particles_mchunk)
         return;
     return space->get_particle_bodies_memory()->set_velocity(particles_mchunk, p_particle_index, p_velocity);
 }
 
-bool FlexParticleBody::is_owner_of_particle(ParticleID p_particle) const {
+bool FlexParticleBody::is_owner_of_particle(ParticleIndex p_particle) const {
     if (!particles_mchunk)
         return false;
     return (particles_mchunk && (particles_mchunk->get_buffer_index(p_particle)) <= particles_mchunk->get_end_index());
 }
 
-bool FlexParticleBody::is_owner_of_spring(SpringID p_spring) const {
+bool FlexParticleBody::is_owner_of_spring(SpringIndex p_spring) const {
     if (!springs_mchunk)
         return false;
     return (springs_mchunk && (springs_mchunk->get_buffer_index(p_spring)) <= springs_mchunk->get_end_index());

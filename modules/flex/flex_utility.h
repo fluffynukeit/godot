@@ -62,10 +62,10 @@
 #include "math_defs.h"
 #include "vector3.h"
 
-typedef int ParticleID; // Particle id relative to body, can change during time
-typedef int ParticleBufferID; // Particle global index, can change during time
-typedef int SpringID; // Spring id relative to body, can change during time
-typedef int SpringBufferID; // Spring id global index, can change during time
+typedef int ParticleIndex; // Particle index relative to body, can change during time
+typedef int ParticleBufferIndex; // Particle global index, can change during time
+typedef int SpringIndex; // Spring index relative to body, can change during time
+typedef int SpringBufferIndex; // Spring index global index, can change during time
 
 #define CreateParticle(position, mass) \
     FlVector4(position.x, position.y, position.z, mass ? (1 / mass) : 0)
@@ -74,16 +74,16 @@ typedef int SpringBufferID; // Spring id global index, can change during time
     Vector3(particle[0], particle[1], particle[2])
 
 struct Spring {
-    ParticleBufferID id0;
-    ParticleBufferID id1;
+    ParticleBufferIndex index0;
+    ParticleBufferIndex index1;
 
     Spring() :
-            id0(0),
-            id1(0) {}
+            index0(0),
+            index1(0) {}
 
-    Spring(ParticleBufferID p_id0, ParticleBufferID p_id1) :
-            id0(p_id0),
-            id1(p_id1) {}
+    Spring(ParticleBufferIndex p_index0, ParticleBufferIndex p_index1) :
+            index0(p_index0),
+            index1(p_index1) {}
 };
 
 #define make_memory_index(p_chunk, p_index)         \

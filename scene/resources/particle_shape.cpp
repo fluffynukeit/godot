@@ -70,9 +70,9 @@ bool ParticleShape::_set(const StringName &p_name, const Variant &p_property) {
 
         const int constraint_index = s_name[1].to_int();
         if ("id_0" == s_name[2]) {
-            constraints[constraint_index].particle_id_0 = p_property;
+            constraints[constraint_index].particle_index_0 = p_property;
         } else if ("id_1" == s_name[2]) {
-            constraints[constraint_index].particle_id_1 = p_property;
+            constraints[constraint_index].particle_index_1 = p_property;
         } else if ("length" == s_name[2]) {
             constraints[constraint_index].length = p_property;
         } else if ("stiffness" == s_name[2]) {
@@ -115,9 +115,9 @@ bool ParticleShape::_get(const StringName &p_name, Variant &r_property) const {
 
         const int constraint_index = s_name[1].to_int();
         if ("id_0" == s_name[2]) {
-            r_property = constraints[constraint_index].particle_id_0;
+            r_property = constraints[constraint_index].particle_index_0;
         } else if ("id_1" == s_name[2]) {
-            r_property = constraints[constraint_index].particle_id_1;
+            r_property = constraints[constraint_index].particle_index_1;
         } else if ("length" == s_name[2]) {
             r_property = constraints[constraint_index].length;
         } else if ("stiffness" == s_name[2]) {

@@ -55,14 +55,14 @@ public:
     };
 
     struct Constraint {
-        int particle_id_0;
-        int particle_id_1;
+        int particle_index_0;
+        int particle_index_1;
         float length;
         float stiffness;
 
         Constraint() :
-                particle_id_0(0),
-                particle_id_1(0),
+                particle_index_0(0),
+                particle_index_1(0),
                 length(0),
                 stiffness(0) {}
     };

@@ -75,37 +75,37 @@ void ParticleBodiesMemory::terminate() {
     active_particles.destroy();
 }
 
-void ParticleBodiesMemory::set_particle(const MemoryChunk *p_chunk, ParticleID p_particle_index, FlVector4 p_particle) {
+void ParticleBodiesMemory::set_particle(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, FlVector4 p_particle) {
     make_memory_index(p_chunk, p_particle_index);
     particles[index] = p_particle;
 }
 
-const FlVector4 &ParticleBodiesMemory::get_particle(const MemoryChunk *p_chunk, ParticleID p_particle_index) const {
+const FlVector4 &ParticleBodiesMemory::get_particle(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const {
     make_memory_index_V(p_chunk, p_particle_index, return_err_flvec4);
     return particles[index];
 }
 
-void ParticleBodiesMemory::set_velocity(const MemoryChunk *p_chunk, ParticleID p_particle_index, Vector3 p_velocity) {
+void ParticleBodiesMemory::set_velocity(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, Vector3 p_velocity) {
     make_memory_index(p_chunk, p_particle_index);
     velocities[index] = p_velocity;
 }
 
-const Vector3 &ParticleBodiesMemory::get_velocity(const MemoryChunk *p_chunk, ParticleID p_particle_index) const {
+const Vector3 &ParticleBodiesMemory::get_velocity(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const {
     make_memory_index_V(p_chunk, p_particle_index, return_err_vec3);
     return velocities[index];
 }
 
-void ParticleBodiesMemory::set_phase(const MemoryChunk *p_chunk, ParticleID p_particle_index, int p_phase) {
+void ParticleBodiesMemory::set_phase(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, int p_phase) {
     make_memory_index(p_chunk, p_particle_index);
     phases[index] = p_phase;
 }
 
-int ParticleBodiesMemory::get_phase(const MemoryChunk *p_chunk, ParticleID p_particle_index) const {
+int ParticleBodiesMemory::get_phase(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const {
     make_memory_index_V(p_chunk, p_particle_index, 0);
     return phases[index];
 }
 
-void ParticleBodiesMemory::set_active_particle(const MemoryChunk *p_chunk, ParticleID p_particle_index) {
+void ParticleBodiesMemory::set_active_particle(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) {
     make_memory_index(p_chunk, p_particle_index);
     active_particles[index] = p_chunk->get_buffer_index(p_particle_index);
 }
@@ -148,35 +148,35 @@ void SpringMemory::copy_unit(FlexUnit p_to, FlexUnit p_from) {
     stiffness[p_to] = stiffness[p_from];
 }
 
-void SpringMemory::set_spring(const MemoryChunk *p_chunk, ParticleID p_spring_index, const Spring &p_spring) {
+void SpringMemory::set_spring(const MemoryChunk *p_chunk, ParticleIndex p_spring_index, const Spring &p_spring) {
     make_memory_index(p_chunk, p_spring_index);
     springs[index] = p_spring;
     changed = true;
 }
 
-const Spring &SpringMemory::get_spring(const MemoryChunk *p_chunk, SpringID p_spring_index) const {
+const Spring &SpringMemory::get_spring(const MemoryChunk *p_chunk, SpringIndex p_spring_index) const {
     make_memory_index_V(p_chunk, p_spring_index, return_err_spring);
     return springs[index];
 }
 
-void SpringMemory::set_length(const MemoryChunk *p_chunk, ParticleID p_spring_index, float p_length) {
+void SpringMemory::set_length(const MemoryChunk *p_chunk, ParticleIndex p_spring_index, float p_length) {
     make_memory_index(p_chunk, p_spring_index);
     lengths[index] = p_length;
     changed = true;
 }
 
-float SpringMemory::get_length(const MemoryChunk *p_chunk, SpringID p_spring_index) const {
+float SpringMemory::get_length(const MemoryChunk *p_chunk, SpringIndex p_spring_index) const {
     make_memory_index_V(p_chunk, p_spring_index, 0);
     return lengths[index];
 }
 
-void SpringMemory::set_stiffness(const MemoryChunk *p_chunk, ParticleID p_spring_index, float p_stiffness) {
+void SpringMemory::set_stiffness(const MemoryChunk *p_chunk, ParticleIndex p_spring_index, float p_stiffness) {
     make_memory_index(p_chunk, p_spring_index);
     stiffness[index] = p_stiffness;
     changed = true;
 }
 
-float SpringMemory::get_stiffness(const MemoryChunk *p_chunk, SpringID p_spring_index) const {
+float SpringMemory::get_stiffness(const MemoryChunk *p_chunk, SpringIndex p_spring_index) const {
     make_memory_index_V(p_chunk, p_spring_index, 0);
     return stiffness[index];
 }
