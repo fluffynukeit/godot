@@ -43,6 +43,11 @@ ParticleObject::ParticleObject(RID p_rid) :
         rid(p_rid) {
 }
 
+ParticleObject::~ParticleObject() {
+
+    ParticlePhysicsServer::get_singleton()->free(rid);
+}
+
 void ParticleBody::_bind_methods() {
 
     ClassDB::bind_method(D_METHOD("set_particle_shape", "particle_shape"), &ParticleBody::set_particle_shape);
@@ -87,6 +92,16 @@ ParticleBody::ParticleBody() :
     set_notify_transform(true);
 
     connect(CoreStringNames::get_singleton()->script_changed, this, "_on_script_changed");
+}
+
+ParticleBody::~ParticleBody() {
+
+    if (particle_shape.is_valid())
+        particle_shape->unregister_owner(this);
+
+    ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SYNC, NULL, "");
+    ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_PARTICLEINDEXCHANGED, NULL, "");
+    ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SPRINGINDEXCHANGED, NULL, "");
 }
 
 void ParticleBody::set_particle_shape(Ref<ParticleShape> p_shape) {
