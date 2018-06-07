@@ -40,53 +40,55 @@
 /// The particle shape is a resource that doesn't have a specific RID that identify the shape in the ParticlePhysicsServer
 /// Because it's not necessary
 class ParticleShape : public Resource {
-    GDCLASS(ParticleShape, Resource);
-    OBJ_SAVE_TYPE(ParticleShape);
-    RES_BASE_EXTENSION("particle_shape");
+	GDCLASS(ParticleShape, Resource);
+	OBJ_SAVE_TYPE(ParticleShape);
+	RES_BASE_EXTENSION("particle_shape");
 
 public:
-    struct Particle {
-        Vector3 relative_position;
-        real_t mass;
+	struct Particle {
+		Vector3 relative_position;
+		real_t mass;
 
-        Particle() :
-                relative_position(0, 0, 0),
-                mass(0) {}
-    };
+		Particle() :
+				relative_position(0, 0, 0),
+				mass(0) {}
+	};
 
-    struct Constraint {
-        int particle_index_0;
-        int particle_index_1;
-        float length;
-        float stiffness;
+	struct Constraint {
+		int particle_index_0;
+		int particle_index_1;
+		float length;
+		float stiffness;
 
-        Constraint() :
-                particle_index_0(0),
-                particle_index_1(0),
-                length(0),
-                stiffness(0) {}
-    };
+		Constraint() :
+				particle_index_0(0),
+				particle_index_1(0),
+				length(0),
+				stiffness(0) {}
+	};
 
 protected:
-    static void _bind_methods();
+	static void _bind_methods();
 
 private:
-    Vector<Particle> particles;
-    Vector<Constraint> constraints;
+	Vector<Particle> particles;
+	Vector<Constraint> constraints;
 
 protected:
-    bool _set(const StringName &p_name, const Variant &p_property);
-    bool _get(const StringName &p_name, Variant &r_property) const;
-    void _get_property_list(List<PropertyInfo> *p_list) const;
+	bool _set(const StringName &p_name, const Variant &p_property);
+	bool _get(const StringName &p_name, Variant &r_property) const;
+	void _get_property_list(List<PropertyInfo> *p_list) const;
 
 public:
-    ParticleShape();
+	ParticleShape();
 
-    void set_particles(Vector<Particle> &p_particles);
-    const Vector<Particle> &get_particles() const;
+	void set_particles(Vector<Particle> &p_particles);
+	const Vector<Particle> &get_particles() const;
+	Vector<Particle> &get_particles() { return particles; }
 
-    void set_constraints(const Vector<Constraint> &p_constraints);
-    const Vector<Constraint> &get_constraints() const;
+	void set_constraints(const Vector<Constraint> &p_constraints);
+	const Vector<Constraint> &get_constraints() const;
+	Vector<Constraint> &get_constraints() { return constraints; }
 };
 
 #endif // PARTICLE_SHAPE_H
