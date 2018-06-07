@@ -193,21 +193,22 @@ Ref<ParticleShape> FlexParticlePhysicsServer::create_soft_particle_shape(Ref<Tri
 	PoolVector<int>::Read indices_read = indices.read();
 
 	NvFlexExtAsset *generated_assets = NvFlexExtCreateSoftFromMesh(
-			((const float *)vertices_read.ptr()),
-			p_mesh->get_vertices().size(),
-			static_cast<const int *>(indices_read.ptr()),
-			indices.size(),
-			0.2,
-			0.5,
-			0.5,
-			0.3,
-			0.5,
-			0.5,
-			0.1,
-			0.5,
-			0.5,
-			0.5,
-			0.5);
+			/*vertices*/ ((const float *)vertices_read.ptr()),
+			/*numVertices*/ p_mesh->get_vertices().size(),
+			/*indices*/ static_cast<const int *>(indices_read.ptr()),
+			/*numIndices*/ indices.size(),
+
+			/*particleSpacing*/ 0.1, // Distance between 2 particle
+			/*volumeSampling*/ 1.0, // (0-1) This parameter regulate the number of particle that should be put inside the mesh (in case of cloth it should be 0)
+			/*surfaceSampling*/ 1.0, // (0-1) This parameter regulate the number of particle that should be put on the surface of mesh (in case of cloth it should be 1)
+			/*clusterSpacing*/ 0.2,
+			/*clusterRadius*/ 0.1,
+			/*clusterStiffness*/ 0.5,
+			/*linkRadius*/ 0.1,
+			/*linkStiffness*/ 0.5,
+			/*globalStiffness*/ 0.5,
+			/*clusterPlasticThreshold*/ 0.0,
+			/*clusterPlasticCreep*/ 0.0);
 
 	ERR_FAIL_COND_V(!generated_assets, Ref<ParticleShape>());
 
