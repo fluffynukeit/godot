@@ -110,19 +110,19 @@ void FlexSpace::init() {
 	CRASH_COND(particle_bodies_memory);
 	CRASH_COND(particle_bodies_allocator);
 	particle_bodies_memory = memnew(ParticleBodiesMemory(flex_lib));
-	particle_bodies_allocator = memnew(FlexMemoryAllocator(particle_bodies_memory, ((FlexUnit)(MAXPARTICLES / 3))));
+	particle_bodies_allocator = memnew(FlexMemoryAllocator(particle_bodies_memory, MAXPARTICLES)); // TODO should be dynamic
 	particle_bodies_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
 
 	CRASH_COND(active_particles_allocator);
 	CRASH_COND(active_particles_memory);
 	active_particles_memory = memnew(ActiveParticlesMemory(flex_lib));
-	active_particles_allocator = memnew(FlexMemoryAllocator(active_particles_memory, ((FlexUnit)(MAXPARTICLES / 3))));
+	active_particles_allocator = memnew(FlexMemoryAllocator(active_particles_memory, MAXPARTICLES)); // TODO should be dynamic
 	active_particles_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
 
 	CRASH_COND(springs_allocator);
 	CRASH_COND(springs_memory);
 	springs_memory = memnew(SpringMemory(flex_lib));
-	springs_allocator = memnew(FlexMemoryAllocator(springs_memory, ((FlexUnit)(MAXPARTICLES * 2))));
+	springs_allocator = memnew(FlexMemoryAllocator(springs_memory, ((FlexUnit)(MAXPARTICLES * 100)))); // TODO should be dynamic
 	springs_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
 
 	NvFlexParams params;

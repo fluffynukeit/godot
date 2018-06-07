@@ -40,61 +40,61 @@
 #include "spatial.h"
 
 class ParticleObject : public Spatial {
-    GDCLASS(ParticleObject, Spatial);
+	GDCLASS(ParticleObject, Spatial);
 
 protected:
-    RID rid;
+	RID rid;
 
-    static void _bind_methods();
+	static void _bind_methods();
 
 public:
-    ParticleObject(RID p_rid);
-    virtual ~ParticleObject();
+	ParticleObject(RID p_rid);
+	virtual ~ParticleObject();
 
-    _FORCE_INLINE_ RID get_rid() { return rid; }
+	_FORCE_INLINE_ RID get_rid() { return rid; }
 };
 
 class ParticleBody : public ParticleObject {
-    GDCLASS(ParticleBody, ParticleObject);
+	GDCLASS(ParticleBody, ParticleObject);
 
-    bool reset_particles_to_base_shape;
-    Ref<ParticleShape> particle_shape;
+	bool reset_particles_to_base_shape;
+	Ref<ParticleShape> particle_shape;
 
-    uint32_t collision_layer;
+	uint32_t collision_layer;
 
-    Vector<RID> debug_particle_visual_instances;
-    Ref<SphereMesh> debug_particle_mesh;
+	Vector<RID> debug_particle_visual_instances;
+	static Ref<SphereMesh> debug_particle_mesh;
 
 protected:
-    static void _bind_methods();
+	static void _bind_methods();
 
 public:
-    ParticleBody();
-    virtual ~ParticleBody();
+	ParticleBody();
+	virtual ~ParticleBody();
 
-    void set_particle_shape(Ref<ParticleShape> p_shape);
-    Ref<ParticleShape> get_particle_shape() const;
+	void set_particle_shape(Ref<ParticleShape> p_shape);
+	Ref<ParticleShape> get_particle_shape() const;
 
-    void add_particle(const Vector3 &p_local_position, real_t p_mass);
-    void remove_particle(int p_particle_index);
-    void set_collision_layer(uint32_t p_layer);
-    uint32_t get_collision_layer() const;
+	void add_particle(const Vector3 &p_local_position, real_t p_mass);
+	void remove_particle(int p_particle_index);
+	void set_collision_layer(uint32_t p_layer);
+	uint32_t get_collision_layer() const;
 
-    void set_collision_layer_bit(int p_bit, bool p_value);
-    bool get_collision_layer_bit(int p_bit) const;
+	void set_collision_layer_bit(int p_bit, bool p_value);
+	bool get_collision_layer_bit(int p_bit) const;
 
 protected:
-    void _notification(int p_what);
-    void resource_changed(const RES &p_res);
+	void _notification(int p_what);
+	void resource_changed(const RES &p_res);
 
-    void commands_process_internal(Object *p_cmds);
+	void commands_process_internal(Object *p_cmds);
 
 private:
-    void _on_script_changed();
-    void initialize_debug_resource();
-    void update_debug_visual_instances(ParticleBodyCommands *p_cmds);
-    void resize_debug_particle_visual_instance(int new_size);
-    void reset_debug_particle_positions();
+	void _on_script_changed();
+	void initialize_debug_resource();
+	void update_debug_visual_instances(ParticleBodyCommands *p_cmds);
+	void resize_debug_particle_visual_instance(int new_size);
+	void reset_debug_particle_positions();
 };
 
 #endif // PARTICLE_BODY_H
