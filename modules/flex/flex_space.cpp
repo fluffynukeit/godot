@@ -76,7 +76,7 @@ FlexSpace::~FlexSpace() {
 void FlexSpace::init() {
 
     // Init library
-    ERR_FAIL_COND(flex_lib);
+    CRASH_COND(flex_lib);
 
     NvFlexInitDesc desc;
     desc.deviceIndex = DEVICE_ID;
@@ -88,11 +88,11 @@ void FlexSpace::init() {
     desc.runOnRenderContext = false;
 
     flex_lib = NvFlexInit(NV_FLEX_VERSION, ErrorCallback, &desc);
-    ERR_FAIL_COND(!flex_lib);
-    ERR_FAIL_COND(has_error());
+    CRASH_COND(!flex_lib);
+    CRASH_COND(has_error());
 
     // Init solvert
-    ERR_FAIL_COND(solver);
+    CRASH_COND(solver);
 
     NvFlexSolverDesc solver_desc;
 
@@ -104,23 +104,23 @@ void FlexSpace::init() {
     solver_desc.maxContactsPerParticle = 10; // TODO should be customizable
 
     solver = NvFlexCreateSolver(flex_lib, &solver_desc);
-    ERR_FAIL_COND(has_error());
+    CRASH_COND(has_error());
 
     // Init buffers
-    ERR_FAIL_COND(particle_bodies_memory);
-    ERR_FAIL_COND(particle_bodies_allocator);
+    CRASH_COND(particle_bodies_memory);
+    CRASH_COND(particle_bodies_allocator);
     particle_bodies_memory = memnew(ParticleBodiesMemory(flex_lib));
     particle_bodies_allocator = memnew(FlexMemoryAllocator(particle_bodies_memory, ((FlexUnit)(MAXPARTICLES / 3))));
     particle_bodies_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
 
-    ERR_FAIL_COND(active_particles_allocator);
-    ERR_FAIL_COND(active_particles_memory);
+    CRASH_COND(active_particles_allocator);
+    CRASH_COND(active_particles_memory);
     active_particles_memory = memnew(ActiveParticlesMemory(flex_lib));
     active_particles_allocator = memnew(FlexMemoryAllocator(active_particles_memory, ((FlexUnit)(MAXPARTICLES / 3))));
     active_particles_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
 
-    ERR_FAIL_COND(springs_allocator);
-    ERR_FAIL_COND(springs_memory);
+    CRASH_COND(springs_allocator);
+    CRASH_COND(springs_memory);
     springs_memory = memnew(SpringMemory(flex_lib));
     springs_allocator = memnew(FlexMemoryAllocator(springs_memory, ((FlexUnit)(MAXPARTICLES * 2))));
     springs_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
@@ -145,27 +145,31 @@ void FlexSpace::init() {
     params.particleFriction = params.dynamicFriction * 0.1;
     NvFlexSetParams(solver, &params);
 
-    ERR_FAIL_COND(has_error());
+    CRASH_COND(has_error());
 }
 
 void FlexSpace::terminate() {
 
-    ERR_FAIL_COND(!particle_bodies_memory);
-    particle_bodies_memory->terminate();
-    memdelete(particle_bodies_memory);
-    particle_bodies_memory = NULL;
+    if (particle_bodies_memory) {
+        particle_bodies_memory->terminate();
+        memdelete(particle_bodies_memory);
+        particle_bodies_memory = NULL;
+    }
 
-    ERR_FAIL_COND(!particle_bodies_allocator);
-    memdelete(particle_bodies_allocator);
-    particle_bodies_allocator = NULL;
+    if (particle_bodies_allocator) {
+        memdelete(particle_bodies_allocator);
+        particle_bodies_allocator = NULL;
+    }
 
-    ERR_FAIL_COND(!solver);
-    NvFlexDestroySolver(solver);
-    solver = NULL;
+    if (solver) {
+        NvFlexDestroySolver(solver);
+        solver = NULL;
+    }
 
-    ERR_FAIL_COND(!flex_lib);
-    NvFlexShutdown(flex_lib);
-    flex_lib = NULL;
+    if (flex_lib) {
+        NvFlexShutdown(flex_lib);
+        flex_lib = NULL;
+    }
 }
 
 void FlexSpace::sync() {
