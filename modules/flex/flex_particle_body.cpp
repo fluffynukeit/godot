@@ -214,11 +214,6 @@ bool FlexParticleBody::is_owner_of_spring(SpringIndex p_spring) const {
     return (springs_mchunk && (springs_mchunk->get_buffer_index(p_spring)) <= springs_mchunk->get_end_index());
 }
 
-void FlexParticleBody::create_soft_body() {
-    //NvFlexExtAsset *asset = NvFlexExtCreateSoftFromMesh();
-    //asset->2
-}
-
 void FlexParticleBody::reset_changed_parameters() {
     changed_parameters = 0;
 }
