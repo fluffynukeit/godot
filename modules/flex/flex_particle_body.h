@@ -151,9 +151,6 @@ public:
     bool is_owner_of_particle(ParticleIndex p_particle) const;
     bool is_owner_of_spring(SpringIndex p_spring) const;
 
-    // This should be on physics server
-    void create_soft_body();
-
 private:
     void reset_changed_parameters();
     void dispatch_sync_callback();

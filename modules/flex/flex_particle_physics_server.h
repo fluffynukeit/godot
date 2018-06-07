@@ -33,6 +33,7 @@
 
 #include "servers/particle_physics_server.h"
 
+#include "core/math/triangle_mesh.h"
 #include "flex_particle_body.h"
 #include "flex_space.h"
 
@@ -101,6 +102,9 @@ public:
     virtual void body_add_particle(RID p_body, const Vector3 &p_local_position, real_t p_mass);
     virtual void body_remove_particle(RID p_body, int p_particle_index);
     virtual int body_get_particle_count(RID p_body) const;
+
+    // This should be on physics server
+    Ref<ParticleShape> create_soft_particle_shape(Ref<TriangleMesh> p_mesh);
 
     virtual void free(RID p_rid);
 

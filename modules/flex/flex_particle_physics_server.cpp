@@ -30,6 +30,8 @@
 
 #include "flex_particle_physics_server.h"
 
+#include "thirdparty/flex/include/NvFlex.h"
+
 /**
 	@author AndreaCatania
 */
@@ -163,6 +165,12 @@ int FlexParticlePhysicsServer::body_get_particle_count(RID p_body) const {
     ERR_FAIL_COND_V(!body, 0);
 
     return body->get_particle_count();
+}
+
+Ref<ParticleShape> FlexParticlePhysicsServer::create_soft_particle_shape(Ref<Mesh> p_mesh) {
+    ERR_FAIL_COND_V(p_mesh.is_null(), Ref<ParticleShape>);
+
+    NvFlexExt
 }
 
 void FlexParticlePhysicsServer::free(RID p_rid) {
