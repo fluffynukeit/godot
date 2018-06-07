@@ -44,51 +44,33 @@ class ParticleShape : public Resource {
 	OBJ_SAVE_TYPE(ParticleShape);
 	RES_BASE_EXTENSION("particle_shape");
 
-public:
-	struct Particle {
-		Vector3 relative_position;
-		real_t mass;
-
-		Particle() :
-				relative_position(0, 0, 0),
-				mass(0) {}
-	};
-
-	struct Constraint {
-		int particle_index_0;
-		int particle_index_1;
-		float length;
-		float stiffness;
-
-		Constraint() :
-				particle_index_0(0),
-				particle_index_1(0),
-				length(0),
-				stiffness(0) {}
-	};
-
 protected:
 	static void _bind_methods();
 
 private:
-	Vector<Particle> particles;
-	Vector<Constraint> constraints;
-
-protected:
-	bool _set(const StringName &p_name, const Variant &p_property);
-	bool _get(const StringName &p_name, Variant &r_property) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
+	PoolVector<Vector3> particles;
+	PoolVector<real_t> masses;
+	PoolVector<int> constraints_indexes; // pair of 2
+	PoolVector<Vector2> constraints_info; // X = length, Y = stiffnes
 
 public:
 	ParticleShape();
 
-	void set_particles(Vector<Particle> &p_particles);
-	const Vector<Particle> &get_particles() const;
-	Vector<Particle> &get_particles() { return particles; }
+	void set_particles(PoolVector<Vector3> p_particles);
+	PoolVector<Vector3> get_particles() const { return particles; }
+	PoolVector<Vector3> &get_particles_ref() { return particles; }
 
-	void set_constraints(const Vector<Constraint> &p_constraints);
-	const Vector<Constraint> &get_constraints() const;
-	Vector<Constraint> &get_constraints() { return constraints; }
+	void set_masses(PoolVector<real_t> p_mass);
+	PoolVector<real_t> get_masses() { return masses; }
+	PoolVector<real_t> &get_masses_ref() { return masses; }
+
+	void set_constraints_indexes(const PoolVector<int> p_constraints_indexes);
+	PoolVector<int> get_constraints_indexes() { return constraints_indexes; }
+	PoolVector<int> &get_constraints_indexes_ref() { return constraints_indexes; }
+
+	void set_constraints_info(const PoolVector<Vector2> p_constraints_info);
+	PoolVector<Vector2> get_constraints_info() { return constraints_info; }
+	PoolVector<Vector2> &get_constraints_info_ref() { return constraints_info; }
 };
 
 #endif // PARTICLE_SHAPE_H

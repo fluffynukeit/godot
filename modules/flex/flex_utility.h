@@ -70,39 +70,42 @@ typedef int SpringIndex; // Spring index relative to body, can change during tim
 typedef int SpringBufferIndex; // Spring index global index, can change during time
 
 #define CreateParticle(position, mass) \
-    FlVector4(position.x, position.y, position.z, mass ? (1 / mass) : 0)
+	FlVector4(position.x, position.y, position.z, mass ? (1 / mass) : 0)
 
-#define gvec3_from_fvec4(particle) \
-    Vector3(particle[0], particle[1], particle[2])
+#define extract_position(particle) \
+	Vector3(particle[0], particle[1], particle[2])
+
+#define extract_mass(particle) \
+	particle[3]
 
 struct Spring {
-    ParticleBufferIndex index0;
-    ParticleBufferIndex index1;
+	ParticleBufferIndex index0;
+	ParticleBufferIndex index1;
 
-    Spring() :
-            index0(0),
-            index1(0) {}
+	Spring() :
+			index0(0),
+			index1(0) {}
 
-    Spring(ParticleBufferIndex p_index0, ParticleBufferIndex p_index1) :
-            index0(p_index0),
-            index1(p_index1) {}
+	Spring(ParticleBufferIndex p_index0, ParticleBufferIndex p_index1) :
+			index0(p_index0),
+			index1(p_index1) {}
 };
 
 struct FlexCallBackData {
-    Object *receiver;
-    StringName method;
+	Object *receiver;
+	StringName method;
 
-    FlexCallBackData() :
-            receiver(NULL) {}
+	FlexCallBackData() :
+			receiver(NULL) {}
 };
 
 #define make_memory_index(p_chunk, p_index)         \
-    int index = p_chunk->get_buffer_index(p_index); \
-    ERR_FAIL_COND(index > p_chunk->get_end_index());
+	int index = p_chunk->get_buffer_index(p_index); \
+	ERR_FAIL_COND(index > p_chunk->get_end_index());
 
 #define make_memory_index_V(p_chunk, p_index, ret)  \
-    int index = p_chunk->get_buffer_index(p_index); \
-    ERR_FAIL_COND_V(index > p_chunk->get_end_index(), ret);
+	int index = p_chunk->get_buffer_index(p_index); \
+	ERR_FAIL_COND_V(index > p_chunk->get_end_index(), ret);
 
 static FlVector4 return_err_flvec4(0, 0, 0, 0);
 static Vector3 return_err_vec3(0, 0, 0);
