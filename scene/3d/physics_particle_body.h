@@ -49,6 +49,7 @@ protected:
 
 public:
     ParticleObject(RID p_rid);
+    virtual ~ParticleObject();
 
     _FORCE_INLINE_ RID get_rid() { return rid; }
 };
@@ -69,6 +70,7 @@ protected:
 
 public:
     ParticleBody();
+    virtual ~ParticleBody();
 
     void set_particle_shape(Ref<ParticleShape> p_shape);
     Ref<ParticleShape> get_particle_shape() const;
