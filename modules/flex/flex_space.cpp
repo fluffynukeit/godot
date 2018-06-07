@@ -64,7 +64,8 @@ FlexSpace::FlexSpace() :
         active_particles_memory(NULL),
         springs_allocator(NULL),
         active_particles_mchunk(NULL),
-        springs_memory(NULL) {
+        springs_memory(NULL),
+        reload_active_particles(false) {
     init();
 }
 
@@ -175,7 +176,6 @@ void FlexSpace::sync() {
 
     dispatch_callbacks();
     execute_delayed_commands();
-    finalize_sync();
 
     particle_bodies_memory->unmap();
     active_particles_memory->unmap();
@@ -215,11 +215,14 @@ void FlexSpace::dispatch_callbacks() {
 }
 
 void FlexSpace::execute_delayed_commands() {
+
+    int particles_count = 0;
     for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
 
         FlexParticleBody *body = particle_bodies[i];
         if (body->delayed_commands.particle_to_add.size()) {
 
+            reload_active_particles = true;
             int previous_size = 0;
 
             // Allocate memory for particles
@@ -264,6 +267,7 @@ void FlexSpace::execute_delayed_commands() {
 
         if (body->delayed_commands.particle_to_remove.size() && body->particles_mchunk) {
 
+            reload_active_particles = true;
             // Remove particles AND find associated springs
 
             ParticleIndex last_buffer_index(body->particles_mchunk->get_end_index());
@@ -309,25 +313,6 @@ void FlexSpace::execute_delayed_commands() {
             springs_allocator->resize_chunk(body->springs_mchunk, new_size);
         }
 
-        // TODO remove
-        // Apply changed properties
-        //const uint32_t body_changed_parameters = body->get_changed_parameters();
-        //if (body_changed_parameters != 0) {
-        //    for (int i(body->get_particle_count() - 1); 0 <= i; --i) {
-        //        if (body_changed_parameters & eChangedParameterGroup) {
-        //            particle_bodies_memory->set_phase(body->particles_mchunk, i, NvFlexMakePhase(body->group, 0));
-        //        }
-        //    }
-        //}
-    }
-}
-
-void FlexSpace::finalize_sync() {
-
-    for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
-
-        FlexParticleBody *body = particle_bodies[i];
-
         // Apply changed properties
         const uint32_t body_changed_parameters = body->get_changed_parameters();
         if (body_changed_parameters != 0) {
@@ -335,6 +320,28 @@ void FlexSpace::finalize_sync() {
                 if (body_changed_parameters & eChangedParameterGroup) {
                     particle_bodies_memory->set_phase(body->particles_mchunk, i, NvFlexMakePhase(body->group, 0));
                 }
+            }
+        }
+
+        particles_count += body->particles_mchunk->get_size();
+    }
+
+    if (reload_active_particles) {
+
+        if (active_particles_mchunk) {
+            active_particles_allocator->resize_chunk(active_particles_mchunk, particles_count);
+        } else {
+            active_particles_mchunk = active_particles_allocator->allocate_chunk(particles_count);
+        }
+
+        int active_particle_index(0);
+        for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
+
+            FlexParticleBody *body = particle_bodies[i];
+
+            for (int p(0); p < body->particles_mchunk->get_size(); ++p) {
+                active_particles_memory->set_active_particle(active_particles_mchunk, active_particle_index, body->particles_mchunk->get_buffer_index(p));
+                ++active_particle_index;
             }
         }
     }
@@ -365,8 +372,16 @@ void FlexSpace::commands_write_buffer() {
         }
     }
 
-    NvFlexSetActive(solver, active_particles_memory->active_particles.buffer, &copy_desc);
-    NvFlexSetActiveCount(solver, active_particles_mchunk->get_size());
+    if (reload_active_particles) {
+        copy_desc.srcOffset = 0;
+        copy_desc.dstOffset = 0;
+        copy_desc.elementCount = active_particles_mchunk->get_size();
+
+        NvFlexSetActive(solver, active_particles_memory->active_particles.buffer, &copy_desc);
+        NvFlexSetActiveCount(solver, active_particles_mchunk->get_size());
+
+        reload_active_particles = false;
+    }
 
     if (springs_memory->was_changed())
         NvFlexSetSprings(solver, springs_memory->springs.buffer, springs_memory->lengths.buffer, springs_memory->stiffness.buffer, springs_allocator->get_last_used_index() + 1);

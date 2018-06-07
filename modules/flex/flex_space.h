@@ -66,6 +66,8 @@ class FlexSpace : public RIDFlex {
 
     Vector<FlexParticleBody *> particle_bodies;
 
+    bool reload_active_particles;
+
 public:
     FlexSpace();
     ~FlexSpace();
@@ -86,7 +88,6 @@ public:
 private:
     void dispatch_callbacks();
     void execute_delayed_commands();
-    void finalize_sync();
 
     void commands_write_buffer();
     void commands_read_buffer();

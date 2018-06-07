@@ -116,9 +116,9 @@ void ActiveParticlesMemory::terminate() {
     active_particles.destroy();
 }
 
-void ActiveParticlesMemory::set_active_particle(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) {
-    make_memory_index(p_chunk, p_particle_index);
-    active_particles[index] = index;
+void ActiveParticlesMemory::set_active_particle(const MemoryChunk *p_chunk, ActiveParticleIndex p_active_particle_index, ParticleBufferIndex p_particle_buffer_index) {
+    make_memory_index(p_chunk, p_active_particle_index);
+    active_particles[index] = p_particle_buffer_index;
 }
 
 void ActiveParticlesMemory::resize_memory(FlexUnit p_size) {

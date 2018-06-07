@@ -96,7 +96,7 @@ public:
     /// |
     /// V
 
-    void set_active_particle(const MemoryChunk *p_chunk, ParticleIndex p_particle_index);
+    void set_active_particle(const MemoryChunk *p_chunk, ActiveParticleIndex p_active_particle_index, ParticleBufferIndex p_particle_buffer_index);
 
 protected:
     virtual void resize_memory(FlexUnit p_size);
