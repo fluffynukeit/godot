@@ -222,7 +222,7 @@ void ParticleBody::_on_script_changed() {
 
 void ParticleBody::initialize_debug_resource() {
 
-	const int particle_count = particle_shape.is_valid() ? particle_shape->get_particles().size() : 0;
+	const int particle_count = particle_shape.is_valid() ? particle_shape->get_particles_ref().size() : 0;
 	resize_debug_particle_visual_instance(particle_count);
 	reset_debug_particle_positions();
 }
@@ -281,12 +281,12 @@ void ParticleBody::reset_debug_particle_positions() {
 	if (particle_shape.is_null())
 		return;
 
-	if (debug_particle_visual_instances.size() == particle_shape->get_particles().size()) {
+	if (debug_particle_visual_instances.size() == particle_shape->get_particles_ref().size()) {
 
 		Transform particle_relative_transf;
 		for (int i = 0; i < debug_particle_visual_instances.size(); ++i) {
 
-			particle_relative_transf.origin = particle_shape->get_particles()[i].relative_position;
+			particle_relative_transf.origin = particle_shape->get_particles_ref()[i];
 			VisualServer::get_singleton()->instance_set_transform(debug_particle_visual_instances[i], get_global_transform() * particle_relative_transf);
 		}
 	}

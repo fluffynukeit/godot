@@ -215,25 +215,24 @@ Ref<ParticleShape> FlexParticlePhysicsServer::create_soft_particle_shape(Ref<Tri
 	Ref<ParticleShape> shape;
 	shape.instance();
 
-	shape->get_particles().resize(generated_assets->numParticles);
+	shape->get_masses_ref().resize(generated_assets->numParticles);
+	shape->get_particles_ref().resize(generated_assets->numParticles);
 
 	for (int i(0); i < generated_assets->numParticles; ++i) {
 
 		FlVector4 particle(((FlVector4 *)generated_assets->particles)[i]);
-		shape->get_particles()[i].mass = particle.w;
-		shape->get_particles()[i].relative_position.x = particle.x;
-		shape->get_particles()[i].relative_position.y = particle.y;
-		shape->get_particles()[i].relative_position.z = particle.z;
+		shape->get_masses_ref().insert(i, extract_mass(particle));
+		shape->get_particles_ref().insert(i, extract_position(particle));
 	}
 
-	shape->get_constraints().resize(generated_assets->numSprings);
+	shape->get_constraints_indexes_ref().resize(generated_assets->numSprings * 2);
+	shape->get_constraints_info_ref().resize(generated_assets->numSprings);
 	for (int i(0); i < generated_assets->numSprings; ++i) {
 
 		Spring spring(((Spring *)generated_assets->springIndices)[i]);
-		shape->get_constraints()[i].particle_index_0 = spring.index0;
-		shape->get_constraints()[i].particle_index_1 = spring.index1;
-		shape->get_constraints()[i].length = generated_assets->springRestLengths[i];
-		shape->get_constraints()[i].stiffness = generated_assets->springCoefficients[i];
+		shape->get_constraints_indexes_ref().insert(i + 0, spring.index0);
+		shape->get_constraints_indexes_ref().insert(i + 1, spring.index1);
+		shape->get_constraints_info_ref().insert(i, Vector2(generated_assets->springRestLengths[i], generated_assets->springCoefficients[i]));
 	}
 
 	NvFlexExtDestroyAsset(generated_assets);
