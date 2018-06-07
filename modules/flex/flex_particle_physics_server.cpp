@@ -192,21 +192,30 @@ Ref<ParticleShape> FlexParticlePhysicsServer::create_soft_particle_shape(Ref<Tri
 	p_mesh->get_indices(&indices);
 	PoolVector<int>::Read indices_read = indices.read();
 
+	bool cloth = false;
+	float radius = 0.1;
+	float sampling = 0.5;
+	float clusterSpacing = 1;
+	float clusterRadius = 1;
+	float linkRadius = 2;
+	float linkStiffness = 1.0;
+	float globalStiffness = 0;
+
 	NvFlexExtAsset *generated_assets = NvFlexExtCreateSoftFromMesh(
 			/*vertices*/ ((const float *)vertices_read.ptr()),
 			/*numVertices*/ p_mesh->get_vertices().size(),
 			/*indices*/ static_cast<const int *>(indices_read.ptr()),
 			/*numIndices*/ indices.size(),
 
-			/*particleSpacing*/ 0.1, // Distance between 2 particle
-			/*volumeSampling*/ 1.0, // (0-1) This parameter regulate the number of particle that should be put inside the mesh (in case of cloth it should be 0)
-			/*surfaceSampling*/ 1.0, // (0-1) This parameter regulate the number of particle that should be put on the surface of mesh (in case of cloth it should be 1)
-			/*clusterSpacing*/ 0.2,
-			/*clusterRadius*/ 0.1,
+			/*particleSpacing*/ radius, // Distance between 2 particle
+			/*volumeSampling*/ cloth ? 0.0 : sampling, // (0-1) This parameter regulate the number of particle that should be put inside the mesh (in case of cloth it should be 0)
+			/*surfaceSampling*/ cloth ? sampling : 0.0, // (0-1) This parameter regulate the number of particle that should be put on the surface of mesh (in case of cloth it should be 1)
+			/*clusterSpacing*/ clusterSpacing * radius,
+			/*clusterRadius*/ clusterRadius * radius,
 			/*clusterStiffness*/ 0.5,
-			/*linkRadius*/ 0.1,
-			/*linkStiffness*/ 0.5,
-			/*globalStiffness*/ 0.5,
+			/*linkRadius*/ linkRadius * radius,
+			/*linkStiffness*/ linkStiffness,
+			/*globalStiffness*/ globalStiffness,
 			/*clusterPlasticThreshold*/ 0.0,
 			/*clusterPlasticCreep*/ 0.0);
 
@@ -219,20 +228,19 @@ Ref<ParticleShape> FlexParticlePhysicsServer::create_soft_particle_shape(Ref<Tri
 	shape->get_particles_ref().resize(generated_assets->numParticles);
 
 	for (int i(0); i < generated_assets->numParticles; ++i) {
-
 		FlVector4 particle(((FlVector4 *)generated_assets->particles)[i]);
-		shape->get_masses_ref().insert(i, extract_mass(particle));
-		shape->get_particles_ref().insert(i, extract_position(particle));
+		shape->get_masses_ref().set(i, extract_mass(particle) == 0 ? 0.01 : 1 / extract_mass(particle));
+		shape->get_particles_ref().set(i, extract_position(particle));
 	}
 
 	shape->get_constraints_indexes_ref().resize(generated_assets->numSprings * 2);
+	for (int i(0); i < shape->get_constraints_indexes_ref().size(); ++i) {
+		shape->get_constraints_indexes_ref().set(i, generated_assets->springIndices[i]);
+	}
+
 	shape->get_constraints_info_ref().resize(generated_assets->numSprings);
 	for (int i(0); i < generated_assets->numSprings; ++i) {
-
-		Spring spring(((Spring *)generated_assets->springIndices)[i]);
-		shape->get_constraints_indexes_ref().insert(i + 0, spring.index0);
-		shape->get_constraints_indexes_ref().insert(i + 1, spring.index1);
-		shape->get_constraints_info_ref().insert(i, Vector2(generated_assets->springRestLengths[i], generated_assets->springCoefficients[i]));
+		shape->get_constraints_info_ref().set(i, Vector2(generated_assets->springRestLengths[i], generated_assets->springCoefficients[i]));
 	}
 
 	NvFlexExtDestroyAsset(generated_assets);

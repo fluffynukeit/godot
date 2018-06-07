@@ -53,8 +53,7 @@ void ParticleShape::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_VECTOR2_ARRAY, "constraints_info"), "set_constraints_info", "get_constraints_info");
 }
 
-ParticleShape::ParticleShape() {
-}
+ParticleShape::ParticleShape() {}
 
 void ParticleShape::set_particles(PoolVector<Vector3> p_particles) {
 	particles = p_particles;

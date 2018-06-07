@@ -127,12 +127,12 @@ void FlexParticleBody::load_shape(Ref<ParticleShape> p_shape, const Transform &i
 			const int dif = resource_p_count - active_p_count;
 			for (int i(0); i < dif; ++i) {
 				const int p(resource_p_count - i - 1);
-				add_particle(initial_transform.xform(p_shape->get_particles_ref()[p]), p_shape->get_masses_ref()[p]);
+				add_particle(initial_transform.xform(p_shape->get_particles_ref().get(p)), p_shape->get_masses_ref().get(p));
 			}
 		}
 
 		for (int i(0); i < active_p_count; ++i) {
-			reset_particle(i, initial_transform.xform(p_shape->get_particles_ref()[i]), p_shape->get_masses_ref()[i]);
+			reset_particle(i, initial_transform.xform(p_shape->get_particles_ref().get(i)), p_shape->get_masses_ref().get(i));
 		}
 	}
 
@@ -156,16 +156,16 @@ void FlexParticleBody::load_shape(Ref<ParticleShape> p_shape, const Transform &i
 			const int dif = resource_s_count - active_s_count;
 			for (int i(0); i < dif; ++i) {
 				const int s(resource_s_count - i - 1);
-				add_spring(p_shape->get_constraints_indexes_ref()[s + 0], p_shape->get_constraints_indexes_ref()[s + 1], p_shape->get_constraints_info_ref()[s].x, p_shape->get_constraints_info_ref()[s].y);
+				add_spring(p_shape->get_constraints_indexes_ref().get(s), p_shape->get_constraints_indexes_ref().get(s + 1), p_shape->get_constraints_info_ref().get(s).x, p_shape->get_constraints_info_ref().get(s).y);
 			}
 		}
 
 		for (int i(0); i < active_s_count; ++i) {
 			reset_spring(i,
-					p_shape->get_constraints_indexes_ref()[i + 0],
-					p_shape->get_constraints_indexes_ref()[i + 1],
-					p_shape->get_constraints_info_ref()[i].x,
-					p_shape->get_constraints_info_ref()[i].y);
+					p_shape->get_constraints_indexes_ref().get(i),
+					p_shape->get_constraints_indexes_ref().get(i + 1),
+					p_shape->get_constraints_info_ref().get(i).x,
+					p_shape->get_constraints_info_ref().get(i).y);
 		}
 	}
 }
