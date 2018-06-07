@@ -103,10 +103,10 @@ public:
     virtual void body_remove_particle(RID p_body, int p_particle_index);
     virtual int body_get_particle_count(RID p_body) const;
 
-    // This should be on physics server
-    Ref<ParticleShape> create_soft_particle_shape(Ref<TriangleMesh> p_mesh);
-
     virtual void free(RID p_rid);
+
+    // This should be on physics server
+    virtual Ref<ParticleShape> create_soft_particle_shape(Ref<TriangleMesh> p_mesh);
 
     virtual void init();
     virtual void terminate();

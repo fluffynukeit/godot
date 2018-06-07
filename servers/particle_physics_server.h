@@ -1,6 +1,7 @@
 #ifndef PARTICLE_PHYSICS_SERVER_H
 #define PARTICLE_PHYSICS_SERVER_H
 
+#include "core/math/triangle_mesh.h"
 #include "object.h"
 #include "resource.h"
 #include "scene/resources/particle_shape.h"
@@ -56,6 +57,8 @@ public:
     virtual int body_get_particle_count(RID p_body) const = 0;
 
     virtual void free(RID p_rid) = 0;
+
+    virtual Ref<ParticleShape> create_soft_particle_shape(Ref<TriangleMesh> p_mesh) = 0;
 
 public:
     // Internals
