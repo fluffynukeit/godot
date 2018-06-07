@@ -206,10 +206,12 @@ void FlexSpace::add_particle_body(FlexParticleBody *p_body) {
 }
 
 void FlexSpace::remove_particle_body(FlexParticleBody *p_body) {
-    // TODO implement
-    print_error("remove_particle_body NOT YET IMPLEMENTED! ");
-    //p_body->space = NULL;
-    //particle_bodies.erase(p_body);
+
+    particle_bodies_allocator->deallocate_chunk(p_body->particles_mchunk);
+    springs_allocator->deallocate_chunk(p_body->springs_mchunk);
+    p_body->space = NULL;
+    particle_bodies.erase(p_body);
+    reload_active_particles = true;
 }
 
 void FlexSpace::dispatch_callbacks() {
