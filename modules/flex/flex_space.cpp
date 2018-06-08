@@ -198,8 +198,9 @@ void FlexSpace::sync() {
 
 	particle_bodies_memory->unmap();
 	active_particles_memory->unmap();
-	if (springs_memory->was_changed()) springs_allocator->sanitize(); // This buffer should be compact when the GPU has to use it
+	if (springs_memory->was_changed()) springs_allocator->sanitize(); // The memory must be consecutive to be sent to GPU
 	springs_memory->unmap();
+	if (geometries_memory->was_changed()) geometries_allocator->sanitize(); // The memory must be consecutive to be sent to GPU
 	geometries_memory->unmap();
 
 	commands_write_buffer();
@@ -235,13 +236,18 @@ void FlexSpace::remove_particle_body(FlexParticleBody *p_body) {
 void FlexSpace::add_primitive_body(FlexPrimitiveBody *p_body) {
 	ERR_FAIL_COND(p_body->space);
 	p_body->space = this;
+	p_body->changed_parameters = eChangedPrimitiveBodyParamAll;
 	primitive_bodies.push_back(p_body);
 }
 
 void FlexSpace::remove_primitive_body(FlexPrimitiveBody *p_body) {
-	print_error("TODO Remove from space");
 	ERR_FAIL_COND(p_body->space != this);
+
+	if (p_body->geometry_mchunk)
+		geometry_chunks_to_deallocate.push_back(p_body->geometry_mchunk);
+
 	p_body->space = NULL;
+	p_body->geometry_mchunk = NULL;
 	primitive_bodies.erase(p_body);
 }
 
@@ -386,8 +392,54 @@ void FlexSpace::execute_delayed_commands() {
 
 void FlexSpace::execute_geometries_commands() {
 	for (int i(primitive_bodies.size() - 1); 0 <= i; --i) {
-		FlexPrimitiveBody *body(primitive_bodies[i]);
+
+		FlexPrimitiveBody *body = primitive_bodies[i];
+
+		if (!body->get_shape()) {
+			// Remove geometry if has memory chunk
+			if (body->geometry_mchunk) {
+				geometry_chunks_to_deallocate.push_back(body->geometry_mchunk);
+				body->geometry_mchunk = NULL;
+			}
+			continue;
+		}
+
+		// Add or update geometry
+
+		if (body->changed_parameters == 0)
+			continue; // Nothing to update
+
+		if (!body->geometry_mchunk) {
+			body->geometry_mchunk = geometries_allocator->allocate_chunk(1);
+		}
+
+		if (body->changed_parameters & eChangedPrimitiveBodyParamShape) {
+			NvFlexCollisionGeometry geometry;
+			body->get_shape()->get_shape(&geometry);
+			geometries_memory->set_shape(body->geometry_mchunk, 0, geometry);
+			body->changed_parameters |= eChangedPrimitiveBodyParamFlags;
+		}
+
+		if (body->changed_parameters & eChangedPrimitiveBodyParamTransform) {
+			// TODO Implement this
+			FlVector4 position;
+			Quat rotation;
+			geometries_memory->set_position(body->geometry_mchunk, 0, position);
+			geometries_memory->set_rotation(body->geometry_mchunk, 0, rotation);
+		}
+
+		if (body->changed_parameters & eChangedPrimitiveBodyParamFlags) {
+			// TODO collision channel
+			geometries_memory->set_flags(body->geometry_mchunk, 0, NvFlexMakeShapeFlagsWithChannels(body->get_shape()->get_type(), body->is_kinematic(), eNvFlexPhaseShapeChannel0));
+		}
+
+		body->set_clean();
 	}
+
+	for (int i(geometry_chunks_to_deallocate.size() - 1); 0 <= i; --i) {
+		geometries_allocator->deallocate_chunk(geometry_chunks_to_deallocate[i]);
+	}
+	geometry_chunks_to_deallocate.clear();
 }
 
 void FlexSpace::commands_write_buffer() {
@@ -411,7 +463,7 @@ void FlexSpace::commands_write_buffer() {
 			if (changed_params & eChangedBodyParameterGroup)
 				NvFlexSetPhases(solver, particle_bodies_memory->phases.buffer, &copy_desc);
 
-			body->reset_changed_parameters();
+			body->set_clean();
 		}
 	}
 
@@ -428,6 +480,10 @@ void FlexSpace::commands_write_buffer() {
 
 	if (springs_memory->was_changed())
 		NvFlexSetSprings(solver, springs_memory->springs.buffer, springs_memory->lengths.buffer, springs_memory->stiffness.buffer, springs_allocator->get_last_used_index() + 1);
+
+	if (geometries_memory->was_changed())
+		// TODO Implement previous position and rotation
+		NvFlexSetShapes(solver, geometries_memory->collision_shapes.buffer, geometries_memory->positions.buffer, geometries_memory->rotations.buffer, NULL, NULL, geometries_memory->flags.buffer, geometries_allocator->get_last_used_index() + 1);
 }
 
 void FlexSpace::commands_read_buffer() {

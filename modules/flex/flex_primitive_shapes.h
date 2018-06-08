@@ -40,18 +40,12 @@
 #include "rid_flex.h"
 #include "thirdparty/flex/include/NvFlexExt.h"
 
-enum FlexPrimitiveShapeType {
-	eFlexPrimitiveShapeTypeBox
-};
-
 class FlexPrimitiveShape : public RIDFlex {
-
-	FlexPrimitiveShapeType shape_type;
 
 public:
 	FlexPrimitiveShape();
 
-	virtual FlexPrimitiveShapeType get_type() = 0;
+	virtual NvFlexCollisionShapeType get_type() = 0;
 	virtual void get_shape(NvFlexCollisionGeometry *r_shape) const = 0;
 	virtual void set_data(const Variant &p_data) = 0;
 	virtual Variant get_data() const = 0;
@@ -64,7 +58,7 @@ class FlexPrimitiveBoxShape : public FlexPrimitiveShape {
 public:
 	FlexPrimitiveBoxShape();
 
-	virtual FlexPrimitiveShapeType get_type() { return eFlexPrimitiveShapeTypeBox; }
+	virtual NvFlexCollisionShapeType get_type() { return eNvFlexShapeBox; }
 	virtual void get_shape(NvFlexCollisionGeometry *r_shape) const;
 	virtual void set_data(const Variant &p_data);
 	virtual Variant get_data() const;

@@ -212,7 +212,8 @@ GeometryMemory::GeometryMemory(NvFlexLibrary *p_lib) :
 		collision_shapes(p_lib),
 		positions(p_lib),
 		rotations(p_lib),
-		flags(p_lib) {
+		flags(p_lib),
+		changed(false) {
 }
 
 void GeometryMemory::map() {
@@ -220,6 +221,7 @@ void GeometryMemory::map() {
 	positions.map(eNvFlexMapWait);
 	rotations.map(eNvFlexMapWait);
 	flags.map(eNvFlexMapWait);
+	changed = false;
 }
 
 void GeometryMemory::unmap() {
@@ -239,6 +241,7 @@ void GeometryMemory::terminate() {
 void GeometryMemory::set_shape(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index, const NvFlexCollisionGeometry &p_shape) {
 	make_memory_index(p_chunk, p_geometry_index);
 	collision_shapes[index] = p_shape;
+	changed = true;
 }
 
 NvFlexCollisionGeometry GeometryMemory::get_shape(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index) const {
@@ -249,6 +252,7 @@ NvFlexCollisionGeometry GeometryMemory::get_shape(const MemoryChunk *p_chunk, Ge
 void GeometryMemory::set_position(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index, const FlVector4 &p_position) {
 	make_memory_index(p_chunk, p_geometry_index);
 	positions[index] = p_position;
+	changed = true;
 }
 
 const FlVector4 &GeometryMemory::get_position(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index) const {
@@ -259,6 +263,7 @@ const FlVector4 &GeometryMemory::get_position(const MemoryChunk *p_chunk, Geomet
 void GeometryMemory::set_rotation(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index, const Quat &p_rotation) {
 	make_memory_index(p_chunk, p_geometry_index);
 	rotations[index] = p_rotation;
+	changed = true;
 }
 
 const Quat &GeometryMemory::get_rotation(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index) const {
@@ -269,6 +274,7 @@ const Quat &GeometryMemory::get_rotation(const MemoryChunk *p_chunk, GeometryInd
 void GeometryMemory::set_flags(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index, int p_flags) {
 	make_memory_index(p_chunk, p_geometry_index);
 	flags[index] = p_flags;
+	changed = true;
 }
 
 int GeometryMemory::get_flags(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index) const {

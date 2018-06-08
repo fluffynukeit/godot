@@ -33,10 +33,15 @@
 */
 
 #include "flex_primitive_body.h"
+#include "flex_primitive_shapes.h"
 
 FlexPrimitiveBody::FlexPrimitiveBody() :
 		RIDFlex(),
-		space(NULL) {
+		changed_parameters(0),
+		geometry_mchunk(NULL),
+		space(NULL),
+		shape(NULL),
+		kinematic(false) {
 }
 
 void FlexPrimitiveBody::set_space(FlexSpace *p_space) {
@@ -45,4 +50,23 @@ void FlexPrimitiveBody::set_space(FlexSpace *p_space) {
 
 FlexSpace *FlexPrimitiveBody::get_space() const {
 	return space;
+}
+
+void FlexPrimitiveBody::set_shape(FlexPrimitiveShape *p_shape) {
+	ERR_FAIL_COND(shape);
+	shape = p_shape;
+	changed_parameters |= eChangedPrimitiveBodyParamFlags;
+}
+
+FlexPrimitiveShape *FlexPrimitiveBody::get_shape() const {
+	return shape;
+}
+
+void FlexPrimitiveBody::set_kinematic(bool p_kinematic) {
+	kinematic = p_kinematic;
+	changed_parameters |= eChangedPrimitiveBodyParamFlags;
+}
+
+void FlexPrimitiveBody::set_clean() {
+	changed_parameters = 0;
 }
