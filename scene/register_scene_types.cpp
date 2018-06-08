@@ -65,6 +65,8 @@
 #include "scene/2d/visibility_notifier_2d.h"
 #include "scene/2d/y_sort.h"
 #include "scene/3d/physics_particle_body.h"
+#include "scene/3d/physics_particle_object.h"
+#include "scene/3d/physics_particle_primitive_body.h"
 #include "scene/animation/animation_blend_space_1d.h"
 #include "scene/animation/animation_blend_space_2d.h"
 #include "scene/animation/animation_blend_tree.h"
@@ -147,7 +149,6 @@
 #include "scene/resources/mesh_library.h"
 #include "scene/resources/packed_scene.h"
 #include "scene/resources/particle_body_model.h"
-#include "scene/resources/particle_shape.h"
 #include "scene/resources/particles_material.h"
 #include "scene/resources/physics_material.h"
 #include "scene/resources/plane_shape.h"
@@ -444,6 +445,7 @@ void register_scene_types() {
 	ClassDB::register_class<BoneAttachment>();
 	ClassDB::register_virtual_class<ParticleObject>();
 	ClassDB::register_class<ParticleBody>();
+	ClassDB::register_class<ParticlePrimitiveBody>();
 
 	ClassDB::register_class<VehicleBody>();
 	ClassDB::register_class<VehicleWheel>();
@@ -600,7 +602,6 @@ void register_scene_types() {
 	ClassDB::register_class<ConvexPolygonShape>();
 	ClassDB::register_class<ConcavePolygonShape>();
 
-	ClassDB::register_class<ParticleShape>();
 	ClassDB::register_class<ParticleBodyModel>();
 
 	ClassDB::register_class<SurfaceTool>();
