@@ -43,7 +43,7 @@ void ParticlePrimitiveBody::_bind_methods() {
 }
 
 ParticlePrimitiveBody::ParticlePrimitiveBody() :
-		ParticleObject(RID()) {
+		ParticleObject(ParticlePhysicsServer::get_singleton()->primitive_body_create()) {
 }
 
 void ParticlePrimitiveBody::set_shape(const Ref<Shape> &p_shape) {
