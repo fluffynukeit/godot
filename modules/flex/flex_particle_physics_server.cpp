@@ -206,6 +206,20 @@ RID FlexParticlePhysicsServer::primitive_shape_create(PrimitiveShapeType p_type)
 	}
 }
 
+void FlexParticlePhysicsServer::primitive_shape_set_data(RID p_shape, const Variant &p_data) {
+	FlexPrimitiveShape *shape = primitive_shape_owner.get(p_shape);
+	ERR_FAIL_COND(!shape);
+
+	shape->set_data(p_data);
+}
+
+Variant FlexParticlePhysicsServer::primitive_shape_get_data(RID p_shape) const {
+	FlexPrimitiveShape *shape = primitive_shape_owner.get(p_shape);
+	ERR_FAIL_COND_V(!shape, Variant());
+
+	return shape->get_data();
+}
+
 void FlexParticlePhysicsServer::free(RID p_rid) {
 	if (space_owner.owns(p_rid)) {
 		FlexSpace *space = space_owner.get(p_rid);

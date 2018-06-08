@@ -69,6 +69,9 @@ public:
 
 	virtual RID primitive_shape_create(PrimitiveShapeType p_type) = 0;
 
+	virtual void primitive_shape_set_data(RID p_shape, const Variant &p_data) = 0;
+	virtual Variant primitive_shape_get_data(RID p_shape) const = 0;
+
 	/* COMMON */
 	virtual void free(RID p_rid) = 0;
 

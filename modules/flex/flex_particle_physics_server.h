@@ -116,6 +116,9 @@ public:
 	/* PRIMITIVE SHAPE */
 	virtual RID primitive_shape_create(ParticlePhysicsServer::PrimitiveShapeType p_type);
 
+	virtual void primitive_shape_set_data(RID p_shape, const Variant &p_data);
+	virtual Variant primitive_shape_get_data(RID p_shape) const;
+
 	/* COMMON */
 	virtual void free(RID p_rid);
 

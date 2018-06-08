@@ -34,19 +34,26 @@
 
 #include "flex_primitive_shapes.h"
 
-FlexPrimitiveShape::FlexPrimitiveShape(FlexPrimitiveShapeType p_type) :
-		RIDFlex(),
-		shape_type(p_type) {
+FlexPrimitiveShape::FlexPrimitiveShape() :
+		RIDFlex() {
 }
 
 FlexPrimitiveBoxShape::FlexPrimitiveBoxShape() :
-		FlexPrimitiveShape(eFlexPrimitiveShapeTypeBox),
+		FlexPrimitiveShape(),
 		extends(1.0, 1.0, 1.0) {}
 
 void FlexPrimitiveBoxShape::get_shape(NvFlexCollisionGeometry *r_shape) const {
 	r_shape->box.halfExtents[0] = extends.x;
 	r_shape->box.halfExtents[1] = extends.y;
 	r_shape->box.halfExtents[2] = extends.z;
+}
+
+void FlexPrimitiveBoxShape::set_data(const Variant &p_data) {
+	set_extends(p_data);
+}
+
+Variant FlexPrimitiveBoxShape::get_data() const {
+	return extends;
 }
 
 void FlexPrimitiveBoxShape::set_extends(const Vector3 &p_extends) {

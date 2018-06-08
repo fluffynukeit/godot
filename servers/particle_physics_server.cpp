@@ -39,6 +39,9 @@ void ParticlePhysicsServer::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("primitive_shape_create", "shape_type"), &ParticlePhysicsServer::primitive_shape_create);
 
+	ClassDB::bind_method(D_METHOD("primitive_shape_set_data", "shape", "data"), &ParticlePhysicsServer::primitive_shape_set_data);
+	ClassDB::bind_method(D_METHOD("primitive_shape_get_data", "shape"), &ParticlePhysicsServer::primitive_shape_get_data);
+
 	ClassDB::bind_method(D_METHOD("free", "rid"), &ParticlePhysicsServer::free);
 
 	ClassDB::bind_method(D_METHOD("create_soft_particle_body_model", "trimesh", "cloth", "sampling", "cluster_spacing", "cluster_radius", "cluster_stiffness", "link_radius", "link_stiffness"), &ParticlePhysicsServer::create_soft_particle_body_model);
