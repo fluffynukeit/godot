@@ -36,6 +36,7 @@
 #include "core/math/triangle_mesh.h"
 #include "flex_particle_body.h"
 #include "flex_primitive_body.h"
+#include "flex_primitive_shapes.h"
 #include "flex_space.h"
 
 /**
@@ -68,6 +69,7 @@ private:
 	mutable RID_Owner<FlexSpace> space_owner;
 	mutable RID_Owner<FlexParticleBody> body_owner;
 	mutable RID_Owner<FlexPrimitiveBody> primitive_body_owner;
+	mutable RID_Owner<FlexPrimitiveShape> primitive_shape_owner;
 
 	short last_space_index;
 	Vector<FlexSpace *> active_spaces;
@@ -111,6 +113,7 @@ public:
 	virtual RID primitive_body_create();
 
 	/* PRIMITIVE SHAPE */
+	virtual RID primitive_shape_create();
 
 	/* COMMON */
 	virtual void free(RID p_rid);

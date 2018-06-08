@@ -173,6 +173,11 @@ RID FlexParticlePhysicsServer::primitive_body_create() {
 	CreateThenReturnRID(primitive_body_owner, primitive);
 }
 
+RID FlexParticlePhysicsServer::primitive_shape_create() {
+	FlexPrimitiveShape *primitive_shape = memnew(FlexPrimitiveShape);
+	CreateThenReturnRID(primitive_shape_owner, primitive_shape);
+}
+
 void FlexParticlePhysicsServer::free(RID p_rid) {
 	if (space_owner.owns(p_rid)) {
 		FlexSpace *space = space_owner.get(p_rid);
@@ -186,6 +191,10 @@ void FlexParticlePhysicsServer::free(RID p_rid) {
 		FlexPrimitiveBody *primitive = primitive_body_owner.get(p_rid);
 		primitive_body_owner.free(p_rid);
 		memdelete(primitive);
+	} else if (primitive_shape_owner.owns(p_rid)) {
+		FlexPrimitiveShape *primitive_shape = primitive_shape_owner.get(p_rid);
+		primitive_shape_owner.free(p_rid);
+		memdelete(primitive_shape);
 	} else {
 		ERR_EXPLAIN("Can't delete RID, owner not found");
 		ERR_FAIL();
