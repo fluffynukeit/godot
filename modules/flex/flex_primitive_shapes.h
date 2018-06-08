@@ -35,6 +35,7 @@
 #ifndef FLEX_PRIMITIVE_SHAPES_H
 #define FLEX_PRIMITIVE_SHAPES_H
 
+#include "core/variant.h"
 #include "flex_utility.h"
 #include "rid_flex.h"
 #include "thirdparty/flex/include/NvFlexExt.h"
@@ -48,10 +49,12 @@ class FlexPrimitiveShape : public RIDFlex {
 	FlexPrimitiveShapeType shape_type;
 
 public:
-	FlexPrimitiveShape(FlexPrimitiveShapeType p_type);
+	FlexPrimitiveShape();
 
-	FlexPrimitiveShapeType get_shape_type();
+	virtual FlexPrimitiveShapeType get_type() = 0;
 	virtual void get_shape(NvFlexCollisionGeometry *r_shape) const = 0;
+	virtual void set_data(const Variant &p_data) = 0;
+	virtual Variant get_data() const = 0;
 };
 
 class FlexPrimitiveBoxShape : public FlexPrimitiveShape {
@@ -61,7 +64,10 @@ class FlexPrimitiveBoxShape : public FlexPrimitiveShape {
 public:
 	FlexPrimitiveBoxShape();
 
+	virtual FlexPrimitiveShapeType get_type() { return eFlexPrimitiveShapeTypeBox; }
 	virtual void get_shape(NvFlexCollisionGeometry *r_shape) const;
+	virtual void set_data(const Variant &p_data);
+	virtual Variant get_data() const;
 
 	void set_extends(const Vector3 &p_extends);
 	const Vector3 &get_extends() const { return extends; }
