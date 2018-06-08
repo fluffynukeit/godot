@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  physics_particle_body.h                                              */
+/*  physics_particle_object.h                                            */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -32,55 +32,25 @@
  * @author AndreaCatania
  */
 
-#ifndef PARTICLE_BODY_H
-#define PARTICLE_BODY_H
+#ifndef PHYSICS_PARTICLE_OBJECT_H
+#define PHYSICS_PARTICLE_OBJECT_H
 
-#include "physics_particle_object.h"
-#include "scene/resources/particle_body_model.h"
-#include "scene/resources/primitive_meshes.h"
+#include "core/resource.h"
 #include "spatial.h"
 
-class ParticleBody : public ParticleObject {
-	GDCLASS(ParticleBody, ParticleObject);
-
-	bool reset_particles_to_base_shape;
-	Ref<ParticleBodyModel> particle_body_model;
-
-	uint32_t collision_layer;
-
-	Vector<RID> debug_particle_visual_instances;
-	Ref<SphereMesh> debug_particle_mesh;
+class ParticleObject : public Spatial {
+	GDCLASS(ParticleObject, Spatial);
 
 protected:
+	RID rid;
+
 	static void _bind_methods();
 
 public:
-	ParticleBody();
-	virtual ~ParticleBody();
+	ParticleObject(RID p_rid);
+	virtual ~ParticleObject();
 
-	void set_particle_body_model(Ref<ParticleBodyModel> p_shape);
-	Ref<ParticleBodyModel> get_particle_body_model() const;
-
-	void add_particle(const Vector3 &p_local_position, real_t p_mass);
-	void remove_particle(int p_particle_index);
-	void set_collision_layer(uint32_t p_layer);
-	uint32_t get_collision_layer() const;
-
-	void set_collision_layer_bit(int p_bit, bool p_value);
-	bool get_collision_layer_bit(int p_bit) const;
-
-protected:
-	void _notification(int p_what);
-	void resource_changed(const RES &p_res);
-
-	void commands_process_internal(Object *p_cmds);
-
-private:
-	void _on_script_changed();
-	void initialize_debug_resource();
-	void update_debug_visual_instances(ParticleBodyCommands *p_cmds);
-	void resize_debug_particle_visual_instance(int new_size);
-	void reset_debug_particle_positions();
+	_FORCE_INLINE_ RID get_rid() { return rid; }
 };
 
-#endif // PARTICLE_BODY_H
+#endif // PHYSICS_PARTICLE_OBJECT_H

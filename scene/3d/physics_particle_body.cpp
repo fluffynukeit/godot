@@ -33,20 +33,8 @@
  */
 
 #include "physics_particle_body.h"
+
 #include "core_string_names.h"
-
-void ParticleObject::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("get_rid"), &ParticleBody::get_rid);
-}
-
-ParticleObject::ParticleObject(RID p_rid) :
-		rid(p_rid) {
-}
-
-ParticleObject::~ParticleObject() {
-
-	ParticlePhysicsServer::get_singleton()->free(rid);
-}
 
 void ParticleBody::_bind_methods() {
 
