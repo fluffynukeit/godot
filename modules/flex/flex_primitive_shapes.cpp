@@ -38,3 +38,17 @@ FlexPrimitiveShape::FlexPrimitiveShape(FlexPrimitiveShapeType p_type) :
 		RIDFlex(),
 		shape_type(p_type) {
 }
+
+FlexPrimitiveBoxShape::FlexPrimitiveBoxShape() :
+		FlexPrimitiveShape(eFlexPrimitiveShapeTypeBox),
+		extends(1.0, 1.0, 1.0) {}
+
+void FlexPrimitiveBoxShape::get_shape(NvFlexCollisionGeometry *r_shape) const {
+	r_shape->box.halfExtents[0] = extends.x;
+	r_shape->box.halfExtents[1] = extends.y;
+	r_shape->box.halfExtents[2] = extends.z;
+}
+
+void FlexPrimitiveBoxShape::set_extends(const Vector3 &p_extends) {
+	extends = p_extends;
+}
