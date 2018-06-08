@@ -42,78 +42,78 @@
 */
 
 class FlexParticleBodyCommands : public ParticleBodyCommands {
-    GDCLASS(FlexParticleBodyCommands, ParticleBodyCommands);
+	GDCLASS(FlexParticleBodyCommands, ParticleBodyCommands);
 
 public:
-    FlexParticleBody *body;
+	FlexParticleBody *body;
 
-    virtual void load_shape(Ref<ParticleShape> p_shape, const Transform &initial_transform);
+	virtual void load_shape(Ref<ParticleShape> p_shape, const Transform &initial_transform);
 
-    virtual void reset_particle(int p_particle_index, const Vector3 &p_position, real_t p_mass);
+	virtual void reset_particle(int p_particle_index, const Vector3 &p_position, real_t p_mass);
 
-    virtual Vector3 get_particle_position(int p_particle_index) const;
+	virtual Vector3 get_particle_position(int p_particle_index) const;
 
-    virtual const Vector3 &get_particle_velocity(int p_particle_index) const;
-    virtual void set_particle_velocity(int p_particle_index, const Vector3 &p_velocity);
+	virtual const Vector3 &get_particle_velocity(int p_particle_index) const;
+	virtual void set_particle_velocity(int p_particle_index, const Vector3 &p_velocity);
 };
 
 class FlexParticlePhysicsServer : public ParticlePhysicsServer {
 	GDCLASS(FlexParticlePhysicsServer, ParticlePhysicsServer);
 
 public:
-    static FlexParticlePhysicsServer *singleton;
+	static FlexParticlePhysicsServer *singleton;
 
 private:
-    mutable RID_Owner<FlexSpace> space_owner;
-    mutable RID_Owner<FlexParticleBody> body_owner;
+	mutable RID_Owner<FlexSpace> space_owner;
+	mutable RID_Owner<FlexParticleBody> body_owner;
 
-    short last_space_index;
-    Vector<FlexSpace *> active_spaces;
+	short last_space_index;
+	Vector<FlexSpace *> active_spaces;
 
-    bool is_active;
-    FlexParticleBodyCommands *particle_body_commands;
-    Variant particle_body_commands_variant;
+	bool is_active;
+	FlexParticleBodyCommands *particle_body_commands;
+	Variant particle_body_commands_variant;
 
 public:
-    FlexParticlePhysicsServer();
-    virtual ~FlexParticlePhysicsServer();
+	FlexParticlePhysicsServer();
+	virtual ~FlexParticlePhysicsServer();
 
-    _FORCE_INLINE_ FlexParticleBodyCommands *get_particle_body_commands(FlexParticleBody *body) {
-        particle_body_commands->body = body;
-        return particle_body_commands;
-    }
+	_FORCE_INLINE_ FlexParticleBodyCommands *get_particle_body_commands(FlexParticleBody *body) {
+		particle_body_commands->body = body;
+		return particle_body_commands;
+	}
 
-    _FORCE_INLINE_ Variant *get_particle_body_commands_variant(FlexParticleBody *body) {
-        particle_body_commands->body = body;
-        return &particle_body_commands_variant;
-    }
+	_FORCE_INLINE_ Variant *get_particle_body_commands_variant(FlexParticleBody *body) {
+		particle_body_commands->body = body;
+		return &particle_body_commands_variant;
+	}
 
-    virtual RID space_create();
-    virtual void space_set_active(RID p_space, bool p_active);
-    virtual bool space_is_active(const RID p_space) const;
+	virtual RID space_create();
+	virtual void space_set_active(RID p_space, bool p_active);
+	virtual bool space_is_active(const RID p_space) const;
 
-    virtual RID body_create();
-    virtual void body_set_space(RID p_body, RID p_space);
-    virtual void body_set_callback(RID p_body, ParticleBodyCallback p_callback_type, Object *p_receiver, const StringName &p_method);
+	virtual RID body_create();
+	virtual void body_set_space(RID p_body, RID p_space);
+	virtual void body_set_callback(RID p_body, ParticleBodyCallback p_callback_type, Object *p_receiver, const StringName &p_method);
 
-    virtual void body_set_collision_layer(RID p_body, uint32_t p_layer);
-    virtual uint32_t body_get_collision_layer(RID p_body) const;
+	virtual void body_set_collision_layer(RID p_body, uint32_t p_layer);
+	virtual uint32_t body_get_collision_layer(RID p_body) const;
 
-    virtual void body_add_particle(RID p_body, const Vector3 &p_local_position, real_t p_mass);
-    virtual void body_remove_particle(RID p_body, int p_particle_index);
-    virtual int body_get_particle_count(RID p_body) const;
+	virtual void body_add_particle(RID p_body, const Vector3 &p_local_position, real_t p_mass);
+	virtual void body_remove_particle(RID p_body, int p_particle_index);
+	virtual int body_get_particle_count(RID p_body) const;
 
-    virtual void free(RID p_rid);
+	virtual void free(RID p_rid);
 
-    // This should be on physics server
-    virtual Ref<ParticleShape> create_soft_particle_shape(Ref<TriangleMesh> p_mesh);
+	// This should be on physics server
+	virtual Ref<ParticleShape> create_soft_particle_shape(Ref<TriangleMesh> p_mesh, bool p_cloth, float p_sampling, float p_clusterSpacing, float p_clusterRadius, float p_clusterStiffness, float p_linkRadius, float p_linkStiffness);
 
-    virtual void init();
-    virtual void terminate();
-    virtual void set_active(bool p_active);
-    virtual void sync();
-    virtual void flush_queries();
-    virtual void step(real_t p_delta_time);
+	virtual void init();
+	virtual void terminate();
+	virtual void set_active(bool p_active);
+	virtual void sync();
+	virtual void flush_queries();
+	virtual void step(real_t p_delta_time);
 };
 
 #endif // FLEX_PARTICLE_PHYSICS_SERVER_H
