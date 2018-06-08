@@ -35,7 +35,7 @@
 #ifndef PARTICLE_BODY_H
 #define PARTICLE_BODY_H
 
-#include "scene/resources/particle_shape.h"
+#include "scene/resources/particle_body_model.h"
 #include "scene/resources/primitive_meshes.h"
 #include "spatial.h"
 
@@ -58,7 +58,7 @@ class ParticleBody : public ParticleObject {
 	GDCLASS(ParticleBody, ParticleObject);
 
 	bool reset_particles_to_base_shape;
-	Ref<ParticleShape> particle_shape;
+	Ref<ParticleBodyModel> particle_body_model;
 
 	uint32_t collision_layer;
 
@@ -72,8 +72,8 @@ public:
 	ParticleBody();
 	virtual ~ParticleBody();
 
-	void set_particle_shape(Ref<ParticleShape> p_shape);
-	Ref<ParticleShape> get_particle_shape() const;
+	void set_particle_body_model(Ref<ParticleBodyModel> p_shape);
+	Ref<ParticleBodyModel> get_particle_body_model() const;
 
 	void add_particle(const Vector3 &p_local_position, real_t p_mass);
 	void remove_particle(int p_particle_index);

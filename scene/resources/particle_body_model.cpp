@@ -32,45 +32,41 @@
  * @author AndreaCatania
  */
 
-#ifndef PARTICLE_SHAPE_H
-#define PARTICLE_SHAPE_H
+#include "particle_body_model.h"
 
-#include "resource.h"
+void ParticleBodyModel::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_particles", "particles"), &ParticleBodyModel::set_particles);
+	ClassDB::bind_method(D_METHOD("get_particles"), &ParticleBodyModel::get_particles);
 
-/// The particle shape is a resource that doesn't have a specific RID that identify the shape in the ParticlePhysicsServer
-/// Because it's not necessary
-class ParticleShape : public Resource {
-	GDCLASS(ParticleShape, Resource);
-	OBJ_SAVE_TYPE(ParticleShape);
-	RES_BASE_EXTENSION("particle_shape");
+	ClassDB::bind_method(D_METHOD("set_masses", "masses"), &ParticleBodyModel::set_masses);
+	ClassDB::bind_method(D_METHOD("get_masses"), &ParticleBodyModel::get_masses);
 
-protected:
-	static void _bind_methods();
+	ClassDB::bind_method(D_METHOD("set_constraints_indexes", "constraints_indexes"), &ParticleBodyModel::set_constraints_indexes);
+	ClassDB::bind_method(D_METHOD("get_constraints_indexes"), &ParticleBodyModel::get_constraints_indexes);
 
-private:
-	PoolVector<Vector3> particles;
-	PoolVector<real_t> masses;
-	PoolVector<int> constraints_indexes; // pair of 2
-	PoolVector<Vector2> constraints_info; // X = length, Y = stiffnes
+	ClassDB::bind_method(D_METHOD("set_constraints_info", "constraints_info"), &ParticleBodyModel::set_constraints_info);
+	ClassDB::bind_method(D_METHOD("get_constraints_info"), &ParticleBodyModel::get_constraints_info);
 
-public:
-	ParticleShape();
+	ADD_PROPERTY(PropertyInfo(Variant::POOL_VECTOR3_ARRAY, "particles"), "set_particles", "get_particles");
+	ADD_PROPERTY(PropertyInfo(Variant::POOL_REAL_ARRAY, "masses"), "set_masses", "get_masses");
+	ADD_PROPERTY(PropertyInfo(Variant::POOL_INT_ARRAY, "constraints_indexes"), "set_constraints_indexes", "get_constraints_indexes");
+	ADD_PROPERTY(PropertyInfo(Variant::POOL_VECTOR2_ARRAY, "constraints_info"), "set_constraints_info", "get_constraints_info");
+}
 
-	void set_particles(PoolVector<Vector3> p_particles);
-	PoolVector<Vector3> get_particles() const { return particles; }
-	PoolVector<Vector3> &get_particles_ref() { return particles; }
+ParticleBodyModel::ParticleBodyModel() {}
 
-	void set_masses(PoolVector<real_t> p_mass);
-	PoolVector<real_t> get_masses() { return masses; }
-	PoolVector<real_t> &get_masses_ref() { return masses; }
+void ParticleBodyModel::set_particles(PoolVector<Vector3> p_particles) {
+	particles = p_particles;
+}
 
-	void set_constraints_indexes(const PoolVector<int> p_constraints_indexes);
-	PoolVector<int> get_constraints_indexes() { return constraints_indexes; }
-	PoolVector<int> &get_constraints_indexes_ref() { return constraints_indexes; }
+void ParticleBodyModel::set_masses(PoolVector<real_t> p_mass) {
+	masses = p_mass;
+}
 
-	void set_constraints_info(const PoolVector<Vector2> p_constraints_info);
-	PoolVector<Vector2> get_constraints_info() { return constraints_info; }
-	PoolVector<Vector2> &get_constraints_info_ref() { return constraints_info; }
-};
+void ParticleBodyModel::set_constraints_indexes(const PoolVector<int> p_constraints_index) {
+	constraints_indexes = p_constraints_index;
+}
 
-#endif // PARTICLE_SHAPE_H
+void ParticleBodyModel::set_constraints_info(const PoolVector<Vector2> p_constraints_info) {
+	constraints_info = p_constraints_info;
+}

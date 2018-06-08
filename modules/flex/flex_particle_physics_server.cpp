@@ -43,8 +43,8 @@
 	rid_data->__set_physics_server(this);    \
 	return rid;
 
-void FlexParticleBodyCommands::load_shape(Ref<ParticleShape> p_shape, const Transform &initial_transform) {
-	body->load_shape(p_shape, initial_transform);
+void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const Transform &initial_transform) {
+	body->load_model(p_model, initial_transform);
 }
 
 void FlexParticleBodyCommands::reset_particle(int p_particle_index, const Vector3 &p_position, real_t p_mass) {
@@ -183,8 +183,8 @@ void FlexParticlePhysicsServer::free(RID p_rid) {
 	}
 }
 
-Ref<ParticleShape> FlexParticlePhysicsServer::create_soft_particle_shape(Ref<TriangleMesh> p_mesh, bool p_cloth, float p_sampling, float p_clusterSpacing, float p_clusterRadius, float p_clusterStiffness, float p_linkRadius, float p_linkStiffness) {
-	ERR_FAIL_COND_V(p_mesh.is_null(), Ref<ParticleShape>());
+Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_soft_particle_body_model(Ref<TriangleMesh> p_mesh, bool p_cloth, float p_sampling, float p_clusterSpacing, float p_clusterRadius, float p_clusterStiffness, float p_linkRadius, float p_linkStiffness) {
+	ERR_FAIL_COND_V(p_mesh.is_null(), Ref<ParticleBodyModel>());
 
 	PoolVector<Vector3>::Read vertices_read = p_mesh->get_vertices().read();
 
@@ -213,34 +213,34 @@ Ref<ParticleShape> FlexParticlePhysicsServer::create_soft_particle_shape(Ref<Tri
 			/*clusterPlasticThreshold*/ 0.0,
 			/*clusterPlasticCreep*/ 0.0);
 
-	ERR_FAIL_COND_V(!generated_assets, Ref<ParticleShape>());
+	ERR_FAIL_COND_V(!generated_assets, Ref<ParticleBodyModel>());
 
-	Ref<ParticleShape> shape;
-	shape.instance();
+	Ref<ParticleBodyModel> model;
+	model.instance();
 
-	shape->get_masses_ref().resize(generated_assets->numParticles);
-	shape->get_particles_ref().resize(generated_assets->numParticles);
+	model->get_masses_ref().resize(generated_assets->numParticles);
+	model->get_particles_ref().resize(generated_assets->numParticles);
 
 	for (int i(0); i < generated_assets->numParticles; ++i) {
 		FlVector4 particle(((FlVector4 *)generated_assets->particles)[i]);
-		shape->get_masses_ref().set(i, extract_mass(particle) == 0 ? 0.01 : 1 / extract_mass(particle));
-		shape->get_particles_ref().set(i, extract_position(particle));
+		model->get_masses_ref().set(i, extract_mass(particle) == 0 ? 0.01 : 1 / extract_mass(particle));
+		model->get_particles_ref().set(i, extract_position(particle));
 	}
 
-	shape->get_constraints_indexes_ref().resize(generated_assets->numSprings * 2);
-	for (int i(0); i < shape->get_constraints_indexes_ref().size(); ++i) {
-		shape->get_constraints_indexes_ref().set(i, generated_assets->springIndices[i]);
+	model->get_constraints_indexes_ref().resize(generated_assets->numSprings * 2);
+	for (int i(0); i < model->get_constraints_indexes_ref().size(); ++i) {
+		model->get_constraints_indexes_ref().set(i, generated_assets->springIndices[i]);
 	}
 
-	shape->get_constraints_info_ref().resize(generated_assets->numSprings);
+	model->get_constraints_info_ref().resize(generated_assets->numSprings);
 	for (int i(0); i < generated_assets->numSprings; ++i) {
-		shape->get_constraints_info_ref().set(i, Vector2(generated_assets->springRestLengths[i], generated_assets->springCoefficients[i]));
+		model->get_constraints_info_ref().set(i, Vector2(generated_assets->springRestLengths[i], generated_assets->springCoefficients[i]));
 	}
 
 	NvFlexExtDestroyAsset(generated_assets);
 	generated_assets = NULL;
 
-	return shape;
+	return model;
 }
 
 void FlexParticlePhysicsServer::init() {
