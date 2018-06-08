@@ -72,6 +72,8 @@ class FlexSpace : public RIDFlex {
 	Vector<FlexParticleBody *> particle_bodies;
 	Vector<FlexPrimitiveBody *> primitive_bodies;
 
+	Vector<MemoryChunk *> geometry_chunks_to_deallocate;
+
 	bool reload_active_particles;
 
 public:

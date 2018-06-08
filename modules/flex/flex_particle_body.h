@@ -152,7 +152,7 @@ public:
 	bool is_owner_of_spring(SpringIndex p_spring) const;
 
 private:
-	void reset_changed_parameters();
+	void set_clean();
 	void dispatch_sync_callback();
 	void particle_index_changed(ParticleIndex p_old_particle_index, ParticleIndex p_new_particle_index);
 	void spring_index_changed(SpringIndex p_old_spring_index, SpringIndex p_new_spring_index);

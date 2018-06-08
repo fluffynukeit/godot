@@ -38,24 +38,42 @@
 #include "flex_space.h"
 #include "rid_flex.h"
 
+class FlexPrimitiveShape;
+
+enum ChangedPrimitiveBodyParameter {
+	eChangedPrimitiveBodyParamShape = 1 << 0,
+	eChangedPrimitiveBodyParamTransform = 1 << 1,
+	eChangedPrimitiveBodyParamFlags = 1 << 2,
+
+	eChangedPrimitiveBodyParamAll = eChangedPrimitiveBodyParamShape | eChangedPrimitiveBodyParamTransform | eChangedPrimitiveBodyParamFlags
+};
+
 class FlexPrimitiveBody : public RIDFlex {
 
 	friend class FlexSpace;
 
-	/// The state inside the space
-	/// This must be touched only by space
-
-	struct {
-		uint32_t parameters_changed;
-	} state;
+	uint32_t changed_parameters;
+	MemoryChunk *geometry_mchunk;
 
 	FlexSpace *space;
+	FlexPrimitiveShape *shape;
+
+	bool kinematic; // if false is static
 
 public:
 	FlexPrimitiveBody();
 
 	void set_space(FlexSpace *p_space);
 	FlexSpace *get_space() const;
+
+	void set_shape(FlexPrimitiveShape *p_shape);
+	FlexPrimitiveShape *get_shape() const;
+
+	void set_kinematic(bool p_kinematic);
+	bool is_kinematic() const { return kinematic; }
+
+private:
+	void set_clean();
 };
 
 #endif // FLEX_PRIMITIVE_BODY_H

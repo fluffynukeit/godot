@@ -151,12 +151,15 @@ class GeometryMemory : public FlexMemory {
 	NvFlexVector<Quat> rotations;
 	NvFlexVector<int> flags;
 
+	bool changed;
+
 public:
 	GeometryMemory(NvFlexLibrary *p_lib);
 
 	void map();
 	void unmap();
 	void terminate();
+	bool was_changed() { return changed; }
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped
