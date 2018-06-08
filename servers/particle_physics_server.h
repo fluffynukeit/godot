@@ -4,7 +4,7 @@
 #include "core/math/triangle_mesh.h"
 #include "object.h"
 #include "resource.h"
-#include "scene/resources/particle_shape.h"
+#include "scene/resources/particle_body_model.h"
 
 class ParticleBodyCommands : public Object {
 	GDCLASS(ParticleBodyCommands, Object);
@@ -13,7 +13,7 @@ protected:
 	static void _bind_methods();
 
 public:
-	virtual void load_shape(Ref<ParticleShape> p_shape, const Transform &initial_transform) = 0;
+	virtual void load_model(Ref<ParticleBodyModel> p_shape, const Transform &initial_transform) = 0;
 
 	virtual void reset_particle(int p_particle_index, const Vector3 &p_position, real_t p_mass) = 0;
 
@@ -58,7 +58,7 @@ public:
 
 	virtual void free(RID p_rid) = 0;
 
-	virtual Ref<ParticleShape> create_soft_particle_shape(Ref<TriangleMesh> p_mesh, bool p_cloth, float p_sampling, float p_clusterSpacing, float p_clusterRadius, float p_clusterStiffness, float p_linkRadius, float p_linkStiffness) = 0;
+	virtual Ref<ParticleBodyModel> create_soft_particle_body_model(Ref<TriangleMesh> p_mesh, bool p_cloth, float p_sampling, float p_clusterSpacing, float p_clusterRadius, float p_clusterStiffness, float p_linkRadius, float p_linkStiffness) = 0;
 
 public:
 	// Internals

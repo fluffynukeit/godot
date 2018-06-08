@@ -137,7 +137,7 @@ public:
     int get_spring_count() const;
 
     // CMD
-    void load_shape(Ref<ParticleShape> p_shape, const Transform &initial_transform);
+    void load_model(Ref<ParticleBodyModel> p_model, const Transform &initial_transform);
 
     void reset_particle(ParticleIndex p_particle, const Vector3 &p_position, real_t p_mass);
     void reset_spring(SpringIndex p_spring, ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness);

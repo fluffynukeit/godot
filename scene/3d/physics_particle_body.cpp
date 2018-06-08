@@ -50,8 +50,8 @@ ParticleObject::~ParticleObject() {
 
 void ParticleBody::_bind_methods() {
 
-	ClassDB::bind_method(D_METHOD("set_particle_shape", "particle_shape"), &ParticleBody::set_particle_shape);
-	ClassDB::bind_method(D_METHOD("get_particle_shape"), &ParticleBody::get_particle_shape);
+	ClassDB::bind_method(D_METHOD("set_particle_body_model", "particle_body_model"), &ParticleBody::set_particle_body_model);
+	ClassDB::bind_method(D_METHOD("get_particle_body_model"), &ParticleBody::get_particle_body_model);
 
 	ClassDB::bind_method(D_METHOD("set_collision_layer", "layer"), &ParticleBody::set_collision_layer);
 	ClassDB::bind_method(D_METHOD("get_collision_layer"), &ParticleBody::get_collision_layer);
@@ -72,7 +72,7 @@ void ParticleBody::_bind_methods() {
 	BIND_VMETHOD(MethodInfo("_on_particle_index_change", PropertyInfo(Variant::OBJECT, "old_index"), PropertyInfo(Variant::OBJECT, "new_index")));
 	BIND_VMETHOD(MethodInfo("_on_spring_index_change", PropertyInfo(Variant::OBJECT, "old_index"), PropertyInfo(Variant::OBJECT, "new_index")));
 
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "particle_shape", PROPERTY_HINT_RESOURCE_TYPE, "ParticleShape"), "set_particle_shape", "get_particle_shape");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "particle_body_model", PROPERTY_HINT_RESOURCE_TYPE, "ParticleBodyModel"), "set_particle_body_model", "get_particle_body_model");
 
 	ADD_GROUP("Collision", "collision_");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_layer", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collision_layer", "get_collision_layer");
@@ -98,31 +98,31 @@ ParticleBody::ParticleBody() :
 
 ParticleBody::~ParticleBody() {
 
-	if (particle_shape.is_valid())
-		particle_shape->unregister_owner(this);
+	if (particle_body_model.is_valid())
+		particle_body_model->unregister_owner(this);
 
 	ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SYNC, NULL, "");
 	ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_PARTICLEINDEXCHANGED, NULL, "");
 	ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SPRINGINDEXCHANGED, NULL, "");
 }
 
-void ParticleBody::set_particle_shape(Ref<ParticleShape> p_shape) {
-	if (particle_shape == p_shape)
+void ParticleBody::set_particle_body_model(Ref<ParticleBodyModel> p_shape) {
+	if (particle_body_model == p_shape)
 		return;
 
-	if (particle_shape.is_valid())
-		particle_shape->unregister_owner(this);
+	if (particle_body_model.is_valid())
+		particle_body_model->unregister_owner(this);
 
-	particle_shape = p_shape;
+	particle_body_model = p_shape;
 
-	if (particle_shape.is_valid())
-		particle_shape->register_owner(this);
+	if (particle_body_model.is_valid())
+		particle_body_model->register_owner(this);
 
-	resource_changed(particle_shape);
+	resource_changed(particle_body_model);
 }
 
-Ref<ParticleShape> ParticleBody::get_particle_shape() const {
-	return particle_shape;
+Ref<ParticleBodyModel> ParticleBody::get_particle_body_model() const {
+	return particle_body_model;
 }
 
 void ParticleBody::add_particle(const Vector3 &p_local_position, real_t p_mass) {
@@ -164,7 +164,7 @@ void ParticleBody::_notification(int p_what) {
 		case NOTIFICATION_ENTER_WORLD: {
 			ParticlePhysicsServer::get_singleton()->body_set_space(rid, get_world()->get_particle_space());
 			ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SYNC, this, "commands_process_internal");
-			resource_changed(particle_shape);
+			resource_changed(particle_body_model);
 		} break;
 		case NOTIFICATION_TRANSFORM_CHANGED: {
 
@@ -179,7 +179,7 @@ void ParticleBody::_notification(int p_what) {
 }
 
 void ParticleBody::resource_changed(const RES &p_res) {
-	if (particle_shape == p_res) {
+	if (particle_body_model == p_res) {
 		reset_particles_to_base_shape = true;
 		initialize_debug_resource();
 	}
@@ -191,7 +191,7 @@ void ParticleBody::commands_process_internal(Object *p_cmds) {
 
 	if (reset_particles_to_base_shape) {
 		reset_particles_to_base_shape = false;
-		cmds->load_shape(particle_shape, get_global_transform());
+		cmds->load_model(particle_body_model, get_global_transform());
 		emit_signal("resource_loaded");
 	}
 
@@ -218,7 +218,7 @@ void ParticleBody::_on_script_changed() {
 
 void ParticleBody::initialize_debug_resource() {
 
-	const int particle_count = particle_shape.is_valid() ? particle_shape->get_particles_ref().size() : 0;
+	const int particle_count = particle_body_model.is_valid() ? particle_body_model->get_particles_ref().size() : 0;
 	resize_debug_particle_visual_instance(particle_count);
 	reset_debug_particle_positions();
 }
@@ -274,15 +274,15 @@ void ParticleBody::resize_debug_particle_visual_instance(int new_size) {
 
 void ParticleBody::reset_debug_particle_positions() {
 
-	if (particle_shape.is_null())
+	if (particle_body_model.is_null())
 		return;
 
-	if (debug_particle_visual_instances.size() == particle_shape->get_particles_ref().size()) {
+	if (debug_particle_visual_instances.size() == particle_body_model->get_particles_ref().size()) {
 
 		Transform particle_relative_transf;
 		for (int i = 0; i < debug_particle_visual_instances.size(); ++i) {
 
-			particle_relative_transf.origin = particle_shape->get_particles_ref()[i];
+			particle_relative_transf.origin = particle_body_model->get_particles_ref()[i];
 			VisualServer::get_singleton()->instance_set_transform(debug_particle_visual_instances[i], get_global_transform() * particle_relative_transf);
 		}
 	}

@@ -47,7 +47,7 @@ class FlexParticleBodyCommands : public ParticleBodyCommands {
 public:
 	FlexParticleBody *body;
 
-	virtual void load_shape(Ref<ParticleShape> p_shape, const Transform &initial_transform);
+	virtual void load_model(Ref<ParticleBodyModel> p_model, const Transform &initial_transform);
 
 	virtual void reset_particle(int p_particle_index, const Vector3 &p_position, real_t p_mass);
 
@@ -106,7 +106,7 @@ public:
 	virtual void free(RID p_rid);
 
 	// This should be on physics server
-	virtual Ref<ParticleShape> create_soft_particle_shape(Ref<TriangleMesh> p_mesh, bool p_cloth, float p_sampling, float p_clusterSpacing, float p_clusterRadius, float p_clusterStiffness, float p_linkRadius, float p_linkStiffness);
+	virtual Ref<ParticleBodyModel> create_soft_particle_body_model(Ref<TriangleMesh> p_mesh, bool p_cloth, float p_sampling, float p_clusterSpacing, float p_clusterRadius, float p_clusterStiffness, float p_linkRadius, float p_linkStiffness);
 
 	virtual void init();
 	virtual void terminate();

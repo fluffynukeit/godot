@@ -105,11 +105,11 @@ int FlexParticleBody::get_spring_count() const {
 	return springs_mchunk ? springs_mchunk->get_size() : 0;
 }
 
-void FlexParticleBody::load_shape(Ref<ParticleShape> p_shape, const Transform &initial_transform) {
+void FlexParticleBody::load_model(Ref<ParticleBodyModel> p_model, const Transform &initial_transform) {
 
 	{ // Particle
 		int active_p_count(get_particle_count());
-		const int resource_p_count(p_shape.is_null() ? 0 : p_shape->get_particles_ref().size());
+		const int resource_p_count(p_model.is_null() ? 0 : p_model->get_particles_ref().size());
 
 		if (active_p_count > resource_p_count) {
 
@@ -127,18 +127,18 @@ void FlexParticleBody::load_shape(Ref<ParticleShape> p_shape, const Transform &i
 			const int dif = resource_p_count - active_p_count;
 			for (int i(0); i < dif; ++i) {
 				const int p(resource_p_count - i - 1);
-				add_particle(initial_transform.xform(p_shape->get_particles_ref().get(p)), p_shape->get_masses_ref().get(p));
+				add_particle(initial_transform.xform(p_model->get_particles_ref().get(p)), p_model->get_masses_ref().get(p));
 			}
 		}
 
 		for (int i(0); i < active_p_count; ++i) {
-			reset_particle(i, initial_transform.xform(p_shape->get_particles_ref().get(i)), p_shape->get_masses_ref().get(i));
+			reset_particle(i, initial_transform.xform(p_model->get_particles_ref().get(i)), p_model->get_masses_ref().get(i));
 		}
 	}
 
 	{ // Spring
 		int active_s_count(get_spring_count());
-		int resource_s_count(p_shape.is_null() ? 0 : p_shape->get_constraints_indexes_ref().size() / 2);
+		int resource_s_count(p_model.is_null() ? 0 : p_model->get_constraints_indexes_ref().size() / 2);
 
 		if (active_s_count > resource_s_count) {
 
@@ -156,16 +156,16 @@ void FlexParticleBody::load_shape(Ref<ParticleShape> p_shape, const Transform &i
 			const int dif = resource_s_count - active_s_count;
 			for (int i(0); i < dif; ++i) {
 				const int s(resource_s_count - i - 1);
-				add_spring(p_shape->get_constraints_indexes_ref().get(s), p_shape->get_constraints_indexes_ref().get(s + 1), p_shape->get_constraints_info_ref().get(s).x, p_shape->get_constraints_info_ref().get(s).y);
+				add_spring(p_model->get_constraints_indexes_ref().get(s), p_model->get_constraints_indexes_ref().get(s + 1), p_model->get_constraints_info_ref().get(s).x, p_model->get_constraints_info_ref().get(s).y);
 			}
 		}
 
 		for (int i(0); i < active_s_count; ++i) {
 			reset_spring(i,
-					p_shape->get_constraints_indexes_ref().get(i),
-					p_shape->get_constraints_indexes_ref().get(i + 1),
-					p_shape->get_constraints_info_ref().get(i).x,
-					p_shape->get_constraints_info_ref().get(i).y);
+					p_model->get_constraints_indexes_ref().get(i),
+					p_model->get_constraints_indexes_ref().get(i + 1),
+					p_model->get_constraints_info_ref().get(i).x,
+					p_model->get_constraints_info_ref().get(i).y);
 		}
 	}
 }
