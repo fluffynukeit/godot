@@ -354,7 +354,7 @@ void FlexSpace::execute_delayed_commands() {
 		const uint32_t body_changed_parameters = body->get_changed_parameters();
 		if (body_changed_parameters != 0) {
 			for (int i(body->get_particle_count() - 1); 0 <= i; --i) {
-				if (body_changed_parameters & eChangedParameterGroup) {
+				if (body_changed_parameters & eChangedBodyParameterGroup) {
 					particle_bodies_memory->set_phase(body->particles_mchunk, i, NvFlexMakePhase(body->group, 0));
 				}
 			}
@@ -404,11 +404,11 @@ void FlexSpace::commands_write_buffer() {
 			copy_desc.dstOffset = body->particles_mchunk->get_begin_index();
 			copy_desc.elementCount = body->particles_mchunk->get_size();
 
-			if (changed_params & eChangedParameterPositionMass)
+			if (changed_params & eChangedBodyParameterPositionMass)
 				NvFlexSetParticles(solver, particle_bodies_memory->particles.buffer, &copy_desc);
-			if (changed_params & eChangedParameterVelocity)
+			if (changed_params & eChangedBodyParameterVelocity)
 				NvFlexSetVelocities(solver, particle_bodies_memory->velocities.buffer, &copy_desc);
-			if (changed_params & eChangedParameterGroup)
+			if (changed_params & eChangedBodyParameterGroup)
 				NvFlexSetPhases(solver, particle_bodies_memory->phases.buffer, &copy_desc);
 
 			body->reset_changed_parameters();
