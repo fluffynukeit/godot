@@ -44,42 +44,42 @@ class FlexSpace;
 class Object;
 
 struct ParticleToAdd {
-    FlVector4 particle;
-    bool want_reference;
+	FlVector4 particle;
+	bool want_reference;
 
-    ParticleToAdd() {}
+	ParticleToAdd() {}
 
-    ParticleToAdd(const Vector3 &p_position, real_t p_mass) {
-        particle = CreateParticle(p_position, p_mass);
-        want_reference = false;
-    }
+	ParticleToAdd(const Vector3 &p_position, real_t p_mass) {
+		particle = CreateParticle(p_position, p_mass);
+		want_reference = false;
+	}
 };
 
 struct SpringToAdd {
 
-    ParticleIndex particle_0;
-    ParticleIndex particle_1;
-    float length;
-    float stiffness;
+	ParticleIndex particle_0;
+	ParticleIndex particle_1;
+	float length;
+	float stiffness;
 
-    SpringToAdd() :
-            particle_0(-1),
-            particle_1(-1),
-            length(0),
-            stiffness(0) {}
+	SpringToAdd() :
+			particle_0(-1),
+			particle_1(-1),
+			length(0),
+			stiffness(0) {}
 
-    SpringToAdd(ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness) :
-            particle_0(p_particle_0),
-            particle_1(p_particle_1),
-            length(p_length),
-            stiffness(p_stiffness) {
-    }
+	SpringToAdd(ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness) :
+			particle_0(p_particle_0),
+			particle_1(p_particle_1),
+			length(p_length),
+			stiffness(p_stiffness) {
+	}
 };
 
-enum ChangedParameter {
-    eChangedParameterPositionMass = 1 << 0,
-    eChangedParameterVelocity = 1 << 1,
-    eChangedParameterGroup = 1 << 2
+enum ChangedBodyParameter {
+	eChangedBodyParameterPositionMass = 1 << 0,
+	eChangedBodyParameterVelocity = 1 << 1,
+	eChangedBodyParameterGroup = 1 << 2
 };
 
 /// This class represent a group of particles that are constrained each other and form a body.
@@ -92,71 +92,71 @@ enum ChangedParameter {
 /// [COMMAND] All functions marked with this label are commands and will be executed in the next tick.
 class FlexParticleBody : public RIDFlex {
 
-    friend class FlexSpace;
-    friend class FlexParticleBodyCommands;
+	friend class FlexSpace;
+	friend class FlexParticleBodyCommands;
 
-    FlexCallBackData sync_callback;
-    FlexCallBackData particle_index_changed_callback;
-    FlexCallBackData spring_index_changed_callback;
+	FlexCallBackData sync_callback;
+	FlexCallBackData particle_index_changed_callback;
+	FlexCallBackData spring_index_changed_callback;
 
-    struct {
-        Vector<ParticleToAdd> particle_to_add;
-        Vector<SpringToAdd> springs_to_add;
-        Set<ParticleIndex> particle_to_remove;
-        Set<SpringIndex> springs_to_remove;
-    } delayed_commands;
+	struct {
+		Vector<ParticleToAdd> particle_to_add;
+		Vector<SpringToAdd> springs_to_add;
+		Set<ParticleIndex> particle_to_remove;
+		Set<SpringIndex> springs_to_remove;
+	} delayed_commands;
 
-    uint32_t changed_parameters;
+	uint32_t changed_parameters;
 
-    MemoryChunk *particles_mchunk;
-    MemoryChunk *springs_mchunk;
+	MemoryChunk *particles_mchunk;
+	MemoryChunk *springs_mchunk;
 
-    FlexSpace *space;
-    uint32_t group;
+	FlexSpace *space;
+	uint32_t group;
 
 public:
-    FlexParticleBody();
+	FlexParticleBody();
 
-    _FORCE_INLINE_ FlexSpace *get_space() { return space; }
+	_FORCE_INLINE_ FlexSpace *get_space() { return space; }
 
-    /// IMPORTANT Remember to remove it if Object will be destroyed
-    void set_callback(ParticlePhysicsServer::ParticleBodyCallback p_callback_type, Object *p_receiver, const StringName &p_method);
+	/// IMPORTANT Remember to remove it if Object will be destroyed
+	void set_callback(ParticlePhysicsServer::ParticleBodyCallback p_callback_type, Object *p_receiver, const StringName &p_method);
 
-    _FORCE_INLINE_ uint32_t get_changed_parameters() const { return changed_parameters; }
+	_FORCE_INLINE_ uint32_t get_changed_parameters() const { return changed_parameters; }
 
-    void set_collision_group(uint32_t p_layer);
-    uint32_t get_collision_group() const;
+	void set_collision_group(uint32_t p_layer);
+	uint32_t get_collision_group() const;
 
-    void add_particle(const Vector3 &p_local_position, real_t p_mass);
-    void remove_particle(ParticleIndex p_particle);
+	void add_particle(const Vector3 &p_local_position, real_t p_mass);
+	void remove_particle(ParticleIndex p_particle);
 
-    void add_spring(ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness);
-    void remove_spring(SpringIndex p_spring_index);
+	void add_spring(ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness);
+	void remove_spring(SpringIndex p_spring_index);
 
-    int get_particle_count() const;
-    int get_spring_count() const;
+	int get_particle_count() const;
+	int get_spring_count() const;
 
-    // CMD
-    void load_model(Ref<ParticleBodyModel> p_model, const Transform &initial_transform);
+	// CMD
+	void load_model(Ref<ParticleBodyModel> p_model, const Transform &initial_transform);
 
-    void reset_particle(ParticleIndex p_particle, const Vector3 &p_position, real_t p_mass);
-    void reset_spring(SpringIndex p_spring, ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness);
+	void reset_particle(ParticleIndex p_particle, const Vector3 &p_position, real_t p_mass);
+	void reset_spring(SpringIndex p_spring, ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness);
 
-    Vector3 get_particle_position(ParticleIndex p_particle) const;
+	Vector3 get_particle_position(ParticleIndex p_particle) const;
 
-    const Vector3 &get_particle_velocity(ParticleIndex p_particle) const;
-    void set_particle_velocity(ParticleIndex p_particle, const Vector3 &p_velocity);
-    // ~CMD
+	const Vector3 &get_particle_velocity(ParticleIndex p_particle) const;
+	void set_particle_velocity(ParticleIndex p_particle, const Vector3 &p_velocity);
+	// ~CMD
 
-    bool is_owner_of_particle(ParticleIndex p_particle) const;
-    bool is_owner_of_spring(SpringIndex p_spring) const;
+	bool is_owner_of_particle(ParticleIndex p_particle) const;
+	bool is_owner_of_spring(SpringIndex p_spring) const;
 
 private:
-    void reset_changed_parameters();
-    void dispatch_sync_callback();
-    void particle_index_changed(ParticleIndex p_old_particle_index, ParticleIndex p_new_particle_index);
-    void spring_index_changed(SpringIndex p_old_spring_index, SpringIndex p_new_spring_index);
-    void clear_commands();
+	void reset_changed_parameters();
+	void dispatch_sync_callback();
+	void particle_index_changed(ParticleIndex p_old_particle_index, ParticleIndex p_new_particle_index);
+	void spring_index_changed(SpringIndex p_old_spring_index, SpringIndex p_new_spring_index);
+	void clear_commands();
 };
 
 #endif // FLEX_PARTICLE_BODY_H
