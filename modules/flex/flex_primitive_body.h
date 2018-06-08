@@ -42,6 +42,13 @@ class FlexPrimitiveBody : public RIDFlex {
 
 	friend class FlexSpace;
 
+	/// The state inside the space
+	/// This must be touched only by space
+
+	struct {
+		uint32_t parameters_changed;
+	} state;
+
 	FlexSpace *space;
 
 public:

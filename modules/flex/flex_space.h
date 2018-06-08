@@ -47,6 +47,7 @@ class FlexMemoryAllocator;
 class ParticleBodiesMemory;
 class ActiveParticlesMemory;
 class SpringMemory;
+class GeometryMemory;
 
 class FlexSpace : public RIDFlex {
 	friend class FlexBuffers;
@@ -64,6 +65,9 @@ class FlexSpace : public RIDFlex {
 
 	FlexMemoryAllocator *springs_allocator;
 	SpringMemory *springs_memory;
+
+	FlexMemoryAllocator *geometries_allocator;
+	GeometryMemory *geometries_memory;
 
 	Vector<FlexParticleBody *> particle_bodies;
 	Vector<FlexPrimitiveBody *> primitive_bodies;
@@ -93,6 +97,7 @@ public:
 private:
 	void dispatch_callbacks();
 	void execute_delayed_commands();
+	void execute_geometries_commands();
 
 	void commands_write_buffer();
 	void commands_read_buffer();
