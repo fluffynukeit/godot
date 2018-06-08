@@ -58,16 +58,20 @@
 #undef Plane
 #undef Transform
 
+#include "core/math/quat.h"
+#include "core/math/vector3.h"
 #include "core/string_db.h"
 #include "flex_memory_allocator.h"
 #include "math_defs.h"
-#include "vector3.h"
 
-typedef int ParticleIndex; // Particle index relative to body, can change during time
+typedef int ParticleIndex; // Particle index relative to the memory chunk, can change during time
 typedef int ParticleBufferIndex; // Particle global index, can change during time
-typedef int ActiveParticleIndex; // Particle index relative to the memory chunk, can change during time
-typedef int SpringIndex; // Spring index relative to body, can change during time
-typedef int SpringBufferIndex; // Spring index global index, can change during time
+typedef int ActiveParticleIndex; // Active Particle index relative to the memory chunk, can change during time
+typedef int ActiveParticleBufferIndex; // Active Particle global index, can change during time
+typedef int SpringIndex; // Spring index relative to the memory chunk, can change during time
+typedef int SpringBufferIndex; // Spring global index, can change during time
+typedef int GeometryIndex; // Geometry index relative to the memory chunk, can change during time
+typedef int GeometryBufferIndex; // Geometry global index, can change during time
 
 #define CreateParticle(position, mass) \
 	FlVector4(position.x, position.y, position.z, mass ? (1 / mass) : 0)
@@ -99,16 +103,9 @@ struct FlexCallBackData {
 			receiver(NULL) {}
 };
 
-#define make_memory_index(p_chunk, p_index)         \
-	int index = p_chunk->get_buffer_index(p_index); \
-	ERR_FAIL_COND(index > p_chunk->get_end_index());
-
-#define make_memory_index_V(p_chunk, p_index, ret)  \
-	int index = p_chunk->get_buffer_index(p_index); \
-	ERR_FAIL_COND_V(index > p_chunk->get_end_index(), ret);
-
-static FlVector4 return_err_flvec4(0, 0, 0, 0);
-static Vector3 return_err_vec3(0, 0, 0);
-static Spring return_err_spring(-1, -1);
+static const FlVector4 return_err_flvec4(0, 0, 0, 0);
+static const Vector3 return_err_vec3(0, 0, 0);
+static const Spring return_err_spring(-1, -1);
+static const Quat return_err_flquat;
 
 #endif // FLEX_UTILITY_H
