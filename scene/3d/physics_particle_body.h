@@ -63,7 +63,7 @@ class ParticleBody : public ParticleObject {
 	uint32_t collision_layer;
 
 	Vector<RID> debug_particle_visual_instances;
-	static Ref<SphereMesh> debug_particle_mesh;
+	Ref<SphereMesh> debug_particle_mesh;
 
 protected:
 	static void _bind_methods();

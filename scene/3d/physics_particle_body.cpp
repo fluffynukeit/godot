@@ -80,20 +80,16 @@ void ParticleBody::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("resource_loaded"));
 }
 
-Ref<SphereMesh> ParticleBody::debug_particle_mesh;
-
 ParticleBody::ParticleBody() :
 		ParticleObject(ParticlePhysicsServer::get_singleton()->body_create()),
 		reset_particles_to_base_shape(true),
 		collision_layer(1) {
 
-	if (debug_particle_mesh.is_null()) {
-		debug_particle_mesh.instance();
-		debug_particle_mesh->set_radius(0.05);
-		debug_particle_mesh->set_height(0.1);
-		debug_particle_mesh->set_radial_segments(16);
-		debug_particle_mesh->set_rings(3);
-	}
+	debug_particle_mesh.instance();
+	debug_particle_mesh->set_radius(0.05);
+	debug_particle_mesh->set_height(0.1);
+	debug_particle_mesh->set_radial_segments(16);
+	debug_particle_mesh->set_rings(3);
 
 	set_notify_transform(true);
 
