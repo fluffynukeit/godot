@@ -42,7 +42,10 @@
 #include "flex_primitive_shapes.h"
 #include "print_string.h"
 
+// TODO make this customizable in settings
 #define MAXPARTICLES 1000
+// TODO this must be dynamic
+#define MAXGEOMETRIES 10
 
 #define DEVICE_ID 0
 
@@ -67,6 +70,8 @@ FlexSpace::FlexSpace() :
 		springs_allocator(NULL),
 		active_particles_mchunk(NULL),
 		springs_memory(NULL),
+		geometries_allocator(NULL),
+		geometries_memory(NULL),
 		reload_active_particles(false) {
 	init();
 }
@@ -112,20 +117,26 @@ void FlexSpace::init() {
 	CRASH_COND(particle_bodies_memory);
 	CRASH_COND(particle_bodies_allocator);
 	particle_bodies_memory = memnew(ParticleBodiesMemory(flex_lib));
-	particle_bodies_allocator = memnew(FlexMemoryAllocator(particle_bodies_memory, MAXPARTICLES)); // TODO should be dynamic
+	particle_bodies_allocator = memnew(FlexMemoryAllocator(particle_bodies_memory, MAXPARTICLES)); // TODO must be dynamic
 	particle_bodies_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
 
 	CRASH_COND(active_particles_allocator);
 	CRASH_COND(active_particles_memory);
 	active_particles_memory = memnew(ActiveParticlesMemory(flex_lib));
-	active_particles_allocator = memnew(FlexMemoryAllocator(active_particles_memory, MAXPARTICLES)); // TODO should be dynamic
+	active_particles_allocator = memnew(FlexMemoryAllocator(active_particles_memory, MAXPARTICLES)); // TODO must be dynamic
 	active_particles_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
 
 	CRASH_COND(springs_allocator);
 	CRASH_COND(springs_memory);
 	springs_memory = memnew(SpringMemory(flex_lib));
-	springs_allocator = memnew(FlexMemoryAllocator(springs_memory, ((FlexUnit)(MAXPARTICLES * 100)))); // TODO should be dynamic
+	springs_allocator = memnew(FlexMemoryAllocator(springs_memory, ((FlexUnit)(MAXPARTICLES * 100)))); // TODO mast be dynamic
 	springs_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
+
+	CRASH_COND(geometries_allocator);
+	CRASH_COND(geometries_memory);
+	geometries_memory = memnew(GeometryMemory(flex_lib));
+	geometries_allocator = memnew(FlexMemoryAllocator(geometries_memory, MAXGEOMETRIES)); // TODO must be dynamic
+	geometries_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
 
 	NvFlexParams params;
 	// Initialize solver parameter
@@ -179,14 +190,17 @@ void FlexSpace::sync() {
 	particle_bodies_memory->map();
 	active_particles_memory->map();
 	springs_memory->map();
+	geometries_memory->map();
 
 	dispatch_callbacks();
 	execute_delayed_commands();
+	execute_geometries_commands();
 
 	particle_bodies_memory->unmap();
 	active_particles_memory->unmap();
 	if (springs_memory->was_changed()) springs_allocator->sanitize(); // This buffer should be compact when the GPU has to use it
 	springs_memory->unmap();
+	geometries_memory->unmap();
 
 	commands_write_buffer();
 }
@@ -367,6 +381,12 @@ void FlexSpace::execute_delayed_commands() {
 				++active_particle_index;
 			}
 		}
+	}
+}
+
+void FlexSpace::execute_geometries_commands() {
+	for (int i(primitive_bodies.size() - 1); 0 <= i; --i) {
+		FlexPrimitiveBody *body(primitive_bodies[i]);
 	}
 }
 
