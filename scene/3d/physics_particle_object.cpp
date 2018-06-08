@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  physics_particle_body.h                                              */
+/*  physics_particle_object.cpp                                          */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -32,55 +32,19 @@
  * @author AndreaCatania
  */
 
-#ifndef PARTICLE_BODY_H
-#define PARTICLE_BODY_H
-
 #include "physics_particle_object.h"
-#include "scene/resources/particle_body_model.h"
-#include "scene/resources/primitive_meshes.h"
-#include "spatial.h"
 
-class ParticleBody : public ParticleObject {
-	GDCLASS(ParticleBody, ParticleObject);
+#include "servers/particle_physics_server.h"
 
-	bool reset_particles_to_base_shape;
-	Ref<ParticleBodyModel> particle_body_model;
+void ParticleObject::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("get_rid"), &ParticleObject::get_rid);
+}
 
-	uint32_t collision_layer;
+ParticleObject::ParticleObject(RID p_rid) :
+		rid(p_rid) {
+}
 
-	Vector<RID> debug_particle_visual_instances;
-	Ref<SphereMesh> debug_particle_mesh;
+ParticleObject::~ParticleObject() {
 
-protected:
-	static void _bind_methods();
-
-public:
-	ParticleBody();
-	virtual ~ParticleBody();
-
-	void set_particle_body_model(Ref<ParticleBodyModel> p_shape);
-	Ref<ParticleBodyModel> get_particle_body_model() const;
-
-	void add_particle(const Vector3 &p_local_position, real_t p_mass);
-	void remove_particle(int p_particle_index);
-	void set_collision_layer(uint32_t p_layer);
-	uint32_t get_collision_layer() const;
-
-	void set_collision_layer_bit(int p_bit, bool p_value);
-	bool get_collision_layer_bit(int p_bit) const;
-
-protected:
-	void _notification(int p_what);
-	void resource_changed(const RES &p_res);
-
-	void commands_process_internal(Object *p_cmds);
-
-private:
-	void _on_script_changed();
-	void initialize_debug_resource();
-	void update_debug_visual_instances(ParticleBodyCommands *p_cmds);
-	void resize_debug_particle_visual_instance(int new_size);
-	void reset_debug_particle_positions();
-};
-
-#endif // PARTICLE_BODY_H
+	ParticlePhysicsServer::get_singleton()->free(rid);
+}
