@@ -38,6 +38,8 @@
 
 #include "flex_memory.h"
 #include "flex_particle_body.h"
+#include "flex_primitive_body.h"
+#include "flex_primitive_shapes.h"
 #include "print_string.h"
 
 #define MAXPARTICLES 1000
@@ -214,6 +216,19 @@ void FlexSpace::remove_particle_body(FlexParticleBody *p_body) {
 	p_body->space = NULL;
 	particle_bodies.erase(p_body);
 	reload_active_particles = true;
+}
+
+void FlexSpace::add_primitive_body(FlexPrimitiveBody *p_body) {
+	ERR_FAIL_COND(p_body->space);
+	p_body->space = this;
+	primitive_bodies.push_back(p_body);
+}
+
+void FlexSpace::remove_primitive_body(FlexPrimitiveBody *p_body) {
+	print_error("TODO Remove from space");
+	ERR_FAIL_COND(p_body->space != this);
+	p_body->space = NULL;
+	primitive_bodies.erase(p_body);
 }
 
 void FlexSpace::dispatch_callbacks() {

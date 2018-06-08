@@ -35,14 +35,20 @@
 #ifndef FLEX_PRIMITIVE_BODY_H
 #define FLEX_PRIMITIVE_BODY_H
 
+#include "flex_space.h"
 #include "rid_flex.h"
 
 class FlexPrimitiveBody : public RIDFlex {
 
 	friend class FlexSpace;
 
+	FlexSpace *space;
+
 public:
 	FlexPrimitiveBody();
+
+	void set_space(FlexSpace *p_space);
+	FlexSpace *get_space() const;
 };
 
 #endif // FLEX_PRIMITIVE_BODY_H

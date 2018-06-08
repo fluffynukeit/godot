@@ -35,5 +35,14 @@
 #include "flex_primitive_body.h"
 
 FlexPrimitiveBody::FlexPrimitiveBody() :
-		RIDFlex() {
+		RIDFlex(),
+		space(NULL) {
+}
+
+void FlexPrimitiveBody::set_space(FlexSpace *p_space) {
+	space = p_space;
+}
+
+FlexSpace *FlexPrimitiveBody::get_space() const {
+	return space;
 }
