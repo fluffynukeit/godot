@@ -34,6 +34,11 @@ void ParticlePhysicsServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("body_add_particle", "body", "local_position", "mass"), &ParticlePhysicsServer::body_add_particle);
 	ClassDB::bind_method(D_METHOD("body_remove_particle", "body", "particle_id"), &ParticlePhysicsServer::body_remove_particle);
 
+	ClassDB::bind_method(D_METHOD("primitive_body_create"), &ParticlePhysicsServer::primitive_body_create);
+	ClassDB::bind_method(D_METHOD("primitive_body_set_space", "body", "space"), &ParticlePhysicsServer::primitive_body_set_space);
+
+	ClassDB::bind_method(D_METHOD("primitive_shape_create", "shape_type"), &ParticlePhysicsServer::primitive_shape_create);
+
 	ClassDB::bind_method(D_METHOD("free", "rid"), &ParticlePhysicsServer::free);
 
 	ClassDB::bind_method(D_METHOD("create_soft_particle_body_model", "trimesh", "cloth", "sampling", "cluster_spacing", "cluster_radius", "cluster_stiffness", "link_radius", "link_stiffness"), &ParticlePhysicsServer::create_soft_particle_body_model);
@@ -41,6 +46,8 @@ void ParticlePhysicsServer::_bind_methods() {
 	BIND_ENUM_CONSTANT(PARTICLE_BODY_CALLBACK_SYNC);
 	BIND_ENUM_CONSTANT(PARTICLE_BODY_CALLBACK_PARTICLEINDEXCHANGED);
 	BIND_ENUM_CONSTANT(PARTICLE_BODY_CALLBACK_SPRINGINDEXCHANGED);
+
+	BIND_ENUM_CONSTANT(PARTICLE_PRIMITIVE_SHAPE_TYPE_BOX)
 }
 
 ParticlePhysicsServer *ParticlePhysicsServer::get_singleton() {
