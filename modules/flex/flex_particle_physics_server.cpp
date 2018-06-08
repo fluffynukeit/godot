@@ -173,9 +173,37 @@ RID FlexParticlePhysicsServer::primitive_body_create() {
 	CreateThenReturnRID(primitive_body_owner, primitive);
 }
 
-RID FlexParticlePhysicsServer::primitive_shape_create() {
-	FlexPrimitiveShape *primitive_shape = memnew(FlexPrimitiveShape);
-	CreateThenReturnRID(primitive_shape_owner, primitive_shape);
+void FlexParticlePhysicsServer::primitive_body_set_space(RID p_body, RID p_space) {
+
+	FlexPrimitiveBody *body = primitive_body_owner.get(p_body);
+	ERR_FAIL_COND(!body);
+
+	if (p_space == RID()) {
+		if (body->get_space())
+			body->get_space()->remove_primitive_body(body);
+	} else {
+
+		FlexSpace *space = space_owner.get(p_space);
+		ERR_FAIL_COND(!space);
+
+		space->add_primitive_body(body);
+	}
+}
+
+RID FlexParticlePhysicsServer::primitive_shape_create(PrimitiveShapeType p_type) {
+
+	FlexPrimitiveShape *primitive_shape = NULL;
+	switch (p_type) {
+		case PARTICLE_PRIMITIVE_SHAPE_TYPE_BOX: {
+
+		} break;
+	}
+
+	if (primitive_shape) {
+		CreateThenReturnRID(primitive_shape_owner, primitive_shape);
+	} else {
+		ERR_FAIL_V(RID());
+	}
 }
 
 void FlexParticlePhysicsServer::free(RID p_rid) {

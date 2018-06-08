@@ -42,57 +42,62 @@
 class NvFlexLibrary;
 class NvFlexSolver;
 class FlexParticleBody;
+class FlexPrimitiveBody;
 class FlexMemoryAllocator;
 class ParticleBodiesMemory;
 class ActiveParticlesMemory;
 class SpringMemory;
 
 class FlexSpace : public RIDFlex {
-    friend class FlexBuffers;
-    friend class FlexParticleBodyCommands;
+	friend class FlexBuffers;
+	friend class FlexParticleBodyCommands;
 
-    NvFlexLibrary *flex_lib;
-    NvFlexSolver *solver;
+	NvFlexLibrary *flex_lib;
+	NvFlexSolver *solver;
 
-    FlexMemoryAllocator *particle_bodies_allocator;
-    ParticleBodiesMemory *particle_bodies_memory;
+	FlexMemoryAllocator *particle_bodies_allocator;
+	ParticleBodiesMemory *particle_bodies_memory;
 
-    FlexMemoryAllocator *active_particles_allocator;
-    ActiveParticlesMemory *active_particles_memory;
-    MemoryChunk *active_particles_mchunk;
+	FlexMemoryAllocator *active_particles_allocator;
+	ActiveParticlesMemory *active_particles_memory;
+	MemoryChunk *active_particles_mchunk;
 
-    FlexMemoryAllocator *springs_allocator;
-    SpringMemory *springs_memory;
+	FlexMemoryAllocator *springs_allocator;
+	SpringMemory *springs_memory;
 
-    Vector<FlexParticleBody *> particle_bodies;
+	Vector<FlexParticleBody *> particle_bodies;
+	Vector<FlexPrimitiveBody *> primitive_bodies;
 
-    bool reload_active_particles;
+	bool reload_active_particles;
 
 public:
-    FlexSpace();
-    ~FlexSpace();
+	FlexSpace();
+	~FlexSpace();
 
-    void init();
-    void terminate();
-    void sync();
-    void step(real_t p_delta_time);
+	void init();
+	void terminate();
+	void sync();
+	void step(real_t p_delta_time);
 
-    _FORCE_INLINE_ FlexMemoryAllocator *get_particle_bodies_allocator() { return particle_bodies_allocator; }
-    _FORCE_INLINE_ ParticleBodiesMemory *get_particle_bodies_memory() { return particle_bodies_memory; }
-    _FORCE_INLINE_ FlexMemoryAllocator *get_springs_allocator() { return springs_allocator; }
-    _FORCE_INLINE_ SpringMemory *get_springs_memory() { return springs_memory; }
+	_FORCE_INLINE_ FlexMemoryAllocator *get_particle_bodies_allocator() { return particle_bodies_allocator; }
+	_FORCE_INLINE_ ParticleBodiesMemory *get_particle_bodies_memory() { return particle_bodies_memory; }
+	_FORCE_INLINE_ FlexMemoryAllocator *get_springs_allocator() { return springs_allocator; }
+	_FORCE_INLINE_ SpringMemory *get_springs_memory() { return springs_memory; }
 
-    void add_particle_body(FlexParticleBody *p_body);
-    void remove_particle_body(FlexParticleBody *p_body);
+	void add_particle_body(FlexParticleBody *p_body);
+	void remove_particle_body(FlexParticleBody *p_body);
+
+	void add_primitive_body(FlexPrimitiveBody *p_body);
+	void remove_primitive_body(FlexPrimitiveBody *p_body);
 
 private:
-    void dispatch_callbacks();
-    void execute_delayed_commands();
+	void dispatch_callbacks();
+	void execute_delayed_commands();
 
-    void commands_write_buffer();
-    void commands_read_buffer();
+	void commands_write_buffer();
+	void commands_read_buffer();
 
-    void replace_particle_index_in_springs(FlexParticleBody *p_body, ParticleBufferIndex p_index_old, ParticleBufferIndex p_index_new);
+	void replace_particle_index_in_springs(FlexParticleBody *p_body, ParticleBufferIndex p_index_old, ParticleBufferIndex p_index_new);
 };
 
 #endif // FLEX_SPACE_H
