@@ -35,6 +35,7 @@
 
 #include "core/math/triangle_mesh.h"
 #include "flex_particle_body.h"
+#include "flex_primitive_body.h"
 #include "flex_space.h"
 
 /**
@@ -66,6 +67,7 @@ public:
 private:
 	mutable RID_Owner<FlexSpace> space_owner;
 	mutable RID_Owner<FlexParticleBody> body_owner;
+	mutable RID_Owner<FlexPrimitiveBody> primitive_body_owner;
 
 	short last_space_index;
 	Vector<FlexSpace *> active_spaces;
@@ -88,10 +90,12 @@ public:
 		return &particle_body_commands_variant;
 	}
 
+	/* SPACE */
 	virtual RID space_create();
 	virtual void space_set_active(RID p_space, bool p_active);
 	virtual bool space_is_active(const RID p_space) const;
 
+	/* BODY */
 	virtual RID body_create();
 	virtual void body_set_space(RID p_body, RID p_space);
 	virtual void body_set_callback(RID p_body, ParticleBodyCallback p_callback_type, Object *p_receiver, const StringName &p_method);
@@ -103,6 +107,12 @@ public:
 	virtual void body_remove_particle(RID p_body, int p_particle_index);
 	virtual int body_get_particle_count(RID p_body) const;
 
+	/* PRIMITIVE BODY */
+	virtual RID primitive_body_create();
+
+	/* PRIMITIVE SHAPE */
+
+	/* COMMON */
 	virtual void free(RID p_rid);
 
 	// This should be on physics server
