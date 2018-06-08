@@ -183,7 +183,7 @@ void FlexParticlePhysicsServer::free(RID p_rid) {
 	}
 }
 
-Ref<ParticleShape> FlexParticlePhysicsServer::create_soft_particle_shape(Ref<TriangleMesh> p_mesh) {
+Ref<ParticleShape> FlexParticlePhysicsServer::create_soft_particle_shape(Ref<TriangleMesh> p_mesh, bool p_cloth, float p_sampling, float p_clusterSpacing, float p_clusterRadius, float p_clusterStiffness, float p_linkRadius, float p_linkStiffness) {
 	ERR_FAIL_COND_V(p_mesh.is_null(), Ref<ParticleShape>());
 
 	PoolVector<Vector3>::Read vertices_read = p_mesh->get_vertices().read();
@@ -192,13 +192,7 @@ Ref<ParticleShape> FlexParticlePhysicsServer::create_soft_particle_shape(Ref<Tri
 	p_mesh->get_indices(&indices);
 	PoolVector<int>::Read indices_read = indices.read();
 
-	bool cloth = false;
 	float radius = 0.1;
-	float sampling = 0.5;
-	float clusterSpacing = 1;
-	float clusterRadius = 1;
-	float linkRadius = 2;
-	float linkStiffness = 1.0;
 	float globalStiffness = 0;
 
 	NvFlexExtAsset *generated_assets = NvFlexExtCreateSoftFromMesh(
@@ -208,13 +202,13 @@ Ref<ParticleShape> FlexParticlePhysicsServer::create_soft_particle_shape(Ref<Tri
 			/*numIndices*/ indices.size(),
 
 			/*particleSpacing*/ radius, // Distance between 2 particle
-			/*volumeSampling*/ cloth ? 0.0 : sampling, // (0-1) This parameter regulate the number of particle that should be put inside the mesh (in case of cloth it should be 0)
-			/*surfaceSampling*/ cloth ? sampling : 0.0, // (0-1) This parameter regulate the number of particle that should be put on the surface of mesh (in case of cloth it should be 1)
-			/*clusterSpacing*/ clusterSpacing * radius,
-			/*clusterRadius*/ clusterRadius * radius,
-			/*clusterStiffness*/ 0.5,
-			/*linkRadius*/ linkRadius * radius,
-			/*linkStiffness*/ linkStiffness,
+			/*volumeSampling*/ p_cloth ? 0.0 : p_sampling, // (0-1) This parameter regulate the number of particle that should be put inside the mesh (in case of cloth it should be 0)
+			/*surfaceSampling*/ p_cloth ? p_sampling : 0.0, // (0-1) This parameter regulate the number of particle that should be put on the surface of mesh (in case of cloth it should be 1)
+			/*clusterSpacing*/ p_clusterSpacing * radius,
+			/*clusterRadius*/ p_clusterRadius * radius,
+			/*clusterStiffness*/ p_clusterStiffness,
+			/*linkRadius*/ p_linkRadius * radius,
+			/*linkStiffness*/ p_linkStiffness,
 			/*globalStiffness*/ globalStiffness,
 			/*clusterPlasticThreshold*/ 0.0,
 			/*clusterPlasticCreep*/ 0.0);
