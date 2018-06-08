@@ -35,7 +35,9 @@
 #ifndef FLEX_PRIMITIVE_SHAPES_H
 #define FLEX_PRIMITIVE_SHAPES_H
 
+#include "flex_utility.h"
 #include "rid_flex.h"
+#include "thirdparty/flex/include/NvFlexExt.h"
 
 enum FlexPrimitiveShapeType {
 	eFlexPrimitiveShapeTypeBox
@@ -49,6 +51,20 @@ public:
 	FlexPrimitiveShape(FlexPrimitiveShapeType p_type);
 
 	FlexPrimitiveShapeType get_shape_type();
+	virtual void get_shape(NvFlexCollisionGeometry *r_shape) const = 0;
+};
+
+class FlexPrimitiveBoxShape : public FlexPrimitiveShape {
+
+	Vector3 extends;
+
+public:
+	FlexPrimitiveBoxShape();
+
+	virtual void get_shape(NvFlexCollisionGeometry *r_shape) const;
+
+	void set_extends(const Vector3 &p_extends);
+	const Vector3 &get_extends() const { return extends; }
 };
 
 #endif // FLEX_PRIMITIVE_SHAPES_H

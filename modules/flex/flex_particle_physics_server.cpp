@@ -195,7 +195,7 @@ RID FlexParticlePhysicsServer::primitive_shape_create(PrimitiveShapeType p_type)
 	FlexPrimitiveShape *primitive_shape = NULL;
 	switch (p_type) {
 		case PARTICLE_PRIMITIVE_SHAPE_TYPE_BOX: {
-
+			primitive_shape = memnew(FlexPrimitiveBoxShape);
 		} break;
 	}
 
