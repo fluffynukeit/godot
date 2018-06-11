@@ -47,6 +47,7 @@ class ParticlePrimitiveBody : public ParticleObject {
 
 protected:
 	static void _bind_methods();
+	virtual void _notification(int p_what);
 
 public:
 	ParticlePrimitiveBody();
