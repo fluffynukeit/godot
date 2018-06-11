@@ -29,6 +29,7 @@
 /*************************************************************************/
 
 #include "box_shape.h"
+#include "servers/particle_physics_server.h"
 #include "servers/physics_server.h"
 
 Vector<Vector3> BoxShape::_gen_debug_mesh_lines() {
@@ -51,6 +52,7 @@ Vector<Vector3> BoxShape::_gen_debug_mesh_lines() {
 void BoxShape::_update_shape() {
 
 	PhysicsServer::get_singleton()->shape_set_data(get_shape(), extents);
+	ParticlePhysicsServer::get_singleton()->primitive_shape_set_data(get_particle_shape(), extents);
 }
 
 void BoxShape::set_extents(const Vector3 &p_extents) {
@@ -75,7 +77,7 @@ void BoxShape::_bind_methods() {
 }
 
 BoxShape::BoxShape() :
-		Shape(PhysicsServer::get_singleton()->shape_create(PhysicsServer::SHAPE_BOX)) {
+		Shape(PhysicsServer::get_singleton()->shape_create(PhysicsServer::SHAPE_BOX), ParticlePhysicsServer::get_singleton()->primitive_shape_create(ParticlePhysicsServer::PARTICLE_PRIMITIVE_SHAPE_TYPE_BOX)) {
 
 	set_extents(Vector3(1, 1, 1));
 }

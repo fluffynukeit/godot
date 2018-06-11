@@ -40,10 +40,20 @@
 #include "rid_flex.h"
 #include "thirdparty/flex/include/NvFlexExt.h"
 
+class FlexPrimitiveBody;
+
 class FlexPrimitiveShape : public RIDFlex {
+
+	Vector<FlexPrimitiveBody *> owners;
 
 public:
 	FlexPrimitiveShape();
+	~FlexPrimitiveShape();
+
+	void add_owner(FlexPrimitiveBody *p_owner);
+	void remove_owner(FlexPrimitiveBody *p_owner);
+	Vector<FlexPrimitiveBody *> get_owners() const { return owners; }
+	void notify_change();
 
 	virtual NvFlexCollisionShapeType get_type() = 0;
 	virtual void get_shape(NvFlexCollisionGeometry *r_shape) const = 0;

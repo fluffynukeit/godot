@@ -33,14 +33,35 @@
 */
 
 #include "flex_primitive_shapes.h"
+#include "flex_primitive_body.h"
 
 FlexPrimitiveShape::FlexPrimitiveShape() :
 		RIDFlex() {
 }
 
+FlexPrimitiveShape::~FlexPrimitiveShape() {
+	for (int i(owners.size() - 1); 0 <= i; --i) {
+		owners[i]->set_shape(NULL);
+	}
+}
+
 FlexPrimitiveBoxShape::FlexPrimitiveBoxShape() :
 		FlexPrimitiveShape(),
 		extends(1.0, 1.0, 1.0) {}
+
+void FlexPrimitiveShape::add_owner(FlexPrimitiveBody *p_owner) {
+	owners.push_back(p_owner);
+}
+
+void FlexPrimitiveShape::remove_owner(FlexPrimitiveBody *p_owner) {
+	owners.erase(p_owner);
+}
+
+void FlexPrimitiveShape::notify_change() {
+	for (int i(owners.size() - 1); 0 <= i; --i) {
+		owners[i]->notify_shape_changed();
+	}
+}
 
 void FlexPrimitiveBoxShape::get_shape(NvFlexCollisionGeometry *r_shape) const {
 	r_shape->box.halfExtents[0] = extends.x;

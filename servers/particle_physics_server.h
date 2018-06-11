@@ -61,6 +61,7 @@ public:
 	/* PRIMITIVE BODY */
 	virtual RID primitive_body_create() = 0;
 	virtual void primitive_body_set_space(RID p_body, RID p_space) = 0;
+	virtual void primitive_body_set_shape(RID p_body, RID p_shape) = 0;
 
 	/* PRIMITIVE SHAPE */
 	enum PrimitiveShapeType {
