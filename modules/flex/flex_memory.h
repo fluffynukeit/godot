@@ -149,6 +149,8 @@ class GeometryMemory : public FlexMemory {
 	NvFlexVector<NvFlexCollisionGeometry> collision_shapes;
 	NvFlexVector<FlVector4> positions;
 	NvFlexVector<Quat> rotations;
+	NvFlexVector<FlVector4> positions_prev;
+	NvFlexVector<Quat> rotations_prev;
 	NvFlexVector<int> flags;
 
 	bool changed;
@@ -176,6 +178,12 @@ public:
 
 	void set_rotation(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index, const Quat &p_rotation);
 	const Quat &get_rotation(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index) const;
+
+	void set_position_prev(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index, const FlVector4 &p_position);
+	const FlVector4 &get_position_prev(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index) const;
+
+	void set_rotation_prev(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index, const Quat &p_rotation);
+	const Quat &get_rotation_prev(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index) const;
 
 	void set_flags(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index, int p_flags);
 	int get_flags(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index) const;

@@ -423,7 +423,11 @@ void FlexSpace::execute_geometries_commands() {
 
 		if (body->changed_parameters & eChangedPrimitiveBodyParamTransform) {
 			if (body->changed_parameters & eChangedPrimitiveBodyParamTransformIsMotion) {
+				geometries_memory->set_position_prev(body->geometry_mchunk, 0, geometries_memory->get_position(body->geometry_mchunk, 0));
+				geometries_memory->set_rotation_prev(body->geometry_mchunk, 0, geometries_memory->get_rotation(body->geometry_mchunk, 0));
 			} else {
+				geometries_memory->set_position_prev(body->geometry_mchunk, 0, flvec4_from_vec3(body->transf.origin));
+				geometries_memory->set_rotation_prev(body->geometry_mchunk, 0, body->transf.basis.get_quat());
 			}
 
 			geometries_memory->set_position(body->geometry_mchunk, 0, flvec4_from_vec3(body->transf.origin));
@@ -484,8 +488,7 @@ void FlexSpace::commands_write_buffer() {
 		NvFlexSetSprings(solver, springs_memory->springs.buffer, springs_memory->lengths.buffer, springs_memory->stiffness.buffer, springs_allocator->get_last_used_index() + 1);
 
 	if (geometries_memory->was_changed())
-		// TODO Implement previous position and rotation
-		NvFlexSetShapes(solver, geometries_memory->collision_shapes.buffer, geometries_memory->positions.buffer, geometries_memory->rotations.buffer, NULL, NULL, geometries_memory->flags.buffer, geometries_allocator->get_last_used_index() + 1);
+		NvFlexSetShapes(solver, geometries_memory->collision_shapes.buffer, geometries_memory->positions.buffer, geometries_memory->rotations.buffer, geometries_memory->positions_prev.buffer, geometries_memory->rotations_prev.buffer, geometries_memory->flags.buffer, geometries_allocator->get_last_used_index() + 1);
 }
 
 void FlexSpace::commands_read_buffer() {
