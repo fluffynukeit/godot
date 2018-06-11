@@ -42,6 +42,17 @@ void ParticlePrimitiveBody::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "shape", PROPERTY_HINT_RESOURCE_TYPE, "Shape"), "set_shape", "get_shape");
 }
 
+void ParticlePrimitiveBody::_notification(int p_what) {
+	switch (p_what) {
+		case NOTIFICATION_ENTER_WORLD: {
+			ParticlePhysicsServer::get_singleton()->primitive_body_set_space(rid, get_world()->get_particle_space());
+		} break;
+		case NOTIFICATION_EXIT_WORLD: {
+			ParticlePhysicsServer::get_singleton()->primitive_body_set_space(rid, RID());
+		} break;
+	}
+}
+
 ParticlePrimitiveBody::ParticlePrimitiveBody() :
 		ParticleObject(ParticlePhysicsServer::get_singleton()->primitive_body_create()) {
 }
@@ -54,7 +65,7 @@ void ParticlePrimitiveBody::set_shape(const Ref<Shape> &p_shape) {
 	if (!shape.is_null()) {
 
 		shape->register_owner(this);
-		ParticlePhysicsServer::get_singleton()->primitive_body_set_shape(rid, shape->get_rid());
+		ParticlePhysicsServer::get_singleton()->primitive_body_set_shape(rid, shape->get_particle_rid());
 	} else {
 
 		ParticlePhysicsServer::get_singleton()->primitive_body_set_shape(rid, RID());

@@ -411,6 +411,7 @@ void FlexSpace::execute_geometries_commands() {
 
 		if (!body->geometry_mchunk) {
 			body->geometry_mchunk = geometries_allocator->allocate_chunk(1);
+			body->changed_parameters = eChangedPrimitiveBodyParamAll;
 		}
 
 		if (body->changed_parameters & eChangedPrimitiveBodyParamShape) {
