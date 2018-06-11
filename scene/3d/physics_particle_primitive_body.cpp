@@ -36,6 +36,8 @@
 
 void ParticlePrimitiveBody::_bind_methods() {
 
+	ClassDB::bind_method(D_METHOD("move", "transform"), &ParticlePrimitiveBody::move);
+
 	ClassDB::bind_method(D_METHOD("set_shape", "shape"), &ParticlePrimitiveBody::set_shape);
 	ClassDB::bind_method(D_METHOD("get_shape"), &ParticlePrimitiveBody::get_shape);
 
@@ -60,6 +62,13 @@ void ParticlePrimitiveBody::_notification(int p_what) {
 ParticlePrimitiveBody::ParticlePrimitiveBody() :
 		ParticleObject(ParticlePhysicsServer::get_singleton()->primitive_body_create()) {
 
+	set_notify_transform(true);
+}
+
+void ParticlePrimitiveBody::move(const Transform &p_transform) {
+	set_notify_transform(false);
+	set_global_transform(p_transform);
+	ParticlePhysicsServer::get_singleton()->primitive_body_set_transform(rid, p_transform, false);
 	set_notify_transform(true);
 }
 

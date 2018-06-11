@@ -212,6 +212,8 @@ GeometryMemory::GeometryMemory(NvFlexLibrary *p_lib) :
 		collision_shapes(p_lib),
 		positions(p_lib),
 		rotations(p_lib),
+		positions_prev(p_lib),
+		rotations_prev(p_lib),
 		flags(p_lib),
 		changed(false) {
 }
@@ -220,6 +222,8 @@ void GeometryMemory::map() {
 	collision_shapes.map(eNvFlexMapWait);
 	positions.map(eNvFlexMapWait);
 	rotations.map(eNvFlexMapWait);
+	positions_prev.map(eNvFlexMapWait);
+	rotations_prev.map(eNvFlexMapWait);
 	flags.map(eNvFlexMapWait);
 	changed = false;
 }
@@ -228,6 +232,8 @@ void GeometryMemory::unmap() {
 	collision_shapes.unmap();
 	positions.unmap();
 	rotations.unmap();
+	positions_prev.unmap();
+	rotations_prev.unmap();
 	flags.unmap();
 }
 
@@ -235,6 +241,8 @@ void GeometryMemory::terminate() {
 	collision_shapes.destroy();
 	positions.destroy();
 	rotations.destroy();
+	positions_prev.destroy();
+	rotations_prev.destroy();
 	flags.destroy();
 }
 
@@ -271,6 +279,28 @@ const Quat &GeometryMemory::get_rotation(const MemoryChunk *p_chunk, GeometryInd
 	return rotations[index];
 }
 
+void GeometryMemory::set_position_prev(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index, const FlVector4 &p_position) {
+	make_memory_index(p_chunk, p_geometry_index);
+	positions_prev[index] = p_position;
+	changed = true;
+}
+
+const FlVector4 &GeometryMemory::get_position_prev(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index) const {
+	make_memory_index_V(p_chunk, p_geometry_index, return_err_flvec4);
+	return positions_prev[index];
+}
+
+void GeometryMemory::set_rotation_prev(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index, const Quat &p_rotation) {
+	make_memory_index(p_chunk, p_geometry_index);
+	rotations_prev[index] = p_rotation;
+	changed = true;
+}
+
+const Quat &GeometryMemory::get_rotation_prev(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index) const {
+	make_memory_index_V(p_chunk, p_geometry_index, return_err_flquat);
+	return rotations_prev[index];
+}
+
 void GeometryMemory::set_flags(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index, int p_flags) {
 	make_memory_index(p_chunk, p_geometry_index);
 	flags[index] = p_flags;
@@ -286,6 +316,8 @@ void GeometryMemory::resize_memory(FlexUnit p_size) {
 	collision_shapes.resize(p_size);
 	positions.resize(p_size);
 	rotations.resize(p_size);
+	positions_prev.resize(p_size);
+	rotations_prev.resize(p_size);
 	flags.resize(p_size);
 }
 
@@ -293,5 +325,7 @@ void GeometryMemory::copy_unit(FlexUnit p_to, FlexUnit p_from) {
 	collision_shapes[p_to] = collision_shapes[p_from];
 	positions[p_to] = positions[p_from];
 	rotations[p_to] = rotations[p_from];
+	positions_prev[p_to] = positions_prev[p_from];
+	rotations_prev[p_to] = rotations_prev[p_from];
 	flags[p_to] = flags[p_from];
 }

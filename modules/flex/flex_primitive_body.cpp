@@ -80,7 +80,7 @@ void FlexPrimitiveBody::notify_shape_changed() {
 void FlexPrimitiveBody::set_transform(const Transform &p_transf, bool p_is_teleport) {
 	transf = p_transf;
 	changed_parameters |= eChangedPrimitiveBodyParamTransform;
-	if (p_is_teleport)
+	if (!p_is_teleport)
 		changed_parameters |= eChangedPrimitiveBodyParamTransformIsMotion;
 }
 
