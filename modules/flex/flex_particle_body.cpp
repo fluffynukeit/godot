@@ -156,7 +156,7 @@ void FlexParticleBody::load_model(Ref<ParticleBodyModel> p_model, const Transfor
 			const int dif = resource_s_count - active_s_count;
 			for (int i(0); i < dif; ++i) {
 				const int s(resource_s_count - i - 1);
-				add_spring(p_model->get_constraints_indexes_ref().get(s), p_model->get_constraints_indexes_ref().get(s + 1), p_model->get_constraints_info_ref().get(s).x, p_model->get_constraints_info_ref().get(s).y);
+				add_spring(p_model->get_constraints_indexes_ref().get(s * 2), p_model->get_constraints_indexes_ref().get(s * 2 + 1), p_model->get_constraints_info_ref().get(s).x, p_model->get_constraints_info_ref().get(s).y);
 			}
 		}
 
