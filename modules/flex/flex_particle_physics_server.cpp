@@ -204,6 +204,14 @@ void FlexParticlePhysicsServer::primitive_body_set_shape(RID p_body, RID p_shape
 	}
 }
 
+void FlexParticlePhysicsServer::primitive_body_set_transform(RID p_body, const Transform &p_transf, bool p_teleport) {
+
+	FlexPrimitiveBody *body = primitive_body_owner.get(p_body);
+	ERR_FAIL_COND(!body);
+
+	body->set_transform(p_transf, p_teleport);
+}
+
 RID FlexParticlePhysicsServer::primitive_shape_create(PrimitiveShapeType p_type) {
 
 	FlexPrimitiveShape *primitive_shape = NULL;

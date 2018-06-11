@@ -59,6 +59,7 @@
 #undef Transform
 
 #include "core/math/quat.h"
+#include "core/math/transform.h"
 #include "core/math/vector3.h"
 #include "core/string_db.h"
 #include "flex_memory_allocator.h"
@@ -81,6 +82,9 @@ typedef int GeometryBufferIndex; // Geometry global index, can change during tim
 
 #define extract_mass(particle) \
 	particle[3]
+
+#define flvec4_from_vec3(position) \
+	FlVector4(position.x, position.y, position.z, 0)
 
 struct Spring {
 	ParticleBufferIndex index0;

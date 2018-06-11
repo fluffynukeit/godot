@@ -43,7 +43,8 @@ class FlexPrimitiveShape;
 enum ChangedPrimitiveBodyParameter {
 	eChangedPrimitiveBodyParamShape = 1 << 0,
 	eChangedPrimitiveBodyParamTransform = 1 << 1,
-	eChangedPrimitiveBodyParamFlags = 1 << 2,
+	eChangedPrimitiveBodyParamTransformIsMotion = 1 << 2, // This is applied in addition to the Transform to tell that change is a movement and not a teleport
+	eChangedPrimitiveBodyParamFlags = 1 << 3,
 
 	eChangedPrimitiveBodyParamAll = eChangedPrimitiveBodyParamShape | eChangedPrimitiveBodyParamTransform | eChangedPrimitiveBodyParamFlags
 };
@@ -58,6 +59,8 @@ class FlexPrimitiveBody : public RIDFlex {
 	FlexSpace *space;
 	FlexPrimitiveShape *shape;
 
+	Transform transf;
+
 	bool kinematic; // if false is static
 
 public:
@@ -70,6 +73,8 @@ public:
 	void set_shape(FlexPrimitiveShape *p_shape);
 	FlexPrimitiveShape *get_shape() const;
 	void notify_shape_changed();
+
+	void set_transform(const Transform &p_transf, bool p_is_teleport);
 
 	void set_kinematic(bool p_kinematic);
 	bool is_kinematic() const { return kinematic; }

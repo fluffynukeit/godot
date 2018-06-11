@@ -422,11 +422,12 @@ void FlexSpace::execute_geometries_commands() {
 		}
 
 		if (body->changed_parameters & eChangedPrimitiveBodyParamTransform) {
-			// TODO Implement this
-			FlVector4 position;
-			Quat rotation;
-			geometries_memory->set_position(body->geometry_mchunk, 0, position);
-			geometries_memory->set_rotation(body->geometry_mchunk, 0, rotation);
+			if (body->changed_parameters & eChangedPrimitiveBodyParamTransformIsMotion) {
+			} else {
+			}
+
+			geometries_memory->set_position(body->geometry_mchunk, 0, flvec4_from_vec3(body->transf.origin));
+			geometries_memory->set_rotation(body->geometry_mchunk, 0, body->transf.basis.get_quat());
 		}
 
 		if (body->changed_parameters & eChangedPrimitiveBodyParamFlags) {

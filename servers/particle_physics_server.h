@@ -63,6 +63,8 @@ public:
 	virtual void primitive_body_set_space(RID p_body, RID p_space) = 0;
 	virtual void primitive_body_set_shape(RID p_body, RID p_shape) = 0;
 
+	virtual void primitive_body_set_transform(RID p_body, const Transform &p_transf, bool p_teleport) = 0;
+
 	/* PRIMITIVE SHAPE */
 	enum PrimitiveShapeType {
 		PARTICLE_PRIMITIVE_SHAPE_TYPE_BOX

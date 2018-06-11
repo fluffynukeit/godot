@@ -77,6 +77,13 @@ void FlexPrimitiveBody::notify_shape_changed() {
 	changed_parameters |= eChangedPrimitiveBodyParamShape;
 }
 
+void FlexPrimitiveBody::set_transform(const Transform &p_transf, bool p_is_teleport) {
+	transf = p_transf;
+	changed_parameters |= eChangedPrimitiveBodyParamTransform;
+	if (p_is_teleport)
+		changed_parameters |= eChangedPrimitiveBodyParamTransformIsMotion;
+}
+
 void FlexPrimitiveBody::set_kinematic(bool p_kinematic) {
 	kinematic = p_kinematic;
 	changed_parameters |= eChangedPrimitiveBodyParamFlags;
