@@ -190,6 +190,20 @@ void FlexParticlePhysicsServer::primitive_body_set_space(RID p_body, RID p_space
 	}
 }
 
+void FlexParticlePhysicsServer::primitive_body_set_shape(RID p_body, RID p_shape) {
+
+	FlexPrimitiveBody *body = primitive_body_owner.get(p_body);
+	ERR_FAIL_COND(!body);
+
+	if (p_shape == RID()) {
+		body->set_shape(NULL);
+	} else {
+		FlexPrimitiveShape *shape = primitive_shape_owner.get(p_shape);
+		ERR_FAIL_COND(!shape);
+		body->set_shape(shape);
+	}
+}
+
 RID FlexParticlePhysicsServer::primitive_shape_create(PrimitiveShapeType p_type) {
 
 	FlexPrimitiveShape *primitive_shape = NULL;

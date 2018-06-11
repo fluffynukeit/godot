@@ -112,6 +112,7 @@ public:
 	/* PRIMITIVE BODY */
 	virtual RID primitive_body_create();
 	virtual void primitive_body_set_space(RID p_body, RID p_space);
+	virtual void primitive_body_set_shape(RID p_body, RID p_shape);
 
 	/* PRIMITIVE SHAPE */
 	virtual RID primitive_shape_create(ParticlePhysicsServer::PrimitiveShapeType p_type);

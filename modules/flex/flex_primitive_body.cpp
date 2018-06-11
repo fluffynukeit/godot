@@ -44,6 +44,12 @@ FlexPrimitiveBody::FlexPrimitiveBody() :
 		kinematic(false) {
 }
 
+FlexPrimitiveBody::~FlexPrimitiveBody() {
+	if (shape) {
+		shape->remove_owner(this);
+	}
+}
+
 void FlexPrimitiveBody::set_space(FlexSpace *p_space) {
 	space = p_space;
 }
@@ -53,13 +59,22 @@ FlexSpace *FlexPrimitiveBody::get_space() const {
 }
 
 void FlexPrimitiveBody::set_shape(FlexPrimitiveShape *p_shape) {
-	ERR_FAIL_COND(shape);
+	if (shape) {
+		shape->remove_owner(this);
+	}
 	shape = p_shape;
-	changed_parameters |= eChangedPrimitiveBodyParamFlags;
+	changed_parameters |= eChangedPrimitiveBodyParamShape;
+	if (shape) {
+		shape->add_owner(this);
+	}
 }
 
 FlexPrimitiveShape *FlexPrimitiveBody::get_shape() const {
 	return shape;
+}
+
+void FlexPrimitiveBody::notify_shape_changed() {
+	changed_parameters |= eChangedPrimitiveBodyParamShape;
 }
 
 void FlexPrimitiveBody::set_kinematic(bool p_kinematic) {

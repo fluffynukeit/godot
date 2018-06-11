@@ -51,8 +51,15 @@ void ParticlePrimitiveBody::set_shape(const Ref<Shape> &p_shape) {
 	if (!shape.is_null())
 		shape->unregister_owner(this);
 	shape = p_shape;
-	if (!shape.is_null())
+	if (!shape.is_null()) {
+
 		shape->register_owner(this);
+		ParticlePhysicsServer::get_singleton()->primitive_body_set_shape(rid, shape->get_rid());
+	} else {
+
+		ParticlePhysicsServer::get_singleton()->primitive_body_set_shape(rid, RID());
+	}
+
 	update_gizmo();
 	update_configuration_warning();
 }

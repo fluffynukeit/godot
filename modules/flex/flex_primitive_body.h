@@ -62,12 +62,14 @@ class FlexPrimitiveBody : public RIDFlex {
 
 public:
 	FlexPrimitiveBody();
+	~FlexPrimitiveBody();
 
 	void set_space(FlexSpace *p_space);
 	FlexSpace *get_space() const;
 
 	void set_shape(FlexPrimitiveShape *p_shape);
 	FlexPrimitiveShape *get_shape() const;
+	void notify_shape_changed();
 
 	void set_kinematic(bool p_kinematic);
 	bool is_kinematic() const { return kinematic; }
