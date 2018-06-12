@@ -322,11 +322,11 @@ public:
 	BakedIndirectLightGizmoPlugin();
 };
 
-class ParticlePrimitiveShapeSpatialGizmo : public EditorSpatialGizmoPlugin {
-	GDCLASS(ParticlePrimitiveShapeSpatialGizmo, EditorSpatialGizmoPlugin);
+class ParticlePrimitiveShapeSpatialGizmoPlugin : public EditorSpatialGizmoPlugin {
+	GDCLASS(ParticlePrimitiveShapeSpatialGizmoPlugin, EditorSpatialGizmoPlugin);
 
 public:
-	ParticlePrimitiveShapeSpatialGizmo();
+	ParticlePrimitiveShapeSpatialGizmoPlugin();
 
 	virtual String get_handle_name(const EditorSpatialGizmo *p_gizmo, int p_idx) const;
 	virtual Variant get_handle_value(EditorSpatialGizmo *p_gizmo, int p_idx) const;
@@ -335,15 +335,15 @@ public:
 	void redraw(EditorSpatialGizmo *p_gizmo);
 };
 
-class ParticleBodySpatialGizmo : public EditorSpatialGizmoPlugin {
-	GDCLASS(ParticleBodySpatialGizmo, EditorSpatialGizmoPlugin);
+class ParticleBodySpatialGizmoPlugin : public EditorSpatialGizmoPlugin {
+	GDCLASS(ParticleBodySpatialGizmoPlugin, EditorSpatialGizmoPlugin);
 
 	SphereMesh spherem;
 	real_t radius;
 	Vector<int> selected_particles;
 
 public:
-	ParticleBodySpatialGizmo();
+	ParticleBodySpatialGizmoPlugin();
 
 	virtual void redraw(EditorSpatialGizmo *p_gizmo);
 	virtual bool intersect_frustum(EditorSpatialGizmo *p_gizmo, const Camera *p_camera, const Vector<Plane> &p_frustum);

@@ -62,7 +62,6 @@ void ParticlePrimitiveBody::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_ENTER_WORLD: {
 			ParticlePhysicsServer::get_singleton()->primitive_body_set_space(rid, get_world()->get_particle_space());
-
 		} break;
 		case NOTIFICATION_TRANSFORM_CHANGED: {
 			ParticlePhysicsServer::get_singleton()->primitive_body_set_transform(rid, get_global_transform(), true);
