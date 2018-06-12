@@ -97,11 +97,18 @@ void FlexParticlePhysicsServer::space_set_active(RID p_space, bool p_active) {
 	last_space_index = static_cast<short>(active_spaces.size() - 1);
 }
 
-bool FlexParticlePhysicsServer::space_is_active(const RID p_space) const {
+bool FlexParticlePhysicsServer::space_is_active(RID p_space) const {
 	const FlexSpace *space = space_owner.get(p_space);
 	ERR_FAIL_COND_V(!space, false);
 
 	return active_spaces.find(space) != -1;
+}
+
+float FlexParticlePhysicsServer::space_get_particle_radius(RID p_space) {
+	const FlexSpace *space = space_owner.get(p_space);
+	ERR_FAIL_COND_V(!space, false);
+
+	return space->get_particle_radius();
 }
 
 RID FlexParticlePhysicsServer::body_create() {

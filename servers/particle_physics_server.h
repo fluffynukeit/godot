@@ -38,7 +38,9 @@ public:
 	/* SPACE */
 	virtual RID space_create() = 0;
 	virtual void space_set_active(RID p_space, bool p_active) = 0;
-	virtual bool space_is_active(const RID p_space) const = 0;
+	virtual bool space_is_active(RID p_space) const = 0;
+
+	virtual float space_get_particle_radius(RID p_space) = 0;
 
 	enum ParticleBodyCallback {
 		PARTICLE_BODY_CALLBACK_SYNC,

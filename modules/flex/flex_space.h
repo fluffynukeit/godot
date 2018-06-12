@@ -76,6 +76,8 @@ class FlexSpace : public RIDFlex {
 
 	bool reload_active_particles;
 
+	float particle_radius;
+
 public:
 	FlexSpace();
 	~FlexSpace();
@@ -95,6 +97,8 @@ public:
 
 	void add_primitive_body(FlexPrimitiveBody *p_body);
 	void remove_primitive_body(FlexPrimitiveBody *p_body);
+
+	float get_particle_radius() const { return particle_radius; }
 
 private:
 	void dispatch_callbacks();

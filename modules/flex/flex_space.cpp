@@ -72,7 +72,8 @@ FlexSpace::FlexSpace() :
 		springs_memory(NULL),
 		geometries_allocator(NULL),
 		geometries_memory(NULL),
-		reload_active_particles(false) {
+		reload_active_particles(false),
+		particle_radius(0.1) {
 	init();
 }
 
@@ -144,7 +145,7 @@ void FlexSpace::init() {
 	params.gravity[0] = 0.0;
 	params.gravity[1] = -10.0;
 	params.gravity[2] = 0.0;
-	params.radius = 0.1;
+	params.radius = particle_radius;
 	params.solidRestDistance = params.radius * 0.9;
 	params.fluidRestDistance = params.radius * 0.5;
 	params.numIterations = 3;

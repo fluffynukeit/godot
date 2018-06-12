@@ -95,7 +95,9 @@ public:
 	/* SPACE */
 	virtual RID space_create();
 	virtual void space_set_active(RID p_space, bool p_active);
-	virtual bool space_is_active(const RID p_space) const;
+	virtual bool space_is_active(RID p_space) const;
+
+	virtual float space_get_particle_radius(RID p_space);
 
 	/* BODY */
 	virtual RID body_create();
