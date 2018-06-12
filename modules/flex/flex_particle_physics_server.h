@@ -102,8 +102,14 @@ public:
 	virtual void body_set_space(RID p_body, RID p_space);
 	virtual void body_set_callback(RID p_body, ParticleBodyCallback p_callback_type, Object *p_receiver, const StringName &p_method);
 
-	virtual void body_set_collision_layer(RID p_body, uint32_t p_layer);
-	virtual uint32_t body_get_collision_layer(RID p_body) const;
+	virtual void body_set_collision_group(RID p_body, uint32_t p_group);
+	virtual uint32_t body_get_collision_group(RID p_body) const;
+
+	virtual void body_set_collision_flag(RID p_body, ParticleCollisionFlag p_flag, bool p_active);
+	virtual bool body_get_collision_flag(RID p_body, ParticleCollisionFlag p_flag) const;
+
+	virtual void body_set_collision_primitive_mask(RID p_body, uint32_t p_mask);
+	virtual uint32_t body_get_collision_primitive_mask(RID p_body) const;
 
 	virtual void body_add_particle(RID p_body, const Vector3 &p_local_position, real_t p_mass);
 	virtual void body_remove_particle(RID p_body, int p_particle_index);

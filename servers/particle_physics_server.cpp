@@ -28,8 +28,14 @@ void ParticlePhysicsServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("body_set_space", "body", "space"), &ParticlePhysicsServer::body_set_space);
 	ClassDB::bind_method(D_METHOD("body_set_callback", "body", "callback_type", "receiver", "method"), &ParticlePhysicsServer::body_set_callback);
 
-	ClassDB::bind_method(D_METHOD("body_set_collision_layer", "body", "layer"), &ParticlePhysicsServer::body_set_collision_layer);
-	ClassDB::bind_method(D_METHOD("body_get_collision_layer", "body"), &ParticlePhysicsServer::body_get_collision_layer);
+	ClassDB::bind_method(D_METHOD("body_set_collision_group", "body", "group"), &ParticlePhysicsServer::body_set_collision_group);
+	ClassDB::bind_method(D_METHOD("body_get_collision_group", "body"), &ParticlePhysicsServer::body_get_collision_group);
+
+	ClassDB::bind_method(D_METHOD("body_set_collision_flag", "body", "flag", "active"), &ParticlePhysicsServer::body_set_collision_flag);
+	ClassDB::bind_method(D_METHOD("body_get_collision_flag", "body", "flag"), &ParticlePhysicsServer::body_get_collision_flag);
+
+	ClassDB::bind_method(D_METHOD("body_set_primitive_collision_mask", "body", "mask"), &ParticlePhysicsServer::body_set_collision_primitive_mask);
+	ClassDB::bind_method(D_METHOD("body_get_primitive_collision_mask", "body"), &ParticlePhysicsServer::body_get_collision_primitive_mask);
 
 	ClassDB::bind_method(D_METHOD("body_add_particle", "body", "local_position", "mass"), &ParticlePhysicsServer::body_add_particle);
 	ClassDB::bind_method(D_METHOD("body_remove_particle", "body", "particle_id"), &ParticlePhysicsServer::body_remove_particle);
@@ -52,6 +58,10 @@ void ParticlePhysicsServer::_bind_methods() {
 	BIND_ENUM_CONSTANT(PARTICLE_BODY_CALLBACK_SYNC);
 	BIND_ENUM_CONSTANT(PARTICLE_BODY_CALLBACK_PARTICLEINDEXCHANGED);
 	BIND_ENUM_CONSTANT(PARTICLE_BODY_CALLBACK_SPRINGINDEXCHANGED);
+
+	BIND_ENUM_CONSTANT(PARTICLE_COLLISION_FLAG_SELF_COLLIDE);
+	BIND_ENUM_CONSTANT(PARTICLE_COLLISION_FLAG_SELF_COLLIDE_FILTER);
+	BIND_ENUM_CONSTANT(PARTICLE_COLLISION_FLAG_FLUID);
 
 	BIND_ENUM_CONSTANT(PARTICLE_PRIMITIVE_SHAPE_TYPE_BOX)
 }

@@ -46,8 +46,6 @@ class ParticleBody : public ParticleObject {
 	bool reset_particles_to_base_shape;
 	Ref<ParticleBodyModel> particle_body_model;
 
-	uint32_t collision_layer;
-
 	Vector<RID> debug_particle_visual_instances;
 	Ref<SphereMesh> debug_particle_mesh;
 
@@ -64,11 +62,20 @@ public:
 	void add_particle(const Vector3 &p_local_position, real_t p_mass);
 	void remove_particle(int p_particle_index);
 
-	void set_collision_layer(uint32_t p_layer);
-	uint32_t get_collision_layer() const;
+	void set_collision_group(uint32_t p_layer);
+	uint32_t get_collision_group() const;
 
-	void set_collision_layer_bit(int p_bit, bool p_value);
-	bool get_collision_layer_bit(int p_bit) const;
+	void set_collision_flag_self_collide(bool p_active);
+	bool get_collision_flag_self_collide() const;
+
+	void set_collision_flag_self_collide_filter(bool p_active);
+	bool get_collision_flag_self_collide_filter() const;
+
+	void set_collision_flag_fluid(bool p_active);
+	bool get_collision_flag_fluid() const;
+
+	void set_collision_primitive_mask(uint32_t p_mask);
+	uint32_t get_collision_primitive_mask() const;
 
 protected:
 	void _notification(int p_what);

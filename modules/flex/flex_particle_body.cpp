@@ -43,7 +43,9 @@ FlexParticleBody::FlexParticleBody() :
 		particles_mchunk(NULL),
 		springs_mchunk(NULL),
 		changed_parameters(0),
-		group(1) {
+		collision_group(0),
+		collision_flags(0),
+		collision_primitive_mask(eNvFlexPhaseShapeChannel0) {
 	sync_callback.receiver = NULL;
 }
 
@@ -70,17 +72,54 @@ void FlexParticleBody::set_callback(ParticlePhysicsServer::ParticleBodyCallback 
 }
 
 void FlexParticleBody::set_collision_group(uint32_t p_group) {
-	group = eNvFlexPhaseGroupMask & p_group;
-	changed_parameters |= eChangedBodyParameterGroup;
+	if (p_group >= (2 ^ 20))
+		return;
+	collision_group = p_group;
+	changed_parameters |= eChangedBodyParamPhase;
 }
 
 uint32_t FlexParticleBody::get_collision_group() const {
-	return group;
+	return collision_group;
+}
+
+uint32_t FlexParticleBody::get_collision_flag_bit(ParticlePhysicsServer::ParticleCollisionFlag p_flag) const {
+	switch (p_flag) {
+		case ParticlePhysicsServer::PARTICLE_COLLISION_FLAG_SELF_COLLIDE:
+			return eNvFlexPhaseSelfCollide;
+		case ParticlePhysicsServer::PARTICLE_COLLISION_FLAG_SELF_COLLIDE_FILTER:
+			return eNvFlexPhaseSelfCollideFilter;
+		case ParticlePhysicsServer::PARTICLE_COLLISION_FLAG_FLUID:
+			return eNvFlexPhaseFluid;
+	}
+	return 0;
+}
+
+void FlexParticleBody::set_collision_flag(ParticlePhysicsServer::ParticleCollisionFlag p_flag, bool p_active) {
+
+	if (p_active) {
+		collision_flags |= get_collision_flag_bit(p_flag);
+	} else {
+		collision_flags &= ~get_collision_flag_bit(p_flag);
+	}
+	changed_parameters |= eChangedBodyParamPhase;
+}
+
+bool FlexParticleBody::get_collision_flag(ParticlePhysicsServer::ParticleCollisionFlag p_flag) const {
+	return collision_flags & get_collision_flag_bit(p_flag);
+}
+
+void FlexParticleBody::set_collision_primitive_mask(uint32_t p_primitive_mask) {
+	collision_primitive_mask = eNvFlexPhaseShapeChannelMask & (p_primitive_mask << 24);
+	changed_parameters |= eChangedBodyParamPhase;
+}
+
+uint32_t FlexParticleBody::get_collision_primitive_mask() const {
+	return collision_primitive_mask >> 24;
 }
 
 void FlexParticleBody::add_particle(const Vector3 &p_local_position, real_t p_mass) {
 	delayed_commands.particle_to_add.push_back(ParticleToAdd(p_local_position, p_mass));
-	changed_parameters |= eChangedBodyParameterPositionMass | eChangedBodyParameterVelocity | eChangedBodyParameterGroup;
+	changed_parameters |= eChangedBodyParamPositionMass | eChangedBodyParamVelocity | eChangedBodyParamPhase;
 }
 
 void FlexParticleBody::remove_particle(ParticleIndex p_particle) {
@@ -175,7 +214,7 @@ void FlexParticleBody::reset_particle(ParticleIndex p_particle_index, const Vect
 		return;
 	space->get_particle_bodies_memory()->set_particle(particles_mchunk, p_particle_index, CreateParticle(p_position, p_mass));
 	space->get_particle_bodies_memory()->set_velocity(particles_mchunk, p_particle_index, Vector3(0, 0, 0));
-	changed_parameters |= eChangedBodyParameterPositionMass | eChangedBodyParameterVelocity;
+	changed_parameters |= eChangedBodyParamPositionMass | eChangedBodyParamVelocity;
 }
 
 void FlexParticleBody::reset_spring(SpringIndex p_spring, ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness) {
@@ -203,7 +242,7 @@ void FlexParticleBody::set_particle_velocity(ParticleIndex p_particle_index, con
 	if (!particles_mchunk)
 		return;
 	space->get_particle_bodies_memory()->set_velocity(particles_mchunk, p_particle_index, p_velocity);
-	changed_parameters |= eChangedBodyParameterVelocity;
+	changed_parameters |= eChangedBodyParamVelocity;
 }
 
 bool FlexParticleBody::is_owner_of_particle(ParticleIndex p_particle) const {
