@@ -47,12 +47,16 @@ class ParticlePrimitiveBody : public ParticleObject {
 
 	uint32_t collision_layer;
 
+	// DEBUG
+	Node *debug_shape;
+
 protected:
 	static void _bind_methods();
 	virtual void _notification(int p_what);
 
 public:
 	ParticlePrimitiveBody();
+	virtual ~ParticlePrimitiveBody();
 
 	void move(const Transform &p_transform);
 
@@ -67,6 +71,9 @@ public:
 
 	void set_collision_layer_bit(int p_bit, bool p_value);
 	bool get_collision_layer_bit(int p_bit) const;
+
+private:
+	void _create_debug_shape();
 };
 
 #endif // PARTICLE_PRIMITIVE_BODY_H

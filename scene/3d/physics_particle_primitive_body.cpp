@@ -33,6 +33,7 @@
  */
 
 #include "physics_particle_primitive_body.h"
+#include "scene/3d/mesh_instance.h"
 
 void ParticlePrimitiveBody::_bind_methods() {
 
@@ -69,6 +70,11 @@ void ParticlePrimitiveBody::_notification(int p_what) {
 		case NOTIFICATION_EXIT_WORLD: {
 			ParticlePhysicsServer::get_singleton()->primitive_body_set_space(rid, RID());
 		} break;
+		case NOTIFICATION_ENTER_TREE: {
+			if (get_tree()->is_debugging_collisions_hint()) {
+				_create_debug_shape();
+			}
+		} break;
 	}
 }
 
@@ -77,6 +83,11 @@ ParticlePrimitiveBody::ParticlePrimitiveBody() :
 		collision_layer(1) {
 
 	set_notify_transform(true);
+}
+
+ParticlePrimitiveBody::~ParticlePrimitiveBody() {
+
+	debug_shape = NULL;
 }
 
 void ParticlePrimitiveBody::move(const Transform &p_transform) {
@@ -140,4 +151,25 @@ void ParticlePrimitiveBody::set_collision_layer_bit(int p_bit, bool p_value) {
 bool ParticlePrimitiveBody::get_collision_layer_bit(int p_bit) const {
 
 	return get_collision_layer() & (1 << p_bit);
+}
+
+void ParticlePrimitiveBody::_create_debug_shape() {
+
+	if (debug_shape) {
+		debug_shape->queue_delete();
+		debug_shape = NULL;
+	}
+
+	Ref<Shape> s = get_shape();
+
+	if (s.is_null())
+		return;
+
+	Ref<Mesh> mesh = s->get_debug_mesh();
+
+	MeshInstance *mi = memnew(MeshInstance);
+	mi->set_mesh(mesh);
+
+	add_child(mi);
+	debug_shape = mi;
 }
