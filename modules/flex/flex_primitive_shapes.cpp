@@ -112,3 +112,18 @@ Variant FlexPrimitiveCapsuleShape::get_data() const {
 const Basis &FlexPrimitiveCapsuleShape::get_alignment_basis() const {
 	return alignment;
 }
+
+FlexPrimitiveSphereShape::FlexPrimitiveSphereShape() :
+		radius(1) {}
+
+void FlexPrimitiveSphereShape::get_shape(NvFlexCollisionGeometry *r_shape) const {
+	r_shape->sphere.radius = radius;
+}
+
+void FlexPrimitiveSphereShape::set_data(const Variant &p_data) {
+	radius = p_data;
+}
+
+Variant FlexPrimitiveSphereShape::get_data() const {
+	return radius;
+}

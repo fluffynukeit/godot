@@ -96,4 +96,17 @@ public:
 	virtual bool need_alignment() const { return true; }
 	virtual const Basis &get_alignment_basis() const;
 };
+
+class FlexPrimitiveSphereShape : public FlexPrimitiveShape {
+
+	float radius;
+
+public:
+	FlexPrimitiveSphereShape();
+
+	virtual NvFlexCollisionShapeType get_type() { return eNvFlexShapeSphere; }
+	virtual void get_shape(NvFlexCollisionGeometry *r_shape) const;
+	virtual void set_data(const Variant &p_data);
+	virtual Variant get_data() const;
+};
 #endif // FLEX_PRIMITIVE_SHAPES_H
