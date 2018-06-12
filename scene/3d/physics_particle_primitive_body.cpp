@@ -41,7 +41,20 @@ void ParticlePrimitiveBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_shape", "shape"), &ParticlePrimitiveBody::set_shape);
 	ClassDB::bind_method(D_METHOD("get_shape"), &ParticlePrimitiveBody::get_shape);
 
+	ClassDB::bind_method(D_METHOD("set_kinematic", "kinematic"), &ParticlePrimitiveBody::set_kinematic);
+	ClassDB::bind_method(D_METHOD("is_kinematic"), &ParticlePrimitiveBody::is_kinematic);
+
+	ClassDB::bind_method(D_METHOD("set_collision_layer", "layer"), &ParticlePrimitiveBody::set_collision_layer);
+	ClassDB::bind_method(D_METHOD("get_collision_layer"), &ParticlePrimitiveBody::get_collision_layer);
+	ClassDB::bind_method(D_METHOD("set_collision_layer_bit", "bit", "value"), &ParticlePrimitiveBody::set_collision_layer_bit);
+	ClassDB::bind_method(D_METHOD("get_collision_layer_bit", "bit"), &ParticlePrimitiveBody::get_collision_layer_bit);
+
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "shape", PROPERTY_HINT_RESOURCE_TYPE, "Shape"), "set_shape", "get_shape");
+
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "kinematic"), "set_kinematic", "is_kinematic");
+
+	ADD_GROUP("Collision", "collision_");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_layer", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collision_layer", "get_collision_layer");
 }
 
 void ParticlePrimitiveBody::_notification(int p_what) {
@@ -60,7 +73,8 @@ void ParticlePrimitiveBody::_notification(int p_what) {
 }
 
 ParticlePrimitiveBody::ParticlePrimitiveBody() :
-		ParticleObject(ParticlePhysicsServer::get_singleton()->primitive_body_create()) {
+		ParticleObject(ParticlePhysicsServer::get_singleton()->primitive_body_create()),
+		collision_layer(1) {
 
 	set_notify_transform(true);
 }
@@ -92,4 +106,38 @@ void ParticlePrimitiveBody::set_shape(const Ref<Shape> &p_shape) {
 
 Ref<Shape> ParticlePrimitiveBody::get_shape() const {
 	return shape;
+}
+
+void ParticlePrimitiveBody::set_kinematic(bool p_kinematic) {
+	ParticlePhysicsServer::get_singleton()->primitive_body_set_kinematic(rid, p_kinematic);
+}
+
+bool ParticlePrimitiveBody::is_kinematic() const {
+	return ParticlePhysicsServer::get_singleton()->primitive_body_is_kinematic(rid);
+}
+
+void ParticlePrimitiveBody::set_collision_layer(uint32_t p_layer) {
+
+	collision_layer = p_layer;
+	ParticlePhysicsServer::get_singleton()->primitive_body_set_collision_layer(rid, p_layer);
+}
+
+uint32_t ParticlePrimitiveBody::get_collision_layer() const {
+
+	return collision_layer;
+}
+
+void ParticlePrimitiveBody::set_collision_layer_bit(int p_bit, bool p_value) {
+
+	uint32_t mask = get_collision_layer();
+	if (p_value)
+		mask |= 1 << p_bit;
+	else
+		mask &= ~(1 << p_bit);
+	set_collision_layer(mask);
+}
+
+bool ParticlePrimitiveBody::get_collision_layer_bit(int p_bit) const {
+
+	return get_collision_layer() & (1 << p_bit);
 }

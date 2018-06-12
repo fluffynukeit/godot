@@ -65,6 +65,12 @@ public:
 
 	virtual void primitive_body_set_transform(RID p_body, const Transform &p_transf, bool p_teleport) = 0;
 
+	virtual void primitive_body_set_collision_layer(RID p_body, uint32_t p_layer) = 0;
+	virtual uint32_t primitive_body_get_collision_layer(RID p_body) const = 0;
+
+	virtual void primitive_body_set_kinematic(RID p_body, bool p_kinematic) = 0;
+	virtual bool primitive_body_is_kinematic(RID p_body) const = 0;
+
 	/* PRIMITIVE SHAPE */
 	enum PrimitiveShapeType {
 		PARTICLE_PRIMITIVE_SHAPE_TYPE_BOX

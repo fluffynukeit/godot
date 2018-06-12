@@ -435,8 +435,9 @@ void FlexSpace::execute_geometries_commands() {
 		}
 
 		if (body->changed_parameters & eChangedPrimitiveBodyParamFlags) {
-			// TODO collision channel
-			geometries_memory->set_flags(body->geometry_mchunk, 0, NvFlexMakeShapeFlagsWithChannels(body->get_shape()->get_type(), body->is_kinematic(), eNvFlexPhaseShapeChannel0));
+			//shift layer by 23 to match: NvFlexPhase
+			uint32_t flag = NvFlexMakeShapeFlagsWithChannels(body->get_shape()->get_type(), body->is_kinematic(), body->get_layer() << 24);
+			geometries_memory->set_flags(body->geometry_mchunk, 0, NvFlexMakeShapeFlagsWithChannels(body->get_shape()->get_type(), body->is_kinematic(), body->get_layer() << 24));
 		}
 
 		body->set_clean();

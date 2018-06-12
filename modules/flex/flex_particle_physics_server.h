@@ -116,6 +116,12 @@ public:
 
 	virtual void primitive_body_set_transform(RID p_body, const Transform &p_transf, bool p_teleport);
 
+	virtual void primitive_body_set_collision_layer(RID p_body, uint32_t p_layer);
+	virtual uint32_t primitive_body_get_collision_layer(RID p_body) const;
+
+	virtual void primitive_body_set_kinematic(RID p_body, bool p_kinematic);
+	virtual bool primitive_body_is_kinematic(RID p_body) const;
+
 	/* PRIMITIVE SHAPE */
 	virtual RID primitive_shape_create(ParticlePhysicsServer::PrimitiveShapeType p_type);
 

@@ -41,7 +41,8 @@ FlexPrimitiveBody::FlexPrimitiveBody() :
 		geometry_mchunk(NULL),
 		space(NULL),
 		shape(NULL),
-		kinematic(false) {
+		kinematic(false),
+		layer(1) {
 }
 
 FlexPrimitiveBody::~FlexPrimitiveBody() {
@@ -82,6 +83,11 @@ void FlexPrimitiveBody::set_transform(const Transform &p_transf, bool p_is_telep
 	changed_parameters |= eChangedPrimitiveBodyParamTransform;
 	if (!p_is_teleport)
 		changed_parameters |= eChangedPrimitiveBodyParamTransformIsMotion;
+}
+
+void FlexPrimitiveBody::set_layer(uint32_t p_layer) {
+	layer = p_layer & 0x7f; // Accept only the first 7 bit
+	changed_parameters != eChangedPrimitiveBodyParamFlags;
 }
 
 void FlexPrimitiveBody::set_kinematic(bool p_kinematic) {

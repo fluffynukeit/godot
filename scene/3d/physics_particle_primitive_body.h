@@ -45,9 +45,10 @@ class ParticlePrimitiveBody : public ParticleObject {
 
 	Ref<Shape> shape;
 
+	uint32_t collision_layer;
+
 protected:
-	static void
-	_bind_methods();
+	static void _bind_methods();
 	virtual void _notification(int p_what);
 
 public:
@@ -57,6 +58,15 @@ public:
 
 	void set_shape(const Ref<Shape> &p_shape);
 	Ref<Shape> get_shape() const;
+
+	void set_kinematic(bool p_kinematic);
+	bool is_kinematic() const;
+
+	void set_collision_layer(uint32_t p_layer);
+	uint32_t get_collision_layer() const;
+
+	void set_collision_layer_bit(int p_bit, bool p_value);
+	bool get_collision_layer_bit(int p_bit) const;
 };
 
 #endif // PARTICLE_PRIMITIVE_BODY_H

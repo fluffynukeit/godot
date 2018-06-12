@@ -61,6 +61,8 @@ class FlexPrimitiveBody : public RIDFlex {
 
 	Transform transf;
 
+	// allow only first 7 bit (max 7 channel)
+	uint32_t layer;
 	bool kinematic; // if false is static
 
 public:
@@ -75,6 +77,10 @@ public:
 	void notify_shape_changed();
 
 	void set_transform(const Transform &p_transf, bool p_is_teleport);
+
+	// Accept only the first 7 bit
+	void set_layer(uint32_t p_layer);
+	uint32_t get_layer() const { return layer; }
 
 	void set_kinematic(bool p_kinematic);
 	bool is_kinematic() const { return kinematic; }
