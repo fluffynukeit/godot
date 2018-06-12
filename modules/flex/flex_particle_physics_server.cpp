@@ -212,6 +212,34 @@ void FlexParticlePhysicsServer::primitive_body_set_transform(RID p_body, const T
 	body->set_transform(p_transf, p_teleport);
 }
 
+void FlexParticlePhysicsServer::primitive_body_set_collision_layer(RID p_body, uint32_t p_layer) {
+	FlexPrimitiveBody *body = primitive_body_owner.get(p_body);
+	ERR_FAIL_COND(!body);
+
+	body->set_layer(p_layer);
+}
+
+uint32_t FlexParticlePhysicsServer::primitive_body_get_collision_layer(RID p_body) const {
+	FlexPrimitiveBody *body = primitive_body_owner.get(p_body);
+	ERR_FAIL_COND_V(!body, 0);
+
+	return body->get_layer();
+}
+
+void FlexParticlePhysicsServer::primitive_body_set_kinematic(RID p_body, bool p_kinematic) {
+	FlexPrimitiveBody *body = primitive_body_owner.get(p_body);
+	ERR_FAIL_COND(!body);
+
+	body->set_kinematic(p_kinematic);
+}
+
+bool FlexParticlePhysicsServer::primitive_body_is_kinematic(RID p_body) const {
+	FlexPrimitiveBody *body = primitive_body_owner.get(p_body);
+	ERR_FAIL_COND_V(!body, false);
+
+	return body->is_kinematic();
+}
+
 RID FlexParticlePhysicsServer::primitive_shape_create(PrimitiveShapeType p_type) {
 
 	FlexPrimitiveShape *primitive_shape = NULL;

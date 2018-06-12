@@ -134,12 +134,12 @@ uint32_t ParticleBody::get_collision_layer() const {
 
 void ParticleBody::set_collision_layer_bit(int p_bit, bool p_value) {
 
-	uint32_t mask = get_collision_layer();
+	uint32_t layer = get_collision_layer();
 	if (p_value)
-		mask |= 1 << p_bit;
+		layer |= 1 << p_bit;
 	else
-		mask &= ~(1 << p_bit);
-	set_collision_layer(mask);
+		layer &= ~(1 << p_bit);
+	set_collision_layer(layer);
 }
 
 bool ParticleBody::get_collision_layer_bit(int p_bit) const {
