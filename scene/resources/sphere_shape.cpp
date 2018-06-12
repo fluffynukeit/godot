@@ -29,6 +29,7 @@
 /*************************************************************************/
 
 #include "sphere_shape.h"
+#include "servers/particle_physics_server.h"
 #include "servers/physics_server.h"
 
 Vector<Vector3> SphereShape::_gen_debug_mesh_lines() {
@@ -58,6 +59,7 @@ Vector<Vector3> SphereShape::_gen_debug_mesh_lines() {
 void SphereShape::_update_shape() {
 
 	PhysicsServer::get_singleton()->shape_set_data(get_shape(), radius);
+	ParticlePhysicsServer::get_singleton()->primitive_shape_set_data(get_particle_rid(), radius);
 }
 
 void SphereShape::set_radius(float p_radius) {
@@ -82,7 +84,7 @@ void SphereShape::_bind_methods() {
 }
 
 SphereShape::SphereShape() :
-		Shape(PhysicsServer::get_singleton()->shape_create(PhysicsServer::SHAPE_SPHERE)) {
+		Shape(PhysicsServer::get_singleton()->shape_create(PhysicsServer::SHAPE_SPHERE), ParticlePhysicsServer::get_singleton()->primitive_shape_create(ParticlePhysicsServer::PARTICLE_PRIMITIVE_SHAPE_TYPE_SPHERE)) {
 
 	set_radius(1.0);
 }
