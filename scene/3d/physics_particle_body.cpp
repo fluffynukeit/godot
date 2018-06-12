@@ -35,6 +35,7 @@
 #include "physics_particle_body.h"
 
 #include "core_string_names.h"
+#include "scene/3d/mesh_instance.h"
 
 void ParticleBody::_bind_methods() {
 
@@ -85,12 +86,6 @@ void ParticleBody::_bind_methods() {
 ParticleBody::ParticleBody() :
 		ParticleObject(ParticlePhysicsServer::get_singleton()->body_create()),
 		reset_particles_to_base_shape(true) {
-
-	debug_particle_mesh.instance();
-	debug_particle_mesh->set_radius(0.05);
-	debug_particle_mesh->set_height(0.1);
-	debug_particle_mesh->set_radial_segments(16);
-	debug_particle_mesh->set_rings(3);
 
 	set_notify_transform(true);
 
@@ -183,12 +178,13 @@ void ParticleBody::_notification(int p_what) {
 		} break;
 		case NOTIFICATION_TRANSFORM_CHANGED: {
 
-			reset_debug_particle_positions();
+			debug_reset_particle_positions();
+
 		} break;
 		case NOTIFICATION_EXIT_WORLD: {
 			ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SYNC, NULL, "");
 			ParticlePhysicsServer::get_singleton()->body_set_space(rid, RID());
-			initialize_debug_resource();
+			debug_initialize_resource();
 		} break;
 	}
 }
@@ -196,7 +192,7 @@ void ParticleBody::_notification(int p_what) {
 void ParticleBody::resource_changed(const RES &p_res) {
 	if (particle_body_model == p_res) {
 		reset_particles_to_base_shape = true;
-		initialize_debug_resource();
+		debug_initialize_resource();
 	}
 }
 
@@ -210,7 +206,7 @@ void ParticleBody::commands_process_internal(Object *p_cmds) {
 		emit_signal("resource_loaded");
 	}
 
-	update_debug_visual_instances(cmds);
+	debug_update(cmds);
 
 	if (!get_script().is_null() && has_method("_commands_process")) {
 		call("_commands_process", p_cmds);
@@ -231,27 +227,23 @@ void ParticleBody::_on_script_changed() {
 	}
 }
 
-void ParticleBody::initialize_debug_resource() {
+void ParticleBody::debug_initialize_resource() {
+
+	if (!is_inside_tree() || !get_tree()->is_debugging_collisions_hint())
+		return;
+
+	debug_particle_mesh.instance();
+	debug_particle_mesh->set_radius(0.05);
+	debug_particle_mesh->set_height(0.1);
+	debug_particle_mesh->set_radial_segments(8);
+	debug_particle_mesh->set_rings(8);
 
 	const int particle_count = particle_body_model.is_valid() ? particle_body_model->get_particles_ref().size() : 0;
-	resize_debug_particle_visual_instance(particle_count);
-	reset_debug_particle_positions();
+	debug_resize_particle_visual_instance(particle_count);
+	debug_reset_particle_positions();
 }
 
-void ParticleBody::update_debug_visual_instances(ParticleBodyCommands *p_cmds) {
-
-	const int particle_count = ParticlePhysicsServer::get_singleton()->body_get_particle_count(rid);
-	resize_debug_particle_visual_instance(ParticlePhysicsServer::get_singleton()->body_get_particle_count(rid));
-
-	Transform transf;
-	for (int i = 0; i < particle_count; ++i) {
-
-		transf.origin = p_cmds->get_particle_position(i);
-		VisualServer::get_singleton()->instance_set_transform(debug_particle_visual_instances[i], transf);
-	}
-}
-
-void ParticleBody::resize_debug_particle_visual_instance(int new_size) {
+void ParticleBody::debug_resize_particle_visual_instance(int new_size) {
 
 	if (debug_particle_visual_instances.size() == new_size)
 		return;
@@ -263,8 +255,8 @@ void ParticleBody::resize_debug_particle_visual_instance(int new_size) {
 		for (int i = 0; i < dif; ++i) {
 
 			const int p = debug_particle_visual_instances.size() - i - 1;
-			VisualServer::get_singleton()->instance_set_scenario(debug_particle_visual_instances[p], RID());
-			VS::get_singleton()->free(debug_particle_visual_instances[p]);
+			debug_particle_visual_instances[p]->queue_delete();
+			debug_particle_visual_instances[p] = NULL;
 		}
 		debug_particle_visual_instances.resize(new_size);
 	} else {
@@ -278,16 +270,35 @@ void ParticleBody::resize_debug_particle_visual_instance(int new_size) {
 		for (int i = 0; i < dif; ++i) {
 
 			const int p = new_size - i - 1;
-			debug_particle_visual_instances[p] = VisualServer::get_singleton()->instance_create();
-			VisualServer::get_singleton()->instance_set_scenario(debug_particle_visual_instances[p], get_world()->get_scenario());
-			VisualServer::get_singleton()->instance_set_base(debug_particle_visual_instances[p], debug_particle_mesh->get_rid());
-			VisualServer::get_singleton()->instance_set_visible(debug_particle_visual_instances[p], true);
-			VisualServer::get_singleton()->instance_set_layer_mask(debug_particle_visual_instances[p], 1);
+			debug_particle_visual_instances[p] = memnew(MeshInstance);
+			debug_particle_visual_instances[p]->set_as_toplevel(true);
+			debug_particle_visual_instances[p]->set_material_override(get_tree()->get_debug_collision_material());
+			debug_particle_visual_instances[p]->set_mesh(debug_particle_mesh);
+			add_child(debug_particle_visual_instances[p]);
 		}
 	}
 }
 
-void ParticleBody::reset_debug_particle_positions() {
+void ParticleBody::debug_update(ParticleBodyCommands *p_cmds) {
+
+	if (!get_tree()->is_debugging_collisions_hint())
+		return;
+
+	const int particle_count = ParticlePhysicsServer::get_singleton()->body_get_particle_count(rid);
+	debug_resize_particle_visual_instance(ParticlePhysicsServer::get_singleton()->body_get_particle_count(rid));
+
+	Transform transf;
+	for (int i = 0; i < particle_count; ++i) {
+
+		transf.origin = p_cmds->get_particle_position(i);
+		debug_particle_visual_instances[i]->set_global_transform(transf);
+	}
+}
+
+void ParticleBody::debug_reset_particle_positions() {
+
+	if (!get_tree()->is_debugging_collisions_hint())
+		return;
 
 	if (particle_body_model.is_null())
 		return;
@@ -298,7 +309,7 @@ void ParticleBody::reset_debug_particle_positions() {
 		for (int i = 0; i < debug_particle_visual_instances.size(); ++i) {
 
 			particle_relative_transf.origin = particle_body_model->get_particles_ref()[i];
-			VisualServer::get_singleton()->instance_set_transform(debug_particle_visual_instances[i], get_global_transform() * particle_relative_transf);
+			debug_particle_visual_instances[i]->set_global_transform(get_global_transform() * particle_relative_transf);
 		}
 	}
 }
