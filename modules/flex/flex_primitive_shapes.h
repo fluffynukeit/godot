@@ -59,6 +59,8 @@ public:
 	virtual void get_shape(NvFlexCollisionGeometry *r_shape) const = 0;
 	virtual void set_data(const Variant &p_data) = 0;
 	virtual Variant get_data() const = 0;
+	virtual bool need_alignment() const { return false; }
+	virtual const Basis &get_alignment_basis() const { return Basis(); }
 };
 
 class FlexPrimitiveBoxShape : public FlexPrimitiveShape {
@@ -77,4 +79,21 @@ public:
 	const Vector3 &get_extends() const { return extends; }
 };
 
+class FlexPrimitiveCapsuleShape : public FlexPrimitiveShape {
+
+	float half_height;
+	float radius;
+
+	static Basis alignment;
+
+public:
+	FlexPrimitiveCapsuleShape();
+
+	virtual NvFlexCollisionShapeType get_type() { return eNvFlexShapeCapsule; }
+	virtual void get_shape(NvFlexCollisionGeometry *r_shape) const;
+	virtual void set_data(const Variant &p_data);
+	virtual Variant get_data() const;
+	virtual bool need_alignment() const { return true; }
+	virtual const Basis &get_alignment_basis() const;
+};
 #endif // FLEX_PRIMITIVE_SHAPES_H
