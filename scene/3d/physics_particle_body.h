@@ -40,13 +40,15 @@
 #include "scene/resources/primitive_meshes.h"
 #include "spatial.h"
 
+class MeshInstance;
+
 class ParticleBody : public ParticleObject {
 	GDCLASS(ParticleBody, ParticleObject);
 
 	bool reset_particles_to_base_shape;
 	Ref<ParticleBodyModel> particle_body_model;
 
-	Vector<RID> debug_particle_visual_instances;
+	Vector<MeshInstance *> debug_particle_visual_instances;
 	Ref<SphereMesh> debug_particle_mesh;
 
 protected:
@@ -85,10 +87,10 @@ protected:
 
 private:
 	void _on_script_changed();
-	void initialize_debug_resource();
-	void update_debug_visual_instances(ParticleBodyCommands *p_cmds);
-	void resize_debug_particle_visual_instance(int new_size);
-	void reset_debug_particle_positions();
+	void debug_initialize_resource();
+	void debug_resize_particle_visual_instance(int new_size);
+	void debug_update(ParticleBodyCommands *p_cmds);
+	void debug_reset_particle_positions();
 };
 
 #endif // PARTICLE_BODY_H
