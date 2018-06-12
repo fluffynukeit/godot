@@ -80,7 +80,8 @@ void ParticlePrimitiveBody::_notification(int p_what) {
 
 ParticlePrimitiveBody::ParticlePrimitiveBody() :
 		ParticleObject(ParticlePhysicsServer::get_singleton()->primitive_body_create()),
-		collision_layer(1) {
+		collision_layer(1),
+		debug_shape(NULL) {
 
 	set_notify_transform(true);
 }

@@ -422,16 +422,22 @@ void FlexSpace::execute_geometries_commands() {
 		}
 
 		if (body->changed_parameters & eChangedPrimitiveBodyParamTransform) {
+
+			Basis basis = body->transf.basis;
+			if (body->get_shape()->need_alignment()) {
+				basis *= body->get_shape()->get_alignment_basis();
+			}
+
 			if (body->changed_parameters & eChangedPrimitiveBodyParamTransformIsMotion) {
 				geometries_memory->set_position_prev(body->geometry_mchunk, 0, geometries_memory->get_position(body->geometry_mchunk, 0));
 				geometries_memory->set_rotation_prev(body->geometry_mchunk, 0, geometries_memory->get_rotation(body->geometry_mchunk, 0));
 			} else {
 				geometries_memory->set_position_prev(body->geometry_mchunk, 0, flvec4_from_vec3(body->transf.origin));
-				geometries_memory->set_rotation_prev(body->geometry_mchunk, 0, body->transf.basis.get_quat());
+				geometries_memory->set_rotation_prev(body->geometry_mchunk, 0, basis.get_quat());
 			}
 
 			geometries_memory->set_position(body->geometry_mchunk, 0, flvec4_from_vec3(body->transf.origin));
-			geometries_memory->set_rotation(body->geometry_mchunk, 0, body->transf.basis.get_quat());
+			geometries_memory->set_rotation(body->geometry_mchunk, 0, basis.get_quat());
 		}
 
 		if (body->changed_parameters & eChangedPrimitiveBodyParamFlags) {

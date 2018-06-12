@@ -29,6 +29,7 @@
 /*************************************************************************/
 
 #include "capsule_shape.h"
+#include "servers/particle_physics_server.h"
 #include "servers/physics_server.h"
 
 Vector<Vector3> CapsuleShape::_gen_debug_mesh_lines() {
@@ -75,6 +76,7 @@ void CapsuleShape::_update_shape() {
 	d["radius"] = radius;
 	d["height"] = height;
 	PhysicsServer::get_singleton()->shape_set_data(get_shape(), d);
+	ParticlePhysicsServer::get_singleton()->primitive_shape_set_data(get_particle_shape(), d);
 }
 
 void CapsuleShape::set_radius(float p_radius) {
@@ -115,7 +117,7 @@ void CapsuleShape::_bind_methods() {
 }
 
 CapsuleShape::CapsuleShape() :
-		Shape(PhysicsServer::get_singleton()->shape_create(PhysicsServer::SHAPE_CAPSULE)) {
+		Shape(PhysicsServer::get_singleton()->shape_create(PhysicsServer::SHAPE_CAPSULE), ParticlePhysicsServer::get_singleton()->primitive_shape_create(ParticlePhysicsServer::PARTICLE_PRIMITIVE_SHAPE_TYPE_CAPSULE)) {
 
 	radius = 1.0;
 	height = 1.0;

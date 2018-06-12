@@ -85,7 +85,8 @@ public:
 
 	/* PRIMITIVE SHAPE */
 	enum PrimitiveShapeType {
-		PARTICLE_PRIMITIVE_SHAPE_TYPE_BOX
+		PARTICLE_PRIMITIVE_SHAPE_TYPE_BOX,
+		PARTICLE_PRIMITIVE_SHAPE_TYPE_CAPSULE
 	};
 
 	virtual RID primitive_shape_create(PrimitiveShapeType p_type) = 0;

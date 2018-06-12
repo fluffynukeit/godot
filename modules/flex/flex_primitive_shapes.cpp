@@ -80,3 +80,35 @@ Variant FlexPrimitiveBoxShape::get_data() const {
 void FlexPrimitiveBoxShape::set_extends(const Vector3 &p_extends) {
 	extends = p_extends;
 }
+
+Basis FlexPrimitiveCapsuleShape::alignment(0, 0, -1, 0, 1, 0, 1, 0, 0);
+
+FlexPrimitiveCapsuleShape::FlexPrimitiveCapsuleShape() :
+		FlexPrimitiveShape(),
+		half_height(0.5),
+		radius(1) {
+}
+
+void FlexPrimitiveCapsuleShape::get_shape(NvFlexCollisionGeometry *r_shape) const {
+	r_shape->capsule.halfHeight = half_height;
+	r_shape->capsule.radius = radius;
+}
+
+void FlexPrimitiveCapsuleShape::set_data(const Variant &p_data) {
+	Dictionary d = p_data;
+	ERR_FAIL_COND(!d.has("radius"));
+	ERR_FAIL_COND(!d.has("height"));
+	half_height = static_cast<float>(d["height"]) / 2.0;
+	radius = d["radius"];
+}
+
+Variant FlexPrimitiveCapsuleShape::get_data() const {
+	Dictionary d;
+	d["height"] = half_height * 2;
+	d["radius"] = radius;
+	return d;
+}
+
+const Basis &FlexPrimitiveCapsuleShape::get_alignment_basis() const {
+	return alignment;
+}
