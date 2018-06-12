@@ -77,9 +77,9 @@ struct SpringToAdd {
 };
 
 enum ChangedBodyParameter {
-	eChangedBodyParameterPositionMass = 1 << 0,
-	eChangedBodyParameterVelocity = 1 << 1,
-	eChangedBodyParameterGroup = 1 << 2
+	eChangedBodyParamPositionMass = 1 << 0,
+	eChangedBodyParamVelocity = 1 << 1,
+	eChangedBodyParamPhase = 1 << 2
 };
 
 /// This class represent a group of particles that are constrained each other and form a body.
@@ -112,7 +112,9 @@ class FlexParticleBody : public RIDFlex {
 	MemoryChunk *springs_mchunk;
 
 	FlexSpace *space;
-	uint32_t group;
+	uint32_t collision_group;
+	uint32_t collision_flags;
+	uint32_t collision_primitive_mask;
 
 public:
 	FlexParticleBody();
@@ -124,8 +126,16 @@ public:
 
 	_FORCE_INLINE_ uint32_t get_changed_parameters() const { return changed_parameters; }
 
-	void set_collision_group(uint32_t p_layer);
+	void set_collision_group(uint32_t p_group);
 	uint32_t get_collision_group() const;
+
+	uint32_t get_collision_flag_bit(ParticlePhysicsServer::ParticleCollisionFlag p_flag) const;
+	void set_collision_flag(ParticlePhysicsServer::ParticleCollisionFlag p_flag, bool active);
+	bool get_collision_flag(ParticlePhysicsServer::ParticleCollisionFlag p_flag) const;
+
+	// Accept only first 7 bit
+	void set_collision_primitive_mask(uint32_t p_primitive_mask);
+	uint32_t get_collision_primitive_mask() const;
 
 	void add_particle(const Vector3 &p_local_position, real_t p_mass);
 	void remove_particle(ParticleIndex p_particle);

@@ -41,10 +41,20 @@ void ParticleBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_particle_body_model", "particle_body_model"), &ParticleBody::set_particle_body_model);
 	ClassDB::bind_method(D_METHOD("get_particle_body_model"), &ParticleBody::get_particle_body_model);
 
-	ClassDB::bind_method(D_METHOD("set_collision_layer", "layer"), &ParticleBody::set_collision_layer);
-	ClassDB::bind_method(D_METHOD("get_collision_layer"), &ParticleBody::get_collision_layer);
-	ClassDB::bind_method(D_METHOD("set_collision_layer_bit", "bit", "value"), &ParticleBody::set_collision_layer_bit);
-	ClassDB::bind_method(D_METHOD("get_collision_layer_bit", "bit"), &ParticleBody::get_collision_layer_bit);
+	ClassDB::bind_method(D_METHOD("set_collision_group", "layer"), &ParticleBody::set_collision_group);
+	ClassDB::bind_method(D_METHOD("get_collision_group"), &ParticleBody::get_collision_group);
+
+	ClassDB::bind_method(D_METHOD("set_collision_flag_self_collide", "active"), &ParticleBody::set_collision_flag_self_collide);
+	ClassDB::bind_method(D_METHOD("get_collision_flag_self_collide"), &ParticleBody::get_collision_flag_self_collide);
+
+	ClassDB::bind_method(D_METHOD("set_collision_flag_self_collide_filter", "active"), &ParticleBody::set_collision_flag_self_collide_filter);
+	ClassDB::bind_method(D_METHOD("get_collision_flag_self_collide_filter"), &ParticleBody::get_collision_flag_self_collide_filter);
+
+	ClassDB::bind_method(D_METHOD("set_collision_flag_fluid", "active"), &ParticleBody::set_collision_flag_fluid);
+	ClassDB::bind_method(D_METHOD("get_collision_flag_fluid"), &ParticleBody::get_collision_flag_fluid);
+
+	ClassDB::bind_method(D_METHOD("set_collision_primitive_mask", "mask"), &ParticleBody::set_collision_primitive_mask);
+	ClassDB::bind_method(D_METHOD("get_collision_primitive_mask"), &ParticleBody::get_collision_primitive_mask);
 
 	ClassDB::bind_method(D_METHOD("add_particle", "local_position", "mass"), &ParticleBody::add_particle);
 	ClassDB::bind_method(D_METHOD("remove_particle", "particle_id"), &ParticleBody::remove_particle);
@@ -63,15 +73,18 @@ void ParticleBody::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "particle_body_model", PROPERTY_HINT_RESOURCE_TYPE, "ParticleBodyModel"), "set_particle_body_model", "get_particle_body_model");
 
 	ADD_GROUP("Collision", "collision_");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_layer", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collision_layer", "get_collision_layer");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_group", PROPERTY_HINT_RANGE, "0,21,1"), "set_collision_group", "get_collision_group");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "collision_flag_self_collide"), "set_collision_flag_self_collide", "get_collision_flag_self_collide");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "collision_flag_self_collide_filter"), "set_collision_flag_self_collide_filter", "get_collision_flag_self_collide_filter");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "collision_flag_fluid"), "set_collision_flag_fluid", "get_collision_flag_fluid");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_primitive_mask", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collision_primitive_mask", "get_collision_primitive_mask");
 
 	ADD_SIGNAL(MethodInfo("resource_loaded"));
 }
 
 ParticleBody::ParticleBody() :
 		ParticleObject(ParticlePhysicsServer::get_singleton()->body_create()),
-		reset_particles_to_base_shape(true),
-		collision_layer(1) {
+		reset_particles_to_base_shape(true) {
 
 	debug_particle_mesh.instance();
 	debug_particle_mesh->set_radius(0.05);
@@ -121,30 +134,44 @@ void ParticleBody::remove_particle(int p_particle_index) {
 	ParticlePhysicsServer::get_singleton()->body_remove_particle(rid, p_particle_index);
 }
 
-void ParticleBody::set_collision_layer(uint32_t p_layer) {
-
-	collision_layer = p_layer;
-	ParticlePhysicsServer::get_singleton()->body_set_collision_layer(rid, p_layer);
+void ParticleBody::set_collision_group(uint32_t p_group) {
+	ParticlePhysicsServer::get_singleton()->body_set_collision_group(rid, p_group);
 }
 
-uint32_t ParticleBody::get_collision_layer() const {
-
-	return collision_layer;
+uint32_t ParticleBody::get_collision_group() const {
+	return ParticlePhysicsServer::get_singleton()->body_get_collision_group(rid);
 }
 
-void ParticleBody::set_collision_layer_bit(int p_bit, bool p_value) {
-
-	uint32_t layer = get_collision_layer();
-	if (p_value)
-		layer |= 1 << p_bit;
-	else
-		layer &= ~(1 << p_bit);
-	set_collision_layer(layer);
+void ParticleBody::set_collision_flag_self_collide(bool p_active) {
+	ParticlePhysicsServer::get_singleton()->body_set_collision_flag(rid, ParticlePhysicsServer::PARTICLE_COLLISION_FLAG_SELF_COLLIDE, p_active);
 }
 
-bool ParticleBody::get_collision_layer_bit(int p_bit) const {
+bool ParticleBody::get_collision_flag_self_collide() const {
+	return ParticlePhysicsServer::get_singleton()->body_get_collision_flag(rid, ParticlePhysicsServer::PARTICLE_COLLISION_FLAG_SELF_COLLIDE);
+}
 
-	return get_collision_layer() & (1 << p_bit);
+void ParticleBody::set_collision_flag_self_collide_filter(bool p_active) {
+	ParticlePhysicsServer::get_singleton()->body_set_collision_flag(rid, ParticlePhysicsServer::PARTICLE_COLLISION_FLAG_SELF_COLLIDE_FILTER, p_active);
+}
+
+bool ParticleBody::get_collision_flag_self_collide_filter() const {
+	return ParticlePhysicsServer::get_singleton()->body_get_collision_flag(rid, ParticlePhysicsServer::PARTICLE_COLLISION_FLAG_SELF_COLLIDE_FILTER);
+}
+
+void ParticleBody::set_collision_flag_fluid(bool p_active) {
+	ParticlePhysicsServer::get_singleton()->body_set_collision_flag(rid, ParticlePhysicsServer::PARTICLE_COLLISION_FLAG_FLUID, p_active);
+}
+
+bool ParticleBody::get_collision_flag_fluid() const {
+	return ParticlePhysicsServer::get_singleton()->body_get_collision_flag(rid, ParticlePhysicsServer::PARTICLE_COLLISION_FLAG_FLUID);
+}
+
+void ParticleBody::set_collision_primitive_mask(uint32_t p_mask) {
+	ParticlePhysicsServer::get_singleton()->body_set_collision_primitive_mask(rid, p_mask);
+}
+
+uint32_t ParticleBody::get_collision_primitive_mask() const {
+	return ParticlePhysicsServer::get_singleton()->body_get_collision_primitive_mask(rid);
 }
 
 void ParticleBody::_notification(int p_what) {

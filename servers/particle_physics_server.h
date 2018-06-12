@@ -46,13 +46,25 @@ public:
 		PARTICLE_BODY_CALLBACK_SPRINGINDEXCHANGED
 	};
 
+	enum ParticleCollisionFlag {
+		PARTICLE_COLLISION_FLAG_SELF_COLLIDE,
+		PARTICLE_COLLISION_FLAG_SELF_COLLIDE_FILTER,
+		PARTICLE_COLLISION_FLAG_FLUID
+	};
+
 	/* BODY */
 	virtual RID body_create() = 0;
 	virtual void body_set_space(RID p_body, RID p_space) = 0;
 	virtual void body_set_callback(RID p_body, ParticleBodyCallback p_callback_type, Object *p_receiver, const StringName &p_method) = 0;
 
-	virtual void body_set_collision_layer(RID p_body, uint32_t p_layer) = 0;
-	virtual uint32_t body_get_collision_layer(RID p_body) const = 0;
+	virtual void body_set_collision_group(RID p_body, uint32_t p_layer) = 0;
+	virtual uint32_t body_get_collision_group(RID p_body) const = 0;
+
+	virtual void body_set_collision_flag(RID p_body, ParticleCollisionFlag p_flag, bool p_active) = 0;
+	virtual bool body_get_collision_flag(RID p_body, ParticleCollisionFlag p_flag) const = 0;
+
+	virtual void body_set_collision_primitive_mask(RID p_body, uint32_t p_mask) = 0;
+	virtual uint32_t body_get_collision_primitive_mask(RID p_body) const = 0;
 
 	virtual void body_add_particle(RID p_body, const Vector3 &p_local_position, real_t p_mass) = 0;
 	virtual void body_remove_particle(RID p_body, int p_particle_index) = 0;
@@ -101,5 +113,6 @@ public:
 
 VARIANT_ENUM_CAST(ParticlePhysicsServer::ParticleBodyCallback);
 VARIANT_ENUM_CAST(ParticlePhysicsServer::PrimitiveShapeType);
+VARIANT_ENUM_CAST(ParticlePhysicsServer::ParticleCollisionFlag);
 
 #endif // PARTICLE_PHYSICS_SERVER_H

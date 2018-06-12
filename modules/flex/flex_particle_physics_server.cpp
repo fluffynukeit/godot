@@ -134,17 +134,42 @@ void FlexParticlePhysicsServer::body_set_callback(RID p_body, ParticleBodyCallba
 	body->set_callback(p_callback_type, p_receiver, p_method);
 }
 
-void FlexParticlePhysicsServer::body_set_collision_layer(RID p_body, uint32_t p_layer) {
+void FlexParticlePhysicsServer::body_set_collision_group(RID p_body, uint32_t p_group) {
 	FlexParticleBody *body = body_owner.get(p_body);
 	ERR_FAIL_COND(!body);
-	body->set_collision_group(p_layer);
+	body->set_collision_group(p_group);
 }
 
-uint32_t FlexParticlePhysicsServer::body_get_collision_layer(RID p_body) const {
+uint32_t FlexParticlePhysicsServer::body_get_collision_group(RID p_body) const {
 	FlexParticleBody *body = body_owner.get(p_body);
 	ERR_FAIL_COND_V(!body, 0);
 
 	return body->get_collision_group();
+}
+
+void FlexParticlePhysicsServer::body_set_collision_flag(RID p_body, ParticleCollisionFlag p_flag, bool p_active) {
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND(!body);
+
+	body->set_collision_flag(p_flag, p_active);
+}
+
+bool FlexParticlePhysicsServer::body_get_collision_flag(RID p_body, ParticleCollisionFlag p_flag) const {
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND_V(!body, false);
+	return body->get_collision_flag(p_flag);
+}
+
+void FlexParticlePhysicsServer::body_set_collision_primitive_mask(RID p_body, uint32_t p_mask) {
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND(!body);
+	body->set_collision_primitive_mask(p_mask);
+}
+
+uint32_t FlexParticlePhysicsServer::body_get_collision_primitive_mask(RID p_body) const {
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND_V(!body, 0);
+	return body->get_collision_primitive_mask();
 }
 
 void FlexParticlePhysicsServer::body_add_particle(RID p_body, const Vector3 &p_local_position, real_t p_mass) {
