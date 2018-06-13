@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  physics_particle_body.h                                              */
+/*  physics_particle_body_mesh_instance.cpp                              */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -32,73 +32,30 @@
  * @author AndreaCatania
  */
 
-#ifndef PARTICLE_BODY_H
-#define PARTICLE_BODY_H
+#include "scene/3d/mesh_instance.h"
 
-#include "physics_particle_object.h"
-#include "scene/resources/particle_body_model.h"
-#include "scene/resources/primitive_meshes.h"
-#include "spatial.h"
+#ifndef PHYSICS_PARTICLE_BODY_MESH_INSTANCE_H
+#define PHYSICS_PARTICLE_BODY_MESH_INSTANCE_H
 
-class MeshInstance;
-class ParticleBodyMeshInstance;
+class ParticleBody;
+class Skeleton;
 
-class ParticleBody : public ParticleObject {
-	GDCLASS(ParticleBody, ParticleObject);
+class ParticleBodyMeshInstance : public MeshInstance {
+	GDCLASS(ParticleBodyMeshInstance, MeshInstance);
 
-	bool reset_particles_to_base_shape;
-	ParticleBodyMeshInstance *particle_body_mesh;
-	Ref<ParticleBodyModel> particle_body_model;
+	ParticleBody *particle_body;
+	Skeleton *skeleton;
 
-	Vector<MeshInstance *> debug_particle_visual_instances;
-	Ref<SphereMesh> debug_particle_mesh;
-
-protected:
 	static void _bind_methods();
+	virtual void _notification(int p_what);
 
 public:
-	ParticleBody();
-	virtual ~ParticleBody();
+	ParticleBodyMeshInstance();
 
-	void set_particle_body_mesh(ParticleBodyMeshInstance *p_mesh);
-	ParticleBodyMeshInstance *get_particle_body_mesh() const { return particle_body_mesh; }
-
-	void set_particle_body_model(Ref<ParticleBodyModel> p_model);
-	Ref<ParticleBodyModel> get_particle_body_model() const;
-
-	void add_particle(const Vector3 &p_local_position, real_t p_mass);
-	void remove_particle(int p_particle_index);
-
-	void set_collision_group(uint32_t p_layer);
-	uint32_t get_collision_group() const;
-
-	void set_collision_flag_self_collide(bool p_active);
-	bool get_collision_flag_self_collide() const;
-
-	void set_collision_flag_self_collide_filter(bool p_active);
-	bool get_collision_flag_self_collide_filter() const;
-
-	void set_collision_flag_fluid(bool p_active);
-	bool get_collision_flag_fluid() const;
-
-	void set_collision_primitive_mask(uint32_t p_mask);
-	uint32_t get_collision_primitive_mask() const;
-
-protected:
-	void _notification(int p_what);
-	void resource_changed(const RES &p_res);
-
-	void commands_process_internal(Object *p_cmds);
+	_FORCE_INLINE_ Skeleton *get_skeleton() { return skeleton; }
 
 private:
-	void _on_script_changed();
-	void _on_model_change();
-	void body_mesh_skeleton_update(ParticleBodyCommands *p_cmds);
-
-	void debug_initialize_resource();
-	void debug_resize_particle_visual_instance(int new_size);
-	void debug_update(ParticleBodyCommands *p_cmds);
-	void debug_reset_particle_positions();
+	void _reload_skeleton();
 };
 
-#endif // PARTICLE_BODY_H
+#endif // PHYSICS_PARTICLE_BODY_MESH_INSTANCE_H

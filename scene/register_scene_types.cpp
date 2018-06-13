@@ -65,6 +65,7 @@
 #include "scene/2d/visibility_notifier_2d.h"
 #include "scene/2d/y_sort.h"
 #include "scene/3d/physics_particle_body.h"
+#include "scene/3d/physics_particle_body_mesh_instance.h"
 #include "scene/3d/physics_particle_object.h"
 #include "scene/3d/physics_particle_primitive_body.h"
 #include "scene/animation/animation_blend_space_1d.h"
@@ -383,6 +384,7 @@ void register_scene_types() {
 	ClassDB::register_class<ARVROrigin>();
 	ClassDB::register_class<InterpolatedCamera>();
 	ClassDB::register_class<MeshInstance>();
+	ClassDB::register_class<ParticleBodyMeshInstance>();
 	ClassDB::register_class<ImmediateGeometry>();
 	ClassDB::register_virtual_class<SpriteBase3D>();
 	ClassDB::register_class<Sprite3D>();
