@@ -391,6 +391,32 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_soft_particle_body_mode
 	return model;
 }
 
+void FlexParticlePhysicsServer::create_skeleton(const Vector3 *bones_poses, int bone_count, const Vector3 *p_vertices, int p_vertex_count, PoolVector<float> *r_weights, PoolVector<int> *r_particle_indices, int *r_max_weight_per_vertex) {
+
+	ERR_FAIL_COND(0 >= bone_count);
+	ERR_FAIL_COND(0 >= p_vertex_count);
+
+	float falloff = 2.f;
+	float max_distance = 100.f;
+
+	*r_max_weight_per_vertex = 4;
+	r_weights->resize(p_vertex_count * 4);
+	r_particle_indices->resize(p_vertex_count * 4);
+
+	PoolVector<float>::Write weight_w = r_weights->write();
+	PoolVector<int>::Write indices_w = r_particle_indices->write();
+
+	NvFlexExtCreateSoftMeshSkinning(
+			((const float *)p_vertices),
+			p_vertex_count,
+			((const float *)bones_poses),
+			bone_count,
+			falloff,
+			max_distance,
+			weight_w.ptr(),
+			indices_w.ptr());
+}
+
 void FlexParticlePhysicsServer::init() {
 	particle_body_commands = memnew(FlexParticleBodyCommands);
 	particle_body_commands_variant = particle_body_commands;

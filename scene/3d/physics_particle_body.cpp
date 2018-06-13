@@ -35,11 +35,14 @@
 #include "physics_particle_body.h"
 
 #include "core_string_names.h"
-#include "scene/3d/mesh_instance.h"
+#include "scene/3d/physics_particle_body_mesh_instance.h"
+#include "scene/3d/skeleton.h"
 
 void ParticleBody::_bind_methods() {
 
-	ClassDB::bind_method(D_METHOD("set_particle_body_model", "particle_body_model"), &ParticleBody::set_particle_body_model);
+	ClassDB::bind_method(D_METHOD("get_particle_body_mesh"), &ParticleBody::get_particle_body_mesh);
+
+	ClassDB::bind_method(D_METHOD("set_particle_body_model", "model"), &ParticleBody::set_particle_body_model);
 	ClassDB::bind_method(D_METHOD("get_particle_body_model"), &ParticleBody::get_particle_body_model);
 
 	ClassDB::bind_method(D_METHOD("set_collision_group", "layer"), &ParticleBody::set_collision_group);
@@ -85,7 +88,8 @@ void ParticleBody::_bind_methods() {
 
 ParticleBody::ParticleBody() :
 		ParticleObject(ParticlePhysicsServer::get_singleton()->body_create()),
-		reset_particles_to_base_shape(true) {
+		reset_particles_to_base_shape(true),
+		particle_body_mesh(NULL) {
 
 	set_notify_transform(true);
 
@@ -102,14 +106,19 @@ ParticleBody::~ParticleBody() {
 	ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SPRINGINDEXCHANGED, NULL, "");
 }
 
-void ParticleBody::set_particle_body_model(Ref<ParticleBodyModel> p_shape) {
-	if (particle_body_model == p_shape)
+void ParticleBody::set_particle_body_mesh(ParticleBodyMeshInstance *p_mesh) {
+	ERR_FAIL_COND(particle_body_mesh);
+	particle_body_mesh = p_mesh;
+}
+
+void ParticleBody::set_particle_body_model(Ref<ParticleBodyModel> p_model) {
+	if (particle_body_model == p_model)
 		return;
 
 	if (particle_body_model.is_valid())
 		particle_body_model->unregister_owner(this);
 
-	particle_body_model = p_shape;
+	particle_body_model = p_model;
 
 	if (particle_body_model.is_valid())
 		particle_body_model->register_owner(this);
@@ -191,8 +200,7 @@ void ParticleBody::_notification(int p_what) {
 
 void ParticleBody::resource_changed(const RES &p_res) {
 	if (particle_body_model == p_res) {
-		reset_particles_to_base_shape = true;
-		debug_initialize_resource();
+		_on_model_change();
 	}
 }
 
@@ -206,6 +214,7 @@ void ParticleBody::commands_process_internal(Object *p_cmds) {
 		emit_signal("resource_loaded");
 	}
 
+	body_mesh_skeleton_update(cmds);
 	debug_update(cmds);
 
 	if (!get_script().is_null() && has_method("_commands_process")) {
@@ -224,6 +233,23 @@ void ParticleBody::_on_script_changed() {
 		ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SPRINGINDEXCHANGED, this, "_on_spring_index_change");
 	} else {
 		ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SPRINGINDEXCHANGED, NULL, "");
+	}
+}
+
+void ParticleBody::_on_model_change() {
+	reset_particles_to_base_shape = true;
+	debug_initialize_resource();
+}
+
+void ParticleBody::body_mesh_skeleton_update(ParticleBodyCommands *p_cmds) {
+
+	const int particle_count = ParticlePhysicsServer::get_singleton()->body_get_particle_count(rid);
+
+	for (int i = 0; i < particle_count; ++i) {
+
+		Transform transf = particle_body_mesh->get_skeleton()->get_bone_pose(i);
+		transf.origin = p_cmds->get_particle_position(i);
+		particle_body_mesh->get_skeleton()->set_bone_pose(i, transf);
 	}
 }
 
