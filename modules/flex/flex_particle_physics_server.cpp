@@ -389,6 +389,20 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_soft_particle_body_mode
 		model->get_constraints_info_ref().set(i, Vector2(generated_assets->springRestLengths[i], generated_assets->springCoefficients[i]));
 	}
 
+	model->get_clusters_offsets_ref().resize(generated_assets->numShapes);
+	model->get_clusters_positions_ref().resize(generated_assets->numShapes);
+	model->get_clusters_stiffness_ref().resize(generated_assets->numShapes);
+	for (int i(0); i < generated_assets->numShapes; ++i) {
+		model->get_clusters_offsets_ref().set(i, generated_assets->shapeOffsets[i]);
+		model->get_clusters_positions_ref().set(i, ((Vector3 *)generated_assets->shapeCenters)[i]);
+		model->get_clusters_stiffness_ref().set(i, generated_assets->shapeCoefficients[i]);
+	}
+
+	model->get_clusters_particle_indices_ref().resize(generated_assets->numShapeIndices);
+	for (int i(0); i < generated_assets->numShapeIndices; ++i) {
+		model->get_clusters_particle_indices_ref().set(i, generated_assets->shapeIndices[i]);
+	}
+
 	NvFlexExtDestroyAsset(generated_assets);
 	generated_assets = NULL;
 
