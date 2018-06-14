@@ -245,6 +245,13 @@ void FlexParticleBody::set_particle_velocity(ParticleIndex p_particle_index, con
 	changed_parameters |= eChangedBodyParamVelocity;
 }
 
+Vector3 FlexParticleBody::get_particle_normal(ParticleIndex p_particle_index) const {
+	if (!particles_mchunk)
+		return return_err_vec3;
+	const FlVector4 &p(space->get_particle_bodies_memory()->get_normal(particles_mchunk, p_particle_index));
+	return vec3_from_flvec3(p);
+}
+
 bool FlexParticleBody::is_owner_of_particle(ParticleIndex p_particle) const {
 	if (!particles_mchunk)
 		return false;

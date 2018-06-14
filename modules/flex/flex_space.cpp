@@ -367,7 +367,7 @@ void FlexSpace::execute_delayed_commands() {
 			}
 		}
 
-		particles_count += body->particles_mchunk->get_size();
+		particles_count += body->particles_mchunk ? body->particles_mchunk->get_size() : 0;
 	}
 
 	if (reload_active_particles) {
@@ -514,6 +514,7 @@ void FlexSpace::commands_read_buffer() {
 		// TODO read only necessary (part of buffer or just skip an entire buffer if not necessary)
 		NvFlexGetParticles(solver, particle_bodies_memory->particles.buffer, &copy_desc);
 		NvFlexGetVelocities(solver, particle_bodies_memory->velocities.buffer, &copy_desc);
+		NvFlexGetNormals(solver, particle_bodies_memory->normals.buffer, &copy_desc);
 
 		particle_bodies[i]->clear_commands();
 	}

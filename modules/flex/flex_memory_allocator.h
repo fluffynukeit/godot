@@ -40,58 +40,58 @@
 typedef int FlexUnit;
 
 class FlexMemory {
-    friend class FlexMemoryAllocator;
+	friend class FlexMemoryAllocator;
 
 protected:
-    virtual void resize_memory(FlexUnit p_size) = 0;
-    virtual void copy_unit(FlexUnit p_to, FlexUnit p_from) = 0;
+	virtual void resize_memory(FlexUnit p_size) = 0;
+	virtual void copy_unit(FlexUnit p_to, FlexUnit p_from) = 0;
 
-    void copy(FlexUnit p_from_begin_index, FlexUnit p_size, FlexUnit p_to_begin_index);
+	void copy(FlexUnit p_from_begin_index, FlexUnit p_size, FlexUnit p_to_begin_index);
 };
 
 struct MemoryChunk {
-    friend class FlexMemoryAllocator;
+	friend class FlexMemoryAllocator;
 
 private:
-    FlexUnit begin_index;
-    FlexUnit end_index;
-    bool is_free;
-    FlexUnit size;
+	FlexUnit begin_index;
+	FlexUnit end_index;
+	bool is_free;
+	FlexUnit size;
 
-    MemoryChunk() :
-            begin_index(0),
-            end_index(0),
-            is_free(true),
-            size(0) {}
+	MemoryChunk() :
+			begin_index(0),
+			end_index(0),
+			is_free(true),
+			size(0) {}
 
-    MemoryChunk(FlexUnit p_begin_index, FlexUnit p_end_index, bool p_is_free) :
-            begin_index(p_begin_index),
-            end_index(p_end_index),
-            is_free(p_is_free),
-            size(p_end_index - p_begin_index + 1) {
-    }
+	MemoryChunk(FlexUnit p_begin_index, FlexUnit p_end_index, bool p_is_free) :
+			begin_index(p_begin_index),
+			end_index(p_end_index),
+			is_free(p_is_free),
+			size(p_end_index - p_begin_index + 1) {
+	}
 
-    MemoryChunk(const MemoryChunk &other) :
-            begin_index(other.begin_index),
-            end_index(other.end_index),
-            is_free(other.is_free),
-            size(other.size) {}
+	MemoryChunk(const MemoryChunk &other) :
+			begin_index(other.begin_index),
+			end_index(other.end_index),
+			is_free(other.is_free),
+			size(other.size) {}
 
-    void set(FlexUnit p_begin_index, FlexUnit p_end_index, bool p_is_free) {
-        begin_index = p_begin_index;
-        end_index = p_end_index;
-        is_free = p_is_free;
-        size = p_end_index - p_begin_index + 1;
-    }
+	void set(FlexUnit p_begin_index, FlexUnit p_end_index, bool p_is_free) {
+		begin_index = p_begin_index;
+		end_index = p_end_index;
+		is_free = p_is_free;
+		size = p_end_index - p_begin_index + 1;
+	}
 
 public:
-    _FORCE_INLINE_ FlexUnit get_begin_index() const { return begin_index; }
-    _FORCE_INLINE_ FlexUnit get_end_index() const { return end_index; }
-    _FORCE_INLINE_ FlexUnit get_size() const { return size; }
-    /// Get buffer index (relative to the memory)
-    _FORCE_INLINE_ FlexUnit get_buffer_index(FlexUnit p_chunk_index) const { return begin_index + p_chunk_index; }
-    /// Get chunk index (relative to this chunk)
-    _FORCE_INLINE_ FlexUnit get_chunk_index(FlexUnit p_buffer_index) const { return p_buffer_index - begin_index; }
+	_FORCE_INLINE_ FlexUnit get_begin_index() const { return begin_index; }
+	_FORCE_INLINE_ FlexUnit get_end_index() const { return end_index; }
+	_FORCE_INLINE_ FlexUnit get_size() const { return size; }
+	/// Get buffer index (relative to the memory)
+	_FORCE_INLINE_ FlexUnit get_buffer_index(FlexUnit p_chunk_index) const { return begin_index + p_chunk_index; }
+	/// Get chunk index (relative to this chunk)
+	_FORCE_INLINE_ FlexUnit get_chunk_index(FlexUnit p_buffer_index) const { return p_buffer_index - begin_index; }
 };
 
 /// This class is responsible for memory management.
@@ -122,37 +122,37 @@ public:
 ///
 class FlexMemoryAllocator {
 
-    Vector<MemoryChunk *> memory_table;
-    FlexUnit memory_size;
-    struct {
-        FlexUnit occupied_memory;
-        FlexUnit biggest_chunk_size;
-    } cache;
+	Vector<MemoryChunk *> memory_table;
+	FlexUnit memory_size;
+	struct {
+		FlexUnit occupied_memory;
+		FlexUnit biggest_chunk_size;
+	} cache;
 
-    FlexMemory *memory;
+	FlexMemory *memory;
 
 public:
-    FlexMemoryAllocator(FlexMemory *p_memory, FlexUnit p_size);
-    ~FlexMemoryAllocator();
-    bool resize_memory(FlexUnit p_size);
-    void sanitize(bool p_want_update_cache = true, bool p_trim = true);
+	FlexMemoryAllocator(FlexMemory *p_memory, FlexUnit p_size);
+	~FlexMemoryAllocator();
+	bool resize_memory(FlexUnit p_size);
+	void sanitize(bool p_want_update_cache = true, bool p_trim = true);
 
-    // Allocate memory, return null if no more space available
-    MemoryChunk *allocate_chunk(FlexUnit p_size);
-    void deallocate_chunk(MemoryChunk *&r_chunk);
-    void resize_chunk(MemoryChunk *&r_chunk, FlexUnit p_size);
+	// Allocate memory, return null if no more space available
+	MemoryChunk *allocate_chunk(FlexUnit p_size);
+	void deallocate_chunk(MemoryChunk *&r_chunk);
+	void resize_chunk(MemoryChunk *&r_chunk, FlexUnit p_size);
 
-    // If the chunks have different sizes the copy will be performed only by the size of smaller chunk
-    void copy_chunk(MemoryChunk *p_from, MemoryChunk *p_to);
+	// If the chunks have different sizes the copy will be performed only by the size of smaller chunk
+	void copy_chunk(MemoryChunk *p_from, MemoryChunk *p_to);
 
-    FlexUnit get_last_used_index();
+	FlexUnit get_last_used_index();
 
 private:
-    bool redux_memory(FlexUnit p_size);
-    void find_biggest_chunk_size();
+	bool redux_memory(FlexUnit p_size);
+	void find_biggest_chunk_size();
 
-    MemoryChunk *create_chunk(FlexUnit p_pos = -1);
-    void delete_chunk(FlexUnit p_pos);
+	MemoryChunk *create_chunk(FlexUnit p_pos = -1);
+	void delete_chunk(FlexUnit p_pos);
 };
 
 #endif // FLEX_MEMORY_ALLOCATOR_H

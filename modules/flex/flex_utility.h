@@ -74,17 +74,20 @@ typedef int SpringBufferIndex; // Spring global index, can change during time
 typedef int GeometryIndex; // Geometry index relative to the memory chunk, can change during time
 typedef int GeometryBufferIndex; // Geometry global index, can change during time
 
+#define vec3_from_flvec3(vec4) \
+	Vector3(vec4[0], vec4[1], vec4[2])
+
 #define CreateParticle(position, mass) \
 	FlVector4(position.x, position.y, position.z, mass ? (1 / mass) : 0)
 
 #define extract_position(particle) \
-	Vector3(particle[0], particle[1], particle[2])
+	vec3_from_flvec3(particle)
 
 #define extract_mass(particle) \
 	particle[3]
 
-#define flvec4_from_vec3(position) \
-	FlVector4(position.x, position.y, position.z, 0)
+#define flvec4_from_vec3(vec3) \
+	FlVector4(vec3.x, vec3.y, vec3.z, 0)
 
 struct Spring {
 	ParticleBufferIndex index0;
