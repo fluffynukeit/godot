@@ -89,7 +89,8 @@ void ParticleBody::_bind_methods() {
 ParticleBody::ParticleBody() :
 		ParticleObject(ParticlePhysicsServer::get_singleton()->body_create()),
 		reset_particles_to_base_shape(true),
-		particle_body_mesh(NULL) {
+		particle_body_mesh(NULL),
+		debug_COM_particles_mesh(NULL) {
 
 	set_notify_transform(true);
 
@@ -214,6 +215,17 @@ void ParticleBody::commands_process_internal(Object *p_cmds) {
 		emit_signal("resource_loaded");
 	}
 
+	// Update COM
+	const int particle_count = ParticlePhysicsServer::get_singleton()->body_get_particle_count(rid);
+	if (particle_count) {
+		AABB aabb;
+		aabb.set_position(cmds->get_particle_position(0));
+		for (int i = 1; i < particle_count; ++i) {
+			aabb.expand_to(cmds->get_particle_position(i));
+		}
+		COM_global_position = aabb.get_position() + aabb.get_size() * 0.5f;
+	}
+
 	body_mesh_skeleton_update(cmds);
 	debug_update(cmds);
 
@@ -247,8 +259,31 @@ void ParticleBody::body_mesh_skeleton_update(ParticleBodyCommands *p_cmds) {
 
 	for (int i = 0; i < particle_count; ++i) {
 
-		Transform transf = particle_body_mesh->get_skeleton()->get_bone_pose(i);
-		transf.origin = p_cmds->get_particle_position(i);
+		//// Try one doesn't work
+		//Transform transf = particle_body_mesh->get_skeleton()->get_bone_pose(i);
+		//transf.origin = p_cmds->get_particle_position(i);
+		//particle_body_mesh->get_skeleton()->set_bone_pose(i, transf);
+
+		//// Try 2 work 1/2
+		//Transform transf = particle_body_mesh->get_skeleton()->get_bone_pose(i);
+		//transf.origin = COM_global_position;
+		//particle_body_mesh->get_skeleton()->set_bone_pose(i, transf);
+
+		// Try 3 WIP
+		Transform transf;
+		transf.origin = p_cmds->get_particle_position(i) - (particle_body_model->get_particles()[i] * -1);
+		//transf.origin = COM_global_position;
+
+		const Vector3 initial_ori(particle_body_model->get_particles()[i].normalized());
+		const Vector3 current_ori((p_cmds->get_particle_position(i) - COM_global_position).normalized() * -1);
+		const Vector3 rot_axis(initial_ori.cross(current_ori).normalized());
+		if (rot_axis[0] != 0 && rot_axis[1] != 0 && rot_axis[2] != 0) {
+			const real_t rot_angle(Math::acos(CLAMP(initial_ori.dot(current_ori), -1, 1)));
+			transf.basis.rotate(rot_axis, rot_angle);
+		} else {
+			transf.basis = particle_body_mesh->get_skeleton()->get_bone_pose(i).basis;
+		}
+
 		particle_body_mesh->get_skeleton()->set_bone_pose(i, transf);
 	}
 }
@@ -271,37 +306,44 @@ void ParticleBody::debug_initialize_resource() {
 
 void ParticleBody::debug_resize_particle_visual_instance(int new_size) {
 
-	if (debug_particle_visual_instances.size() == new_size)
+	if (debug_particles_mesh.size() == new_size)
 		return;
 
-	if (debug_particle_visual_instances.size() > new_size) {
+	if (debug_particles_mesh.size() > new_size) {
 
 		// If the particle count is less then visual instances size, free the last
-		const int dif = debug_particle_visual_instances.size() - new_size;
+		const int dif = debug_particles_mesh.size() - new_size;
 		for (int i = 0; i < dif; ++i) {
 
-			const int p = debug_particle_visual_instances.size() - i - 1;
-			debug_particle_visual_instances[p]->queue_delete();
-			debug_particle_visual_instances[p] = NULL;
+			const int p = debug_particles_mesh.size() - i - 1;
+			debug_particles_mesh[p]->queue_delete();
+			debug_particles_mesh[p] = NULL;
 		}
-		debug_particle_visual_instances.resize(new_size);
+		debug_particles_mesh.resize(new_size);
 	} else {
 
 		if (!is_inside_world())
 			return;
 
 		// If the particle count is more then visual instances resize and create last
-		const int dif = new_size - debug_particle_visual_instances.size();
-		debug_particle_visual_instances.resize(new_size);
+		const int dif = new_size - debug_particles_mesh.size();
+		debug_particles_mesh.resize(new_size);
 		for (int i = 0; i < dif; ++i) {
 
 			const int p = new_size - i - 1;
-			debug_particle_visual_instances[p] = memnew(MeshInstance);
-			debug_particle_visual_instances[p]->set_as_toplevel(true);
-			debug_particle_visual_instances[p]->set_material_override(get_tree()->get_debug_collision_material());
-			debug_particle_visual_instances[p]->set_mesh(debug_particle_mesh);
-			add_child(debug_particle_visual_instances[p]);
+			debug_particles_mesh[p] = memnew(MeshInstance);
+			debug_particles_mesh[p]->set_as_toplevel(true);
+			debug_particles_mesh[p]->set_material_override(get_tree()->get_debug_collision_material());
+			debug_particles_mesh[p]->set_mesh(debug_particle_mesh);
+			add_child(debug_particles_mesh[p]);
 		}
+	}
+
+	if (!debug_COM_particles_mesh) {
+		debug_COM_particles_mesh = memnew(MeshInstance);
+		debug_COM_particles_mesh->set_as_toplevel(true);
+		debug_COM_particles_mesh->set_mesh(debug_particle_mesh);
+		add_child(debug_COM_particles_mesh);
 	}
 }
 
@@ -317,8 +359,11 @@ void ParticleBody::debug_update(ParticleBodyCommands *p_cmds) {
 	for (int i = 0; i < particle_count; ++i) {
 
 		transf.origin = p_cmds->get_particle_position(i);
-		debug_particle_visual_instances[i]->set_global_transform(transf);
+		debug_particles_mesh[i]->set_global_transform(transf);
 	}
+
+	transf.origin = COM_global_position;
+	debug_COM_particles_mesh->set_transform(transf);
 }
 
 void ParticleBody::debug_reset_particle_positions() {
@@ -329,13 +374,14 @@ void ParticleBody::debug_reset_particle_positions() {
 	if (particle_body_model.is_null())
 		return;
 
-	if (debug_particle_visual_instances.size() == particle_body_model->get_particles_ref().size()) {
+	if (debug_particles_mesh.size() == particle_body_model->get_particles_ref().size()) {
 
 		Transform particle_relative_transf;
-		for (int i = 0; i < debug_particle_visual_instances.size(); ++i) {
+		for (int i = 0; i < debug_particles_mesh.size(); ++i) {
 
 			particle_relative_transf.origin = particle_body_model->get_particles_ref()[i];
-			debug_particle_visual_instances[i]->set_global_transform(get_global_transform() * particle_relative_transf);
+			debug_particles_mesh[i]->set_global_transform(get_global_transform() * particle_relative_transf);
 		}
 	}
+	debug_COM_particles_mesh->set_transform(Transform().translated(COM_global_position));
 }

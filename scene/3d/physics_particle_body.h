@@ -50,7 +50,10 @@ class ParticleBody : public ParticleObject {
 	ParticleBodyMeshInstance *particle_body_mesh;
 	Ref<ParticleBodyModel> particle_body_model;
 
-	Vector<MeshInstance *> debug_particle_visual_instances;
+	Vector3 COM_global_position;
+
+	MeshInstance *debug_COM_particles_mesh;
+	Vector<MeshInstance *> debug_particles_mesh;
 	Ref<SphereMesh> debug_particle_mesh;
 
 protected:
