@@ -21,6 +21,8 @@ public:
 
 	virtual const Vector3 &get_particle_velocity(int p_particle_index) const = 0;
 	virtual void set_particle_velocity(int p_particle_index, const Vector3 &p_velocity) = 0;
+
+	virtual Vector3 get_particle_normal(int p_particle_index) const = 0;
 };
 
 class ParticlePhysicsServer : public Object {
@@ -100,7 +102,7 @@ public:
 	/* COMMON */
 	virtual void free(RID p_rid) = 0;
 
-	virtual Ref<ParticleBodyModel> create_soft_particle_body_model(Ref<TriangleMesh> p_mesh, bool p_cloth, float p_sampling, float p_clusterSpacing, float p_clusterRadius, float p_clusterStiffness, float p_linkRadius, float p_linkStiffness) = 0;
+	virtual Ref<ParticleBodyModel> create_soft_particle_body_model(Ref<TriangleMesh> p_mesh, bool p_cloth, float p_particle_spacing, float p_sampling, float p_clusterSpacing, float p_clusterRadius, float p_clusterStiffness, float p_linkRadius, float p_linkStiffness) = 0;
 
 	struct ParticleMeshBone {
 		int particle_id;

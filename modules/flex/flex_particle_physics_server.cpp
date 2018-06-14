@@ -63,6 +63,10 @@ void FlexParticleBodyCommands::set_particle_velocity(int p_particle_index, const
 	body->set_particle_velocity(p_particle_index, p_velocity);
 }
 
+Vector3 FlexParticleBodyCommands::get_particle_normal(int p_particle_index) const {
+	return body->get_particle_normal(p_particle_index);
+}
+
 FlexParticlePhysicsServer *FlexParticlePhysicsServer::singleton = NULL;
 
 FlexParticlePhysicsServer::FlexParticlePhysicsServer() :
@@ -331,7 +335,7 @@ void FlexParticlePhysicsServer::free(RID p_rid) {
 	}
 }
 
-Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_soft_particle_body_model(Ref<TriangleMesh> p_mesh, bool p_cloth, float p_sampling, float p_clusterSpacing, float p_clusterRadius, float p_clusterStiffness, float p_linkRadius, float p_linkStiffness) {
+Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_soft_particle_body_model(Ref<TriangleMesh> p_mesh, bool p_cloth, float p_particle_spacing, float p_sampling, float p_clusterSpacing, float p_clusterRadius, float p_clusterStiffness, float p_linkRadius, float p_linkStiffness) {
 	ERR_FAIL_COND_V(p_mesh.is_null(), Ref<ParticleBodyModel>());
 
 	PoolVector<Vector3>::Read vertices_read = p_mesh->get_vertices().read();
@@ -349,7 +353,7 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_soft_particle_body_mode
 			/*indices*/ static_cast<const int *>(indices_read.ptr()),
 			/*numIndices*/ indices.size(),
 
-			/*particleSpacing*/ radius, // Distance between 2 particle
+			/*particleSpacing*/ radius * p_particle_spacing, // Distance between 2 particle
 			/*volumeSampling*/ p_cloth ? 0.0 : p_sampling, // (0-1) This parameter regulate the number of particle that should be put inside the mesh (in case of cloth it should be 0)
 			/*surfaceSampling*/ p_cloth ? p_sampling : 0.0, // (0-1) This parameter regulate the number of particle that should be put on the surface of mesh (in case of cloth it should be 1)
 			/*clusterSpacing*/ p_clusterSpacing * radius,

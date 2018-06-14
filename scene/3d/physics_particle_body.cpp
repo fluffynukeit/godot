@@ -38,6 +38,9 @@
 #include "scene/3d/physics_particle_body_mesh_instance.h"
 #include "scene/3d/skeleton.h"
 
+// TODO remove
+#include "scene/3d/immediate_geometry.h"
+
 void ParticleBody::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("get_particle_body_mesh"), &ParticleBody::get_particle_body_mesh);
@@ -185,6 +188,23 @@ void ParticleBody::_notification(int p_what) {
 			ParticlePhysicsServer::get_singleton()->body_set_space(rid, get_world()->get_particle_space());
 			ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SYNC, this, "commands_process_internal");
 			resource_changed(particle_body_model);
+
+			debug_lines = memnew(ImmediateGeometry);
+			add_child(debug_lines);
+			debug_lines->set_as_toplevel(true);
+			debug_lines->set_global_transform(Transform());
+
+			Ref<SpatialMaterial> red_mat;
+			red_mat = Ref<SpatialMaterial>(memnew(SpatialMaterial));
+			red_mat->set_flag(SpatialMaterial::FLAG_UNSHADED, true);
+			red_mat->set_line_width(20.0);
+			red_mat->set_feature(SpatialMaterial::FEATURE_TRANSPARENT, true);
+			red_mat->set_flag(SpatialMaterial::FLAG_ALBEDO_FROM_VERTEX_COLOR, true);
+			red_mat->set_flag(SpatialMaterial::FLAG_SRGB_VERTEX_COLOR, true);
+			red_mat->set_albedo(Color(1, 0, 0, 1));
+
+			debug_lines->set_material_override(red_mat);
+
 		} break;
 		case NOTIFICATION_TRANSFORM_CHANGED: {
 
@@ -255,9 +275,15 @@ void ParticleBody::_on_model_change() {
 
 void ParticleBody::body_mesh_skeleton_update(ParticleBodyCommands *p_cmds) {
 
+	debug_lines->clear();
+	debug_lines->begin(Mesh::PRIMITIVE_LINES, NULL);
+
 	const int particle_count = ParticlePhysicsServer::get_singleton()->body_get_particle_count(rid);
 
 	for (int i = 0; i < particle_count; ++i) {
+
+		debug_lines->add_vertex(p_cmds->get_particle_position(i));
+		debug_lines->add_vertex(p_cmds->get_particle_position(i) + p_cmds->get_particle_normal(i) * 0.2);
 
 		//// Try one doesn't work
 		//Transform transf = particle_body_mesh->get_skeleton()->get_bone_pose(i);
@@ -270,7 +296,7 @@ void ParticleBody::body_mesh_skeleton_update(ParticleBodyCommands *p_cmds) {
 		//particle_body_mesh->get_skeleton()->set_bone_pose(i, transf);
 
 		// Try 3 WIP
-		Transform transf;
+		/*Transform transf;
 		transf.origin = p_cmds->get_particle_position(i) - (particle_body_model->get_particles()[i] * -1);
 		//transf.origin = COM_global_position;
 
@@ -284,8 +310,10 @@ void ParticleBody::body_mesh_skeleton_update(ParticleBodyCommands *p_cmds) {
 			transf.basis = particle_body_mesh->get_skeleton()->get_bone_pose(i).basis;
 		}
 
-		particle_body_mesh->get_skeleton()->set_bone_pose(i, transf);
+		particle_body_mesh->get_skeleton()->set_bone_pose(i, transf);*/
 	}
+
+	debug_lines->end();
 }
 
 void ParticleBody::debug_initialize_resource() {
@@ -363,7 +391,8 @@ void ParticleBody::debug_update(ParticleBodyCommands *p_cmds) {
 	}
 
 	transf.origin = COM_global_position;
-	debug_COM_particles_mesh->set_transform(transf);
+	if (debug_COM_particles_mesh)
+		debug_COM_particles_mesh->set_transform(transf);
 }
 
 void ParticleBody::debug_reset_particle_positions() {
@@ -383,5 +412,6 @@ void ParticleBody::debug_reset_particle_positions() {
 			debug_particles_mesh[i]->set_global_transform(get_global_transform() * particle_relative_transf);
 		}
 	}
-	debug_COM_particles_mesh->set_transform(Transform().translated(COM_global_position));
+	if (debug_COM_particles_mesh)
+		debug_COM_particles_mesh->set_transform(Transform().translated(COM_global_position));
 }

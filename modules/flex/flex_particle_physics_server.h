@@ -57,6 +57,8 @@ public:
 
 	virtual const Vector3 &get_particle_velocity(int p_particle_index) const;
 	virtual void set_particle_velocity(int p_particle_index, const Vector3 &p_velocity);
+
+	virtual Vector3 get_particle_normal(int p_particle_index) const;
 };
 
 class FlexParticlePhysicsServer : public ParticlePhysicsServer {
@@ -140,7 +142,7 @@ public:
 	virtual void free(RID p_rid);
 
 	// This should be on physics server
-	virtual Ref<ParticleBodyModel> create_soft_particle_body_model(Ref<TriangleMesh> p_mesh, bool p_cloth, float p_sampling, float p_clusterSpacing, float p_clusterRadius, float p_clusterStiffness, float p_linkRadius, float p_linkStiffness);
+	virtual Ref<ParticleBodyModel> create_soft_particle_body_model(Ref<TriangleMesh> p_mesh, bool p_cloth, float p_particle_spacing, float p_sampling, float p_clusterSpacing, float p_clusterRadius, float p_clusterStiffness, float p_linkRadius, float p_linkStiffness);
 	virtual void create_skeleton(const Vector3 *bones_poses, int bone_count, const Vector3 *p_vertices, int p_vertex_count, PoolVector<float> *r_weights, PoolVector<int> *r_particle_indices, int *r_max_weight_per_vertex);
 
 	virtual void init();
