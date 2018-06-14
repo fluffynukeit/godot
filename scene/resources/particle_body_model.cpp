@@ -47,10 +47,27 @@ void ParticleBodyModel::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_constraints_info", "constraints_info"), &ParticleBodyModel::set_constraints_info);
 	ClassDB::bind_method(D_METHOD("get_constraints_info"), &ParticleBodyModel::get_constraints_info);
 
+	ClassDB::bind_method(D_METHOD("set_clusters_offsets", "clusters_offsets"), &ParticleBodyModel::set_clusters_offsets);
+	ClassDB::bind_method(D_METHOD("get_clusters_offsets"), &ParticleBodyModel::get_clusters_offsets);
+
+	ClassDB::bind_method(D_METHOD("set_clusters_positions", "clusters_position"), &ParticleBodyModel::set_clusters_positions);
+	ClassDB::bind_method(D_METHOD("get_clusters_positions"), &ParticleBodyModel::get_clusters_positions);
+
+	ClassDB::bind_method(D_METHOD("set_clusters_stiffness", "clusters_stiffness"), &ParticleBodyModel::set_clusters_stiffness);
+	ClassDB::bind_method(D_METHOD("get_clusters_stiffness"), &ParticleBodyModel::get_clusters_stiffness);
+
+	ClassDB::bind_method(D_METHOD("set_clusters_particle_indices", "clusters_particle_indices"), &ParticleBodyModel::set_clusters_particle_indices);
+	ClassDB::bind_method(D_METHOD("get_clusters_particle_indices"), &ParticleBodyModel::get_clusters_particle_indices);
+
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_VECTOR3_ARRAY, "particles"), "set_particles", "get_particles");
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_REAL_ARRAY, "masses"), "set_masses", "get_masses");
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_INT_ARRAY, "constraints_indexes"), "set_constraints_indexes", "get_constraints_indexes");
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_VECTOR2_ARRAY, "constraints_info"), "set_constraints_info", "get_constraints_info");
+
+	ADD_PROPERTY(PropertyInfo(Variant::POOL_VECTOR3_ARRAY, "clusters_positions"), "set_clusters_positions", "get_clusters_positions");
+	ADD_PROPERTY(PropertyInfo(Variant::POOL_REAL_ARRAY, "clusters_stiffness"), "set_clusters_stiffness", "get_clusters_stiffness");
+	ADD_PROPERTY(PropertyInfo(Variant::POOL_INT_ARRAY, "clusters_offsets"), "set_clusters_offsets", "get_clusters_offsets");
+	ADD_PROPERTY(PropertyInfo(Variant::POOL_INT_ARRAY, "clusters_particle_indices"), "set_clusters_particle_indices", "get_clusters_particle_indices");
 }
 
 ParticleBodyModel::ParticleBodyModel() {}
@@ -69,4 +86,20 @@ void ParticleBodyModel::set_constraints_indexes(const PoolVector<int> p_constrai
 
 void ParticleBodyModel::set_constraints_info(const PoolVector<Vector2> p_constraints_info) {
 	constraints_info = p_constraints_info;
+}
+
+void ParticleBodyModel::set_clusters_positions(const PoolVector<Vector3> p_clusters_position) {
+	clusters_positions = p_clusters_position;
+}
+
+void ParticleBodyModel::set_clusters_stiffness(const PoolVector<float> p_clusters_stiffness) {
+	clusters_stiffness = p_clusters_stiffness;
+}
+
+void ParticleBodyModel::set_clusters_offsets(const PoolVector<int> p_clusters_offsets) {
+	clusters_offsets = p_clusters_offsets;
+}
+
+void ParticleBodyModel::set_clusters_particle_indices(const PoolVector<int> p_clusters_particle_indices) {
+	clusters_particle_indices = p_clusters_particle_indices;
 }
