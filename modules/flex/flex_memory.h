@@ -150,10 +150,7 @@ protected:
 	}
 
 public:
-	bool changed;
-
-	FlexBufferMemory() :
-			changed(false) {}
+	FlexBufferMemory() {}
 
 	void map() {
 		for (int i(buffers_int.size() - 1); 0 <= i; --i) {
@@ -177,7 +174,7 @@ public:
 		for (int i(buffers_colgeo.size() - 1); 0 <= i; --i) {
 			buffers_colgeo[i]->map();
 		}
-		changed = false;
+		_on_mapped();
 	}
 
 	void unmap() {
@@ -202,6 +199,7 @@ public:
 		for (int i(buffers_colgeo.size() - 1); 0 <= i; --i) {
 			buffers_colgeo[i]->unmap();
 		}
+		_on_unmapped();
 	}
 
 	void terminate() {
@@ -228,7 +226,8 @@ public:
 		}
 	}
 
-	bool was_changed() { return changed; }
+	virtual void _on_mapped() {}
+	virtual void _on_unmapped() {}
 
 protected:
 	virtual void resize_memory(FlexUnit p_size) {
@@ -319,7 +318,12 @@ class ActiveParticlesMemory : public FlexBufferMemory {
 
 class SpringMemory : public FlexBufferMemory {
 
+	bool changed;
 	FLEXBUFFERCLASS_3(SpringMemory, Spring, springs, float, lengths, float, stiffness);
+
+	virtual void _on_mapped() { changed = false; }
+
+	bool was_changed() { return changed; }
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped
@@ -340,7 +344,12 @@ class SpringMemory : public FlexBufferMemory {
 /// This represent primitive body
 class GeometryMemory : public FlexBufferMemory {
 
+	bool changed;
 	FLEXBUFFERCLASS_6(GeometryMemory, NvFlexCollisionGeometry, collision_shapes, FlVector4, positions, Quat, rotations, FlVector4, positions_prev, Quat, rotations_prev, int, flags);
+
+	virtual void _on_mapped() { changed = false; }
+
+	bool was_changed() { return changed; }
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped
@@ -370,7 +379,12 @@ class GeometryMemory : public FlexBufferMemory {
 
 class RigidsMemory : public FlexBufferMemory {
 
+	bool changed;
 	FLEXBUFFERCLASS_4(RigidsMemory, int, offsets, float, stiffness, Quat, rotation, Vector3, position);
+
+	virtual void _on_mapped() { changed = false; }
+
+	bool was_changed() { return changed; }
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped
@@ -395,7 +409,12 @@ class RigidsMemory : public FlexBufferMemory {
 /// This memory is used to store information for each rigid
 class RigidsComponentsMemory : public FlexBufferMemory {
 
+	bool changed;
 	FLEXBUFFERCLASS_3(RigidsComponentsMemory, ParticleBufferIndex, indices, Vector3, rests, FlVector4, normals);
+
+	virtual void _on_mapped() { changed = false; }
+
+	bool was_changed() { return changed; }
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped
