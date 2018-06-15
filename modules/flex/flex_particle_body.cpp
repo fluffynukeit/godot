@@ -368,6 +368,8 @@ void FlexParticleBody::spring_index_changed(SpringIndex p_old_spring_index, Spri
 void FlexParticleBody::clear_commands() {
 	delayed_commands.particle_to_add.clear();
 	delayed_commands.springs_to_add.clear();
+	delayed_commands.rigids_to_add.clear();
 	delayed_commands.particle_to_remove.clear();
 	delayed_commands.springs_to_remove.clear();
+	delayed_commands.rigids_to_remove.clear();
 }
