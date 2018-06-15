@@ -70,6 +70,10 @@ FlexSpace::FlexSpace() :
 		springs_allocator(NULL),
 		active_particles_mchunk(NULL),
 		springs_memory(NULL),
+		rigids_allocator(NULL),
+		rigids_memory(NULL),
+		rigids_components_allocator(NULL),
+		rigids_components_memory(NULL),
 		geometries_allocator(NULL),
 		geometries_memory(NULL),
 		reload_active_particles(false),
@@ -133,6 +137,18 @@ void FlexSpace::init() {
 	springs_allocator = memnew(FlexMemoryAllocator(springs_memory, ((FlexUnit)(MAXPARTICLES * 100)))); // TODO mast be dynamic
 	springs_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
 
+	CRASH_COND(rigids_allocator);
+	CRASH_COND(rigids_memory);
+	rigids_memory = memnew(RigidsMemory(flex_lib));
+	rigids_allocator = memnew(FlexMemoryAllocator(rigids_memory, ((FlexUnit)(MAXPARTICLES * 100)))); // TODO mast be dynamic
+	rigids_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
+
+	CRASH_COND(rigids_components_allocator);
+	CRASH_COND(rigids_components_memory);
+	rigids_components_memory = memnew(RigidsComponentsMemory(flex_lib));
+	rigids_components_allocator = memnew(FlexMemoryAllocator(rigids_memory, ((FlexUnit)(MAXPARTICLES * 100)))); // TODO mast be dynamic
+	rigids_components_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
+
 	CRASH_COND(geometries_allocator);
 	CRASH_COND(geometries_memory);
 	geometries_memory = memnew(GeometryMemory(flex_lib));
@@ -175,6 +191,61 @@ void FlexSpace::terminate() {
 		particle_bodies_allocator = NULL;
 	}
 
+	if (active_particles_memory) {
+		active_particles_memory->terminate();
+		memdelete(active_particles_memory);
+		active_particles_memory = NULL;
+	}
+
+	if (active_particles_allocator) {
+		memdelete(active_particles_allocator);
+		active_particles_allocator = NULL;
+	}
+
+	if (springs_memory) {
+		springs_memory->terminate();
+		memdelete(springs_memory);
+		springs_memory = NULL;
+	}
+
+	if (springs_allocator) {
+		memdelete(springs_allocator);
+		springs_allocator = NULL;
+	}
+
+	if (rigids_memory) {
+		rigids_memory->terminate();
+		memdelete(rigids_memory);
+		rigids_memory = NULL;
+	}
+
+	if (rigids_allocator) {
+		memdelete(rigids_allocator);
+		rigids_allocator = NULL;
+	}
+
+	if (rigids_components_memory) {
+		rigids_components_memory->terminate();
+		memdelete(rigids_components_memory);
+		rigids_components_memory = NULL;
+	}
+
+	if (rigids_components_allocator) {
+		memdelete(rigids_components_allocator);
+		rigids_components_allocator = NULL;
+	}
+
+	if (geometries_memory) {
+		geometries_memory->terminate();
+		memdelete(geometries_memory);
+		geometries_memory = NULL;
+	}
+
+	if (geometries_allocator) {
+		memdelete(geometries_allocator);
+		geometries_allocator = NULL;
+	}
+
 	if (solver) {
 		NvFlexDestroySolver(solver);
 		solver = NULL;
@@ -191,6 +262,7 @@ void FlexSpace::sync() {
 	particle_bodies_memory->map();
 	active_particles_memory->map();
 	springs_memory->map();
+	rigids_memory->map();
 	geometries_memory->map();
 
 	dispatch_callbacks();
@@ -201,6 +273,7 @@ void FlexSpace::sync() {
 	active_particles_memory->unmap();
 	if (springs_memory->was_changed()) springs_allocator->sanitize(); // The memory must be consecutive to be sent to GPU
 	springs_memory->unmap();
+	rigids_memory->unmap();
 	if (geometries_memory->was_changed()) geometries_allocator->sanitize(); // The memory must be consecutive to be sent to GPU
 	geometries_memory->unmap();
 
@@ -261,9 +334,9 @@ void FlexSpace::dispatch_callbacks() {
 void FlexSpace::execute_delayed_commands() {
 
 	int particles_count = 0;
-	for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
+	for (int body_index(particle_bodies.size() - 1); 0 <= body_index; --body_index) {
 
-		FlexParticleBody *body = particle_bodies[i];
+		FlexParticleBody *body = particle_bodies[body_index];
 		if (body->delayed_commands.particle_to_add.size()) {
 
 			reload_active_particles = true;
@@ -305,7 +378,48 @@ void FlexSpace::execute_delayed_commands() {
 			// Write on memory
 			for (int s(body->delayed_commands.springs_to_add.size() - 1); 0 <= s; --s) {
 				const SpringToAdd &sta(body->delayed_commands.springs_to_add[s]);
-				body->reset_spring(s, sta.particle_0, sta.particle_1, sta.length, sta.stiffness);
+				body->reset_spring(previous_size + s, sta.particle_0, sta.particle_1, sta.length, sta.stiffness);
+			}
+		}
+
+		if (body->delayed_commands.rigids_to_add.size()) {
+
+			int index_count = 0;
+			int previous_size = 0;
+
+			if (body->rigids_mchunk) {
+				previous_size = body->rigids_mchunk->get_size();
+				rigids_allocator->resize_chunk(body->rigids_mchunk, previous_size + body->delayed_commands.rigids_to_add.size());
+			} else {
+				body->rigids_mchunk = rigids_allocator->allocate_chunk(body->delayed_commands.rigids_to_add.size());
+			}
+
+			for (int r(body->delayed_commands.rigids_to_add.size() - 1); 0 <= r; --r) {
+
+				rigids_memory->set_position(body->rigids_mchunk, previous_size + r, body->delayed_commands.rigids_to_add[r].position);
+				rigids_memory->set_rotation(body->rigids_mchunk, previous_size + r, Quat());
+				rigids_memory->set_stiffness(body->rigids_mchunk, previous_size + r, body->delayed_commands.rigids_to_add[r].stiffness);
+
+				index_count += body->delayed_commands.rigids_to_add[r].indices.size();
+			}
+
+			// Inser indices
+
+			previous_size = 0;
+			if (body->rigids_components_mchunk) {
+				previous_size = body->rigids_components_mchunk->get_size();
+				rigids_components_allocator->resize_chunk(body->rigids_components_mchunk, previous_size + index_count);
+			} else {
+				body->rigids_components_mchunk = rigids_components_allocator->allocate_chunk(index_count);
+			}
+
+			for (int r(body->delayed_commands.rigids_to_add.size() - 1); 0 <= r; --r) {
+
+				// Allocate components
+				//PoolVector<int>::Read indices_r = body->delayed_commands.rigids_to_add[r].indices.read();
+				//for (int i(body->delayed_commands.rigids_to_add[r].indices.size() - 1); 0 <= i; --i) {
+				//	rigids_components_memory->set_index(body->rigids_components_mchunks[previous_size + r], i, body->particles_mchunk->get_buffer_index(indices_r[i]));
+				//}
 			}
 		}
 

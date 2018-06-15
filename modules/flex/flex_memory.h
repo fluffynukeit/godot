@@ -43,12 +43,17 @@ typedef int ParticleIndex; // Particle id relative to body, can change during ti
 typedef int ParticleRef; // Particle Ref id relative to body never change
 
 #define define_functions_1(clazz, name0)                     \
+															 \
+	bool changed;                                            \
+															 \
 public:                                                      \
-	clazz(NvFlexLibrary *p_flex_lib) : name0(p_flex_lib) {}  \
+	clazz(NvFlexLibrary *p_flex_lib) : changed(false),       \
+									   name0(p_flex_lib) {}  \
 															 \
 public:                                                      \
 	void map() {                                             \
 		name0.map();                                         \
+		changed = false;                                     \
 	}                                                        \
 															 \
 	void unmap() {                                           \
@@ -58,6 +63,8 @@ public:                                                      \
 	void terminate() {                                       \
 		name0.destroy();                                     \
 	}                                                        \
+															 \
+	bool was_changed() { return changed; }                   \
 															 \
 protected:                                                   \
 	virtual void resize_memory(FlexUnit p_size) {            \
@@ -69,159 +76,193 @@ protected:                                                   \
 															 \
 public:
 
-#define define_functions_2(clazz, name0, name1)                                \
-public:                                                                        \
-	clazz(NvFlexLibrary *p_flex_lib) : name0(p_flex_lib), name1(p_flex_lib) {} \
-	void map() {                                                               \
-		name0.map();                                                           \
-		name1.map();                                                           \
-	}                                                                          \
-																			   \
-	void unmap() {                                                             \
-		name0.unmap();                                                         \
-		name1.unmap();                                                         \
-	}                                                                          \
-																			   \
-	void terminate() {                                                         \
-		name0.destroy();                                                       \
-		name1.destroy();                                                       \
-	}                                                                          \
-																			   \
-protected:                                                                     \
-	virtual void resize_memory(FlexUnit p_size) {                              \
-		name0.resize(p_size);                                                  \
-		name1.resize(p_size);                                                  \
-	}                                                                          \
-	virtual void copy_unit(FlexUnit p_to, FlexUnit p_from) {                   \
-		name0[p_to] = name0[p_from];                                           \
-		name1[p_to] = name1[p_from];                                           \
-	}                                                                          \
-																			   \
+#define define_functions_2(clazz, name0, name1)              \
+	bool changed;                                            \
+															 \
+public:                                                      \
+	clazz(NvFlexLibrary *p_flex_lib) : changed(false),       \
+									   name0(p_flex_lib),    \
+									   name1(p_flex_lib) {}  \
+	void map() {                                             \
+		name0.map();                                         \
+		name1.map();                                         \
+		changed = false;                                     \
+	}                                                        \
+															 \
+	void unmap() {                                           \
+		name0.unmap();                                       \
+		name1.unmap();                                       \
+	}                                                        \
+															 \
+	void terminate() {                                       \
+		name0.destroy();                                     \
+		name1.destroy();                                     \
+	}                                                        \
+															 \
+	bool was_changed() { return changed; }                   \
+															 \
+protected:                                                   \
+	virtual void resize_memory(FlexUnit p_size) {            \
+		name0.resize(p_size);                                \
+		name1.resize(p_size);                                \
+	}                                                        \
+	virtual void copy_unit(FlexUnit p_to, FlexUnit p_from) { \
+		name0[p_to] = name0[p_from];                         \
+		name1[p_to] = name1[p_from];                         \
+	}                                                        \
+															 \
 public:
 
-#define define_functions_3(clazz, name0, name1, name2)                                            \
-public:                                                                                           \
-	clazz(NvFlexLibrary *p_flex_lib) : name0(p_flex_lib), name1(p_flex_lib), name2(p_flex_lib) {} \
-	void map() {                                                                                  \
-		name0.map();                                                                              \
-		name1.map();                                                                              \
-		name2.map();                                                                              \
-	}                                                                                             \
-																								  \
-	void unmap() {                                                                                \
-		name0.unmap();                                                                            \
-		name1.unmap();                                                                            \
-		name2.unmap();                                                                            \
-	}                                                                                             \
-																								  \
-	void terminate() {                                                                            \
-		name0.destroy();                                                                          \
-		name1.destroy();                                                                          \
-		name2.destroy();                                                                          \
-	}                                                                                             \
-																								  \
-protected:                                                                                        \
-	virtual void resize_memory(FlexUnit p_size) {                                                 \
-		name0.resize(p_size);                                                                     \
-		name1.resize(p_size);                                                                     \
-		name2.resize(p_size);                                                                     \
-	}                                                                                             \
-	virtual void copy_unit(FlexUnit p_to, FlexUnit p_from) {                                      \
-		name0[p_to] = name0[p_from];                                                              \
-		name1[p_to] = name1[p_from];                                                              \
-		name2[p_to] = name2[p_from];                                                              \
-	}                                                                                             \
-																								  \
+#define define_functions_3(clazz, name0, name1, name2)       \
+	bool changed;                                            \
+															 \
+public:                                                      \
+	clazz(NvFlexLibrary *p_flex_lib) : changed(false),       \
+									   name0(p_flex_lib),    \
+									   name1(p_flex_lib),    \
+									   name2(p_flex_lib) {}  \
+	void map() {                                             \
+		name0.map();                                         \
+		name1.map();                                         \
+		name2.map();                                         \
+		changed = false;                                     \
+	}                                                        \
+															 \
+	void unmap() {                                           \
+		name0.unmap();                                       \
+		name1.unmap();                                       \
+		name2.unmap();                                       \
+	}                                                        \
+															 \
+	void terminate() {                                       \
+		name0.destroy();                                     \
+		name1.destroy();                                     \
+		name2.destroy();                                     \
+	}                                                        \
+															 \
+	bool was_changed() { return changed; }                   \
+															 \
+protected:                                                   \
+	virtual void resize_memory(FlexUnit p_size) {            \
+		name0.resize(p_size);                                \
+		name1.resize(p_size);                                \
+		name2.resize(p_size);                                \
+	}                                                        \
+	virtual void copy_unit(FlexUnit p_to, FlexUnit p_from) { \
+		name0[p_to] = name0[p_from];                         \
+		name1[p_to] = name1[p_from];                         \
+		name2[p_to] = name2[p_from];                         \
+	}                                                        \
+															 \
 public:
 
-#define define_functions_4(clazz, name0, name1, name2, name3)                                                        \
-public:                                                                                                              \
-	clazz(NvFlexLibrary *p_flex_lib) : name0(p_flex_lib), name1(p_flex_lib), name2(p_flex_lib), name3(p_flex_lib) {} \
-	void map() {                                                                                                     \
-		name0.map();                                                                                                 \
-		name1.map();                                                                                                 \
-		name2.map();                                                                                                 \
-		name3.map();                                                                                                 \
-	}                                                                                                                \
-																													 \
-	void unmap() {                                                                                                   \
-		name0.unmap();                                                                                               \
-		name1.unmap();                                                                                               \
-		name2.unmap();                                                                                               \
-		name3.unmap();                                                                                               \
-	}                                                                                                                \
-																													 \
-	void terminate() {                                                                                               \
-		name0.destroy();                                                                                             \
-		name1.destroy();                                                                                             \
-		name2.destroy();                                                                                             \
-		name3.destroy();                                                                                             \
-	}                                                                                                                \
-																													 \
-protected:                                                                                                           \
-	virtual void resize_memory(FlexUnit p_size) {                                                                    \
-		name0.resize(p_size);                                                                                        \
-		name1.resize(p_size);                                                                                        \
-		name2.resize(p_size);                                                                                        \
-		name3.resize(p_size);                                                                                        \
-	}                                                                                                                \
-	virtual void copy_unit(FlexUnit p_to, FlexUnit p_from) {                                                         \
-		name0[p_to] = name0[p_from];                                                                                 \
-		name1[p_to] = name1[p_from];                                                                                 \
-		name2[p_to] = name2[p_from];                                                                                 \
-		name3[p_to] = name3[p_from];                                                                                 \
-	}                                                                                                                \
-																													 \
+#define define_functions_4(clazz, name0, name1, name2, name3) \
+	bool changed;                                             \
+															  \
+public:                                                       \
+	clazz(NvFlexLibrary *p_flex_lib) : changed(false),        \
+									   name0(p_flex_lib),     \
+									   name1(p_flex_lib),     \
+									   name2(p_flex_lib),     \
+									   name3(p_flex_lib) {}   \
+	void map() {                                              \
+		name0.map();                                          \
+		name1.map();                                          \
+		name2.map();                                          \
+		name3.map();                                          \
+		changed = false;                                      \
+	}                                                         \
+															  \
+	void unmap() {                                            \
+		name0.unmap();                                        \
+		name1.unmap();                                        \
+		name2.unmap();                                        \
+		name3.unmap();                                        \
+	}                                                         \
+															  \
+	void terminate() {                                        \
+		name0.destroy();                                      \
+		name1.destroy();                                      \
+		name2.destroy();                                      \
+		name3.destroy();                                      \
+	}                                                         \
+															  \
+	bool was_changed() { return changed; }                    \
+															  \
+protected:                                                    \
+	virtual void resize_memory(FlexUnit p_size) {             \
+		name0.resize(p_size);                                 \
+		name1.resize(p_size);                                 \
+		name2.resize(p_size);                                 \
+		name3.resize(p_size);                                 \
+	}                                                         \
+	virtual void copy_unit(FlexUnit p_to, FlexUnit p_from) {  \
+		name0[p_to] = name0[p_from];                          \
+		name1[p_to] = name1[p_from];                          \
+		name2[p_to] = name2[p_from];                          \
+		name3[p_to] = name3[p_from];                          \
+	}                                                         \
+															  \
 public:
 
-#define define_functions_6(clazz, name0, name1, name2, name3, name4, name5)                                                                                \
-public:                                                                                                                                                    \
-	clazz(NvFlexLibrary *p_flex_lib) : name0(p_flex_lib), name1(p_flex_lib), name2(p_flex_lib), name3(p_flex_lib), name4(p_flex_lib), name5(p_flex_lib) {} \
-	void map() {                                                                                                                                           \
-		name0.map();                                                                                                                                       \
-		name1.map();                                                                                                                                       \
-		name2.map();                                                                                                                                       \
-		name3.map();                                                                                                                                       \
-		name4.map();                                                                                                                                       \
-		name5.map();                                                                                                                                       \
-	}                                                                                                                                                      \
-																																						   \
-	void unmap() {                                                                                                                                         \
-		name0.unmap();                                                                                                                                     \
-		name1.unmap();                                                                                                                                     \
-		name2.unmap();                                                                                                                                     \
-		name3.unmap();                                                                                                                                     \
-		name4.unmap();                                                                                                                                     \
-		name5.unmap();                                                                                                                                     \
-	}                                                                                                                                                      \
-																																						   \
-	void terminate() {                                                                                                                                     \
-		name0.destroy();                                                                                                                                   \
-		name1.destroy();                                                                                                                                   \
-		name2.destroy();                                                                                                                                   \
-		name3.destroy();                                                                                                                                   \
-		name4.destroy();                                                                                                                                   \
-		name5.destroy();                                                                                                                                   \
-	}                                                                                                                                                      \
-																																						   \
-protected:                                                                                                                                                 \
-	virtual void resize_memory(FlexUnit p_size) {                                                                                                          \
-		name0.resize(p_size);                                                                                                                              \
-		name1.resize(p_size);                                                                                                                              \
-		name2.resize(p_size);                                                                                                                              \
-		name3.resize(p_size);                                                                                                                              \
-		name4.resize(p_size);                                                                                                                              \
-		name5.resize(p_size);                                                                                                                              \
-	}                                                                                                                                                      \
-	virtual void copy_unit(FlexUnit p_to, FlexUnit p_from) {                                                                                               \
-		name0[p_to] = name0[p_from];                                                                                                                       \
-		name1[p_to] = name1[p_from];                                                                                                                       \
-		name2[p_to] = name2[p_from];                                                                                                                       \
-		name3[p_to] = name3[p_from];                                                                                                                       \
-		name4[p_to] = name4[p_from];                                                                                                                       \
-		name5[p_to] = name5[p_from];                                                                                                                       \
-	}                                                                                                                                                      \
-																																						   \
+#define define_functions_6(clazz, name0, name1, name2, name3, name4, name5) \
+	bool changed;                                                           \
+																			\
+public:                                                                     \
+	clazz(NvFlexLibrary *p_flex_lib) : changed(false),                      \
+									   name0(p_flex_lib),                   \
+									   name1(p_flex_lib),                   \
+									   name2(p_flex_lib),                   \
+									   name3(p_flex_lib),                   \
+									   name4(p_flex_lib),                   \
+									   name5(p_flex_lib) {}                 \
+	void map() {                                                            \
+		name0.map();                                                        \
+		name1.map();                                                        \
+		name2.map();                                                        \
+		name3.map();                                                        \
+		name4.map();                                                        \
+		name5.map();                                                        \
+		changed = false;                                                    \
+	}                                                                       \
+																			\
+	void unmap() {                                                          \
+		name0.unmap();                                                      \
+		name1.unmap();                                                      \
+		name2.unmap();                                                      \
+		name3.unmap();                                                      \
+		name4.unmap();                                                      \
+		name5.unmap();                                                      \
+	}                                                                       \
+																			\
+	void terminate() {                                                      \
+		name0.destroy();                                                    \
+		name1.destroy();                                                    \
+		name2.destroy();                                                    \
+		name3.destroy();                                                    \
+		name4.destroy();                                                    \
+		name5.destroy();                                                    \
+	}                                                                       \
+	bool was_changed() { return changed; }                                  \
+																			\
+protected:                                                                  \
+	virtual void resize_memory(FlexUnit p_size) {                           \
+		name0.resize(p_size);                                               \
+		name1.resize(p_size);                                               \
+		name2.resize(p_size);                                               \
+		name3.resize(p_size);                                               \
+		name4.resize(p_size);                                               \
+		name5.resize(p_size);                                               \
+	}                                                                       \
+	virtual void copy_unit(FlexUnit p_to, FlexUnit p_from) {                \
+		name0[p_to] = name0[p_from];                                        \
+		name1[p_to] = name1[p_from];                                        \
+		name2[p_to] = name2[p_from];                                        \
+		name3[p_to] = name3[p_from];                                        \
+		name4[p_to] = name4[p_from];                                        \
+		name5[p_to] = name5[p_from];                                        \
+	}                                                                       \
+																			\
 public:
 
 #define create_buffer_1(clazz, type, name) \
@@ -310,11 +351,7 @@ class ActiveParticlesMemory : public FlexMemory {
 
 class SpringMemory : public FlexMemory {
 
-	bool changed;
-
 	create_buffer_3(SpringMemory, Spring, springs, float, lengths, float, stiffness);
-
-	bool was_changed() { return changed; }
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped
@@ -335,10 +372,7 @@ class SpringMemory : public FlexMemory {
 /// This represent primitive body
 class GeometryMemory : public FlexMemory {
 
-	bool changed;
 	create_buffer_6(GeometryMemory, NvFlexCollisionGeometry, collision_shapes, FlVector4, positions, Quat, rotations, FlVector4, positions_prev, Quat, rotations_prev, int, flags);
-
-	bool was_changed() { return changed; }
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped
@@ -376,12 +410,24 @@ class RigidsMemory : public FlexMemory {
 	/// |
 	/// V
 	///
+
+	void set_offset(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, RigidComponentIndex p_offset);
+	RigidComponentIndex get_offset(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const;
+
+	void set_stiffness(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, float p_stiffness);
+	float get_stiffness(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const;
+
+	void set_rotation(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, const Quat &p_rotation);
+	const Quat &get_rotation(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const;
+
+	void set_position(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, const Vector3 &p_position);
+	const Vector3 &get_position(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const;
 };
 
 /// This memory is used to store information for each rigid
 class RigidsComponentsMemory : public FlexMemory {
 
-	create_buffer_3(RigidsComponentsMemory, int, indices, Vector3, rests, FlVector4, normals);
+	create_buffer_3(RigidsComponentsMemory, ParticleBufferIndex, indices, Vector3, rests, FlVector4, normals);
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped
@@ -389,5 +435,14 @@ class RigidsComponentsMemory : public FlexMemory {
 	/// |
 	/// V
 	///
+
+	void set_index(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index, ParticleBufferIndex p_particle_buffer_index);
+	ParticleBufferIndex get_index(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index) const;
+
+	void set_rest(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index, const Vector3 &p_rest);
+	const Vector3 &get_rest(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index) const;
+
+	void set_normal(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index, const Vector3 &p_normal);
+	Vector3 get_normal(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index) const;
 };
 #endif // FLEX_MEMORY_H

@@ -45,6 +45,7 @@
 void ParticleBodiesMemory::set_particle(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, FlVector4 p_particle) {
 	make_memory_index(p_chunk, p_particle_index);
 	particles[index] = p_particle;
+	changed = true;
 }
 
 const FlVector4 &ParticleBodiesMemory::get_particle(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const {
@@ -55,6 +56,7 @@ const FlVector4 &ParticleBodiesMemory::get_particle(const MemoryChunk *p_chunk, 
 void ParticleBodiesMemory::set_velocity(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, Vector3 p_velocity) {
 	make_memory_index(p_chunk, p_particle_index);
 	velocities[index] = p_velocity;
+	changed = true;
 }
 
 const Vector3 &ParticleBodiesMemory::get_velocity(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const {
@@ -65,6 +67,7 @@ const Vector3 &ParticleBodiesMemory::get_velocity(const MemoryChunk *p_chunk, Pa
 void ParticleBodiesMemory::set_phase(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, int p_phase) {
 	make_memory_index(p_chunk, p_particle_index);
 	phases[index] = p_phase;
+	changed = true;
 }
 
 int ParticleBodiesMemory::get_phase(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const {
@@ -80,6 +83,7 @@ const FlVector4 &ParticleBodiesMemory::get_normal(const MemoryChunk *p_chunk, Pa
 void ActiveParticlesMemory::set_active_particle(const MemoryChunk *p_chunk, ActiveParticleIndex p_active_particle_index, ParticleBufferIndex p_particle_buffer_index) {
 	make_memory_index(p_chunk, p_active_particle_index);
 	active_particles[index] = p_particle_buffer_index;
+	changed = true;
 }
 
 void SpringMemory::set_spring(const MemoryChunk *p_chunk, SpringIndex p_spring_index, const Spring &p_spring) {
@@ -144,7 +148,7 @@ void GeometryMemory::set_rotation(const MemoryChunk *p_chunk, GeometryIndex p_ge
 }
 
 const Quat &GeometryMemory::get_rotation(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index) const {
-	make_memory_index_V(p_chunk, p_geometry_index, return_err_flquat);
+	make_memory_index_V(p_chunk, p_geometry_index, return_err_quat);
 	return rotations[index];
 }
 
@@ -166,7 +170,7 @@ void GeometryMemory::set_rotation_prev(const MemoryChunk *p_chunk, GeometryIndex
 }
 
 const Quat &GeometryMemory::get_rotation_prev(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index) const {
-	make_memory_index_V(p_chunk, p_geometry_index, return_err_flquat);
+	make_memory_index_V(p_chunk, p_geometry_index, return_err_quat);
 	return rotations_prev[index];
 }
 
@@ -179,4 +183,81 @@ void GeometryMemory::set_flags(const MemoryChunk *p_chunk, GeometryIndex p_geome
 int GeometryMemory::get_flags(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index) const {
 	make_memory_index_V(p_chunk, p_geometry_index, 0);
 	return flags[index];
+}
+
+void RigidsMemory::set_offset(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, RigidComponentIndex p_offset) {
+	make_memory_index(p_chunk, p_rigid_index);
+	offsets[index] = p_offset;
+	changed = true;
+}
+
+RigidComponentIndex RigidsMemory::get_offset(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const {
+	make_memory_index_V(p_chunk, p_rigid_index, 0);
+	return offsets[index];
+}
+
+void RigidsMemory::set_stiffness(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, float p_stiffness) {
+	make_memory_index(p_chunk, p_rigid_index);
+	stiffness[index] = p_stiffness;
+	changed = true;
+}
+
+float RigidsMemory::get_stiffness(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const {
+	make_memory_index_V(p_chunk, p_rigid_index, 0.0);
+	return stiffness[index];
+}
+
+void RigidsMemory::set_rotation(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, const Quat &p_rotation) {
+	make_memory_index(p_chunk, p_rigid_index);
+	rotation[index] = p_rotation;
+	changed = true;
+}
+
+const Quat &RigidsMemory::get_rotation(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const {
+	make_memory_index_V(p_chunk, p_rigid_index, return_err_quat);
+	return rotation[index];
+}
+
+void RigidsMemory::set_position(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, const Vector3 &p_position) {
+	make_memory_index(p_chunk, p_rigid_index);
+	position[index] = p_position;
+	changed = true;
+}
+
+const Vector3 &RigidsMemory::get_position(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const {
+	make_memory_index_V(p_chunk, p_rigid_index, return_err_vec3);
+	return position[index];
+}
+
+void RigidsComponentsMemory::set_index(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index, ParticleBufferIndex p_particle_buffer_index) {
+	make_memory_index(p_chunk, p_rigid_comp_index);
+	indices[index] = p_particle_buffer_index;
+	changed = true;
+}
+
+ParticleBufferIndex RigidsComponentsMemory::get_index(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index) const {
+	make_memory_index_V(p_chunk, p_rigid_comp_index, 0);
+	return indices[index];
+}
+
+void RigidsComponentsMemory::set_rest(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index, const Vector3 &p_rest) {
+	make_memory_index(p_chunk, p_rigid_comp_index);
+	rests[index] = p_rest;
+	changed = true;
+}
+
+const Vector3 &RigidsComponentsMemory::get_rest(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index) const {
+	make_memory_index_V(p_chunk, p_rigid_comp_index, return_err_vec3);
+	return rests[index];
+}
+
+void RigidsComponentsMemory::set_normal(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index, const Vector3 &p_normal) {
+	make_memory_index(p_chunk, p_rigid_comp_index);
+	normals[index] = flvec4_from_vec3(p_normal);
+	changed = true;
+}
+
+Vector3 RigidsComponentsMemory::get_normal(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index) const {
+	make_memory_index_V(p_chunk, p_rigid_comp_index, return_err_vec3);
+	return vec3_from_flvec4(normals[index]);
 }

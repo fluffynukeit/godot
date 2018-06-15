@@ -69,21 +69,23 @@ typedef int ParticleIndex; // Particle index relative to the memory chunk, can c
 typedef int ParticleBufferIndex; // Particle global index, can change during time
 typedef int RigidIndex; // Rigid index relative to the memory chunk, can change during time
 typedef int RigidBufferIndex; // Rigid global index, can change during time
+typedef int RigidComponentIndex; // Rigid component index relative to the memory chunk, can change during time
+typedef int RigidComponentBufferIndex; // Rigid component global index, can change during time
 typedef int ActiveParticleIndex; // Active Particle index relative to the memory chunk, can change during time
 typedef int ActiveParticleBufferIndex; // Active Particle global index, can change during time
 typedef int SpringIndex; // Spring index relative to the memory chunk, can change during time
 typedef int SpringBufferIndex; // Spring global index, can change during time
 typedef int GeometryIndex; // Geometry index relative to the memory chunk, can change during time
-typedef int GeometryBufferIndex; // Geometry global index, can change during time
+typedef int GeometryBufferIndex; // Geometry global index, cavec3_from_flvec4time
 
-#define vec3_from_flvec3(vec4) \
+#define vec3_from_flvec4(vec4) \
 	Vector3(vec4[0], vec4[1], vec4[2])
 
 #define CreateParticle(position, mass) \
 	FlVector4(position.x, position.y, position.z, mass ? (1 / mass) : 0)
 
 #define extract_position(particle) \
-	vec3_from_flvec3(particle)
+	vec3_from_flvec4(particle)
 
 #define extract_mass(particle) \
 	particle[3]
@@ -115,6 +117,6 @@ struct FlexCallBackData {
 static const FlVector4 return_err_flvec4(0, 0, 0, 0);
 static const Vector3 return_err_vec3(0, 0, 0);
 static const Spring return_err_spring(-1, -1);
-static const Quat return_err_flquat;
+static const Quat return_err_quat;
 
 #endif // FLEX_UTILITY_H
