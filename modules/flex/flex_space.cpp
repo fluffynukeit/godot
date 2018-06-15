@@ -263,6 +263,7 @@ void FlexSpace::sync() {
 	active_particles_memory->map();
 	springs_memory->map();
 	rigids_memory->map();
+	rigids_components_memory->map();
 	geometries_memory->map();
 
 	dispatch_callbacks();
@@ -274,6 +275,7 @@ void FlexSpace::sync() {
 	if (springs_memory->was_changed()) springs_allocator->sanitize(); // The memory must be consecutive to be sent to GPU
 	springs_memory->unmap();
 	rigids_memory->unmap();
+	rigids_components_memory->unmap();
 	if (geometries_memory->was_changed()) geometries_allocator->sanitize(); // The memory must be consecutive to be sent to GPU
 	geometries_memory->unmap();
 
@@ -384,6 +386,8 @@ void FlexSpace::execute_delayed_commands() {
 
 		if (body->delayed_commands.rigids_to_add.size()) {
 
+			ERR_FAIL_COND(!body->particles_mchunk);
+
 			int index_count = 0;
 			int previous_size = 0;
 
@@ -403,23 +407,28 @@ void FlexSpace::execute_delayed_commands() {
 				index_count += body->delayed_commands.rigids_to_add[r].indices.size();
 			}
 
-			// Inser indices
+			// Insert indices
 
-			//previous_size = 0;
-			//if (body->rigids_components_mchunk) {
-			//	previous_size = body->rigids_components_mchunk->get_size();
-			//	rigids_components_allocator->resize_chunk(body->rigids_components_mchunk, previous_size + index_count);
-			//} else {
-			//	body->rigids_components_mchunk = rigids_components_allocator->allocate_chunk(index_count);
-			//}
+			previous_size = 0;
+			if (body->rigids_components_mchunk) {
+				previous_size = body->rigids_components_mchunk->get_size();
+				rigids_components_allocator->resize_chunk(body->rigids_components_mchunk, previous_size + index_count);
+			} else {
+				body->rigids_components_mchunk = rigids_components_allocator->allocate_chunk(index_count);
+			}
 
-			for (int r(body->delayed_commands.rigids_to_add.size() - 1); 0 <= r; --r) {
+			RigidComponentIndex rigid_comp_index(previous_size == 0 ? 0 : rigids_memory->get_offset(body->rigids_mchunk, previous_size - 1));
+			for (int r(0); r < body->delayed_commands.rigids_to_add.size(); ++r) {
+
+				rigids_memory->set_offset(body->rigids_mchunk, previous_size + r, rigid_comp_index);
 
 				// Allocate components
-				//PoolVector<int>::Read indices_r = body->delayed_commands.rigids_to_add[r].indices.read();
-				//for (int i(body->delayed_commands.rigids_to_add[r].indices.size() - 1); 0 <= i; --i) {
-				//	rigids_components_memory->set_index(body->rigids_components_mchunks[previous_size + r], i, body->particles_mchunk->get_buffer_index(indices_r[i]));
-				//}
+				PoolVector<int>::Read indices_r = body->delayed_commands.rigids_to_add[r].indices.read();
+
+				for (int rigid_p_index(body->delayed_commands.rigids_to_add[r].indices.size() - 1); 0 <= rigid_p_index; --rigid_p_index) {
+					rigids_components_memory->set_index(body->rigids_components_mchunk, rigid_comp_index + rigid_p_index, body->particles_mchunk->get_buffer_index(indices_r[rigid_p_index]));
+				}
+				rigid_comp_index += body->delayed_commands.rigids_to_add[r].indices.size();
 			}
 		}
 
