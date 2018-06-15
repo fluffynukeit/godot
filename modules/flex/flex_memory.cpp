@@ -181,6 +181,14 @@ int GeometryMemory::get_flags(const MemoryChunk *p_chunk, GeometryIndex p_geomet
 	return flags[index];
 }
 
+void RigidsMemory::_on_resized(FlexUnit p_size) {
+	offsets.resize(p_size);
+}
+
+void RigidsMemory::_on_copied_unit(FlexUnit p_to, FlexUnit p_from) {
+	offsets[p_to] = offsets[p_from];
+}
+
 void RigidsMemory::set_offset(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, RigidComponentIndex p_offset) {
 	make_memory_index(p_chunk, p_rigid_index);
 	offsets[index] = p_offset;
@@ -190,6 +198,17 @@ void RigidsMemory::set_offset(const MemoryChunk *p_chunk, RigidIndex p_rigid_ind
 RigidComponentIndex RigidsMemory::get_offset(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const {
 	make_memory_index_V(p_chunk, p_rigid_index, 0);
 	return offsets[index];
+}
+
+void RigidsMemory::set_buffer_offset(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, RigidComponentBufferIndex p_offset) {
+	make_memory_index(p_chunk, p_rigid_index);
+	buffer_offsets[index] = p_offset;
+	changed = true;
+}
+
+RigidComponentBufferIndex RigidsMemory::get_buffer_offset(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const {
+	make_memory_index_V(p_chunk, p_rigid_index, 0);
+	return buffer_offsets[index];
 }
 
 void RigidsMemory::set_stiffness(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, float p_stiffness) {

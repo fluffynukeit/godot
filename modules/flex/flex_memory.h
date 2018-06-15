@@ -228,6 +228,8 @@ public:
 
 	virtual void _on_mapped() {}
 	virtual void _on_unmapped() {}
+	virtual void _on_resized(FlexUnit p_size) {}
+	virtual void _on_copied_unit(FlexUnit p_to, FlexUnit p_from) {}
 
 protected:
 	virtual void resize_memory(FlexUnit p_size) {
@@ -252,6 +254,7 @@ protected:
 		for (int i(buffers_colgeo.size() - 1); 0 <= i; --i) {
 			buffers_colgeo[i]->resize(p_size);
 		}
+		_on_resized(p_size);
 	}
 	virtual void copy_unit(FlexUnit p_to, FlexUnit p_from) {
 		for (int i(buffers_int.size() - 1); 0 <= i; --i) {
@@ -275,6 +278,7 @@ protected:
 		for (int i(buffers_colgeo.size() - 1); 0 <= i; --i) {
 			buffers_colgeo[p_to] = buffers_colgeo[p_from];
 		}
+		_on_copied_unit(p_to, p_from);
 	}
 };
 
@@ -380,9 +384,13 @@ class GeometryMemory : public FlexBufferMemory {
 class RigidsMemory : public FlexBufferMemory {
 
 	bool changed;
-	FLEXBUFFERCLASS_4(RigidsMemory, int, offsets, float, stiffness, Quat, rotation, Vector3, position);
+	FLEXBUFFERCLASS_4(RigidsMemory, RigidComponentBufferIndex, buffer_offsets, float, stiffness, Quat, rotation, Vector3, position);
+
+	Vector<RigidComponentIndex> offsets;
 
 	virtual void _on_mapped() { changed = false; }
+	virtual void _on_resized(FlexUnit p_size);
+	virtual void _on_copied_unit(FlexUnit p_to, FlexUnit p_from);
 
 	bool was_changed() { return changed; }
 
@@ -395,6 +403,9 @@ class RigidsMemory : public FlexBufferMemory {
 
 	void set_offset(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, RigidComponentIndex p_offset);
 	RigidComponentIndex get_offset(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const;
+
+	void set_buffer_offset(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, RigidComponentBufferIndex p_offset);
+	RigidComponentBufferIndex get_buffer_offset(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const;
 
 	void set_stiffness(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, float p_stiffness);
 	float get_stiffness(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const;
