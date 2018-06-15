@@ -126,7 +126,7 @@ class FlexMemoryAllocator {
 	FlexUnit memory_size;
 	struct {
 		FlexUnit occupied_memory;
-		FlexUnit biggest_chunk_size;
+		FlexUnit biggest_free_chunk_size;
 	} cache;
 
 	FlexMemory *memory;
@@ -146,6 +146,8 @@ public:
 	void copy_chunk(MemoryChunk *p_from, MemoryChunk *p_to);
 
 	FlexUnit get_last_used_index();
+
+	MemoryChunk *get_chunk(FlexUnit i) const;
 
 private:
 	bool redux_memory(FlexUnit p_size);

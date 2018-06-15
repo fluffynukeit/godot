@@ -259,6 +259,8 @@ void FlexSpace::terminate() {
 
 void FlexSpace::sync() {
 
+	///
+	/// Map phase
 	particle_bodies_memory->map();
 	active_particles_memory->map();
 	springs_memory->map();
@@ -266,19 +268,33 @@ void FlexSpace::sync() {
 	rigids_components_memory->map();
 	geometries_memory->map();
 
+	///
+	/// Stepping phase
 	dispatch_callbacks();
 	execute_delayed_commands();
 	execute_geometries_commands();
 
+	///
+	/// Unmap phase
 	particle_bodies_memory->unmap();
+
 	active_particles_memory->unmap();
-	if (springs_memory->was_changed()) springs_allocator->sanitize(); // The memory must be consecutive to be sent to GPU
+
+	if (springs_memory->was_changed())
+		springs_allocator->sanitize(); // The memory must be consecutive to be sent to GPU
 	springs_memory->unmap();
+
+	if (rigids_memory->was_changed())
+		rebuild_rigids_offsets();
 	rigids_memory->unmap();
 	rigids_components_memory->unmap();
-	if (geometries_memory->was_changed()) geometries_allocator->sanitize(); // The memory must be consecutive to be sent to GPU
+
+	if (geometries_memory->was_changed())
+		geometries_allocator->sanitize(); // The memory must be consecutive to be sent to GPU
 	geometries_memory->unmap();
 
+	///
+	/// Retrieving phase
 	commands_write_buffer();
 }
 
@@ -577,6 +593,62 @@ void FlexSpace::execute_geometries_commands() {
 		geometries_allocator->deallocate_chunk(geometry_chunks_to_deallocate[i]);
 	}
 	geometry_chunks_to_deallocate.clear();
+}
+
+void FlexSpace::rebuild_rigids_offsets() {
+
+	// Flex require a buffer of offsets that points to the buffer of indices
+	// For this reason when the rigid memory change all the ID should be recreated in order to syn them
+
+	// 1. Step trim
+	rigids_allocator->sanitize();
+	rigids_components_allocator->sanitize();
+
+	// 2. Step get buffer offsets
+	for (int body_i(particle_bodies.size() - 1); 0 <= body_i; --body_i) {
+		FlexParticleBody *body = particle_bodies[body_i];
+
+		if (!body->rigids_mchunk)
+			continue;
+
+		for (int rigid_i(body->rigids_mchunk->get_size() - 1); 0 <= rigid_i; --rigid_i) {
+
+			rigids_memory->set_buffer_offset(body->rigids_mchunk, rigid_i, body->rigids_components_mchunk->get_buffer_index(rigids_memory->get_offset(body->rigids_mchunk, rigid_i)));
+		}
+	}
+
+	// 3. Step sorting
+	// Inverse Heap Sort
+	const int rigids_size(rigids_allocator->get_last_used_index() + 1);
+
+	MemoryChunk *swap_area = rigids_allocator->allocate_chunk(1);
+
+	for (int chunk_i(0); chunk_i < rigids_size; ++chunk_i) {
+
+		MemoryChunk *initial_chunk = rigids_allocator->get_chunk(chunk_i);
+
+		MemoryChunk *lowest_chunk = initial_chunk;
+		int lowest_val = rigids_memory->get_buffer_offset(initial_chunk, 0);
+
+		for (int chunk_x(chunk_i + 1); chunk_x < rigids_size; ++chunk_x) {
+
+			MemoryChunk *other_chunk = rigids_allocator->get_chunk(chunk_x);
+			int other_val = rigids_memory->get_buffer_offset(initial_chunk, 0);
+
+			if (lowest_val > other_val) {
+				lowest_val = other_val;
+				lowest_chunk = other_chunk;
+			}
+		}
+
+		if (lowest_chunk != initial_chunk) {
+			rigids_allocator->copy_chunk(initial_chunk, swap_area);
+			rigids_allocator->copy_chunk(lowest_chunk, initial_chunk);
+			rigids_allocator->copy_chunk(swap_area, lowest_chunk);
+		}
+	}
+
+	rigids_allocator->deallocate_chunk(swap_area);
 }
 
 void FlexSpace::commands_write_buffer() {
