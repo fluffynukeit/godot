@@ -378,10 +378,10 @@ class RigidsMemory : public FlexMemory {
 	///
 };
 
-/// This memory is used to store per indices information of rigids
-class RigidsIndicesMemory : public FlexMemory {
+/// This memory is used to store information for each rigid
+class RigidsComponentsMemory : public FlexMemory {
 
-	create_buffer_3(RigidsIndicesMemory, int, indices, Vector3, rests, FlVector4, normals);
+	create_buffer_3(RigidsComponentsMemory, int, indices, Vector3, rests, FlVector4, normals);
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped

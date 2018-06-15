@@ -76,6 +76,21 @@ struct SpringToAdd {
 	}
 };
 
+struct RigidToAdd {
+
+	Vector3 position;
+	float stiffness;
+	PoolVector<ParticleIndex> indices;
+
+	RigidToAdd() :
+			stiffness(0) {}
+
+	RigidToAdd(Vector3 p_position, float p_stiffness, PoolVector<ParticleIndex> p_indices) :
+			position(p_position),
+			stiffness(p_stiffness),
+			indices(p_indices) {}
+};
+
 enum ChangedBodyParameter {
 	eChangedBodyParamPositionMass = 1 << 0,
 	eChangedBodyParamVelocity = 1 << 1,
@@ -102,14 +117,19 @@ class FlexParticleBody : public RIDFlex {
 	struct {
 		Vector<ParticleToAdd> particle_to_add;
 		Vector<SpringToAdd> springs_to_add;
+		Vector<RigidToAdd> rigids_to_add;
 		Set<ParticleIndex> particle_to_remove;
 		Set<SpringIndex> springs_to_remove;
+		Vector<RigidIndex> rigids_to_remove;
 	} delayed_commands;
 
 	uint32_t changed_parameters;
 
 	MemoryChunk *particles_mchunk;
 	MemoryChunk *springs_mchunk;
+
+	MemoryChunk *rigids_mchunk;
+	Vector<MemoryChunk *> rigids_components_mchunk;
 
 	FlexSpace *space;
 	uint32_t collision_group;
@@ -143,14 +163,19 @@ public:
 	void add_spring(ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness);
 	void remove_spring(SpringIndex p_spring_index);
 
+	void add_rigid(const Vector3 &p_position, float p_stiffness, PoolVector<ParticleIndex> p_indices);
+	void remove_rigid(RigidIndex p_rigid_index);
+
 	int get_particle_count() const;
 	int get_spring_count() const;
+	int get_rigids_count() const;
 
 	// CMD
 	void load_model(Ref<ParticleBodyModel> p_model, const Transform &initial_transform);
 
 	void reset_particle(ParticleIndex p_particle, const Vector3 &p_position, real_t p_mass);
 	void reset_spring(SpringIndex p_spring, ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness);
+	void reset_rigid(RigidIndex p_rigid);
 
 	Vector3 get_particle_position(ParticleIndex p_particle) const;
 
@@ -162,6 +187,7 @@ public:
 
 	bool is_owner_of_particle(ParticleIndex p_particle) const;
 	bool is_owner_of_spring(SpringIndex p_spring) const;
+	bool is_owner_of_rigid(RigidIndex p_rigid) const;
 
 private:
 	void set_clean();

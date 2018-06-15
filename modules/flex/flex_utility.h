@@ -67,6 +67,8 @@
 
 typedef int ParticleIndex; // Particle index relative to the memory chunk, can change during time
 typedef int ParticleBufferIndex; // Particle global index, can change during time
+typedef int RigidIndex; // Rigid index relative to the memory chunk, can change during time
+typedef int RigidBufferIndex; // Rigid global index, can change during time
 typedef int ActiveParticleIndex; // Active Particle index relative to the memory chunk, can change during time
 typedef int ActiveParticleBufferIndex; // Active Particle global index, can change during time
 typedef int SpringIndex; // Spring index relative to the memory chunk, can change during time
