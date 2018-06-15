@@ -42,6 +42,7 @@ FlexParticleBody::FlexParticleBody() :
 		space(NULL),
 		particles_mchunk(NULL),
 		springs_mchunk(NULL),
+		rigids_mchunk(NULL),
 		changed_parameters(0),
 		collision_group(0),
 		collision_flags(0),
@@ -136,12 +137,44 @@ void FlexParticleBody::remove_spring(SpringIndex p_spring_index) {
 	delayed_commands.springs_to_remove.insert(p_spring_index);
 }
 
+void FlexParticleBody::add_rigid(const Vector3 &p_position, float p_stiffness, PoolVector<ParticleIndex> p_indices) {
+	delayed_commands.rigids_to_add.push_back(RigidToAdd(p_position, p_stiffness, p_indices));
+}
+
+void FlexParticleBody::remove_rigid(RigidIndex p_rigid_index) {
+	ERR_FAIL_COND(!is_owner_of_rigid(p_rigid_index));
+	delayed_commands.rigids_to_remove.push_back(p_rigid_index);
+}
+
 int FlexParticleBody::get_particle_count() const {
 	return particles_mchunk ? particles_mchunk->get_size() : 0;
 }
 
 int FlexParticleBody::get_spring_count() const {
 	return springs_mchunk ? springs_mchunk->get_size() : 0;
+}
+
+int FlexParticleBody::get_rigids_count() const {
+	return rigids_mchunk ? rigids_mchunk->get_size() : 0;
+}
+
+PoolVector<ParticleIndex> extract_rigid_indices(int index, PoolVector<int> p_offsets, PoolVector<int> p_indices) {
+
+	PoolVector<int>::Read offsets_r = p_offsets.read();
+	PoolVector<int>::Read indices_r = p_indices.read();
+
+	const int offset_start = index == 0 ? 0 : offsets_r[index - 1];
+	const int size = offsets_r[index] - offset_start;
+
+	PoolVector<ParticleIndex> rigid_indices;
+	rigid_indices.resize(size);
+	PoolVector<ParticleIndex>::Write rigid_indices_w = rigid_indices.write();
+
+	for (int i(0); i < size; i++) {
+		rigid_indices_w[i] = indices_r[offset_start + i];
+	}
+
+	return rigid_indices;
 }
 
 void FlexParticleBody::load_model(Ref<ParticleBodyModel> p_model, const Transform &initial_transform) {
@@ -207,6 +240,40 @@ void FlexParticleBody::load_model(Ref<ParticleBodyModel> p_model, const Transfor
 					p_model->get_constraints_info_ref().get(i).y);
 		}
 	}
+
+	{ // Rigids
+		int active_r_count(get_rigids_count());
+		int resource_r_count(p_model->get_clusters_offsets().size());
+
+		if (active_r_count > resource_r_count) {
+
+			// Remove last
+			const int dif = active_r_count - resource_r_count;
+			for (int i(0); i < dif; ++i) {
+				remove_rigid(active_r_count - i - 1);
+			}
+
+			active_r_count = resource_r_count;
+
+		} else {
+
+			// Add
+
+			PoolVector<Vector3>::Read cluster_pos_r = p_model->get_clusters_positions().read();
+			PoolVector<float>::Read cluster_stiffness_r = p_model->get_clusters_stiffness().read();
+
+			const int dif = resource_r_count - active_r_count;
+			for (int i(0); i < dif; ++i) {
+				const int r(resource_r_count - i - 1);
+
+				add_rigid(cluster_pos_r[r], cluster_stiffness_r[r], extract_rigid_indices(r, p_model->get_clusters_offsets(), p_model->get_clusters_particle_indices()));
+			}
+		}
+
+		for (int i(0); i < active_r_count; ++i) {
+			// TODO RESET HERE RIGIDS
+		}
+	}
 }
 
 void FlexParticleBody::reset_particle(ParticleIndex p_particle_index, const Vector3 &p_position, real_t p_mass) {
@@ -223,6 +290,9 @@ void FlexParticleBody::reset_spring(SpringIndex p_spring, ParticleIndex p_partic
 	space->get_springs_memory()->set_spring(springs_mchunk, p_spring, Spring(particles_mchunk->get_buffer_index(p_particle_0), particles_mchunk->get_buffer_index(p_particle_1)));
 	space->get_springs_memory()->set_length(springs_mchunk, p_spring, p_length);
 	space->get_springs_memory()->set_stiffness(springs_mchunk, p_spring, p_stiffness);
+}
+
+void FlexParticleBody::reset_rigid(RigidIndex p_rigid) {
 }
 
 Vector3 FlexParticleBody::get_particle_position(ParticleIndex p_particle_index) const {
@@ -262,6 +332,12 @@ bool FlexParticleBody::is_owner_of_spring(SpringIndex p_spring) const {
 	if (!springs_mchunk)
 		return false;
 	return (springs_mchunk && (springs_mchunk->get_buffer_index(p_spring)) <= springs_mchunk->get_end_index());
+}
+
+bool FlexParticleBody::is_owner_of_rigid(RigidIndex p_rigid) const {
+	if (!rigids_mchunk)
+		return false;
+	return (rigids_mchunk && (rigids_mchunk->get_buffer_index(p_rigid)) <= rigids_mchunk->get_end_index());
 }
 
 void FlexParticleBody::set_clean() {
