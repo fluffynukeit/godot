@@ -443,6 +443,7 @@ void FlexSpace::execute_delayed_commands() {
 
 				for (int rigid_p_index(body->delayed_commands.rigids_to_add[r].indices.size() - 1); 0 <= rigid_p_index; --rigid_p_index) {
 					rigids_components_memory->set_index(body->rigids_components_mchunk, rigid_comp_index + rigid_p_index, body->particles_mchunk->get_buffer_index(indices_r[rigid_p_index]));
+					//rigids_components_memory->set_rest(body->rigids_components_mchunk, rigid_comp_index + rigid_p_index, Vector3());
 				}
 				rigid_comp_index += body->delayed_commands.rigids_to_add[r].indices.size();
 			}
@@ -619,20 +620,27 @@ void FlexSpace::rebuild_rigids_offsets() {
 
 	// 3. Step sorting
 	// Inverse Heap Sort
-	const int rigids_size(rigids_allocator->get_last_used_index() + 1);
+	const int chunks_size(rigids_allocator->get_chunk_count());
 
 	MemoryChunk *swap_area = rigids_allocator->allocate_chunk(1);
 
-	for (int chunk_i(0); chunk_i < rigids_size; ++chunk_i) {
+	for (int chunk_i(0); chunk_i < chunks_size; ++chunk_i) {
 
 		MemoryChunk *initial_chunk = rigids_allocator->get_chunk(chunk_i);
+
+		if (initial_chunk->get_is_free())
+			break; // End reached
 
 		MemoryChunk *lowest_chunk = initial_chunk;
 		int lowest_val = rigids_memory->get_buffer_offset(initial_chunk, 0);
 
-		for (int chunk_x(chunk_i + 1); chunk_x < rigids_size; ++chunk_x) {
+		for (int chunk_x(chunk_i + 1); chunk_x < chunks_size; ++chunk_x) {
 
 			MemoryChunk *other_chunk = rigids_allocator->get_chunk(chunk_x);
+
+			if (other_chunk->get_is_free())
+				break; // End reached
+
 			int other_val = rigids_memory->get_buffer_offset(initial_chunk, 0);
 
 			if (lowest_val > other_val) {
@@ -698,7 +706,7 @@ void FlexSpace::commands_write_buffer() {
 				rigids_memory->buffer_offsets.buffer,
 				rigids_components_memory->indices.buffer,
 				rigids_components_memory->rests.buffer,
-				rigids_components_memory->normals.buffer,
+				rigids_components_memory->normals.buffer, // TODO remove if useless
 				rigids_memory->stiffness.buffer,
 				NULL,
 				NULL,
