@@ -45,7 +45,6 @@
 void ParticleBodiesMemory::set_particle(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, FlVector4 p_particle) {
 	make_memory_index(p_chunk, p_particle_index);
 	particles[index] = p_particle;
-	changed = true;
 }
 
 const FlVector4 &ParticleBodiesMemory::get_particle(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const {
@@ -56,7 +55,6 @@ const FlVector4 &ParticleBodiesMemory::get_particle(const MemoryChunk *p_chunk, 
 void ParticleBodiesMemory::set_velocity(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, Vector3 p_velocity) {
 	make_memory_index(p_chunk, p_particle_index);
 	velocities[index] = p_velocity;
-	changed = true;
 }
 
 const Vector3 &ParticleBodiesMemory::get_velocity(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const {
@@ -67,7 +65,6 @@ const Vector3 &ParticleBodiesMemory::get_velocity(const MemoryChunk *p_chunk, Pa
 void ParticleBodiesMemory::set_phase(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, int p_phase) {
 	make_memory_index(p_chunk, p_particle_index);
 	phases[index] = p_phase;
-	changed = true;
 }
 
 int ParticleBodiesMemory::get_phase(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const {
@@ -83,7 +80,6 @@ const FlVector4 &ParticleBodiesMemory::get_normal(const MemoryChunk *p_chunk, Pa
 void ActiveParticlesMemory::set_active_particle(const MemoryChunk *p_chunk, ActiveParticleIndex p_active_particle_index, ParticleBufferIndex p_particle_buffer_index) {
 	make_memory_index(p_chunk, p_active_particle_index);
 	active_particles[index] = p_particle_buffer_index;
-	changed = true;
 }
 
 void SpringMemory::set_spring(const MemoryChunk *p_chunk, SpringIndex p_spring_index, const Spring &p_spring) {
