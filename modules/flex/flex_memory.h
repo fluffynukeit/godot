@@ -381,18 +381,50 @@ class GeometryMemory : public FlexBufferMemory {
 	int get_flags(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index) const;
 };
 
-class RigidsMemory : public FlexBufferMemory {
+class RawRigidsMemory : public FlexBufferMemory {
 
+protected:
 	bool changed;
-	Vector<RigidComponentIndex> offsets;
 
-	FLEXBUFFERCLASS_4(RigidsMemory, RigidComponentBufferIndex, buffer_offsets, float, stiffness, Quat, rotation, Vector3, position);
+	FLEXBUFFERCLASS_3(RawRigidsMemory, float, stiffness, Quat, rotation, Vector3, position);
 
 	virtual void _on_mapped() { changed = false; }
-	virtual void _on_resized(FlexUnit p_size);
-	virtual void _on_copied_unit(FlexUnit p_to, FlexUnit p_from);
 
 	bool was_changed() { return changed; }
+
+	/// IMPORTANT
+	/// These functions must be called only if the buffers are mapped
+	/// |
+	/// |
+	/// V
+	///
+
+	void set_stiffness(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, float p_stiffness);
+	float get_stiffness(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const;
+
+	void set_rotation(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, const Quat &p_rotation);
+	const Quat &get_rotation(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const;
+
+	void set_position(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, const Vector3 &p_position);
+	const Vector3 &get_position(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const;
+};
+
+// This buffer is handled like this because Flex required to have one more element in buffers_offsets with value 0
+// In this way I'm able to control buffer_offsets separately
+class RigidsMemory : public RawRigidsMemory {
+
+	Vector<RigidComponentIndex> offsets;
+	NvFlexVector<RigidComponentBufferIndex> buffer_offsets;
+
+public:
+	RigidsMemory(NvFlexLibrary *p_library) :
+			RawRigidsMemory(p_library),
+			buffer_offsets(p_library) {}
+
+	virtual void _on_mapped();
+	virtual void _on_unmapped();
+	virtual void _on_resized(FlexUnit p_size);
+	virtual void _on_copied_unit(FlexUnit p_to, FlexUnit p_from);
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped
@@ -407,14 +439,8 @@ class RigidsMemory : public FlexBufferMemory {
 	void set_buffer_offset(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, RigidComponentBufferIndex p_offset);
 	RigidComponentBufferIndex get_buffer_offset(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const;
 
-	void set_stiffness(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, float p_stiffness);
-	float get_stiffness(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const;
-
-	void set_rotation(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, const Quat &p_rotation);
-	const Quat &get_rotation(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const;
-
-	void set_position(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, const Vector3 &p_position);
-	const Vector3 &get_position(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const;
+	// Special function to set 0 on the first element of buffer offsets as specified by Flex
+	void zeroed_first_buffer_offset();
 };
 
 /// This memory is used to store information for each rigid

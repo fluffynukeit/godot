@@ -649,6 +649,8 @@ void FlexSpace::rebuild_rigids_offsets() {
 	}
 
 	rigids_allocator->deallocate_chunk(swap_area);
+
+	rigids_memory->zeroed_first_buffer_offset();
 }
 
 void FlexSpace::commands_write_buffer() {
