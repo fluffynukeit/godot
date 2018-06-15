@@ -294,7 +294,7 @@ void FlexSpace::sync() {
 	geometries_memory->unmap();
 
 	///
-	/// Retrieving phase
+	/// Write phase
 	commands_write_buffer();
 }
 
@@ -691,6 +691,21 @@ void FlexSpace::commands_write_buffer() {
 
 	if (springs_memory->was_changed())
 		NvFlexSetSprings(solver, springs_memory->springs.buffer, springs_memory->lengths.buffer, springs_memory->stiffness.buffer, springs_allocator->get_last_used_index() + 1);
+
+	if (rigids_memory->was_changed())
+		NvFlexSetRigids(
+				solver,
+				rigids_memory->buffer_offsets.buffer,
+				rigids_components_memory->indices.buffer,
+				rigids_components_memory->rests.buffer,
+				rigids_components_memory->normals.buffer,
+				rigids_memory->stiffness.buffer,
+				NULL,
+				NULL,
+				rigids_memory->rotation.buffer,
+				rigids_memory->position.buffer,
+				rigids_allocator->get_last_used_index() + 1,
+				rigids_components_allocator->get_last_used_index() + 1);
 
 	if (geometries_memory->was_changed())
 		NvFlexSetShapes(solver, geometries_memory->collision_shapes.buffer, geometries_memory->positions.buffer, geometries_memory->rotations.buffer, geometries_memory->positions_prev.buffer, geometries_memory->rotations_prev.buffer, geometries_memory->flags.buffer, geometries_allocator->get_last_used_index() + 1);

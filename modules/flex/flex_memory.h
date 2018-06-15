@@ -413,6 +413,8 @@ protected:
 // In this way I'm able to control buffer_offsets separately
 class RigidsMemory : public RawRigidsMemory {
 
+	friend class FlexSpace;
+
 	Vector<RigidComponentIndex> offsets;
 	NvFlexVector<RigidComponentBufferIndex> buffer_offsets;
 
