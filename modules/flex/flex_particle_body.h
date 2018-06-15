@@ -129,7 +129,7 @@ class FlexParticleBody : public RIDFlex {
 	MemoryChunk *springs_mchunk;
 
 	MemoryChunk *rigids_mchunk;
-	Vector<MemoryChunk *> rigids_components_mchunk;
+	MemoryChunk *rigids_components_mchunk;
 
 	FlexSpace *space;
 	uint32_t collision_group;

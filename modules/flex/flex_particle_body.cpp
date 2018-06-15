@@ -319,7 +319,7 @@ Vector3 FlexParticleBody::get_particle_normal(ParticleIndex p_particle_index) co
 	if (!particles_mchunk)
 		return return_err_vec3;
 	const FlVector4 &p(space->get_particle_bodies_memory()->get_normal(particles_mchunk, p_particle_index));
-	return vec3_from_flvec3(p);
+	return vec3_from_flvec4(p);
 }
 
 bool FlexParticleBody::is_owner_of_particle(ParticleIndex p_particle) const {
