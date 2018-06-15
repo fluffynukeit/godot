@@ -43,6 +43,7 @@ FlexParticleBody::FlexParticleBody() :
 		particles_mchunk(NULL),
 		springs_mchunk(NULL),
 		rigids_mchunk(NULL),
+		rigids_components_mchunk(NULL),
 		changed_parameters(0),
 		collision_group(0),
 		collision_flags(0),

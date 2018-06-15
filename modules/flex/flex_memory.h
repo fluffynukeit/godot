@@ -42,281 +42,249 @@
 typedef int ParticleIndex; // Particle id relative to body, can change during time
 typedef int ParticleRef; // Particle Ref id relative to body never change
 
-#define define_functions_1(clazz, name0)                     \
-															 \
-	bool changed;                                            \
-															 \
-public:                                                      \
-	clazz(NvFlexLibrary *p_flex_lib) : changed(false),       \
-									   name0(p_flex_lib) {}  \
-															 \
-public:                                                      \
-	void map() {                                             \
-		name0.map();                                         \
-		changed = false;                                     \
-	}                                                        \
-															 \
-	void unmap() {                                           \
-		name0.unmap();                                       \
-	}                                                        \
-															 \
-	void terminate() {                                       \
-		name0.destroy();                                     \
-	}                                                        \
-															 \
-	bool was_changed() { return changed; }                   \
-															 \
-protected:                                                   \
-	virtual void resize_memory(FlexUnit p_size) {            \
-		name0.resize(p_size);                                \
-	}                                                        \
-	virtual void copy_unit(FlexUnit p_to, FlexUnit p_from) { \
-		name0[p_to] = name0[p_from];                         \
-	}                                                        \
-															 \
+#define FLEXBUFFERCLASS_1(clazz, type0, name0) \
+	friend class FlexSpace;                    \
+											   \
+	NvFlexVector<type0> name0;                 \
+											   \
+public:                                        \
+	clazz(NvFlexLibrary *p_flex_lib) :         \
+			name0(p_flex_lib) {                \
+		__add_buffer(&name0);                  \
+	}
+
+#define FLEXBUFFERCLASS_3(clazz, type0, name0, type1, name1, type2, name2) \
+	friend class FlexSpace;                                                \
+																		   \
+	NvFlexVector<type0> name0;                                             \
+	NvFlexVector<type1> name1;                                             \
+	NvFlexVector<type2> name2;                                             \
+																		   \
+public:                                                                    \
+	clazz(NvFlexLibrary *p_flex_lib) :                                     \
+			name0(p_flex_lib),                                             \
+			name1(p_flex_lib),                                             \
+			name2(p_flex_lib) {                                            \
+		__add_buffer(&name0);                                              \
+		__add_buffer(&name1);                                              \
+		__add_buffer(&name2);                                              \
+	}
+
+#define FLEXBUFFERCLASS_4(clazz, type0, name0, type1, name1, type2, name2, type3, name3) \
+	friend class FlexSpace;                                                              \
+																						 \
+	NvFlexVector<type0> name0;                                                           \
+	NvFlexVector<type1> name1;                                                           \
+	NvFlexVector<type2> name2;                                                           \
+	NvFlexVector<type3> name3;                                                           \
+																						 \
+public:                                                                                  \
+	clazz(NvFlexLibrary *p_flex_lib) :                                                   \
+			name0(p_flex_lib),                                                           \
+			name1(p_flex_lib),                                                           \
+			name2(p_flex_lib),                                                           \
+			name3(p_flex_lib) {                                                          \
+		__add_buffer(&name0);                                                            \
+		__add_buffer(&name1);                                                            \
+		__add_buffer(&name2);                                                            \
+		__add_buffer(&name3);                                                            \
+	}
+
+#define FLEXBUFFERCLASS_6(clazz, type0, name0, type1, name1, type2, name2, type3, name3, type4, name4, type5, name5) \
+	friend class FlexSpace;                                                                                          \
+																													 \
+	NvFlexVector<type0> name0;                                                                                       \
+	NvFlexVector<type1> name1;                                                                                       \
+	NvFlexVector<type2> name2;                                                                                       \
+	NvFlexVector<type3> name3;                                                                                       \
+	NvFlexVector<type4> name4;                                                                                       \
+	NvFlexVector<type5> name5;                                                                                       \
+																													 \
+public:                                                                                                              \
+	clazz(NvFlexLibrary *p_flex_lib) :                                                                               \
+			name0(p_flex_lib),                                                                                       \
+			name1(p_flex_lib),                                                                                       \
+			name2(p_flex_lib),                                                                                       \
+			name3(p_flex_lib),                                                                                       \
+			name4(p_flex_lib),                                                                                       \
+			name5(p_flex_lib) {                                                                                      \
+		__add_buffer(&name0);                                                                                        \
+		__add_buffer(&name1);                                                                                        \
+		__add_buffer(&name2);                                                                                        \
+		__add_buffer(&name3);                                                                                        \
+		__add_buffer(&name4);                                                                                        \
+		__add_buffer(&name5);                                                                                        \
+	}
+
+class FlexBufferMemory : public FlexMemory {
+
+	Vector<NvFlexVector<int> *> buffers_int;
+	Vector<NvFlexVector<float> *> buffers_float;
+	Vector<NvFlexVector<Quat> *> buffers_quat;
+	Vector<NvFlexVector<Vector3> *> buffers_vec3;
+	Vector<NvFlexVector<Spring> *> buffers_spring;
+	Vector<NvFlexVector<FlVector4> *> buffers_flvec4;
+	Vector<NvFlexVector<NvFlexCollisionGeometry> *> buffers_colgeo;
+
+protected:
+	void __add_buffer(NvFlexVector<int> *buffer) {
+		buffers_int.push_back(buffer);
+	}
+	void __add_buffer(NvFlexVector<float> *buffer) {
+		buffers_float.push_back(buffer);
+	}
+	void __add_buffer(NvFlexVector<Quat> *buffer) {
+		buffers_quat.push_back(buffer);
+	}
+	void __add_buffer(NvFlexVector<Vector3> *buffer) {
+		buffers_vec3.push_back(buffer);
+	}
+	void __add_buffer(NvFlexVector<Spring> *buffer) {
+		buffers_spring.push_back(buffer);
+	}
+	void __add_buffer(NvFlexVector<FlVector4> *buffer) {
+		buffers_flvec4.push_back(buffer);
+	}
+	void __add_buffer(NvFlexVector<NvFlexCollisionGeometry> *buffer) {
+		buffers_colgeo.push_back(buffer);
+	}
+
 public:
+	bool changed;
 
-#define define_functions_2(clazz, name0, name1)              \
-	bool changed;                                            \
-															 \
-public:                                                      \
-	clazz(NvFlexLibrary *p_flex_lib) : changed(false),       \
-									   name0(p_flex_lib),    \
-									   name1(p_flex_lib) {}  \
-	void map() {                                             \
-		name0.map();                                         \
-		name1.map();                                         \
-		changed = false;                                     \
-	}                                                        \
-															 \
-	void unmap() {                                           \
-		name0.unmap();                                       \
-		name1.unmap();                                       \
-	}                                                        \
-															 \
-	void terminate() {                                       \
-		name0.destroy();                                     \
-		name1.destroy();                                     \
-	}                                                        \
-															 \
-	bool was_changed() { return changed; }                   \
-															 \
-protected:                                                   \
-	virtual void resize_memory(FlexUnit p_size) {            \
-		name0.resize(p_size);                                \
-		name1.resize(p_size);                                \
-	}                                                        \
-	virtual void copy_unit(FlexUnit p_to, FlexUnit p_from) { \
-		name0[p_to] = name0[p_from];                         \
-		name1[p_to] = name1[p_from];                         \
-	}                                                        \
-															 \
-public:
+	FlexBufferMemory() :
+			changed(false) {}
 
-#define define_functions_3(clazz, name0, name1, name2)       \
-	bool changed;                                            \
-															 \
-public:                                                      \
-	clazz(NvFlexLibrary *p_flex_lib) : changed(false),       \
-									   name0(p_flex_lib),    \
-									   name1(p_flex_lib),    \
-									   name2(p_flex_lib) {}  \
-	void map() {                                             \
-		name0.map();                                         \
-		name1.map();                                         \
-		name2.map();                                         \
-		changed = false;                                     \
-	}                                                        \
-															 \
-	void unmap() {                                           \
-		name0.unmap();                                       \
-		name1.unmap();                                       \
-		name2.unmap();                                       \
-	}                                                        \
-															 \
-	void terminate() {                                       \
-		name0.destroy();                                     \
-		name1.destroy();                                     \
-		name2.destroy();                                     \
-	}                                                        \
-															 \
-	bool was_changed() { return changed; }                   \
-															 \
-protected:                                                   \
-	virtual void resize_memory(FlexUnit p_size) {            \
-		name0.resize(p_size);                                \
-		name1.resize(p_size);                                \
-		name2.resize(p_size);                                \
-	}                                                        \
-	virtual void copy_unit(FlexUnit p_to, FlexUnit p_from) { \
-		name0[p_to] = name0[p_from];                         \
-		name1[p_to] = name1[p_from];                         \
-		name2[p_to] = name2[p_from];                         \
-	}                                                        \
-															 \
-public:
+	void map() {
+		for (int i(buffers_int.size() - 1); 0 <= i; --i) {
+			buffers_int[i]->map();
+		}
+		for (int i(buffers_float.size() - 1); 0 <= i; --i) {
+			buffers_float[i]->map();
+		}
+		for (int i(buffers_quat.size() - 1); 0 <= i; --i) {
+			buffers_quat[i]->map();
+		}
+		for (int i(buffers_vec3.size() - 1); 0 <= i; --i) {
+			buffers_vec3[i]->map();
+		}
+		for (int i(buffers_spring.size() - 1); 0 <= i; --i) {
+			buffers_spring[i]->map();
+		}
+		for (int i(buffers_flvec4.size() - 1); 0 <= i; --i) {
+			buffers_flvec4[i]->map();
+		}
+		for (int i(buffers_colgeo.size() - 1); 0 <= i; --i) {
+			buffers_colgeo[i]->map();
+		}
+		changed = false;
+	}
 
-#define define_functions_4(clazz, name0, name1, name2, name3) \
-	bool changed;                                             \
-															  \
-public:                                                       \
-	clazz(NvFlexLibrary *p_flex_lib) : changed(false),        \
-									   name0(p_flex_lib),     \
-									   name1(p_flex_lib),     \
-									   name2(p_flex_lib),     \
-									   name3(p_flex_lib) {}   \
-	void map() {                                              \
-		name0.map();                                          \
-		name1.map();                                          \
-		name2.map();                                          \
-		name3.map();                                          \
-		changed = false;                                      \
-	}                                                         \
-															  \
-	void unmap() {                                            \
-		name0.unmap();                                        \
-		name1.unmap();                                        \
-		name2.unmap();                                        \
-		name3.unmap();                                        \
-	}                                                         \
-															  \
-	void terminate() {                                        \
-		name0.destroy();                                      \
-		name1.destroy();                                      \
-		name2.destroy();                                      \
-		name3.destroy();                                      \
-	}                                                         \
-															  \
-	bool was_changed() { return changed; }                    \
-															  \
-protected:                                                    \
-	virtual void resize_memory(FlexUnit p_size) {             \
-		name0.resize(p_size);                                 \
-		name1.resize(p_size);                                 \
-		name2.resize(p_size);                                 \
-		name3.resize(p_size);                                 \
-	}                                                         \
-	virtual void copy_unit(FlexUnit p_to, FlexUnit p_from) {  \
-		name0[p_to] = name0[p_from];                          \
-		name1[p_to] = name1[p_from];                          \
-		name2[p_to] = name2[p_from];                          \
-		name3[p_to] = name3[p_from];                          \
-	}                                                         \
-															  \
-public:
+	void unmap() {
+		for (int i(buffers_int.size() - 1); 0 <= i; --i) {
+			buffers_int[i]->unmap();
+		}
+		for (int i(buffers_float.size() - 1); 0 <= i; --i) {
+			buffers_float[i]->unmap();
+		}
+		for (int i(buffers_quat.size() - 1); 0 <= i; --i) {
+			buffers_quat[i]->unmap();
+		}
+		for (int i(buffers_vec3.size() - 1); 0 <= i; --i) {
+			buffers_vec3[i]->unmap();
+		}
+		for (int i(buffers_spring.size() - 1); 0 <= i; --i) {
+			buffers_spring[i]->unmap();
+		}
+		for (int i(buffers_flvec4.size() - 1); 0 <= i; --i) {
+			buffers_flvec4[i]->unmap();
+		}
+		for (int i(buffers_colgeo.size() - 1); 0 <= i; --i) {
+			buffers_colgeo[i]->unmap();
+		}
+	}
 
-#define define_functions_6(clazz, name0, name1, name2, name3, name4, name5) \
-	bool changed;                                                           \
-																			\
-public:                                                                     \
-	clazz(NvFlexLibrary *p_flex_lib) : changed(false),                      \
-									   name0(p_flex_lib),                   \
-									   name1(p_flex_lib),                   \
-									   name2(p_flex_lib),                   \
-									   name3(p_flex_lib),                   \
-									   name4(p_flex_lib),                   \
-									   name5(p_flex_lib) {}                 \
-	void map() {                                                            \
-		name0.map();                                                        \
-		name1.map();                                                        \
-		name2.map();                                                        \
-		name3.map();                                                        \
-		name4.map();                                                        \
-		name5.map();                                                        \
-		changed = false;                                                    \
-	}                                                                       \
-																			\
-	void unmap() {                                                          \
-		name0.unmap();                                                      \
-		name1.unmap();                                                      \
-		name2.unmap();                                                      \
-		name3.unmap();                                                      \
-		name4.unmap();                                                      \
-		name5.unmap();                                                      \
-	}                                                                       \
-																			\
-	void terminate() {                                                      \
-		name0.destroy();                                                    \
-		name1.destroy();                                                    \
-		name2.destroy();                                                    \
-		name3.destroy();                                                    \
-		name4.destroy();                                                    \
-		name5.destroy();                                                    \
-	}                                                                       \
-	bool was_changed() { return changed; }                                  \
-																			\
-protected:                                                                  \
-	virtual void resize_memory(FlexUnit p_size) {                           \
-		name0.resize(p_size);                                               \
-		name1.resize(p_size);                                               \
-		name2.resize(p_size);                                               \
-		name3.resize(p_size);                                               \
-		name4.resize(p_size);                                               \
-		name5.resize(p_size);                                               \
-	}                                                                       \
-	virtual void copy_unit(FlexUnit p_to, FlexUnit p_from) {                \
-		name0[p_to] = name0[p_from];                                        \
-		name1[p_to] = name1[p_from];                                        \
-		name2[p_to] = name2[p_from];                                        \
-		name3[p_to] = name3[p_from];                                        \
-		name4[p_to] = name4[p_from];                                        \
-		name5[p_to] = name5[p_from];                                        \
-	}                                                                       \
-																			\
-public:
+	void terminate() {
+		for (int i(buffers_int.size() - 1); 0 <= i; --i) {
+			buffers_int[i]->destroy();
+		}
+		for (int i(buffers_float.size() - 1); 0 <= i; --i) {
+			buffers_float[i]->destroy();
+		}
+		for (int i(buffers_quat.size() - 1); 0 <= i; --i) {
+			buffers_quat[i]->destroy();
+		}
+		for (int i(buffers_vec3.size() - 1); 0 <= i; --i) {
+			buffers_vec3[i]->destroy();
+		}
+		for (int i(buffers_spring.size() - 1); 0 <= i; --i) {
+			buffers_spring[i]->destroy();
+		}
+		for (int i(buffers_flvec4.size() - 1); 0 <= i; --i) {
+			buffers_flvec4[i]->destroy();
+		}
+		for (int i(buffers_colgeo.size() - 1); 0 <= i; --i) {
+			buffers_colgeo[i]->destroy();
+		}
+	}
 
-#define create_buffer_1(clazz, type, name) \
-	friend class FlexSpace;                \
-										   \
-private:                                   \
-	NvFlexVector<type> name;               \
-	define_functions_1(clazz, name);
+	bool was_changed() { return changed; }
 
-#define create_buffer_2(clazz, type0, name0, type1, name1) \
-	friend class FlexSpace;                                \
-														   \
-private:                                                   \
-	NvFlexVector<type0> name0;                             \
-	NvFlexVector<type1> name1;                             \
-	define_functions_2(clazz, name0, name1);
+protected:
+	virtual void resize_memory(FlexUnit p_size) {
+		for (int i(buffers_int.size() - 1); 0 <= i; --i) {
+			buffers_int[i]->resize(p_size);
+		}
+		for (int i(buffers_float.size() - 1); 0 <= i; --i) {
+			buffers_float[i]->resize(p_size);
+		}
+		for (int i(buffers_quat.size() - 1); 0 <= i; --i) {
+			buffers_quat[i]->resize(p_size);
+		}
+		for (int i(buffers_vec3.size() - 1); 0 <= i; --i) {
+			buffers_vec3[i]->resize(p_size);
+		}
+		for (int i(buffers_spring.size() - 1); 0 <= i; --i) {
+			buffers_spring[i]->resize(p_size);
+		}
+		for (int i(buffers_flvec4.size() - 1); 0 <= i; --i) {
+			buffers_flvec4[i]->resize(p_size);
+		}
+		for (int i(buffers_colgeo.size() - 1); 0 <= i; --i) {
+			buffers_colgeo[i]->resize(p_size);
+		}
+	}
+	virtual void copy_unit(FlexUnit p_to, FlexUnit p_from) {
+		for (int i(buffers_int.size() - 1); 0 <= i; --i) {
+			buffers_int[p_to] = buffers_int[p_from];
+		}
+		for (int i(buffers_float.size() - 1); 0 <= i; --i) {
+			buffers_float[p_to] = buffers_float[p_from];
+		}
+		for (int i(buffers_quat.size() - 1); 0 <= i; --i) {
+			buffers_quat[p_to] = buffers_quat[p_from];
+		}
+		for (int i(buffers_vec3.size() - 1); 0 <= i; --i) {
+			buffers_vec3[p_to] = buffers_vec3[p_from];
+		}
+		for (int i(buffers_spring.size() - 1); 0 <= i; --i) {
+			buffers_spring[p_to] = buffers_spring[p_from];
+		}
+		for (int i(buffers_flvec4.size() - 1); 0 <= i; --i) {
+			buffers_flvec4[p_to] = buffers_flvec4[p_from];
+		}
+		for (int i(buffers_colgeo.size() - 1); 0 <= i; --i) {
+			buffers_colgeo[p_to] = buffers_colgeo[p_from];
+		}
+	}
+};
 
-#define create_buffer_3(clazz, type0, name0, type1, name1, type2, name2) \
-	friend class FlexSpace;                                              \
-																		 \
-private:                                                                 \
-	NvFlexVector<type0> name0;                                           \
-	NvFlexVector<type1> name1;                                           \
-	NvFlexVector<type2> name2;                                           \
-	define_functions_3(clazz, name0, name1, name2);
-
-#define create_buffer_4(clazz, type0, name0, type1, name1, type2, name2, type3, name3) \
-	friend class FlexSpace;                                                            \
-																					   \
-private:                                                                               \
-	NvFlexVector<type0> name0;                                                         \
-	NvFlexVector<type1> name1;                                                         \
-	NvFlexVector<type2> name2;                                                         \
-	NvFlexVector<type3> name3;                                                         \
-	define_functions_4(clazz, name0, name1, name2, name3);
-
-#define create_buffer_6(clazz, type0, name0, type1, name1, type2, name2, type3, name3, type4, name4, type5, name5) \
-	friend class FlexSpace;                                                                                        \
-																												   \
-private:                                                                                                           \
-	NvFlexVector<type0> name0;                                                                                     \
-	NvFlexVector<type1> name1;                                                                                     \
-	NvFlexVector<type2> name2;                                                                                     \
-	NvFlexVector<type3> name3;                                                                                     \
-	NvFlexVector<type4> name4;                                                                                     \
-	NvFlexVector<type5> name5;                                                                                     \
-	define_functions_6(clazz, name0, name1, name2, name3, name4, name5);
-
-class ParticleBodiesMemory : public FlexMemory {
+class ParticleBodiesMemory : public FlexBufferMemory {
 
 	// particles: XYZ world position, W inverse mass
 	// Phases: This is a flag that specify behaviour of particle like collision etc.. https://docs.nvidia.com/gameworks/content/gameworkslibrary/physx/flex/manual.html#phase
 	// TODO remove normals
-	create_buffer_4(ParticleBodiesMemory, FlVector4, particles, Vector3, velocities, int, phases, FlVector4, normals);
+	FLEXBUFFERCLASS_4(ParticleBodiesMemory, FlVector4, particles, Vector3, velocities, int, phases, FlVector4, normals);
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped
@@ -336,9 +304,9 @@ class ParticleBodiesMemory : public FlexMemory {
 	const FlVector4 &get_normal(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const;
 };
 
-class ActiveParticlesMemory : public FlexMemory {
+class ActiveParticlesMemory : public FlexBufferMemory {
 
-	create_buffer_1(ActiveParticlesMemory, int, active_particles);
+	FLEXBUFFERCLASS_1(ActiveParticlesMemory, int, active_particles);
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped
@@ -349,9 +317,9 @@ class ActiveParticlesMemory : public FlexMemory {
 	void set_active_particle(const MemoryChunk *p_chunk, ActiveParticleIndex p_active_particle_index, ParticleBufferIndex p_particle_buffer_index);
 };
 
-class SpringMemory : public FlexMemory {
+class SpringMemory : public FlexBufferMemory {
 
-	create_buffer_3(SpringMemory, Spring, springs, float, lengths, float, stiffness);
+	FLEXBUFFERCLASS_3(SpringMemory, Spring, springs, float, lengths, float, stiffness);
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped
@@ -370,9 +338,9 @@ class SpringMemory : public FlexMemory {
 };
 
 /// This represent primitive body
-class GeometryMemory : public FlexMemory {
+class GeometryMemory : public FlexBufferMemory {
 
-	create_buffer_6(GeometryMemory, NvFlexCollisionGeometry, collision_shapes, FlVector4, positions, Quat, rotations, FlVector4, positions_prev, Quat, rotations_prev, int, flags);
+	FLEXBUFFERCLASS_6(GeometryMemory, NvFlexCollisionGeometry, collision_shapes, FlVector4, positions, Quat, rotations, FlVector4, positions_prev, Quat, rotations_prev, int, flags);
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped
@@ -400,9 +368,9 @@ class GeometryMemory : public FlexMemory {
 	int get_flags(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index) const;
 };
 
-class RigidsMemory : public FlexMemory {
+class RigidsMemory : public FlexBufferMemory {
 
-	create_buffer_4(RigidsMemory, int, offsets, float, stiffness, Quat, rotation, Vector3, position);
+	FLEXBUFFERCLASS_4(RigidsMemory, int, offsets, float, stiffness, Quat, rotation, Vector3, position);
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped
@@ -425,9 +393,9 @@ class RigidsMemory : public FlexMemory {
 };
 
 /// This memory is used to store information for each rigid
-class RigidsComponentsMemory : public FlexMemory {
+class RigidsComponentsMemory : public FlexBufferMemory {
 
-	create_buffer_3(RigidsComponentsMemory, ParticleBufferIndex, indices, Vector3, rests, FlVector4, normals);
+	FLEXBUFFERCLASS_3(RigidsComponentsMemory, ParticleBufferIndex, indices, Vector3, rests, FlVector4, normals);
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped
