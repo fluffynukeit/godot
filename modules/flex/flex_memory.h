@@ -384,9 +384,9 @@ class GeometryMemory : public FlexBufferMemory {
 class RigidsMemory : public FlexBufferMemory {
 
 	bool changed;
-	FLEXBUFFERCLASS_4(RigidsMemory, RigidComponentBufferIndex, buffer_offsets, float, stiffness, Quat, rotation, Vector3, position);
-
 	Vector<RigidComponentIndex> offsets;
+
+	FLEXBUFFERCLASS_4(RigidsMemory, RigidComponentBufferIndex, buffer_offsets, float, stiffness, Quat, rotation, Vector3, position);
 
 	virtual void _on_mapped() { changed = false; }
 	virtual void _on_resized(FlexUnit p_size);
@@ -421,6 +421,7 @@ class RigidsMemory : public FlexBufferMemory {
 class RigidsComponentsMemory : public FlexBufferMemory {
 
 	bool changed;
+
 	FLEXBUFFERCLASS_3(RigidsComponentsMemory, ParticleBufferIndex, indices, Vector3, rests, FlVector4, normals);
 
 	virtual void _on_mapped() { changed = false; }
