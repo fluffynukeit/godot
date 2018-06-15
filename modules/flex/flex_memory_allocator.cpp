@@ -228,6 +228,10 @@ FlexUnit FlexMemoryAllocator::get_last_used_index() {
 	return -1;
 }
 
+FlexUnit FlexMemoryAllocator::get_chunk_count() const {
+	return memory_table.size();
+}
+
 MemoryChunk *FlexMemoryAllocator::get_chunk(FlexUnit i) const {
 	memory_table.get(i);
 }

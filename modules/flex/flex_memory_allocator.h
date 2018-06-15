@@ -88,6 +88,7 @@ public:
 	_FORCE_INLINE_ FlexUnit get_begin_index() const { return begin_index; }
 	_FORCE_INLINE_ FlexUnit get_end_index() const { return end_index; }
 	_FORCE_INLINE_ FlexUnit get_size() const { return size; }
+	_FORCE_INLINE_ bool get_is_free() const { return is_free; }
 	/// Get buffer index (relative to the memory)
 	_FORCE_INLINE_ FlexUnit get_buffer_index(FlexUnit p_chunk_index) const { return begin_index + p_chunk_index; }
 	/// Get chunk index (relative to this chunk)
@@ -147,6 +148,7 @@ public:
 
 	FlexUnit get_last_used_index();
 
+	FlexUnit get_chunk_count() const;
 	MemoryChunk *get_chunk(FlexUnit i) const;
 
 private:

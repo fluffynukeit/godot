@@ -450,6 +450,7 @@ class RigidsComponentsMemory : public FlexBufferMemory {
 
 	bool changed;
 
+	// TODO remove normals if useless
 	FLEXBUFFERCLASS_3(RigidsComponentsMemory, ParticleBufferIndex, indices, Vector3, rests, FlVector4, normals);
 
 	virtual void _on_mapped() { changed = false; }
