@@ -145,9 +145,9 @@ void FlexSpace::init() {
 
 	CRASH_COND(rigids_components_allocator);
 	CRASH_COND(rigids_components_memory);
-	rigids_components_memory = memnew(RigidsComponentsMemory(flex_lib));
-	rigids_components_allocator = memnew(FlexMemoryAllocator(rigids_memory, ((FlexUnit)(MAXPARTICLES * 100)))); // TODO mast be dynamic
-	rigids_components_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
+	//rigids_components_memory = memnew(RigidsComponentsMemory(flex_lib));
+	//rigids_components_allocator = memnew(FlexMemoryAllocator(rigids_memory, ((FlexUnit)(MAXPARTICLES * 100)))); // TODO mast be dynamic
+	//rigids_components_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
 
 	CRASH_COND(geometries_allocator);
 	CRASH_COND(geometries_memory);
@@ -384,34 +384,34 @@ void FlexSpace::execute_delayed_commands() {
 
 		if (body->delayed_commands.rigids_to_add.size()) {
 
-			int index_count = 0;
-			int previous_size = 0;
-
-			if (body->rigids_mchunk) {
-				previous_size = body->rigids_mchunk->get_size();
-				rigids_allocator->resize_chunk(body->rigids_mchunk, previous_size + body->delayed_commands.rigids_to_add.size());
-			} else {
-				body->rigids_mchunk = rigids_allocator->allocate_chunk(body->delayed_commands.rigids_to_add.size());
-			}
-
-			for (int r(body->delayed_commands.rigids_to_add.size() - 1); 0 <= r; --r) {
-
-				rigids_memory->set_position(body->rigids_mchunk, previous_size + r, body->delayed_commands.rigids_to_add[r].position);
-				rigids_memory->set_rotation(body->rigids_mchunk, previous_size + r, Quat());
-				rigids_memory->set_stiffness(body->rigids_mchunk, previous_size + r, body->delayed_commands.rigids_to_add[r].stiffness);
-
-				index_count += body->delayed_commands.rigids_to_add[r].indices.size();
-			}
+			//int index_count = 0;
+			//int previous_size = 0;
+			//
+			//if (body->rigids_mchunk) {
+			//	previous_size = body->rigids_mchunk->get_size();
+			//	rigids_allocator->resize_chunk(body->rigids_mchunk, previous_size + body->delayed_commands.rigids_to_add.size());
+			//} else {
+			//	body->rigids_mchunk = rigids_allocator->allocate_chunk(body->delayed_commands.rigids_to_add.size());
+			//}
+			//
+			//for (int r(body->delayed_commands.rigids_to_add.size() - 1); 0 <= r; --r) {
+			//
+			//	rigids_memory->set_position(body->rigids_mchunk, previous_size + r, body->delayed_commands.rigids_to_add[r].position);
+			//	rigids_memory->set_rotation(body->rigids_mchunk, previous_size + r, Quat());
+			//	rigids_memory->set_stiffness(body->rigids_mchunk, previous_size + r, body->delayed_commands.rigids_to_add[r].stiffness);
+			//
+			//	index_count += body->delayed_commands.rigids_to_add[r].indices.size();
+			//}
 
 			// Inser indices
 
-			previous_size = 0;
-			if (body->rigids_components_mchunk) {
-				previous_size = body->rigids_components_mchunk->get_size();
-				rigids_components_allocator->resize_chunk(body->rigids_components_mchunk, previous_size + index_count);
-			} else {
-				body->rigids_components_mchunk = rigids_components_allocator->allocate_chunk(index_count);
-			}
+			//previous_size = 0;
+			//if (body->rigids_components_mchunk) {
+			//	previous_size = body->rigids_components_mchunk->get_size();
+			//	rigids_components_allocator->resize_chunk(body->rigids_components_mchunk, previous_size + index_count);
+			//} else {
+			//	body->rigids_components_mchunk = rigids_components_allocator->allocate_chunk(index_count);
+			//}
 
 			for (int r(body->delayed_commands.rigids_to_add.size() - 1); 0 <= r; --r) {
 
