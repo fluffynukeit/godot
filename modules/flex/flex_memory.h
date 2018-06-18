@@ -493,7 +493,8 @@ class RigidsComponentsMemory : public FlexBufferMemory {
 
 	bool changed;
 
-	FLEXBUFFERCLASS_2(RigidsComponentsMemory, ParticleBufferIndex, indices, Vector3, rests);
+	// TODO Remove normal if useless
+	FLEXBUFFERCLASS_3(RigidsComponentsMemory, ParticleBufferIndex, indices, Vector3, rests, Vector3, normals);
 
 	virtual void _on_mapped() { changed = false; }
 
@@ -511,5 +512,8 @@ class RigidsComponentsMemory : public FlexBufferMemory {
 
 	void set_rest(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index, const Vector3 &p_rest);
 	const Vector3 &get_rest(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index) const;
+
+	void set_normal(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index, const Vector3 &p_normal);
+	const Vector3 &get_normal(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index) const;
 };
 #endif // FLEX_MEMORY_H

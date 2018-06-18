@@ -442,10 +442,12 @@ void FlexSpace::execute_delayed_commands() {
 
 				// Allocate components
 				PoolVector<int>::Read indices_r = body->delayed_commands.rigids_to_add[r].indices.read();
+				PoolVector<Vector3>::Read rests_r = body->delayed_commands.rigids_to_add[r].rests.read();
 
 				for (int rigid_p_index(body->delayed_commands.rigids_to_add[r].indices.size() - 1); 0 <= rigid_p_index; --rigid_p_index) {
 					rigids_components_memory->set_index(body->rigids_components_mchunk, rigid_comp_index + rigid_p_index, body->particles_mchunk->get_buffer_index(indices_r[rigid_p_index]));
-					rigids_components_memory->set_rest(body->rigids_components_mchunk, rigid_comp_index + rigid_p_index, body->delayed_commands.rigids_to_add[r].rests[rigid_p_index]);
+					rigids_components_memory->set_rest(body->rigids_components_mchunk, rigid_comp_index + rigid_p_index, rests_r[rigid_p_index]);
+					rigids_components_memory->set_normal(body->rigids_components_mchunk, rigid_comp_index + rigid_p_index, rests_r[rigid_p_index].normalized() * -1);
 				}
 				rigid_comp_index += body->delayed_commands.rigids_to_add[r].indices.size();
 			}
@@ -708,12 +710,12 @@ void FlexSpace::commands_write_buffer() {
 				rigids_memory->buffer_offsets.buffer,
 				rigids_components_memory->indices.buffer,
 				rigids_components_memory->rests.buffer,
-				NULL,
+				rigids_components_memory->normals.buffer,
 				rigids_memory->stiffness.buffer,
 				rigids_memory->thresholds.buffer,
 				rigids_memory->creeps.buffer,
-				NULL, //rigids_memory->rotation.buffer, // Setting this make the simulation real instable
-				NULL, //rigids_memory->position.buffer, // Setting this make the simulation real instable
+				rigids_memory->rotation.buffer,
+				rigids_memory->position.buffer,
 				rigids_allocator->get_last_used_index() + 1,
 				rigids_components_allocator->get_last_used_index() + 1);
 
@@ -740,6 +742,19 @@ void FlexSpace::commands_read_buffer() {
 
 		particle_bodies[i]->clear_commands();
 	}
+
+	// Read rigids
+	NvFlexGetRigids(
+			solver,
+			NULL,
+			NULL,
+			NULL,
+			rigids_components_memory->normals.buffer,
+			NULL,
+			NULL,
+			NULL,
+			rigids_memory->rotation.buffer,
+			rigids_memory->position.buffer);
 }
 
 void FlexSpace::replace_particle_index_in_springs(FlexParticleBody *p_body, ParticleBufferIndex p_index_old, ParticleBufferIndex p_index_new) {

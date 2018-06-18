@@ -235,6 +235,7 @@ const Vector3 &RawRigidsMemory::get_position(const MemoryChunk *p_chunk, RigidIn
 }
 
 void RigidsMemory::_on_mapped() {
+	RawRigidsMemory::_on_mapped();
 	buffer_offsets.map();
 }
 
@@ -298,4 +299,15 @@ void RigidsComponentsMemory::set_rest(const MemoryChunk *p_chunk, RigidComponent
 const Vector3 &RigidsComponentsMemory::get_rest(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index) const {
 	make_memory_index_V(p_chunk, p_rigid_comp_index, return_err_vec3);
 	return rests[index];
+}
+
+void RigidsComponentsMemory::set_normal(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index, const Vector3 &p_normal) {
+	make_memory_index(p_chunk, p_rigid_comp_index);
+	normals[index] = p_normal;
+	changed = true;
+}
+
+const Vector3 &RigidsComponentsMemory::get_normal(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index) const {
+	make_memory_index_V(p_chunk, p_rigid_comp_index, return_err_vec3);
+	return normals[index];
 }
