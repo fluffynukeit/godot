@@ -78,7 +78,7 @@ struct SpringToAdd {
 
 struct RigidToAdd {
 
-	Vector3 global_position;
+	Transform global_transform;
 	float stiffness;
 	float plastic_threshold;
 	float plastic_creep;
@@ -88,8 +88,8 @@ struct RigidToAdd {
 	RigidToAdd() :
 			stiffness(0) {}
 
-	RigidToAdd(Vector3 p_global_position, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, PoolVector<ParticleIndex> p_indices, PoolVector<Vector3> p_rests) :
-			global_position(p_global_position),
+	RigidToAdd(const Transform &p_global_transform, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, PoolVector<ParticleIndex> p_indices, PoolVector<Vector3> p_rests) :
+			global_transform(p_global_transform),
 			stiffness(p_stiffness),
 			plastic_threshold(p_plastic_threshold),
 			plastic_creep(p_plastic_creep),
@@ -169,7 +169,7 @@ public:
 	void add_spring(ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness);
 	void remove_spring(SpringIndex p_spring_index);
 
-	void add_rigid(const Vector3 &p_position, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, PoolVector<ParticleIndex> p_indices, PoolVector<Vector3> p_rests);
+	void add_rigid(const Transform &p_transform, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, PoolVector<ParticleIndex> p_indices, PoolVector<Vector3> p_rests);
 	void remove_rigid(RigidIndex p_rigid_index);
 
 	int get_particle_count() const;

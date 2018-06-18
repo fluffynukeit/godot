@@ -418,8 +418,8 @@ void FlexSpace::execute_delayed_commands() {
 
 			for (int r(body->delayed_commands.rigids_to_add.size() - 1); 0 <= r; --r) {
 
-				rigids_memory->set_position(body->rigids_mchunk, previous_size + r, body->delayed_commands.rigids_to_add[r].global_position);
-				rigids_memory->set_rotation(body->rigids_mchunk, previous_size + r, Quat());
+				rigids_memory->set_position(body->rigids_mchunk, previous_size + r, body->delayed_commands.rigids_to_add[r].global_transform.origin);
+				rigids_memory->set_rotation(body->rigids_mchunk, previous_size + r, body->delayed_commands.rigids_to_add[r].global_transform.basis.get_quat());
 				rigids_memory->set_stiffness(body->rigids_mchunk, previous_size + r, body->delayed_commands.rigids_to_add[r].stiffness);
 				rigids_memory->set_threshold(body->rigids_mchunk, previous_size + r, body->delayed_commands.rigids_to_add[r].plastic_threshold);
 				rigids_memory->set_creep(body->rigids_mchunk, previous_size + r, body->delayed_commands.rigids_to_add[r].plastic_creep);
