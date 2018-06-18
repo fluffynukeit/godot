@@ -207,7 +207,7 @@ void FlexParticleBody::load_model(Ref<ParticleBodyModel> p_model, const Transfor
 			// Remove last
 			const int dif = active_p_count - resource_p_count;
 			for (int i(0); i < dif; ++i) {
-				remove_particle(active_p_count - i - 1);
+				remove_particle(resource_p_count + i);
 			}
 
 			active_p_count = resource_p_count;
@@ -217,7 +217,7 @@ void FlexParticleBody::load_model(Ref<ParticleBodyModel> p_model, const Transfor
 			// Add
 			const int dif = resource_p_count - active_p_count;
 			for (int i(0); i < dif; ++i) {
-				const int p(resource_p_count - i - 1);
+				const int p(active_p_count + i);
 				add_particle(initial_transform.xform(p_model->get_particles_ref().get(p)), p_model->get_masses_ref().get(p));
 			}
 		}
@@ -236,7 +236,7 @@ void FlexParticleBody::load_model(Ref<ParticleBodyModel> p_model, const Transfor
 			// Remove last
 			const int dif = active_s_count - resource_s_count;
 			for (int i(0); i < dif; ++i) {
-				remove_spring(active_s_count - i - 1);
+				remove_spring(resource_s_count + i);
 			}
 
 			active_s_count = resource_s_count;
@@ -246,7 +246,7 @@ void FlexParticleBody::load_model(Ref<ParticleBodyModel> p_model, const Transfor
 			// Add
 			const int dif = resource_s_count - active_s_count;
 			for (int i(0); i < dif; ++i) {
-				const int s(resource_s_count - i - 1);
+				const int s(active_s_count + i);
 				add_spring(p_model->get_constraints_indexes_ref().get(s * 2), p_model->get_constraints_indexes_ref().get(s * 2 + 1), p_model->get_constraints_info_ref().get(s).x, p_model->get_constraints_info_ref().get(s).y);
 			}
 		}
@@ -269,7 +269,7 @@ void FlexParticleBody::load_model(Ref<ParticleBodyModel> p_model, const Transfor
 			// Remove last
 			const int dif = active_r_count - resource_r_count;
 			for (int i(0); i < dif; ++i) {
-				remove_rigid(active_r_count - i - 1);
+				remove_rigid(resource_r_count + i);
 			}
 
 			active_r_count = resource_r_count;
@@ -285,7 +285,7 @@ void FlexParticleBody::load_model(Ref<ParticleBodyModel> p_model, const Transfor
 
 			const int dif = resource_r_count - active_r_count;
 			for (int i(0); i < dif; ++i) {
-				const int r(resource_r_count - i - 1);
+				const int r(active_r_count + i);
 
 				PoolVector<ParticleIndex> indices = extract_rigid_indices(r, p_model->get_clusters_offsets(), p_model->get_clusters_particle_indices());
 				add_rigid(initial_transform.translated(cluster_pos_r[r]), cluster_stiffness_r[r], cluster_plastic_threshold_r[r], cluster_plastic_creep_r[r], indices, extract_rigid_rests(indices, p_model->get_particles(), cluster_pos_r[r]));
