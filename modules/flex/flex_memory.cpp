@@ -192,6 +192,26 @@ float RawRigidsMemory::get_stiffness(const MemoryChunk *p_chunk, RigidIndex p_ri
 	return stiffness[index];
 }
 
+void RawRigidsMemory::set_threshold(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, float p_threshold) {
+	make_memory_index(p_chunk, p_rigid_index);
+	thresholds[index] = p_threshold;
+}
+
+float RawRigidsMemory::get_threshold(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const {
+	make_memory_index_V(p_chunk, p_rigid_index, 0.0);
+	return thresholds[index];
+}
+
+void RawRigidsMemory::set_creep(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, float p_creep) {
+	make_memory_index(p_chunk, p_rigid_index);
+	creeps[index] = p_creep;
+}
+
+float RawRigidsMemory::get_creep(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const {
+	make_memory_index_V(p_chunk, p_rigid_index, 0.0);
+	return creeps[index];
+}
+
 void RawRigidsMemory::set_rotation(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, const Quat &p_rotation) {
 	make_memory_index(p_chunk, p_rigid_index);
 	rotation[index] = p_rotation;
@@ -278,15 +298,4 @@ void RigidsComponentsMemory::set_rest(const MemoryChunk *p_chunk, RigidComponent
 const Vector3 &RigidsComponentsMemory::get_rest(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index) const {
 	make_memory_index_V(p_chunk, p_rigid_comp_index, return_err_vec3);
 	return rests[index];
-}
-
-void RigidsComponentsMemory::set_normal(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index, const Vector3 &p_normal) {
-	make_memory_index(p_chunk, p_rigid_comp_index);
-	normals[index] = flvec4_from_vec3(p_normal);
-	changed = true;
-}
-
-Vector3 RigidsComponentsMemory::get_normal(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index) const {
-	make_memory_index_V(p_chunk, p_rigid_comp_index, return_err_vec3);
-	return vec3_from_flvec4(normals[index]);
 }

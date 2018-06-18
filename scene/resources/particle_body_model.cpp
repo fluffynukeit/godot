@@ -56,6 +56,12 @@ void ParticleBodyModel::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_clusters_stiffness", "clusters_stiffness"), &ParticleBodyModel::set_clusters_stiffness);
 	ClassDB::bind_method(D_METHOD("get_clusters_stiffness"), &ParticleBodyModel::get_clusters_stiffness);
 
+	ClassDB::bind_method(D_METHOD("set_clusters_plastic_threshold", "clusters_plastic_threshold"), &ParticleBodyModel::set_clusters_plastic_threshold);
+	ClassDB::bind_method(D_METHOD("get_clusters_plastic_threshold"), &ParticleBodyModel::get_clusters_plastic_threshold);
+
+	ClassDB::bind_method(D_METHOD("set_clusters_plastic_creep", "clusters_plastic_creep"), &ParticleBodyModel::set_clusters_plastic_creep);
+	ClassDB::bind_method(D_METHOD("get_clusters_plastic_creep"), &ParticleBodyModel::get_clusters_plastic_creep);
+
 	ClassDB::bind_method(D_METHOD("set_clusters_particle_indices", "clusters_particle_indices"), &ParticleBodyModel::set_clusters_particle_indices);
 	ClassDB::bind_method(D_METHOD("get_clusters_particle_indices"), &ParticleBodyModel::get_clusters_particle_indices);
 
@@ -66,6 +72,8 @@ void ParticleBodyModel::_bind_methods() {
 
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_VECTOR3_ARRAY, "clusters_positions"), "set_clusters_positions", "get_clusters_positions");
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_REAL_ARRAY, "clusters_stiffness"), "set_clusters_stiffness", "get_clusters_stiffness");
+	ADD_PROPERTY(PropertyInfo(Variant::POOL_REAL_ARRAY, "clusters_plastic_threshold"), "set_clusters_plastic_threshold", "get_clusters_plastic_threshold");
+	ADD_PROPERTY(PropertyInfo(Variant::POOL_REAL_ARRAY, "clusters_plastic_creep"), "set_clusters_plastic_creep", "get_clusters_plastic_creep");
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_INT_ARRAY, "clusters_offsets"), "set_clusters_offsets", "get_clusters_offsets");
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_INT_ARRAY, "clusters_particle_indices"), "set_clusters_particle_indices", "get_clusters_particle_indices");
 }
@@ -94,6 +102,14 @@ void ParticleBodyModel::set_clusters_positions(const PoolVector<Vector3> p_clust
 
 void ParticleBodyModel::set_clusters_stiffness(const PoolVector<float> p_clusters_stiffness) {
 	clusters_stiffness = p_clusters_stiffness;
+}
+
+void ParticleBodyModel::set_clusters_plastic_threshold(const PoolVector<float> p_clusters_plastic_threshold) {
+	clusters_plastic_threshold = p_clusters_plastic_threshold;
+}
+
+void ParticleBodyModel::set_clusters_plastic_creep(const PoolVector<float> p_clusters_plastic_creep) {
+	clusters_plastic_creep = p_clusters_plastic_creep;
 }
 
 void ParticleBodyModel::set_clusters_offsets(const PoolVector<int> p_clusters_offsets) {

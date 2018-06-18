@@ -55,6 +55,8 @@ private:
 
 	PoolVector<Vector3> clusters_positions; // Average position local space
 	PoolVector<float> clusters_stiffness;
+	PoolVector<float> clusters_plastic_threshold;
+	PoolVector<float> clusters_plastic_creep;
 	PoolVector<int> clusters_offsets; // This represent the last id of a group of particles
 	PoolVector<int> clusters_particle_indices; // Cluster index organized per offset
 
@@ -84,6 +86,14 @@ public:
 	void set_clusters_stiffness(const PoolVector<float> p_clusters_stiffness);
 	PoolVector<float> get_clusters_stiffness() { return clusters_stiffness; }
 	PoolVector<float> &get_clusters_stiffness_ref() { return clusters_stiffness; }
+
+	void set_clusters_plastic_threshold(const PoolVector<float> p_clusters_plastic_threshold);
+	PoolVector<float> get_clusters_plastic_threshold() { return clusters_plastic_threshold; }
+	PoolVector<float> &get_clusters_plastic_threshold_ref() { return clusters_plastic_threshold; }
+
+	void set_clusters_plastic_creep(const PoolVector<float> p_clusters_plastic_creep);
+	PoolVector<float> get_clusters_plastic_creep() { return clusters_plastic_creep; }
+	PoolVector<float> &get_clusters_plastic_creep_ref() { return clusters_plastic_creep; }
 
 	void set_clusters_offsets(const PoolVector<int> p_clusters_offsets);
 	PoolVector<int> get_clusters_offsets() { return clusters_offsets; }
