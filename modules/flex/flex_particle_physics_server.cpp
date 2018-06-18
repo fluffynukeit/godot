@@ -362,50 +362,82 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_soft_particle_body_mode
 			p_plastic_threshold,
 			p_plastic_creep);
 
-	ERR_FAIL_COND_V(!generated_assets, Ref<ParticleBodyModel>());
+	Ref<ParticleBodyModel> model = make_model(generated_assets);
+
+	NvFlexExtDestroyAsset(generated_assets);
+	generated_assets = NULL;
+
+	return model;
+}
+
+Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_rigid_particle_body_model(Ref<TriangleMesh> p_mesh, float p_radius, float p_expand) {
+	ERR_FAIL_COND_V(p_mesh.is_null(), Ref<ParticleBodyModel>());
+
+	PoolVector<Vector3>::Read vertices_read = p_mesh->get_vertices().read();
+
+	PoolVector<int> indices;
+	p_mesh->get_indices(&indices);
+	PoolVector<int>::Read indices_read = indices.read();
+
+	NvFlexExtAsset *generated_assets = NvFlexExtCreateRigidFromMesh(
+			((const float *)vertices_read.ptr()),
+			p_mesh->get_vertices().size(),
+			static_cast<const int *>(indices_read.ptr()),
+			indices.size(),
+
+			p_radius,
+			p_expand);
+
+	Ref<ParticleBodyModel> model = make_model(generated_assets);
+
+	NvFlexExtDestroyAsset(generated_assets);
+	generated_assets = NULL;
+
+	return model;
+}
+
+Ref<ParticleBodyModel> FlexParticlePhysicsServer::make_model(NvFlexExtAsset *p_assets) {
+	ERR_FAIL_COND_V(!p_assets, Ref<ParticleBodyModel>());
 
 	Ref<ParticleBodyModel> model;
 	model.instance();
 
-	model->get_masses_ref().resize(generated_assets->numParticles);
-	model->get_particles_ref().resize(generated_assets->numParticles);
+	model->get_masses_ref().resize(p_assets->numParticles);
+	model->get_particles_ref().resize(p_assets->numParticles);
 
-	for (int i(0); i < generated_assets->numParticles; ++i) {
-		FlVector4 particle(((FlVector4 *)generated_assets->particles)[i]);
+	for (int i(0); i < p_assets->numParticles; ++i) {
+		FlVector4 particle(((FlVector4 *)p_assets->particles)[i]);
 		model->get_masses_ref().set(i, extract_mass(particle) == 0 ? 0.01 : 1 / extract_mass(particle));
 		model->get_particles_ref().set(i, extract_position(particle));
 	}
 
-	model->get_constraints_indexes_ref().resize(generated_assets->numSprings * 2);
+	model->get_constraints_indexes_ref().resize(p_assets->numSprings * 2);
 	for (int i(0); i < model->get_constraints_indexes_ref().size(); ++i) {
-		model->get_constraints_indexes_ref().set(i, generated_assets->springIndices[i]);
+		model->get_constraints_indexes_ref().set(i, p_assets->springIndices[i]);
 	}
 
-	model->get_constraints_info_ref().resize(generated_assets->numSprings);
-	for (int i(0); i < generated_assets->numSprings; ++i) {
-		model->get_constraints_info_ref().set(i, Vector2(generated_assets->springRestLengths[i], generated_assets->springCoefficients[i]));
+	model->get_constraints_info_ref().resize(p_assets->numSprings);
+	for (int i(0); i < p_assets->numSprings; ++i) {
+		model->get_constraints_info_ref().set(i, Vector2(p_assets->springRestLengths[i], p_assets->springCoefficients[i]));
 	}
 
-	model->get_clusters_offsets_ref().resize(generated_assets->numShapes);
-	model->get_clusters_positions_ref().resize(generated_assets->numShapes);
-	model->get_clusters_stiffness_ref().resize(generated_assets->numShapes);
-	model->get_clusters_plastic_threshold_ref().resize(generated_assets->numShapes);
-	model->get_clusters_plastic_creep_ref().resize(generated_assets->numShapes);
-	for (int i(0); i < generated_assets->numShapes; ++i) {
-		model->get_clusters_offsets_ref().set(i, generated_assets->shapeOffsets[i]);
-		model->get_clusters_positions_ref().set(i, ((Vector3 *)generated_assets->shapeCenters)[i]);
-		model->get_clusters_stiffness_ref().set(i, generated_assets->shapeCoefficients[i]);
-		model->get_clusters_plastic_threshold_ref().set(i, generated_assets->shapePlasticThresholds ? generated_assets->shapePlasticThresholds[i] : 0);
-		model->get_clusters_plastic_creep_ref().set(i, generated_assets->shapePlasticCreeps ? generated_assets->shapePlasticCreeps[i] : 0);
+	model->get_clusters_offsets_ref().resize(p_assets->numShapes);
+	model->get_clusters_positions_ref().resize(p_assets->numShapes);
+	model->get_clusters_stiffness_ref().resize(p_assets->numShapes);
+	model->get_clusters_plastic_threshold_ref().resize(p_assets->numShapes);
+	model->get_clusters_plastic_creep_ref().resize(p_assets->numShapes);
+	for (int i(0); i < p_assets->numShapes; ++i) {
+		model->get_clusters_offsets_ref().set(i, p_assets->shapeOffsets[i]);
+		model->get_clusters_positions_ref().set(i, ((Vector3 *)p_assets->shapeCenters)[i]);
+		model->get_clusters_stiffness_ref().set(i, p_assets->shapeCoefficients[i]);
+		model->get_clusters_plastic_threshold_ref().set(i, p_assets->shapePlasticThresholds ? p_assets->shapePlasticThresholds[i] : 0);
+		model->get_clusters_plastic_creep_ref().set(i, p_assets->shapePlasticCreeps ? p_assets->shapePlasticCreeps[i] : 0);
 	}
 
-	model->get_clusters_particle_indices_ref().resize(generated_assets->numShapeIndices);
-	for (int i(0); i < generated_assets->numShapeIndices; ++i) {
-		model->get_clusters_particle_indices_ref().set(i, generated_assets->shapeIndices[i]);
+	model->get_clusters_particle_indices_ref().resize(p_assets->numShapeIndices);
+	for (int i(0); i < p_assets->numShapeIndices; ++i) {
+		model->get_clusters_particle_indices_ref().set(i, p_assets->shapeIndices[i]);
 	}
-
-	NvFlexExtDestroyAsset(generated_assets);
-	generated_assets = NULL;
 
 	return model;
 }
