@@ -301,6 +301,7 @@ const Vector3 &RigidsComponentsMemory::get_rest(const MemoryChunk *p_chunk, Rigi
 	return rests[index];
 }
 
+/*
 void RigidsComponentsMemory::set_normal(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index, const Vector3 &p_normal) {
 	make_memory_index(p_chunk, p_rigid_comp_index);
 	normals[index] = p_normal;
@@ -311,3 +312,4 @@ const Vector3 &RigidsComponentsMemory::get_normal(const MemoryChunk *p_chunk, Ri
 	make_memory_index_V(p_chunk, p_rigid_comp_index, return_err_vec3);
 	return normals[index];
 }
+*/
