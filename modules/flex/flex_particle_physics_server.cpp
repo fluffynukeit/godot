@@ -63,8 +63,12 @@ void FlexParticleBodyCommands::set_particle_velocity(int p_particle_index, const
 	body->set_particle_velocity(p_particle_index, p_velocity);
 }
 
-Vector3 FlexParticleBodyCommands::get_particle_normal(int p_particle_index) const {
-	return body->get_particle_normal(p_particle_index);
+const Vector3 &FlexParticleBodyCommands::get_rigid_position(int p_index) const {
+	return body->get_rigid_position(p_index);
+}
+
+const Quat &FlexParticleBodyCommands::get_rigid_rotation(int p_index) const {
+	return body->get_rigid_rotation(p_index);
 }
 
 FlexParticlePhysicsServer *FlexParticlePhysicsServer::singleton = NULL;
@@ -202,6 +206,13 @@ int FlexParticlePhysicsServer::body_get_particle_count(RID p_body) const {
 	ERR_FAIL_COND_V(!body, 0);
 
 	return body->get_particle_count();
+}
+
+int FlexParticlePhysicsServer::body_get_rigid_count(RID p_body) const {
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND_V(!body, 0);
+
+	return body->get_rigids_count();
 }
 
 RID FlexParticlePhysicsServer::primitive_body_create() {

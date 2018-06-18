@@ -56,8 +56,6 @@ class ParticleBody : public ParticleObject {
 	Vector<MeshInstance *> debug_particles_mesh;
 	Ref<SphereMesh> debug_particle_mesh;
 
-	class ImmediateGeometry *debug_lines;
-
 protected:
 	static void _bind_methods();
 

@@ -108,8 +108,8 @@ void ParticleBodyMeshInstance::_reload_skeleton() {
 
 	const int surface_id = 0;
 
-	PoolVector<Vector3>::Read particles_read = model->get_particles().read();
-	const int bone_count(model->get_particles().size());
+	PoolVector<Vector3>::Read clusters_pos_r = model->get_clusters_positions().read();
+	const int bone_count(model->get_clusters_positions().size());
 
 	Array array_mesh = get_mesh()->surface_get_arrays(surface_id).duplicate();
 	PoolVector<Vector3> vertices = array_mesh[VS::ARRAY_VERTEX];
@@ -120,7 +120,7 @@ void ParticleBodyMeshInstance::_reload_skeleton() {
 	PoolVector<int> bone_indices; // The index of bone relative of vertex
 	int max_weights_per_vertex = 0;
 
-	ParticlePhysicsServer::get_singleton()->create_skeleton(particles_read.ptr(), bone_count, vertices_read.ptr(), vertex_count, &weights, &bone_indices, &max_weights_per_vertex);
+	ParticlePhysicsServer::get_singleton()->create_skeleton(clusters_pos_r.ptr(), bone_count, vertices_read.ptr(), vertex_count, &weights, &bone_indices, &max_weights_per_vertex);
 
 	ERR_FAIL_COND(max_weights_per_vertex != VS::ARRAY_WEIGHTS_SIZE);
 

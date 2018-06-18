@@ -22,7 +22,8 @@ public:
 	virtual const Vector3 &get_particle_velocity(int p_particle_index) const = 0;
 	virtual void set_particle_velocity(int p_particle_index, const Vector3 &p_velocity) = 0;
 
-	virtual Vector3 get_particle_normal(int p_particle_index) const = 0;
+	virtual const Vector3 &get_rigid_position(int p_index) const = 0;
+	virtual const Quat &get_rigid_rotation(int p_index) const = 0;
 };
 
 class ParticlePhysicsServer : public Object {
@@ -73,6 +74,7 @@ public:
 	virtual void body_add_particle(RID p_body, const Vector3 &p_local_position, real_t p_mass) = 0;
 	virtual void body_remove_particle(RID p_body, int p_particle_index) = 0;
 	virtual int body_get_particle_count(RID p_body) const = 0;
+	virtual int body_get_rigid_count(RID p_body) const = 0;
 
 	/* PRIMITIVE BODY */
 	virtual RID primitive_body_create() = 0;
