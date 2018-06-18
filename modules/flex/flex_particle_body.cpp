@@ -337,11 +337,16 @@ void FlexParticleBody::set_particle_velocity(ParticleIndex p_particle_index, con
 	changed_parameters |= eChangedBodyParamVelocity;
 }
 
-Vector3 FlexParticleBody::get_particle_normal(ParticleIndex p_particle_index) const {
-	if (!particles_mchunk)
+const Vector3 &FlexParticleBody::get_rigid_position(RigidIndex p_rigid_index) const {
+	if (!rigids_mchunk)
 		return return_err_vec3;
-	const FlVector4 &p(space->get_particle_bodies_memory()->get_normal(particles_mchunk, p_particle_index));
-	return vec3_from_flvec4(p);
+	return space->get_rigids_memory()->get_position(rigids_mchunk, p_rigid_index);
+}
+
+const Quat &FlexParticleBody::get_rigid_rotation(RigidIndex p_rigid_index) const {
+	if (!rigids_mchunk)
+		return return_err_quat;
+	return space->get_rigids_memory()->get_rotation(rigids_mchunk, p_rigid_index);
 }
 
 bool FlexParticleBody::is_owner_of_particle(ParticleIndex p_particle) const {

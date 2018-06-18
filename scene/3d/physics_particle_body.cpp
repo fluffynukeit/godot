@@ -189,11 +189,6 @@ void ParticleBody::_notification(int p_what) {
 			ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SYNC, this, "commands_process_internal");
 			resource_changed(particle_body_model);
 
-			debug_lines = memnew(ImmediateGeometry);
-			add_child(debug_lines);
-			debug_lines->set_as_toplevel(true);
-			debug_lines->set_global_transform(Transform());
-
 			Ref<SpatialMaterial> red_mat;
 			red_mat = Ref<SpatialMaterial>(memnew(SpatialMaterial));
 			red_mat->set_flag(SpatialMaterial::FLAG_UNSHADED, true);
@@ -202,8 +197,6 @@ void ParticleBody::_notification(int p_what) {
 			red_mat->set_flag(SpatialMaterial::FLAG_ALBEDO_FROM_VERTEX_COLOR, true);
 			red_mat->set_flag(SpatialMaterial::FLAG_SRGB_VERTEX_COLOR, true);
 			red_mat->set_albedo(Color(1, 0, 0, 1));
-
-			debug_lines->set_material_override(red_mat);
 
 		} break;
 		case NOTIFICATION_TRANSFORM_CHANGED: {
@@ -275,15 +268,9 @@ void ParticleBody::_on_model_change() {
 
 void ParticleBody::body_mesh_skeleton_update(ParticleBodyCommands *p_cmds) {
 
-	debug_lines->clear();
-	debug_lines->begin(Mesh::PRIMITIVE_LINES, NULL);
+	const int rigids_count = ParticlePhysicsServer::get_singleton()->body_get_rigid_count(rid);
 
-	const int particle_count = ParticlePhysicsServer::get_singleton()->body_get_particle_count(rid);
-
-	for (int i = 0; i < particle_count; ++i) {
-
-		debug_lines->add_vertex(p_cmds->get_particle_position(i));
-		debug_lines->add_vertex(p_cmds->get_particle_position(i) + p_cmds->get_particle_normal(i) * 0.2);
+	for (int i = 0; i < rigids_count; ++i) {
 
 		//// Try one doesn't work
 		//Transform transf = particle_body_mesh->get_skeleton()->get_bone_pose(i);
@@ -310,10 +297,15 @@ void ParticleBody::body_mesh_skeleton_update(ParticleBodyCommands *p_cmds) {
 			transf.basis = particle_body_mesh->get_skeleton()->get_bone_pose(i).basis;
 		}
 
-		particle_body_mesh->get_skeleton()->set_bone_pose(i, transf);*/
-	}
+		particle_body_mesh->get_skeleton()->set_bone_pose(i, t);
+		*/
 
-	debug_lines->end();
+		// Try 4 (Correct way to update)
+		Transform t;
+		t.origin = p_cmds->get_rigid_position(i);
+		t.basis.set_quat(p_cmds->get_rigid_rotation(i));
+		particle_body_mesh->get_skeleton()->set_bone_pose(i, t);
+	}
 }
 
 void ParticleBody::debug_initialize_resource() {
