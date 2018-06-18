@@ -438,7 +438,7 @@ void FlexSpace::execute_delayed_commands() {
 			RigidComponentIndex rigid_comp_index(previous_size == 0 ? 0 : rigids_memory->get_offset(body->rigids_mchunk, previous_size - 1));
 			for (int r(0); r < body->delayed_commands.rigids_to_add.size(); ++r) {
 
-				rigids_memory->set_offset(body->rigids_mchunk, previous_size + r, rigid_comp_index);
+				rigids_memory->set_offset(body->rigids_mchunk, previous_size + r, rigid_comp_index + body->delayed_commands.rigids_to_add[r].indices.size());
 
 				// Allocate components
 				PoolVector<int>::Read indices_r = body->delayed_commands.rigids_to_add[r].indices.read();
@@ -447,7 +447,7 @@ void FlexSpace::execute_delayed_commands() {
 				for (int rigid_p_index(body->delayed_commands.rigids_to_add[r].indices.size() - 1); 0 <= rigid_p_index; --rigid_p_index) {
 					rigids_components_memory->set_index(body->rigids_components_mchunk, rigid_comp_index + rigid_p_index, body->particles_mchunk->get_buffer_index(indices_r[rigid_p_index]));
 					rigids_components_memory->set_rest(body->rigids_components_mchunk, rigid_comp_index + rigid_p_index, rests_r[rigid_p_index]);
-					rigids_components_memory->set_normal(body->rigids_components_mchunk, rigid_comp_index + rigid_p_index, rests_r[rigid_p_index].normalized() * -1);
+					//rigids_components_memory->set_normal(body->rigids_components_mchunk, rigid_comp_index + rigid_p_index, rests_r[rigid_p_index].normalized() * -1);
 				}
 				rigid_comp_index += body->delayed_commands.rigids_to_add[r].indices.size();
 			}
@@ -710,7 +710,7 @@ void FlexSpace::commands_write_buffer() {
 				rigids_memory->buffer_offsets.buffer,
 				rigids_components_memory->indices.buffer,
 				rigids_components_memory->rests.buffer,
-				rigids_components_memory->normals.buffer,
+				NULL, //rigids_components_memory->normals.buffer,
 				rigids_memory->stiffness.buffer,
 				rigids_memory->thresholds.buffer,
 				rigids_memory->creeps.buffer,
@@ -749,7 +749,7 @@ void FlexSpace::commands_read_buffer() {
 			NULL,
 			NULL,
 			NULL,
-			rigids_components_memory->normals.buffer,
+			NULL, //rigids_components_memory->normals.buffer,
 			NULL,
 			NULL,
 			NULL,
