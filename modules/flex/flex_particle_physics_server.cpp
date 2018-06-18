@@ -460,8 +460,8 @@ void FlexParticlePhysicsServer::create_skeleton(const Vector3 *bones_poses, int 
 
 	float radius = 0.1;
 
-	float falloff = radius * 0.5f;
-	float max_distance = radius * 2.f;
+	float falloff = radius * 2;
+	float max_distance = radius * 3.f;
 
 	*r_max_weight_per_vertex = 4;
 	r_weights->resize(p_vertex_count * 4);

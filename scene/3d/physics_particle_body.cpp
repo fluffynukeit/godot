@@ -301,10 +301,23 @@ void ParticleBody::body_mesh_skeleton_update(ParticleBodyCommands *p_cmds) {
 		particle_body_mesh->get_skeleton()->set_bone_pose(i, t);
 		*/
 
+		/*
+		 *  !NOTA!
+			Il problema è che nel VS la distanza tra i vertici al bone va dal vertice al centro mesh
+			Mentre in Flex la posizione ritornata è relativa al rigid
+
+			Devo rimuovere dal transform ritornato da flex la posizione iniziale
+
+			Effettuare la prova bloccando i rigid superiori e controllare se la distanza
+			tra il bone e i vertici viene mantenuta
+		*/
+
 		// Try 4 (Correct way to update)
 		Transform t;
+		//t.origin = p_cmds->get_rigid_position(i) - (particle_body_model->get_clusters_positions()[i] * 1);
 		t.origin = p_cmds->get_rigid_position(i);
 		t.basis.set_quat(p_cmds->get_rigid_rotation(i));
+		t.inverse_xform(Transform(Basis(), particle_body_model->get_clusters_positions()[i]));
 		particle_body_mesh->get_skeleton()->set_bone_pose(i, t);
 	}
 }
