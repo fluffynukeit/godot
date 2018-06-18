@@ -228,6 +228,7 @@ void ParticleBody::commands_process_internal(Object *p_cmds) {
 		emit_signal("resource_loaded");
 	}
 
+	// TODO remove this, and calculate only when the transform is required
 	// Update COM
 	const int particle_count = ParticlePhysicsServer::get_singleton()->body_get_particle_count(rid);
 	if (particle_count) {
