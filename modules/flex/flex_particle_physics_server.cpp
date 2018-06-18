@@ -335,7 +335,7 @@ void FlexParticlePhysicsServer::free(RID p_rid) {
 	}
 }
 
-Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_soft_particle_body_model(Ref<TriangleMesh> p_mesh, bool p_cloth, float p_particle_spacing, float p_sampling, float p_clusterSpacing, float p_clusterRadius, float p_clusterStiffness, float p_linkRadius, float p_linkStiffness) {
+Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_soft_particle_body_model(Ref<TriangleMesh> p_mesh, float p_radius, float p_global_stiffness, bool p_cloth, float p_particle_spacing, float p_sampling, float p_clusterSpacing, float p_clusterRadius, float p_clusterStiffness, float p_linkRadius, float p_linkStiffness, float p_plastic_threshold, float p_plastic_creep) {
 	ERR_FAIL_COND_V(p_mesh.is_null(), Ref<ParticleBodyModel>());
 
 	PoolVector<Vector3>::Read vertices_read = p_mesh->get_vertices().read();
@@ -344,26 +344,23 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_soft_particle_body_mode
 	p_mesh->get_indices(&indices);
 	PoolVector<int>::Read indices_read = indices.read();
 
-	float radius = 0.1;
-	float globalStiffness = 0;
-
 	NvFlexExtAsset *generated_assets = NvFlexExtCreateSoftFromMesh(
-			/*vertices*/ ((const float *)vertices_read.ptr()),
-			/*numVertices*/ p_mesh->get_vertices().size(),
-			/*indices*/ static_cast<const int *>(indices_read.ptr()),
-			/*numIndices*/ indices.size(),
+			((const float *)vertices_read.ptr()),
+			p_mesh->get_vertices().size(),
+			static_cast<const int *>(indices_read.ptr()),
+			indices.size(),
 
-			/*particleSpacing*/ radius * p_particle_spacing, // Distance between 2 particle
-			/*volumeSampling*/ p_cloth ? 0.0 : p_sampling, // (0-1) This parameter regulate the number of particle that should be put inside the mesh (in case of cloth it should be 0)
-			/*surfaceSampling*/ p_cloth ? p_sampling : 0.0, // (0-1) This parameter regulate the number of particle that should be put on the surface of mesh (in case of cloth it should be 1)
-			/*clusterSpacing*/ p_clusterSpacing * radius,
-			/*clusterRadius*/ p_clusterRadius * radius,
-			/*clusterStiffness*/ p_clusterStiffness,
-			/*linkRadius*/ p_linkRadius * radius,
-			/*linkStiffness*/ p_linkStiffness,
-			/*globalStiffness*/ globalStiffness,
-			/*clusterPlasticThreshold*/ 0.0,
-			/*clusterPlasticCreep*/ 0.0);
+			p_radius * p_particle_spacing, // Distance between 2 particle
+			p_cloth ? 0.0 : p_sampling, // (0-1) This parameter regulate the number of particle that should be put inside the mesh (in case of cloth it should be 0)
+			p_cloth ? p_sampling : 0.0, // (0-1) This parameter regulate the number of particle that should be put on the surface of mesh (in case of cloth it should be 1)
+			p_clusterSpacing * p_radius,
+			p_clusterRadius * p_radius,
+			p_clusterStiffness,
+			p_linkRadius * p_radius,
+			p_linkStiffness,
+			p_global_stiffness,
+			p_plastic_threshold,
+			p_plastic_creep);
 
 	ERR_FAIL_COND_V(!generated_assets, Ref<ParticleBodyModel>());
 
@@ -392,10 +389,14 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_soft_particle_body_mode
 	model->get_clusters_offsets_ref().resize(generated_assets->numShapes);
 	model->get_clusters_positions_ref().resize(generated_assets->numShapes);
 	model->get_clusters_stiffness_ref().resize(generated_assets->numShapes);
+	model->get_clusters_plastic_threshold_ref().resize(generated_assets->numShapes);
+	model->get_clusters_plastic_creep_ref().resize(generated_assets->numShapes);
 	for (int i(0); i < generated_assets->numShapes; ++i) {
 		model->get_clusters_offsets_ref().set(i, generated_assets->shapeOffsets[i]);
 		model->get_clusters_positions_ref().set(i, ((Vector3 *)generated_assets->shapeCenters)[i]);
 		model->get_clusters_stiffness_ref().set(i, generated_assets->shapeCoefficients[i]);
+		model->get_clusters_plastic_threshold_ref().set(i, generated_assets->shapePlasticThresholds[i]);
+		model->get_clusters_plastic_creep_ref().set(i, generated_assets->shapePlasticCreeps[i]);
 	}
 
 	model->get_clusters_particle_indices_ref().resize(generated_assets->numShapeIndices);

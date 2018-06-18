@@ -419,6 +419,8 @@ void FlexSpace::execute_delayed_commands() {
 				rigids_memory->set_position(body->rigids_mchunk, previous_size + r, body->delayed_commands.rigids_to_add[r].position);
 				rigids_memory->set_rotation(body->rigids_mchunk, previous_size + r, Quat());
 				rigids_memory->set_stiffness(body->rigids_mchunk, previous_size + r, body->delayed_commands.rigids_to_add[r].stiffness);
+				rigids_memory->set_threshold(body->rigids_mchunk, previous_size + r, body->delayed_commands.rigids_to_add[r].plastic_threshold);
+				rigids_memory->set_creep(body->rigids_mchunk, previous_size + r, body->delayed_commands.rigids_to_add[r].plastic_creep);
 
 				index_count += body->delayed_commands.rigids_to_add[r].indices.size();
 			}
@@ -443,7 +445,7 @@ void FlexSpace::execute_delayed_commands() {
 
 				for (int rigid_p_index(body->delayed_commands.rigids_to_add[r].indices.size() - 1); 0 <= rigid_p_index; --rigid_p_index) {
 					rigids_components_memory->set_index(body->rigids_components_mchunk, rigid_comp_index + rigid_p_index, body->particles_mchunk->get_buffer_index(indices_r[rigid_p_index]));
-					//rigids_components_memory->set_rest(body->rigids_components_mchunk, rigid_comp_index + rigid_p_index, Vector3());
+					rigids_components_memory->set_rest(body->rigids_components_mchunk, rigid_comp_index + rigid_p_index, Vector3(1, 1, 1)); // TODO set rests
 				}
 				rigid_comp_index += body->delayed_commands.rigids_to_add[r].indices.size();
 			}
@@ -706,10 +708,10 @@ void FlexSpace::commands_write_buffer() {
 				rigids_memory->buffer_offsets.buffer,
 				rigids_components_memory->indices.buffer,
 				rigids_components_memory->rests.buffer,
-				rigids_components_memory->normals.buffer, // TODO remove if useless
+				NULL,
 				rigids_memory->stiffness.buffer,
-				NULL,
-				NULL,
+				rigids_memory->thresholds.buffer,
+				rigids_memory->creeps.buffer,
 				rigids_memory->rotation.buffer,
 				rigids_memory->position.buffer,
 				rigids_allocator->get_last_used_index() + 1,

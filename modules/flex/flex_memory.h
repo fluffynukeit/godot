@@ -53,6 +53,20 @@ public:                                        \
 		__add_buffer(&name0);                  \
 	}
 
+#define FLEXBUFFERCLASS_2(clazz, type0, name0, type1, name1) \
+	friend class FlexSpace;                                  \
+															 \
+	NvFlexVector<type0> name0;                               \
+	NvFlexVector<type1> name1;                               \
+															 \
+public:                                                      \
+	clazz(NvFlexLibrary *p_flex_lib) :                       \
+			name0(p_flex_lib),                               \
+			name1(p_flex_lib) {                              \
+		__add_buffer(&name0);                                \
+		__add_buffer(&name1);                                \
+	}
+
 #define FLEXBUFFERCLASS_3(clazz, type0, name0, type1, name1, type2, name2) \
 	friend class FlexSpace;                                                \
 																		   \
@@ -88,6 +102,29 @@ public:                                                                         
 		__add_buffer(&name1);                                                            \
 		__add_buffer(&name2);                                                            \
 		__add_buffer(&name3);                                                            \
+	}
+
+#define FLEXBUFFERCLASS_5(clazz, type0, name0, type1, name1, type2, name2, type3, name3, type4, name4) \
+	friend class FlexSpace;                                                                            \
+																									   \
+	NvFlexVector<type0> name0;                                                                         \
+	NvFlexVector<type1> name1;                                                                         \
+	NvFlexVector<type2> name2;                                                                         \
+	NvFlexVector<type3> name3;                                                                         \
+	NvFlexVector<type4> name4;                                                                         \
+																									   \
+public:                                                                                                \
+	clazz(NvFlexLibrary *p_flex_lib) :                                                                 \
+			name0(p_flex_lib),                                                                         \
+			name1(p_flex_lib),                                                                         \
+			name2(p_flex_lib),                                                                         \
+			name3(p_flex_lib),                                                                         \
+			name4(p_flex_lib) {                                                                        \
+		__add_buffer(&name0);                                                                          \
+		__add_buffer(&name1);                                                                          \
+		__add_buffer(&name2);                                                                          \
+		__add_buffer(&name3);                                                                          \
+		__add_buffer(&name4);                                                                          \
 	}
 
 #define FLEXBUFFERCLASS_6(clazz, type0, name0, type1, name1, type2, name2, type3, name3, type4, name4, type5, name5) \
@@ -386,7 +423,7 @@ class RawRigidsMemory : public FlexBufferMemory {
 protected:
 	bool changed;
 
-	FLEXBUFFERCLASS_3(RawRigidsMemory, float, stiffness, Quat, rotation, Vector3, position);
+	FLEXBUFFERCLASS_5(RawRigidsMemory, float, stiffness, float, thresholds, float, creeps, Quat, rotation, Vector3, position);
 
 	virtual void _on_mapped() { changed = false; }
 
@@ -401,6 +438,12 @@ protected:
 
 	void set_stiffness(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, float p_stiffness);
 	float get_stiffness(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const;
+
+	void set_threshold(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, float p_threshold);
+	float get_threshold(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const;
+
+	void set_creep(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, float p_creep);
+	float get_creep(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const;
 
 	void set_rotation(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, const Quat &p_rotation);
 	const Quat &get_rotation(const MemoryChunk *p_chunk, RigidIndex p_rigid_index) const;
@@ -450,8 +493,7 @@ class RigidsComponentsMemory : public FlexBufferMemory {
 
 	bool changed;
 
-	// TODO remove normals if useless
-	FLEXBUFFERCLASS_3(RigidsComponentsMemory, ParticleBufferIndex, indices, Vector3, rests, FlVector4, normals);
+	FLEXBUFFERCLASS_2(RigidsComponentsMemory, ParticleBufferIndex, indices, Vector3, rests);
 
 	virtual void _on_mapped() { changed = false; }
 
@@ -469,8 +511,5 @@ class RigidsComponentsMemory : public FlexBufferMemory {
 
 	void set_rest(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index, const Vector3 &p_rest);
 	const Vector3 &get_rest(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index) const;
-
-	void set_normal(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index, const Vector3 &p_normal);
-	Vector3 get_normal(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index) const;
 };
 #endif // FLEX_MEMORY_H

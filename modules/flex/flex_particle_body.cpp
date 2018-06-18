@@ -138,8 +138,8 @@ void FlexParticleBody::remove_spring(SpringIndex p_spring_index) {
 	delayed_commands.springs_to_remove.insert(p_spring_index);
 }
 
-void FlexParticleBody::add_rigid(const Vector3 &p_position, float p_stiffness, PoolVector<ParticleIndex> p_indices) {
-	delayed_commands.rigids_to_add.push_back(RigidToAdd(p_position, p_stiffness, p_indices));
+void FlexParticleBody::add_rigid(const Vector3 &p_position, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, PoolVector<ParticleIndex> p_indices) {
+	delayed_commands.rigids_to_add.push_back(RigidToAdd(p_position, p_stiffness, p_plastic_threshold, p_plastic_creep, p_indices));
 }
 
 void FlexParticleBody::remove_rigid(RigidIndex p_rigid_index) {
@@ -165,7 +165,7 @@ PoolVector<ParticleIndex> extract_rigid_indices(int index, PoolVector<int> p_off
 	PoolVector<int>::Read indices_r = p_indices.read();
 
 	const int offset_start = index == 0 ? 0 : offsets_r[index - 1];
-	const int size = offsets_r[index] - offset_start;
+	const int size = offsets_r[index] - offset_start + 1;
 
 	PoolVector<ParticleIndex> rigid_indices;
 	rigid_indices.resize(size);
@@ -262,12 +262,14 @@ void FlexParticleBody::load_model(Ref<ParticleBodyModel> p_model, const Transfor
 
 			PoolVector<Vector3>::Read cluster_pos_r = p_model->get_clusters_positions().read();
 			PoolVector<float>::Read cluster_stiffness_r = p_model->get_clusters_stiffness().read();
+			PoolVector<float>::Read cluster_plastic_threshold_r = p_model->get_clusters_plastic_threshold().read();
+			PoolVector<float>::Read cluster_plastic_creep_r = p_model->get_clusters_plastic_creep().read();
 
 			const int dif = resource_r_count - active_r_count;
 			for (int i(0); i < dif; ++i) {
 				const int r(resource_r_count - i - 1);
 
-				add_rigid(cluster_pos_r[r], cluster_stiffness_r[r], extract_rigid_indices(r, p_model->get_clusters_offsets(), p_model->get_clusters_particle_indices()));
+				add_rigid(cluster_pos_r[r], cluster_stiffness_r[r], cluster_plastic_threshold_r[r], cluster_plastic_creep_r[r], extract_rigid_indices(r, p_model->get_clusters_offsets(), p_model->get_clusters_particle_indices()));
 			}
 		}
 
