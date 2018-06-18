@@ -172,7 +172,9 @@ void FlexSpace::init() {
 	params.solidPressure = 1.0;
 	params.collisionDistance = MAX(params.solidRestDistance, params.fluidRestDistance) * 0.5;
 	params.shapeCollisionMargin = params.collisionDistance * 0.5;
-	params.particleFriction = params.dynamicFriction * 0.1;
+	params.dynamicFriction = 0.1;
+	params.staticFriction = 0.1;
+	params.particleFriction = 0.1;
 	NvFlexSetParams(solver, &params);
 
 	CRASH_COND(has_error());
