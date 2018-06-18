@@ -395,8 +395,8 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_soft_particle_body_mode
 		model->get_clusters_offsets_ref().set(i, generated_assets->shapeOffsets[i]);
 		model->get_clusters_positions_ref().set(i, ((Vector3 *)generated_assets->shapeCenters)[i]);
 		model->get_clusters_stiffness_ref().set(i, generated_assets->shapeCoefficients[i]);
-		model->get_clusters_plastic_threshold_ref().set(i, generated_assets->shapePlasticThresholds[i]);
-		model->get_clusters_plastic_creep_ref().set(i, generated_assets->shapePlasticCreeps[i]);
+		model->get_clusters_plastic_threshold_ref().set(i, generated_assets->shapePlasticThresholds ? generated_assets->shapePlasticThresholds[i] : 0);
+		model->get_clusters_plastic_creep_ref().set(i, generated_assets->shapePlasticCreeps ? generated_assets->shapePlasticCreeps[i] : 0);
 	}
 
 	model->get_clusters_particle_indices_ref().resize(generated_assets->numShapeIndices);
