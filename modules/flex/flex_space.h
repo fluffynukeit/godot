@@ -119,7 +119,8 @@ private:
 	void commands_write_buffer();
 	void commands_read_buffer();
 
-	void replace_particle_index_in_springs(FlexParticleBody *p_body, ParticleBufferIndex p_index_old, ParticleBufferIndex p_index_new);
+	void on_particle_removed(FlexParticleBody *p_body, ParticleBufferIndex p_index);
+	void on_particle_index_changed(FlexParticleBody *p_body, ParticleBufferIndex p_index_old, ParticleBufferIndex p_index_new);
 };
 
 #endif // FLEX_SPACE_H

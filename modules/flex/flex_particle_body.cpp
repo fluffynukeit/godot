@@ -144,7 +144,11 @@ void FlexParticleBody::add_rigid(const Transform &p_global_transform, float p_st
 
 void FlexParticleBody::remove_rigid(RigidIndex p_rigid_index) {
 	ERR_FAIL_COND(!is_owner_of_rigid(p_rigid_index));
-	delayed_commands.rigids_to_remove.push_back(p_rigid_index);
+	delayed_commands.rigids_to_remove.insert(p_rigid_index);
+}
+
+void FlexParticleBody::remove_rigid_component(RigidComponentIndex p_rigid_component_index) {
+	delayed_commands.rigids_components_to_remove.insert(p_rigid_component_index);
 }
 
 int FlexParticleBody::get_particle_count() const {
@@ -398,4 +402,5 @@ void FlexParticleBody::clear_commands() {
 	delayed_commands.particle_to_remove.clear();
 	delayed_commands.springs_to_remove.clear();
 	delayed_commands.rigids_to_remove.clear();
+	delayed_commands.rigids_components_to_remove.clear();
 }
