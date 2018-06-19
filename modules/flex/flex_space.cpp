@@ -43,7 +43,7 @@
 #include "print_string.h"
 
 // TODO make this customizable in settings
-#define MAXPARTICLES 1000
+#define MAXPARTICLES 5000
 // TODO this must be dynamic
 #define MAXGEOMETRIES 10
 
