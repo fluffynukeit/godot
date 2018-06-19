@@ -126,7 +126,9 @@ class FlexParticleBody : public RIDFlex {
 		Vector<RigidToAdd> rigids_to_add;
 		Set<ParticleIndex> particle_to_remove;
 		Set<SpringIndex> springs_to_remove;
-		Vector<RigidIndex> rigids_to_remove;
+		Set<RigidIndex> rigids_to_remove;
+		// rigid component to add
+		Set<RigidComponentIndex> rigids_components_to_remove;
 	} delayed_commands;
 
 	uint32_t changed_parameters;
@@ -171,6 +173,8 @@ public:
 
 	void add_rigid(const Transform &p_transform, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, PoolVector<ParticleIndex> p_indices, PoolVector<Vector3> p_rests);
 	void remove_rigid(RigidIndex p_rigid_index);
+
+	void remove_rigid_component(RigidComponentIndex p_rigid_component_index);
 
 	int get_particle_count() const;
 	int get_spring_count() const;

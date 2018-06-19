@@ -464,22 +464,14 @@ void FlexSpace::execute_delayed_commands() {
 			for (Set<ParticleIndex>::Element *e = body->delayed_commands.particle_to_remove.front(); e; e = e->next()) {
 
 				// Copy the values of last index to the index to remove (lose order)
-				const ParticleBufferIndex buffer_index_to_remove(body->particles_mchunk->get_buffer_index(e->get()));
+				const ParticleBufferIndex index_to_remove(body->particles_mchunk->get_buffer_index(e->get()));
 
-				// Find and remove springs associated to the particle to remove
-				if (body->springs_mchunk) {
-					// Find all springs associated to removed particle and put in the remove list
-					for (int spring_index(body->springs_mchunk->get_size() - 1); 0 <= spring_index; --spring_index) {
-						const Spring &spring = springs_memory->get_spring(body->springs_mchunk, spring_index);
-						if (spring.index0 == buffer_index_to_remove || spring.index1 == buffer_index_to_remove) {
-							body->remove_spring(spring_index);
-						}
-					}
-				}
+				particle_bodies_memory->copy(last_buffer_index, 1, index_to_remove);
 
-				particle_bodies_memory->copy(last_buffer_index, 1, buffer_index_to_remove);
-				replace_particle_index_in_springs(body, last_buffer_index, buffer_index_to_remove);
+				on_particle_removed(body, index_to_remove);
+				on_particle_index_changed(body, last_buffer_index, index_to_remove);
 				body->particle_index_changed(body->particles_mchunk->get_chunk_index(last_buffer_index), e->get());
+
 				--last_buffer_index;
 			}
 			const FlexUnit new_size = body->particles_mchunk->get_size() - body->delayed_commands.particle_to_remove.size();
@@ -501,6 +493,26 @@ void FlexSpace::execute_delayed_commands() {
 			}
 			const FlexUnit new_size = body->springs_mchunk->get_size() - body->delayed_commands.springs_to_remove.size();
 			springs_allocator->resize_chunk(body->springs_mchunk, new_size);
+		}
+
+		if (body->delayed_commands.rigids_components_to_remove.size() && body->rigids_components_mchunk) {
+
+			FlexUnit chunk_size(body->rigids_components_mchunk->get_size());
+			for (Set<RigidComponentIndex>::Element *e = body->delayed_commands.rigids_components_to_remove.front(); e; e = e->next()) {
+				--chunk_size;
+				rigids_components_memory->copy(e->get() + 1, chunk_size, e->get());
+
+				for (RigidIndex i(body->rigids_mchunk->get_size() - 1); 0 <= i; --i) {
+					RigidComponentIndex offset(rigids_memory->get_offset(body->rigids_mchunk, i));
+					if (offset >= e->get()) {
+						rigids_memory->set_offset(body->rigids_mchunk, i, offset - 1);
+					} else {
+						break;
+					}
+				}
+			}
+
+			rigids_components_allocator->resize_chunk(body->rigids_components_mchunk, chunk_size);
 		}
 
 		// Apply changed properties
@@ -721,6 +733,10 @@ void FlexSpace::commands_write_buffer() {
 				rigids_allocator->get_last_used_index() + 1,
 				rigids_components_allocator->get_last_used_index() + 1);
 
+	// TODO remove this
+	int a = rigids_allocator->get_last_used_index() + 1;
+	int b = rigids_components_allocator->get_last_used_index() + 1;
+
 	if (geometries_memory->was_changed())
 		NvFlexSetShapes(solver, geometries_memory->collision_shapes.buffer, geometries_memory->positions.buffer, geometries_memory->rotations.buffer, geometries_memory->positions_prev.buffer, geometries_memory->rotations_prev.buffer, geometries_memory->flags.buffer, geometries_allocator->get_last_used_index() + 1);
 }
@@ -759,9 +775,32 @@ void FlexSpace::commands_read_buffer() {
 			rigids_memory->position.buffer);
 }
 
-void FlexSpace::replace_particle_index_in_springs(FlexParticleBody *p_body, ParticleBufferIndex p_index_old, ParticleBufferIndex p_index_new) {
+void FlexSpace::on_particle_removed(FlexParticleBody *p_body, ParticleBufferIndex p_index) {
+	// Find and remove springs associated to the particle to remove
+	if (p_body->springs_mchunk) {
+		// Find all springs associated to removed particle and put in the remove list
+		for (int spring_index(p_body->springs_mchunk->get_size() - 1); 0 <= spring_index; --spring_index) {
+			const Spring &spring = springs_memory->get_spring(p_body->springs_mchunk, spring_index);
+			if (spring.index0 == p_index || spring.index1 == p_index) {
+				p_body->remove_spring(spring_index);
+			}
+		}
+	}
 
-	// Update the springs order
+	// Remove rigid components associated to this body
+	if (p_body->rigids_components_mchunk) {
+		for (RigidComponentIndex i(p_body->rigids_components_mchunk->get_size() - 1); 0 <= i; --i) {
+
+			if (p_index == rigids_components_memory->get_index(p_body->rigids_components_mchunk, i)) {
+				p_body->remove_rigid_component(i);
+			}
+		}
+	}
+}
+
+void FlexSpace::on_particle_index_changed(FlexParticleBody *p_body, ParticleBufferIndex p_index_old, ParticleBufferIndex p_index_new) {
+
+	// Change springs index
 	if (!p_body->springs_mchunk)
 		return;
 
@@ -775,8 +814,18 @@ void FlexSpace::replace_particle_index_in_springs(FlexParticleBody *p_body, Part
 
 			springs_memory->set_spring(p_body->springs_mchunk, i, Spring(spring.index0, p_index_new));
 		}
+	}
 
-		const Spring &spring1(springs_memory->get_spring(p_body->springs_mchunk, i));
-		const Spring &spring2(springs_memory->get_spring(p_body->springs_mchunk, i));
+	// Change rigid index
+	if (!p_body->rigids_components_mchunk)
+		return;
+
+	for (int i(p_body->rigids_components_mchunk->get_size() - 1); 0 <= i; --i) {
+
+		ParticleBufferIndex buffer_index = rigids_components_memory->get_index(p_body->rigids_components_mchunk, i);
+		if (p_index_old == buffer_index) {
+
+			rigids_components_memory->set_index(p_body->rigids_components_mchunk, i, p_index_new);
+		}
 	}
 }
