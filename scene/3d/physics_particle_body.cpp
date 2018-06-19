@@ -48,6 +48,9 @@ void ParticleBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_particle_body_model", "model"), &ParticleBody::set_particle_body_model);
 	ClassDB::bind_method(D_METHOD("get_particle_body_model"), &ParticleBody::get_particle_body_model);
 
+	ClassDB::bind_method(D_METHOD("add_particle", "local_position", "mass"), &ParticleBody::add_particle);
+	ClassDB::bind_method(D_METHOD("remove_particle", "particle_id"), &ParticleBody::remove_particle);
+
 	ClassDB::bind_method(D_METHOD("set_collision_group", "layer"), &ParticleBody::set_collision_group);
 	ClassDB::bind_method(D_METHOD("get_collision_group"), &ParticleBody::get_collision_group);
 
@@ -63,8 +66,9 @@ void ParticleBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_collision_primitive_mask", "mask"), &ParticleBody::set_collision_primitive_mask);
 	ClassDB::bind_method(D_METHOD("get_collision_primitive_mask"), &ParticleBody::get_collision_primitive_mask);
 
-	ClassDB::bind_method(D_METHOD("add_particle", "local_position", "mass"), &ParticleBody::add_particle);
-	ClassDB::bind_method(D_METHOD("remove_particle", "particle_id"), &ParticleBody::remove_particle);
+	ClassDB::bind_method(D_METHOD("get_particle_count"), &ParticleBody::get_particle_count);
+	ClassDB::bind_method(D_METHOD("get_spring_count"), &ParticleBody::get_spring_count);
+	ClassDB::bind_method(D_METHOD("get_rigid_count"), &ParticleBody::get_rigid_count);
 
 	ClassDB::bind_method(D_METHOD("resource_changed", "resource"), &ParticleBody::resource_changed);
 
@@ -180,6 +184,18 @@ void ParticleBody::set_collision_primitive_mask(uint32_t p_mask) {
 
 uint32_t ParticleBody::get_collision_primitive_mask() const {
 	return ParticlePhysicsServer::get_singleton()->body_get_collision_primitive_mask(rid);
+}
+
+int ParticleBody::get_particle_count() const {
+	return ParticlePhysicsServer::get_singleton()->body_get_particle_count(rid);
+}
+
+int ParticleBody::get_spring_count() const {
+	return ParticlePhysicsServer::get_singleton()->body_get_spring_count(rid);
+}
+
+int ParticleBody::get_rigid_count() const {
+	return ParticlePhysicsServer::get_singleton()->body_get_rigid_count(rid);
 }
 
 void ParticleBody::_notification(int p_what) {

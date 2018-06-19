@@ -760,7 +760,11 @@ void FlexSpace::commands_read_buffer() {
 }
 
 void FlexSpace::replace_particle_index_in_springs(FlexParticleBody *p_body, ParticleBufferIndex p_index_old, ParticleBufferIndex p_index_new) {
+
 	// Update the springs order
+	if (!p_body->springs_mchunk)
+		return;
+
 	for (int i(p_body->springs_mchunk->get_size() - 1); 0 <= i; --i) {
 
 		const Spring &spring(springs_memory->get_spring(p_body->springs_mchunk, i));

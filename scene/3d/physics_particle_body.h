@@ -87,6 +87,12 @@ public:
 	void set_collision_primitive_mask(uint32_t p_mask);
 	uint32_t get_collision_primitive_mask() const;
 
+	// Utility:
+
+	int get_particle_count() const;
+	int get_spring_count() const;
+	int get_rigid_count() const;
+
 protected:
 	void _notification(int p_what);
 	void resource_changed(const RES &p_res);

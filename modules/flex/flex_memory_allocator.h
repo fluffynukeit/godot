@@ -155,7 +155,8 @@ private:
 	bool redux_memory(FlexUnit p_size);
 	void find_biggest_chunk_size();
 
-	MemoryChunk *create_chunk(FlexUnit p_pos = -1);
+	MemoryChunk *insert_chunk(FlexUnit p_pos);
+	MemoryChunk *create_chunk();
 	void delete_chunk(FlexUnit p_pos);
 };
 

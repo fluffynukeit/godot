@@ -208,11 +208,18 @@ int FlexParticlePhysicsServer::body_get_particle_count(RID p_body) const {
 	return body->get_particle_count();
 }
 
+int FlexParticlePhysicsServer::body_get_spring_count(RID p_body) const {
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND_V(!body, 0);
+
+	return body->get_spring_count();
+}
+
 int FlexParticlePhysicsServer::body_get_rigid_count(RID p_body) const {
 	FlexParticleBody *body = body_owner.get(p_body);
 	ERR_FAIL_COND_V(!body, 0);
 
-	return body->get_rigids_count();
+	return body->get_rigid_count();
 }
 
 RID FlexParticlePhysicsServer::primitive_body_create() {

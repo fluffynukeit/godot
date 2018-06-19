@@ -101,7 +101,7 @@ void ParticleBodyMeshInstance::_reload_skeleton() {
 	if (get_mesh().is_null())
 		return;
 
-	if (!model->get_particles().size())
+	if (!model->get_clusters_positions().size())
 		return;
 
 	ERR_FAIL_COND(get_mesh()->get_surface_count() != 1);

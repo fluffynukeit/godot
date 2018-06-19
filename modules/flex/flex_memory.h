@@ -39,9 +39,6 @@
 #include "flex_utility.h"
 #include "thirdparty/flex/include/NvFlexExt.h"
 
-typedef int ParticleIndex; // Particle id relative to body, can change during time
-typedef int ParticleRef; // Particle Ref id relative to body never change
-
 #define FLEXBUFFERCLASS_1(clazz, type0, name0) \
 	friend class FlexSpace;                    \
 											   \
@@ -295,25 +292,25 @@ protected:
 	}
 	virtual void copy_unit(FlexUnit p_to, FlexUnit p_from) {
 		for (int i(buffers_int.size() - 1); 0 <= i; --i) {
-			buffers_int[p_to] = buffers_int[p_from];
+			(*buffers_int[i])[p_to] = (*buffers_int[i])[p_from];
 		}
 		for (int i(buffers_float.size() - 1); 0 <= i; --i) {
-			buffers_float[p_to] = buffers_float[p_from];
+			(*buffers_float[i])[p_to] = (*buffers_float[i])[p_from];
 		}
 		for (int i(buffers_quat.size() - 1); 0 <= i; --i) {
-			buffers_quat[p_to] = buffers_quat[p_from];
+			(*buffers_quat[i])[p_to] = (*buffers_quat[i])[p_from];
 		}
 		for (int i(buffers_vec3.size() - 1); 0 <= i; --i) {
-			buffers_vec3[p_to] = buffers_vec3[p_from];
+			(*buffers_vec3[i])[p_to] = (*buffers_vec3[i])[p_from];
 		}
 		for (int i(buffers_spring.size() - 1); 0 <= i; --i) {
-			buffers_spring[p_to] = buffers_spring[p_from];
+			(*buffers_spring[i])[p_to] = (*buffers_spring[i])[p_from];
 		}
 		for (int i(buffers_flvec4.size() - 1); 0 <= i; --i) {
-			buffers_flvec4[p_to] = buffers_flvec4[p_from];
+			(*buffers_flvec4[i])[p_to] = (*buffers_flvec4[i])[p_from];
 		}
 		for (int i(buffers_colgeo.size() - 1); 0 <= i; --i) {
-			buffers_colgeo[p_to] = buffers_colgeo[p_from];
+			(*buffers_colgeo[i])[p_to] = (*buffers_colgeo[i])[p_from];
 		}
 		_on_copied_unit(p_to, p_from);
 	}
@@ -346,7 +343,7 @@ class ParticleBodiesMemory : public FlexBufferMemory {
 
 class ActiveParticlesMemory : public FlexBufferMemory {
 
-	FLEXBUFFERCLASS_1(ActiveParticlesMemory, int, active_particles);
+	FLEXBUFFERCLASS_1(ActiveParticlesMemory, ParticleIndex, active_particles);
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped

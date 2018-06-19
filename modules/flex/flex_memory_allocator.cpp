@@ -158,7 +158,7 @@ MemoryChunk *FlexMemoryAllocator::allocate_chunk(FlexUnit p_size) {
 
 		if (memory_table[i]->size != p_size) {
 			// Perform split of current chunk
-			create_chunk(i + 1)->set(memory_table[i]->begin_index + p_size, memory_table[i]->end_index, true);
+			insert_chunk(i + 1)->set(memory_table[i]->begin_index + p_size, memory_table[i]->end_index, true);
 		}
 		memory_table[i]->set(memory_table[i]->begin_index, memory_table[i]->begin_index + p_size - 1, false);
 		cache.occupied_memory += memory_table[i]->size;
@@ -198,7 +198,7 @@ void FlexMemoryAllocator::resize_chunk(MemoryChunk *&r_chunk, FlexUnit p_size) {
 		ERR_FAIL_COND(chunk_index == -1);
 
 		FlexUnit new_chunk_size = r_chunk->size - p_size;
-		MemoryChunk *new_chunk = create_chunk(chunk_index + 1);
+		MemoryChunk *new_chunk = insert_chunk(chunk_index + 1);
 		new_chunk->set(r_chunk->end_index - new_chunk_size + 1, r_chunk->end_index, true);
 
 		// 2. Redux
@@ -271,12 +271,15 @@ void FlexMemoryAllocator::find_biggest_chunk_size() {
 	}
 }
 
-MemoryChunk *FlexMemoryAllocator::create_chunk(FlexUnit p_pos) {
+MemoryChunk *FlexMemoryAllocator::insert_chunk(FlexUnit p_pos) {
 	MemoryChunk *chunk = new MemoryChunk;
-	if (p_pos == -1)
-		memory_table.push_back(chunk);
-	else
-		memory_table.insert(p_pos, chunk);
+	memory_table.insert(p_pos, chunk);
+	return chunk;
+}
+
+MemoryChunk *FlexMemoryAllocator::create_chunk() {
+	MemoryChunk *chunk = new MemoryChunk;
+	memory_table.push_back(chunk);
 	return chunk;
 }
 
