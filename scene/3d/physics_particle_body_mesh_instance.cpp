@@ -132,12 +132,8 @@ void ParticleBodyMeshInstance::_reload_skeleton() {
 		skeleton->clear_bones();
 	}
 
-	// TODO clear here
-	//Transform rest;
 	for (int i(0); i < bone_count; ++i) {
 		skeleton->add_bone("particle_" + String::num(i));
-		//rest.set_origin(particles_read[i]);
-		//skeleton->set_bone_rest(i, rest);
 		skeleton->set_bone_disable_rest(i, true);
 	}
 

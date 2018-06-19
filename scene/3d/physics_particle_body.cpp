@@ -270,54 +270,12 @@ void ParticleBody::_on_model_change() {
 void ParticleBody::body_mesh_skeleton_update(ParticleBodyCommands *p_cmds) {
 
 	const int rigids_count = ParticlePhysicsServer::get_singleton()->body_get_rigid_count(rid);
+	const PoolVector<Vector3>::Read rigids_local_pos_r = particle_body_model->get_clusters_positions().read();
 
 	for (int i = 0; i < rigids_count; ++i) {
 
-		//// Try one doesn't work
-		//Transform transf = particle_body_mesh->get_skeleton()->get_bone_pose(i);
-		//transf.origin = p_cmds->get_particle_position(i);
-		//particle_body_mesh->get_skeleton()->set_bone_pose(i, transf);
-
-		//// Try 2 work 1/2
-		//Transform transf = particle_body_mesh->get_skeleton()->get_bone_pose(i);
-		//transf.origin = COM_global_position;
-		//particle_body_mesh->get_skeleton()->set_bone_pose(i, transf);
-
-		// Try 3 WIP
-		/*Transform transf;
-		transf.origin = p_cmds->get_particle_position(i) - (particle_body_model->get_particles()[i] * -1);
-		//transf.origin = COM_global_position;
-
-		const Vector3 initial_ori(particle_body_model->get_particles()[i].normalized());
-		const Vector3 current_ori((p_cmds->get_particle_position(i) - COM_global_position).normalized() * -1);
-		const Vector3 rot_axis(initial_ori.cross(current_ori).normalized());
-		if (rot_axis[0] != 0 && rot_axis[1] != 0 && rot_axis[2] != 0) {
-			const real_t rot_angle(Math::acos(CLAMP(initial_ori.dot(current_ori), -1, 1)));
-			transf.basis.rotate(rot_axis, rot_angle);
-		} else {
-			transf.basis = particle_body_mesh->get_skeleton()->get_bone_pose(i).basis;
-		}
-
-		particle_body_mesh->get_skeleton()->set_bone_pose(i, t);
-		*/
-
-		/*
-		 *  !NOTA!
-			Il problema è che nel VS la distanza tra i vertici al bone va dal vertice al centro mesh
-			Mentre in Flex la posizione ritornata è relativa al rigid
-
-			Devo rimuovere dal transform ritornato da flex la posizione iniziale
-
-			Effettuare la prova bloccando i rigid superiori e controllare se la distanza
-			tra il bone e i vertici viene mantenuta
-		*/
-
-		// Try 4 (Correct way to update)
-		Transform t;
-		//t.origin = p_cmds->get_rigid_position(i) - (particle_body_model->get_clusters_positions()[i] * 1);
-		t.origin = p_cmds->get_rigid_position(i);
-		t.basis.set_quat(p_cmds->get_rigid_rotation(i));
-		t.inverse_xform(Transform(Basis(), particle_body_model->get_clusters_positions()[i]));
+		Transform t(Basis(p_cmds->get_rigid_rotation(i)), p_cmds->get_rigid_position(i));
+		t.translate(rigids_local_pos_r[i] * -1);
 		particle_body_mesh->get_skeleton()->set_bone_pose(i, t);
 	}
 }
