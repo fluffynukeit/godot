@@ -174,7 +174,7 @@ public:
 
 	int get_particle_count() const;
 	int get_spring_count() const;
-	int get_rigids_count() const;
+	int get_rigid_count() const;
 
 	// CMD
 	void load_model(Ref<ParticleBodyModel> p_model, const Transform &initial_transform);

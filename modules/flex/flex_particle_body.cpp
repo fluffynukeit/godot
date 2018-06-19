@@ -155,7 +155,7 @@ int FlexParticleBody::get_spring_count() const {
 	return springs_mchunk ? springs_mchunk->get_size() : 0;
 }
 
-int FlexParticleBody::get_rigids_count() const {
+int FlexParticleBody::get_rigid_count() const {
 	return rigids_mchunk ? rigids_mchunk->get_size() : 0;
 }
 
@@ -228,7 +228,7 @@ void FlexParticleBody::load_model(Ref<ParticleBodyModel> p_model, const Transfor
 	}
 
 	{ // Spring
-		int active_s_count(get_spring_count());
+		uint32_t active_s_count(get_spring_count());
 		int resource_s_count(p_model.is_null() ? 0 : p_model->get_constraints_indexes_ref().size() / 2);
 
 		if (active_s_count > resource_s_count) {
@@ -261,7 +261,7 @@ void FlexParticleBody::load_model(Ref<ParticleBodyModel> p_model, const Transfor
 	}
 
 	{ // Rigids
-		int active_r_count(get_rigids_count());
+		uint32_t active_r_count(get_rigid_count());
 		int resource_r_count(p_model->get_clusters_offsets().size());
 
 		if (active_r_count > resource_r_count) {

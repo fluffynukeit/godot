@@ -40,6 +40,10 @@ void ParticlePhysicsServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("body_add_particle", "body", "local_position", "mass"), &ParticlePhysicsServer::body_add_particle);
 	ClassDB::bind_method(D_METHOD("body_remove_particle", "body", "particle_id"), &ParticlePhysicsServer::body_remove_particle);
 
+	ClassDB::bind_method(D_METHOD("body_get_particle_count", "body"), &ParticlePhysicsServer::body_get_particle_count);
+	ClassDB::bind_method(D_METHOD("body_get_spring_count", "body"), &ParticlePhysicsServer::body_get_spring_count);
+	ClassDB::bind_method(D_METHOD("body_get_rigid_count", "body"), &ParticlePhysicsServer::body_get_rigid_count);
+
 	ClassDB::bind_method(D_METHOD("primitive_body_create"), &ParticlePhysicsServer::primitive_body_create);
 	ClassDB::bind_method(D_METHOD("primitive_body_set_space", "body", "space"), &ParticlePhysicsServer::primitive_body_set_space);
 	ClassDB::bind_method(D_METHOD("primitive_body_set_shape", "body", "shape"), &ParticlePhysicsServer::primitive_body_set_shape);

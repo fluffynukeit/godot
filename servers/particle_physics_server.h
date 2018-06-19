@@ -73,7 +73,9 @@ public:
 
 	virtual void body_add_particle(RID p_body, const Vector3 &p_local_position, real_t p_mass) = 0;
 	virtual void body_remove_particle(RID p_body, int p_particle_index) = 0;
+
 	virtual int body_get_particle_count(RID p_body) const = 0;
+	virtual int body_get_spring_count(RID p_body) const = 0;
 	virtual int body_get_rigid_count(RID p_body) const = 0;
 
 	/* PRIMITIVE BODY */
