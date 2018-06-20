@@ -37,6 +37,7 @@
 
 #include "rid_flex.h"
 
+#include "flex_memory_allocator.h"
 #include "flex_utility.h"
 
 class NvFlexLibrary;

@@ -42,6 +42,7 @@
 class FlexParticleBody;
 class FlexSpace;
 class Object;
+class MemoryChunk;
 
 struct ParticleToAdd {
 	FlVector4 particle;

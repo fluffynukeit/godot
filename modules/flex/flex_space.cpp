@@ -263,6 +263,10 @@ void FlexSpace::terminate() {
 
 void FlexSpace::sync() {
 
+	ChunkInteger a(1);
+	BufferInteger b = 1;
+	//// FINISH TEST
+
 	///
 	/// Map phase
 	particle_bodies_memory->map();
