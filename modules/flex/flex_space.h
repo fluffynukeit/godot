@@ -110,9 +110,8 @@ public:
 private:
 	void dispatch_callbacks();
 	void execute_delayed_commands();
-	void execute_geometries_commands();
-
 	void rebuild_rigids_offsets();
+	void execute_geometries_commands();
 
 	void commands_write_buffer();
 	void commands_read_buffer();
