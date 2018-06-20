@@ -82,8 +82,6 @@ class FlexSpace : public RIDFlex {
 
 	Vector<MemoryChunk *> geometry_chunks_to_deallocate;
 
-	bool reload_active_particles;
-
 	float particle_radius;
 
 public:

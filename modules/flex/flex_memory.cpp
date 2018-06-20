@@ -80,6 +80,7 @@ const FlVector4 &ParticleBodiesMemory::get_normal(const MemoryChunk *p_chunk, Pa
 void ActiveParticlesMemory::set_active_particle(const MemoryChunk *p_chunk, ActiveParticleIndex p_active_particle_index, ParticleBufferIndex p_particle_buffer_index) {
 	make_memory_index(p_chunk, p_active_particle_index);
 	active_particles[index] = p_particle_buffer_index;
+	changed = true;
 }
 
 void SpringMemory::set_spring(const MemoryChunk *p_chunk, SpringIndex p_spring_index, const Spring &p_spring) {
