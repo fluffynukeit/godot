@@ -67,8 +67,8 @@ FlexSpace::FlexSpace() :
 		particle_bodies_memory(NULL),
 		active_particles_allocator(NULL),
 		active_particles_memory(NULL),
-		springs_allocator(NULL),
 		active_particles_mchunk(NULL),
+		springs_allocator(NULL),
 		springs_memory(NULL),
 		rigids_allocator(NULL),
 		rigids_memory(NULL),
@@ -76,7 +76,6 @@ FlexSpace::FlexSpace() :
 		rigids_components_memory(NULL),
 		geometries_allocator(NULL),
 		geometries_memory(NULL),
-		reload_active_particles(false),
 		particle_radius(0.1) {
 	init();
 }
@@ -130,6 +129,8 @@ void FlexSpace::init() {
 	active_particles_memory = memnew(ActiveParticlesMemory(flex_lib));
 	active_particles_allocator = memnew(FlexMemoryAllocator(active_particles_memory, MAXPARTICLES)); // TODO must be dynamic
 	active_particles_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
+
+	active_particles_mchunk = active_particles_allocator->allocate_chunk(0);
 
 	CRASH_COND(springs_allocator);
 	CRASH_COND(springs_memory);
@@ -194,6 +195,7 @@ void FlexSpace::terminate() {
 	}
 
 	if (active_particles_memory) {
+		active_particles_allocator->deallocate_chunk(active_particles_mchunk);
 		active_particles_memory->terminate();
 		memdelete(active_particles_memory);
 		active_particles_memory = NULL;
@@ -324,7 +326,6 @@ void FlexSpace::remove_particle_body(FlexParticleBody *p_body) {
 		springs_allocator->deallocate_chunk(p_body->springs_mchunk);
 	p_body->space = NULL;
 	particle_bodies.erase(p_body);
-	reload_active_particles = true;
 }
 
 void FlexSpace::add_primitive_body(FlexPrimitiveBody *p_body) {
@@ -359,7 +360,6 @@ void FlexSpace::execute_delayed_commands() {
 		FlexParticleBody *body = particle_bodies[body_index];
 		if (body->delayed_commands.particle_to_add.size()) {
 
-			reload_active_particles = true;
 			int previous_size = 0;
 
 			// Allocate memory for particles
@@ -457,7 +457,6 @@ void FlexSpace::execute_delayed_commands() {
 
 		if (body->delayed_commands.particle_to_remove.size() && body->particles_mchunk) {
 
-			reload_active_particles = true;
 			// Remove particles AND find associated springs
 
 			ParticleIndex last_buffer_index(body->particles_mchunk->get_end_index());
@@ -497,19 +496,40 @@ void FlexSpace::execute_delayed_commands() {
 
 		if (body->delayed_commands.rigids_components_to_remove.size() && body->rigids_components_mchunk) {
 
-			FlexUnit chunk_size(body->rigids_components_mchunk->get_size());
-			for (Set<RigidComponentIndex>::Element *e = body->delayed_commands.rigids_components_to_remove.front(); e; e = e->next()) {
-				--chunk_size;
-				rigids_components_memory->copy(e->get() + 1, chunk_size, e->get());
+			const int comp_to_rem_size(body->delayed_commands.rigids_components_to_remove.size());
 
+			// Create a vector, because the vector is easier to change values
+			Vector<RigidComponentIndex> rigids_components_to_remove;
+			rigids_components_to_remove.resize(comp_to_rem_size);
+			int i(0);
+			for (Set<RigidComponentIndex>::Element *e = body->delayed_commands.rigids_components_to_remove.front(); e; e = e->next())
+				rigids_components_to_remove[i++] = e->get();
+
+			FlexUnit chunk_size(body->rigids_components_mchunk->get_size());
+			for (i = 0; i < comp_to_rem_size; ++i) {
+
+				// Shift left memory data from the component to remove +1
+				--chunk_size;
+				const RigidComponentIndex component_to_remove_index(rigids_components_to_remove[i]);
+				rigids_components_memory->copy(component_to_remove_index + 1, chunk_size, component_to_remove_index);
+
+				// Update offset in rigid body
 				for (RigidIndex i(body->rigids_mchunk->get_size() - 1); 0 <= i; --i) {
 					RigidComponentIndex offset(rigids_memory->get_offset(body->rigids_mchunk, i));
-					if (offset >= e->get()) {
+					if (offset >= component_to_remove_index) {
 						rigids_memory->set_offset(body->rigids_mchunk, i, offset - 1);
 					} else {
 						break;
 					}
 				}
+
+				// Change the index from the next elements to remove
+				if ((i + 1) < comp_to_rem_size)
+					for (int b(i + 1); b < comp_to_rem_size; ++b) {
+						if (component_to_remove_index <= rigids_components_to_remove[b]) {
+							--rigids_components_to_remove[b];
+						}
+					}
 			}
 
 			rigids_components_allocator->resize_chunk(body->rigids_components_mchunk, chunk_size);
@@ -528,13 +548,9 @@ void FlexSpace::execute_delayed_commands() {
 		particles_count += body->particles_mchunk ? body->particles_mchunk->get_size() : 0;
 	}
 
-	if (reload_active_particles) {
+	if (active_particles_mchunk->get_size() != particles_count) {
 
-		if (active_particles_mchunk) {
-			active_particles_allocator->resize_chunk(active_particles_mchunk, particles_count);
-		} else {
-			active_particles_mchunk = active_particles_allocator->allocate_chunk(particles_count);
-		}
+		active_particles_allocator->resize_chunk(active_particles_mchunk, particles_count);
 
 		int active_particle_index(0);
 		for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
@@ -704,15 +720,13 @@ void FlexSpace::commands_write_buffer() {
 		}
 	}
 
-	if (reload_active_particles) {
+	if (active_particles_memory->was_changed()) {
 		copy_desc.srcOffset = 0;
 		copy_desc.dstOffset = 0;
 		copy_desc.elementCount = active_particles_mchunk->get_size();
 
 		NvFlexSetActive(solver, active_particles_memory->active_particles.buffer, &copy_desc);
 		NvFlexSetActiveCount(solver, active_particles_mchunk->get_size());
-
-		reload_active_particles = false;
 	}
 
 	if (springs_memory->was_changed())
@@ -801,31 +815,29 @@ void FlexSpace::on_particle_removed(FlexParticleBody *p_body, ParticleBufferInde
 void FlexSpace::on_particle_index_changed(FlexParticleBody *p_body, ParticleBufferIndex p_index_old, ParticleBufferIndex p_index_new) {
 
 	// Change springs index
-	if (!p_body->springs_mchunk)
-		return;
+	if (p_body->springs_mchunk) {
+		for (int i(p_body->springs_mchunk->get_size() - 1); 0 <= i; --i) {
 
-	for (int i(p_body->springs_mchunk->get_size() - 1); 0 <= i; --i) {
+			const Spring &spring(springs_memory->get_spring(p_body->springs_mchunk, i));
+			if (spring.index0 == p_index_old) {
 
-		const Spring &spring(springs_memory->get_spring(p_body->springs_mchunk, i));
-		if (spring.index0 == p_index_old) {
+				springs_memory->set_spring(p_body->springs_mchunk, i, Spring(p_index_new, spring.index1));
+			} else if (spring.index1 == p_index_old) {
 
-			springs_memory->set_spring(p_body->springs_mchunk, i, Spring(p_index_new, spring.index1));
-		} else if (spring.index1 == p_index_old) {
-
-			springs_memory->set_spring(p_body->springs_mchunk, i, Spring(spring.index0, p_index_new));
+				springs_memory->set_spring(p_body->springs_mchunk, i, Spring(spring.index0, p_index_new));
+			}
 		}
 	}
 
 	// Change rigid index
-	if (!p_body->rigids_components_mchunk)
-		return;
+	if (p_body->rigids_components_mchunk) {
+		for (int i(p_body->rigids_components_mchunk->get_size() - 1); 0 <= i; --i) {
 
-	for (int i(p_body->rigids_components_mchunk->get_size() - 1); 0 <= i; --i) {
+			ParticleBufferIndex buffer_index = rigids_components_memory->get_index(p_body->rigids_components_mchunk, i);
+			if (p_index_old == buffer_index) {
 
-		ParticleBufferIndex buffer_index = rigids_components_memory->get_index(p_body->rigids_components_mchunk, i);
-		if (p_index_old == buffer_index) {
-
-			rigids_components_memory->set_index(p_body->rigids_components_mchunk, i, p_index_new);
+				rigids_components_memory->set_index(p_body->rigids_components_mchunk, i, p_index_new);
+			}
 		}
 	}
 }

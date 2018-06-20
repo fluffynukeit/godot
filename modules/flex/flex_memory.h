@@ -343,7 +343,12 @@ class ParticleBodiesMemory : public FlexBufferMemory {
 
 class ActiveParticlesMemory : public FlexBufferMemory {
 
+	bool changed;
 	FLEXBUFFERCLASS_1(ActiveParticlesMemory, ParticleIndex, active_particles);
+
+	virtual void _on_mapped() { changed = false; }
+
+	bool was_changed() { return changed; }
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped
