@@ -124,11 +124,11 @@ class FlexParticleBody : public RIDFlex {
 		Vector<ParticleToAdd> particle_to_add;
 		Vector<SpringToAdd> springs_to_add;
 		Vector<RigidToAdd> rigids_to_add;
-		Set<ParticleIndex> particle_to_remove;
+		Vector<ParticleIndex> particle_to_remove;
 		Set<SpringIndex> springs_to_remove;
 		Set<RigidIndex> rigids_to_remove;
 		// rigid component to add
-		Set<RigidComponentIndex> rigids_components_to_remove;
+		Vector<RigidComponentIndex> rigids_components_to_remove;
 	} delayed_commands;
 
 	uint32_t changed_parameters;

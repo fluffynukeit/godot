@@ -126,7 +126,8 @@ void FlexParticleBody::add_particle(const Vector3 &p_local_position, real_t p_ma
 
 void FlexParticleBody::remove_particle(ParticleIndex p_particle) {
 	ERR_FAIL_COND(!is_owner_of_particle(p_particle));
-	delayed_commands.particle_to_remove.insert(p_particle);
+	if (-1 == delayed_commands.particle_to_remove.find(p_particle))
+		delayed_commands.particle_to_remove.push_back(p_particle);
 }
 
 void FlexParticleBody::add_spring(ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness) {
@@ -148,7 +149,8 @@ void FlexParticleBody::remove_rigid(RigidIndex p_rigid_index) {
 }
 
 void FlexParticleBody::remove_rigid_component(RigidComponentIndex p_rigid_component_index) {
-	delayed_commands.rigids_components_to_remove.insert(p_rigid_component_index);
+	if (-1 == delayed_commands.rigids_components_to_remove.find(p_rigid_component_index))
+		delayed_commands.rigids_components_to_remove.push_back(p_rigid_component_index);
 }
 
 int FlexParticleBody::get_particle_count() const {
