@@ -62,8 +62,76 @@
 #include "core/math/transform.h"
 #include "core/math/vector3.h"
 #include "core/string_db.h"
-#include "flex_memory_allocator.h"
 #include "math_defs.h"
+
+#define define_flex_integer(clazz_name)                                    \
+	struct clazz_name {                                                    \
+		int value;                                                         \
+																		   \
+		clazz_name() {}                                                    \
+																		   \
+		clazz_name(const clazz_name &p_other) :                            \
+				value(p_other.value) {}                                    \
+																		   \
+		clazz_name(int p_value) :                                          \
+				value(p_value) {}                                          \
+																		   \
+		void operator=(const int p_value) { value = p_value; }             \
+		void operator=(const clazz_name &p_test) { value = p_test.value; } \
+																		   \
+		clazz_name operator+(const int p_value) {                          \
+			clazz_name tmp(value);                                         \
+			tmp.value += p_value;                                          \
+			return tmp;                                                    \
+		}                                                                  \
+		void operator-(const int p_value) {                                \
+			value -= p_value;                                              \
+		}                                                                  \
+																		   \
+		clazz_name &operator++() {                                         \
+			++value;                                                       \
+			return *this;                                                  \
+		}                                                                  \
+		clazz_name operator++(int) {                                       \
+			clazz_name tmp(*this);                                         \
+			operator++();                                                  \
+			return tmp;                                                    \
+		}                                                                  \
+																		   \
+		clazz_name &operator--() {                                         \
+			--value;                                                       \
+			return *this;                                                  \
+		}                                                                  \
+		clazz_name operator--(int) {                                       \
+			clazz_name tmp(*this);                                         \
+			operator--();                                                  \
+			return tmp;                                                    \
+		}                                                                  \
+																		   \
+		bool operator==(clazz_name p_other) {                              \
+			return value == p_other.value;                                 \
+		}                                                                  \
+		bool operator!=(clazz_name p_other) {                              \
+			return value != p_other.value;                                 \
+		}                                                                  \
+																		   \
+		bool operator<(clazz_name p_other) {                               \
+			return value < p_other.value;                                  \
+		}                                                                  \
+		bool operator>(clazz_name p_other) {                               \
+			return value > p_other.value;                                  \
+		}                                                                  \
+																		   \
+		bool operator<=(clazz_name p_other) {                              \
+			return value <= p_other.value;                                 \
+		}                                                                  \
+		bool operator>=(clazz_name p_other) {                              \
+			return value >= p_other.value;                                 \
+		}                                                                  \
+	}
+
+define_flex_integer(BufferInteger);
+define_flex_integer(ChunkInteger);
 
 typedef int ParticleIndex; // Particle index relative to the memory chunk, can change during time
 typedef int ParticleBufferIndex; // Particle global index, can change during time

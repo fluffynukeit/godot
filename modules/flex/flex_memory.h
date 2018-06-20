@@ -152,6 +152,7 @@ public:                                                                         
 
 class FlexBufferMemory : public FlexMemory {
 
+	Vector<NvFlexVector<BufferInteger> *> buffers_flexint;
 	Vector<NvFlexVector<int> *> buffers_int;
 	Vector<NvFlexVector<float> *> buffers_float;
 	Vector<NvFlexVector<Quat> *> buffers_quat;
@@ -161,6 +162,9 @@ class FlexBufferMemory : public FlexMemory {
 	Vector<NvFlexVector<NvFlexCollisionGeometry> *> buffers_colgeo;
 
 protected:
+	//void __add_buffer(NvFlexVector<BufferInteger> *buffer) {
+	//	buffers_flexint.push_back(buffer);
+	//}
 	void __add_buffer(NvFlexVector<int> *buffer) {
 		buffers_int.push_back(buffer);
 	}
@@ -187,6 +191,9 @@ public:
 	FlexBufferMemory() {}
 
 	void map() {
+		for (int i(buffers_flexint.size() - 1); 0 <= i; --i) {
+			buffers_flexint[i]->map();
+		}
 		for (int i(buffers_int.size() - 1); 0 <= i; --i) {
 			buffers_int[i]->map();
 		}
@@ -212,6 +219,9 @@ public:
 	}
 
 	void unmap() {
+		for (int i(buffers_flexint.size() - 1); 0 <= i; --i) {
+			buffers_flexint[i]->unmap();
+		}
 		for (int i(buffers_int.size() - 1); 0 <= i; --i) {
 			buffers_int[i]->unmap();
 		}
@@ -237,6 +247,9 @@ public:
 	}
 
 	void terminate() {
+		for (int i(buffers_flexint.size() - 1); 0 <= i; --i) {
+			buffers_flexint[i]->destroy();
+		}
 		for (int i(buffers_int.size() - 1); 0 <= i; --i) {
 			buffers_int[i]->destroy();
 		}
@@ -344,7 +357,7 @@ class ParticleBodiesMemory : public FlexBufferMemory {
 class ActiveParticlesMemory : public FlexBufferMemory {
 
 	bool changed;
-	FLEXBUFFERCLASS_1(ActiveParticlesMemory, ParticleIndex, active_particles);
+	FLEXBUFFERCLASS_1(ActiveParticlesMemory, ParticleBufferIndex, active_particles);
 
 	virtual void _on_mapped() { changed = false; }
 
