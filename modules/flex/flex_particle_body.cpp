@@ -388,13 +388,13 @@ void FlexParticleBody::dispatch_sync_callback() {
 void FlexParticleBody::particle_index_changed(ParticleIndex p_old_particle_index, ParticleIndex p_new_particle_index) {
 	if (!particle_index_changed_callback.receiver)
 		return;
-	particle_index_changed_callback.receiver->call(particle_index_changed_callback.method, p_old_particle_index, p_new_particle_index);
+	particle_index_changed_callback.receiver->call(particle_index_changed_callback.method, (int)p_old_particle_index, (int)p_new_particle_index);
 }
 
 void FlexParticleBody::spring_index_changed(SpringIndex p_old_spring_index, SpringIndex p_new_spring_index) {
 	if (!spring_index_changed_callback.receiver)
 		return;
-	spring_index_changed_callback.receiver->call(spring_index_changed_callback.method, p_old_spring_index, p_new_spring_index);
+	spring_index_changed_callback.receiver->call(spring_index_changed_callback.method, (int)p_old_spring_index, (int)p_new_spring_index);
 }
 
 void FlexParticleBody::clear_commands() {

@@ -35,7 +35,7 @@
 #include "flex_memory_allocator.h"
 #include "print_string.h"
 
-void FlexMemory::copy(FlexUnit p_from_begin_index, FlexUnit p_size, FlexUnit p_to_begin_index) {
+void FlexMemory::copy(FlexBufferIndex p_from_begin_index, FlexUnit p_size, FlexBufferIndex p_to_begin_index) {
 	for (int i(0); i < p_size; ++i) {
 		copy_unit(p_to_begin_index + i, p_from_begin_index + i);
 	}
@@ -271,9 +271,9 @@ void FlexMemoryAllocator::find_biggest_chunk_size() {
 	}
 }
 
-MemoryChunk *FlexMemoryAllocator::insert_chunk(FlexUnit p_pos) {
+MemoryChunk *FlexMemoryAllocator::insert_chunk(FlexBufferIndex p_index) {
 	MemoryChunk *chunk = new MemoryChunk;
-	memory_table.insert(p_pos, chunk);
+	memory_table.insert(p_index, chunk);
 	return chunk;
 }
 
@@ -283,7 +283,7 @@ MemoryChunk *FlexMemoryAllocator::create_chunk() {
 	return chunk;
 }
 
-void FlexMemoryAllocator::delete_chunk(FlexUnit p_pos) {
-	delete memory_table[p_pos];
-	memory_table.remove(p_pos);
+void FlexMemoryAllocator::delete_chunk(FlexBufferIndex p_index) {
+	delete memory_table[p_index];
+	memory_table.remove(p_index);
 }

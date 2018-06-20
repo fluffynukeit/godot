@@ -38,8 +38,6 @@
 #include "flex_utility.h"
 #include "vector.h"
 
-typedef int FlexUnit;
-
 class FlexMemory {
 	friend class FlexMemoryAllocator;
 
@@ -47,15 +45,15 @@ protected:
 	virtual void resize_memory(FlexUnit p_size) = 0;
 	virtual void copy_unit(FlexUnit p_to, FlexUnit p_from) = 0;
 
-	void copy(FlexUnit p_from_begin_index, FlexUnit p_size, FlexUnit p_to_begin_index);
+	void copy(FlexBufferIndex p_from_begin_index, FlexUnit p_size, FlexBufferIndex p_to_begin_index);
 };
 
 struct MemoryChunk {
 	friend class FlexMemoryAllocator;
 
 private:
-	FlexUnit begin_index;
-	FlexUnit end_index;
+	FlexBufferIndex begin_index;
+	FlexBufferIndex end_index;
 	bool is_free;
 	FlexUnit size;
 
@@ -65,11 +63,11 @@ private:
 			is_free(true),
 			size(0) {}
 
-	MemoryChunk(FlexUnit p_begin_index, FlexUnit p_end_index, bool p_is_free) :
+	MemoryChunk(FlexBufferIndex p_begin_index, FlexBufferIndex p_end_index, bool p_is_free) :
 			begin_index(p_begin_index),
 			end_index(p_end_index),
 			is_free(p_is_free),
-			size(p_end_index - p_begin_index + 1) {
+			size(1 + p_end_index - p_begin_index) {
 	}
 
 	MemoryChunk(const MemoryChunk &other) :
@@ -78,22 +76,22 @@ private:
 			is_free(other.is_free),
 			size(other.size) {}
 
-	void set(FlexUnit p_begin_index, FlexUnit p_end_index, bool p_is_free) {
+	void set(FlexBufferIndex p_begin_index, FlexBufferIndex p_end_index, bool p_is_free) {
 		begin_index = p_begin_index;
 		end_index = p_end_index;
 		is_free = p_is_free;
-		size = p_end_index - p_begin_index + 1;
+		size = 1 + p_end_index - p_begin_index;
 	}
 
 public:
-	_FORCE_INLINE_ FlexUnit get_begin_index() const { return begin_index; }
-	_FORCE_INLINE_ FlexUnit get_end_index() const { return end_index; }
+	_FORCE_INLINE_ FlexBufferIndex get_begin_index() const { return begin_index; }
+	_FORCE_INLINE_ FlexBufferIndex get_end_index() const { return end_index; }
 	_FORCE_INLINE_ FlexUnit get_size() const { return size; }
 	_FORCE_INLINE_ bool get_is_free() const { return is_free; }
 	/// Get buffer index (relative to the memory)
-	_FORCE_INLINE_ FlexUnit get_buffer_index(FlexUnit p_chunk_index) const { return begin_index + p_chunk_index; }
+	_FORCE_INLINE_ FlexBufferIndex get_buffer_index(FlexChunkIndex p_chunk_index) const { return begin_index + p_chunk_index.value; }
 	/// Get chunk index (relative to this chunk)
-	_FORCE_INLINE_ FlexUnit get_chunk_index(FlexUnit p_buffer_index) const { return p_buffer_index - begin_index; }
+	_FORCE_INLINE_ FlexChunkIndex get_chunk_index(FlexBufferIndex p_buffer_index) const { return p_buffer_index.value - begin_index; }
 };
 
 /// This class is responsible for memory management.
@@ -156,9 +154,9 @@ private:
 	bool redux_memory(FlexUnit p_size);
 	void find_biggest_chunk_size();
 
-	MemoryChunk *insert_chunk(FlexUnit p_pos);
+	MemoryChunk *insert_chunk(FlexBufferIndex p_index);
 	MemoryChunk *create_chunk();
-	void delete_chunk(FlexUnit p_pos);
+	void delete_chunk(FlexBufferIndex p_index);
 };
 
 #endif // FLEX_MEMORY_ALLOCATOR_H

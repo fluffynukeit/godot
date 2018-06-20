@@ -64,35 +64,99 @@
 #include "core/string_db.h"
 #include "math_defs.h"
 
+typedef int FlexUnit;
+
 #define define_flex_integer(clazz_name)                                    \
 	struct clazz_name {                                                    \
-		int value;                                                         \
+		FlexUnit value;                                                    \
 																		   \
 		clazz_name() {}                                                    \
 																		   \
 		clazz_name(const clazz_name &p_other) :                            \
 				value(p_other.value) {}                                    \
 																		   \
-		clazz_name(int p_value) :                                          \
+		clazz_name(FlexUnit p_value) :                                     \
 				value(p_value) {}                                          \
 																		   \
-		void operator=(const int p_value) { value = p_value; }             \
+		void operator=(const FlexUnit p_value) { value = p_value; }        \
 		void operator=(const clazz_name &p_test) { value = p_test.value; } \
 																		   \
-		clazz_name operator+(const int p_value) {                          \
-			clazz_name tmp(value);                                         \
+		bool operator==(clazz_name p_other) {                              \
+			return operator==(p_other.value);                              \
+		}                                                                  \
+		bool operator!=(clazz_name p_other) {                              \
+			return operator!=(p_other.value);                              \
+		}                                                                  \
+																		   \
+		bool operator<(clazz_name p_other) {                               \
+			return operator<(p_other.value);                               \
+		}                                                                  \
+		bool operator>(clazz_name p_other) {                               \
+			return operator>(p_other.value);                               \
+		}                                                                  \
+																		   \
+		bool operator<=(clazz_name p_other) {                              \
+			return operator<=(p_other.value);                              \
+		}                                                                  \
+		bool operator>=(clazz_name p_other) {                              \
+			return operator>=(p_other.value);                              \
+		}                                                                  \
+																		   \
+		operator int() const { return value; }                             \
+																		   \
+		clazz_name operator+(FlexUnit p_value) {                           \
+			clazz_name tmp(*this);                                         \
 			tmp.value += p_value;                                          \
 			return tmp;                                                    \
 		}                                                                  \
-		void operator-(const int p_value) {                                \
+		clazz_name operator-(FlexUnit p_value) {                           \
+			clazz_name tmp(*this);                                         \
+			tmp.value -= p_value;                                          \
+			return tmp;                                                    \
+		}                                                                  \
+																		   \
+		void operator+=(FlexUnit p_value) {                                \
+			value += p_value;                                              \
+		}                                                                  \
+																		   \
+		void operator-=(FlexUnit p_value) {                                \
 			value -= p_value;                                              \
+		}                                                                  \
+																		   \
+		bool operator==(FlexUnit p_value) {                                \
+			return value == p_value;                                       \
+		}                                                                  \
+																		   \
+		bool operator!=(FlexUnit p_value) {                                \
+			return !(operator==(p_value));                                 \
+		}                                                                  \
+																		   \
+		bool operator<(FlexUnit p_value) {                                 \
+			return value < p_value;                                        \
+		}                                                                  \
+		bool operator>(FlexUnit p_value) {                                 \
+			return value > p_value;                                        \
+		}                                                                  \
+																		   \
+		bool operator<=(FlexUnit p_value) {                                \
+			return value <= p_value;                                       \
+		}                                                                  \
+		bool operator>=(FlexUnit p_value) {                                \
+			return value >= p_value;                                       \
+		}                                                                  \
+																		   \
+		clazz_name operator+(clazz_name p_other) {                         \
+			return operator+(p_other.value);                               \
+		}                                                                  \
+		clazz_name operator-(clazz_name p_other) {                         \
+			return operator-(p_other.value);                               \
 		}                                                                  \
 																		   \
 		clazz_name &operator++() {                                         \
 			++value;                                                       \
 			return *this;                                                  \
 		}                                                                  \
-		clazz_name operator++(int) {                                       \
+		clazz_name operator++(FlexUnit) {                                  \
 			clazz_name tmp(*this);                                         \
 			operator++();                                                  \
 			return tmp;                                                    \
@@ -102,49 +166,30 @@
 			--value;                                                       \
 			return *this;                                                  \
 		}                                                                  \
-		clazz_name operator--(int) {                                       \
+		clazz_name operator--(FlexUnit) {                                  \
 			clazz_name tmp(*this);                                         \
 			operator--();                                                  \
 			return tmp;                                                    \
 		}                                                                  \
-																		   \
-		bool operator==(clazz_name p_other) {                              \
-			return value == p_other.value;                                 \
-		}                                                                  \
-		bool operator!=(clazz_name p_other) {                              \
-			return value != p_other.value;                                 \
-		}                                                                  \
-																		   \
-		bool operator<(clazz_name p_other) {                               \
-			return value < p_other.value;                                  \
-		}                                                                  \
-		bool operator>(clazz_name p_other) {                               \
-			return value > p_other.value;                                  \
-		}                                                                  \
-																		   \
-		bool operator<=(clazz_name p_other) {                              \
-			return value <= p_other.value;                                 \
-		}                                                                  \
-		bool operator>=(clazz_name p_other) {                              \
-			return value >= p_other.value;                                 \
-		}                                                                  \
 	}
 
-define_flex_integer(BufferInteger);
-define_flex_integer(ChunkInteger);
+define_flex_integer(FlexChunkIndex);
+define_flex_integer(FlexBufferIndex);
 
-typedef int ParticleIndex; // Particle index relative to the memory chunk, can change during time
-typedef int ParticleBufferIndex; // Particle global index, can change during time
-typedef int RigidIndex; // Rigid index relative to the memory chunk, can change during time
-typedef int RigidBufferIndex; // Rigid global index, can change during time
-typedef int RigidComponentIndex; // Rigid component index relative to the memory chunk, can change during time
-typedef int RigidComponentBufferIndex; // Rigid component global index, can change during time
-typedef int ActiveParticleIndex; // Active Particle index relative to the memory chunk, can change during time
-typedef int ActiveParticleBufferIndex; // Active Particle global index, can change during time
-typedef int SpringIndex; // Spring index relative to the memory chunk, can change during time
-typedef int SpringBufferIndex; // Spring global index, can change during time
-typedef int GeometryIndex; // Geometry index relative to the memory chunk, can change during time
-typedef int GeometryBufferIndex; // Geometry global index, cavec3_from_flvec4time
+typedef FlexChunkIndex ParticleIndex; // Particle index relative to the memory chunk, can change during time
+typedef FlexBufferIndex ParticleBufferIndex; // Particle global index, can change during time
+typedef FlexChunkIndex RigidIndex; // Rigid index relative to the memory chunk, can change during time
+typedef FlexBufferIndex RigidBufferIndex; // Rigid global index, can change during time
+typedef FlexChunkIndex RigidComponentIndex; // Rigid component index relative to the memory chunk, can change during time
+typedef FlexBufferIndex RigidComponentBufferIndex; // Rigid component global index, can change during time
+typedef FlexChunkIndex ActiveParticleIndex; // Active Particle index relative to the memory chunk, can change during time
+typedef FlexBufferIndex ActiveParticleBufferIndex; // Active Particle global index, can change during time
+typedef FlexChunkIndex SpringIndex; // Spring index relative to the memory chunk, can change during time
+typedef FlexBufferIndex SpringBufferIndex; // Spring global index, can change during time
+typedef FlexChunkIndex GeometryIndex; // Geometry index relative to the memory chunk, can change during time
+typedef FlexBufferIndex GeometryBufferIndex; // Geometry global index, cavec3_from_flvec4time
+
+typedef int FlexIndex;
 
 #define vec3_from_flvec4(vec4) \
 	Vector3(vec4[0], vec4[1], vec4[2])
