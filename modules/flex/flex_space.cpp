@@ -263,10 +263,6 @@ void FlexSpace::terminate() {
 
 void FlexSpace::sync() {
 
-	ChunkInteger a(1);
-	BufferInteger b = 1;
-	//// FINISH TEST
-
 	///
 	/// Map phase
 	particle_bodies_memory->map();
@@ -439,13 +435,13 @@ void FlexSpace::execute_delayed_commands() {
 				body->rigids_components_mchunk = rigids_components_allocator->allocate_chunk(index_count);
 			}
 
-			RigidComponentIndex rigid_comp_index(previous_size == 0 ? 0 : rigids_memory->get_offset(body->rigids_mchunk, previous_size - 1));
+			RigidComponentIndex rigid_comp_index(previous_size == 0 ? RigidComponentIndex(0) : rigids_memory->get_offset(body->rigids_mchunk, previous_size - 1));
 			for (int r(0); r < body->delayed_commands.rigids_to_add.size(); ++r) {
 
 				rigids_memory->set_offset(body->rigids_mchunk, previous_size + r, rigid_comp_index + body->delayed_commands.rigids_to_add[r].indices.size());
 
 				// Allocate components
-				PoolVector<int>::Read indices_r = body->delayed_commands.rigids_to_add[r].indices.read();
+				PoolVector<ParticleIndex>::Read indices_r = body->delayed_commands.rigids_to_add[r].indices.read();
 				PoolVector<Vector3>::Read rests_r = body->delayed_commands.rigids_to_add[r].rests.read();
 
 				for (int rigid_p_index(body->delayed_commands.rigids_to_add[r].indices.size() - 1); 0 <= rigid_p_index; --rigid_p_index) {
@@ -484,7 +480,7 @@ void FlexSpace::execute_delayed_commands() {
 
 			// Remove springs
 
-			SpringIndex last_buffer_index(body->springs_mchunk->get_end_index());
+			SpringBufferIndex last_buffer_index(body->springs_mchunk->get_end_index());
 			for (Set<SpringIndex>::Element *e = body->delayed_commands.springs_to_remove.front(); e; e = e->next()) {
 
 				// Copy the values of last ID to the ID to remove (lose order)
