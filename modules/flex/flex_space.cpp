@@ -288,8 +288,6 @@ void FlexSpace::sync() {
 		springs_allocator->sanitize(); // The memory must be consecutive to be sent to GPU
 	springs_memory->unmap();
 
-	if (rigids_memory->was_changed())
-		rebuild_rigids_offsets();
 	rigids_memory->unmap();
 	rigids_components_memory->unmap();
 
@@ -459,17 +457,18 @@ void FlexSpace::execute_delayed_commands() {
 
 			// Remove particles
 
-			ParticleIndex last_buffer_index(body->particles_mchunk->get_end_index());
+			ParticleBufferIndex last_buffer_index(body->particles_mchunk->get_end_index());
 			for (int i(0); i < body->delayed_commands.particle_to_remove.size(); ++i) {
 
 				// Copy the values of last index to the index to remove (lose order)
 				const ParticleBufferIndex buffer_index_to_remove(body->particles_mchunk->get_buffer_index(body->delayed_commands.particle_to_remove[i]));
 
-				particle_bodies_memory->copy(last_buffer_index, 1, buffer_index_to_remove);
-
 				on_particle_removed(body, buffer_index_to_remove);
-				on_particle_index_changed(body, last_buffer_index, buffer_index_to_remove);
-				body->particle_index_changed(body->particles_mchunk->get_chunk_index(last_buffer_index), body->delayed_commands.particle_to_remove[i]);
+				if (last_buffer_index != buffer_index_to_remove) {
+					particle_bodies_memory->copy(last_buffer_index, 1, buffer_index_to_remove);
+					on_particle_index_changed(body, last_buffer_index, buffer_index_to_remove);
+					body->particle_index_changed(body->particles_mchunk->get_chunk_index(last_buffer_index), body->delayed_commands.particle_to_remove[i]);
+				}
 
 				--last_buffer_index;
 			}
@@ -504,7 +503,8 @@ void FlexSpace::execute_delayed_commands() {
 				// Shift left memory data from the component to remove +1
 				--chunk_size;
 				const RigidComponentIndex component_to_remove_index(body->delayed_commands.rigids_components_to_remove[i]);
-				rigids_components_memory->copy(component_to_remove_index + 1, chunk_size, component_to_remove_index);
+				const RigidComponentBufferIndex component_to_remove_buffer_index(body->rigids_components_mchunk->get_buffer_index(component_to_remove_index));
+				rigids_components_memory->copy(component_to_remove_buffer_index + 1, chunk_size, component_to_remove_buffer_index);
 
 				// Update offset in rigid body
 				for (RigidIndex i(body->rigids_mchunk->get_size() - 1); 0 <= i; --i) {
@@ -556,71 +556,9 @@ void FlexSpace::execute_delayed_commands() {
 			}
 		}
 	}
-}
 
-void FlexSpace::execute_geometries_commands() {
-	for (int i(primitive_bodies.size() - 1); 0 <= i; --i) {
-
-		FlexPrimitiveBody *body = primitive_bodies[i];
-
-		if (!body->get_shape()) {
-			// Remove geometry if has memory chunk
-			if (body->geometry_mchunk) {
-				geometry_chunks_to_deallocate.push_back(body->geometry_mchunk);
-				body->geometry_mchunk = NULL;
-			}
-			continue;
-		}
-
-		// Add or update geometry
-
-		if (body->changed_parameters == 0)
-			continue; // Nothing to update
-
-		if (!body->geometry_mchunk) {
-			body->geometry_mchunk = geometries_allocator->allocate_chunk(1);
-			body->changed_parameters = eChangedPrimitiveBodyParamAll;
-		}
-
-		if (body->changed_parameters & eChangedPrimitiveBodyParamShape) {
-			NvFlexCollisionGeometry geometry;
-			body->get_shape()->get_shape(&geometry);
-			geometries_memory->set_shape(body->geometry_mchunk, 0, geometry);
-			body->changed_parameters |= eChangedPrimitiveBodyParamFlags;
-		}
-
-		if (body->changed_parameters & eChangedPrimitiveBodyParamTransform) {
-
-			Basis basis = body->transf.basis;
-			if (body->get_shape()->need_alignment()) {
-				basis *= body->get_shape()->get_alignment_basis();
-			}
-
-			if (body->changed_parameters & eChangedPrimitiveBodyParamTransformIsMotion) {
-				geometries_memory->set_position_prev(body->geometry_mchunk, 0, geometries_memory->get_position(body->geometry_mchunk, 0));
-				geometries_memory->set_rotation_prev(body->geometry_mchunk, 0, geometries_memory->get_rotation(body->geometry_mchunk, 0));
-			} else {
-				geometries_memory->set_position_prev(body->geometry_mchunk, 0, flvec4_from_vec3(body->transf.origin));
-				geometries_memory->set_rotation_prev(body->geometry_mchunk, 0, basis.get_quat());
-			}
-
-			geometries_memory->set_position(body->geometry_mchunk, 0, flvec4_from_vec3(body->transf.origin));
-			geometries_memory->set_rotation(body->geometry_mchunk, 0, basis.get_quat());
-		}
-
-		if (body->changed_parameters & eChangedPrimitiveBodyParamFlags) {
-			//shift layer by 23 to match: NvFlexPhase
-			uint32_t flag = NvFlexMakeShapeFlagsWithChannels(body->get_shape()->get_type(), body->is_kinematic(), body->get_layer() << 24);
-			geometries_memory->set_flags(body->geometry_mchunk, 0, NvFlexMakeShapeFlagsWithChannels(body->get_shape()->get_type(), body->is_kinematic(), body->get_layer() << 24));
-		}
-
-		body->set_clean();
-	}
-
-	for (int i(geometry_chunks_to_deallocate.size() - 1); 0 <= i; --i) {
-		geometries_allocator->deallocate_chunk(geometry_chunks_to_deallocate[i]);
-	}
-	geometry_chunks_to_deallocate.clear();
+	if (rigids_memory->was_changed())
+		rebuild_rigids_offsets();
 }
 
 void FlexSpace::rebuild_rigids_offsets() {
@@ -686,6 +624,71 @@ void FlexSpace::rebuild_rigids_offsets() {
 	rigids_allocator->deallocate_chunk(swap_area);
 
 	rigids_memory->zeroed_first_buffer_offset();
+}
+
+void FlexSpace::execute_geometries_commands() {
+	for (int i(primitive_bodies.size() - 1); 0 <= i; --i) {
+
+		FlexPrimitiveBody *body = primitive_bodies[i];
+
+		if (!body->get_shape()) {
+			// Remove geometry if has memory chunk
+			if (body->geometry_mchunk) {
+				geometry_chunks_to_deallocate.push_back(body->geometry_mchunk);
+				body->geometry_mchunk = NULL;
+			}
+			continue;
+		}
+
+		// Add or update geometry
+
+		if (body->changed_parameters == 0)
+			continue; // Nothing to update
+
+		if (!body->geometry_mchunk) {
+			body->geometry_mchunk = geometries_allocator->allocate_chunk(1);
+			body->changed_parameters = eChangedPrimitiveBodyParamAll;
+		}
+
+		if (body->changed_parameters & eChangedPrimitiveBodyParamShape) {
+			NvFlexCollisionGeometry geometry;
+			body->get_shape()->get_shape(&geometry);
+			geometries_memory->set_shape(body->geometry_mchunk, 0, geometry);
+			body->changed_parameters |= eChangedPrimitiveBodyParamFlags;
+		}
+
+		if (body->changed_parameters & eChangedPrimitiveBodyParamTransform) {
+
+			Basis basis = body->transf.basis;
+			if (body->get_shape()->need_alignment()) {
+				basis *= body->get_shape()->get_alignment_basis();
+			}
+
+			if (body->changed_parameters & eChangedPrimitiveBodyParamTransformIsMotion) {
+				geometries_memory->set_position_prev(body->geometry_mchunk, 0, geometries_memory->get_position(body->geometry_mchunk, 0));
+				geometries_memory->set_rotation_prev(body->geometry_mchunk, 0, geometries_memory->get_rotation(body->geometry_mchunk, 0));
+			} else {
+				geometries_memory->set_position_prev(body->geometry_mchunk, 0, flvec4_from_vec3(body->transf.origin));
+				geometries_memory->set_rotation_prev(body->geometry_mchunk, 0, basis.get_quat());
+			}
+
+			geometries_memory->set_position(body->geometry_mchunk, 0, flvec4_from_vec3(body->transf.origin));
+			geometries_memory->set_rotation(body->geometry_mchunk, 0, basis.get_quat());
+		}
+
+		if (body->changed_parameters & eChangedPrimitiveBodyParamFlags) {
+			//shift layer by 23 to match: NvFlexPhase
+			uint32_t flag = NvFlexMakeShapeFlagsWithChannels(body->get_shape()->get_type(), body->is_kinematic(), body->get_layer() << 24);
+			geometries_memory->set_flags(body->geometry_mchunk, 0, NvFlexMakeShapeFlagsWithChannels(body->get_shape()->get_type(), body->is_kinematic(), body->get_layer() << 24));
+		}
+
+		body->set_clean();
+	}
+
+	for (int i(geometry_chunks_to_deallocate.size() - 1); 0 <= i; --i) {
+		geometries_allocator->deallocate_chunk(geometry_chunks_to_deallocate[i]);
+	}
+	geometry_chunks_to_deallocate.clear();
 }
 
 void FlexSpace::commands_write_buffer() {
@@ -835,7 +838,10 @@ void FlexSpace::on_particle_index_changed(FlexParticleBody *p_body, ParticleBuff
 	}
 
 	// Update id even in the commands
-	const int pos = p_body->delayed_commands.particle_to_remove.find(p_index_old);
+	const int chunk_index_old(p_body->particles_mchunk->get_chunk_index(p_index_old));
+	const int chunk_index_new(p_body->particles_mchunk->get_chunk_index(p_index_new));
+
+	const int pos = p_body->delayed_commands.particle_to_remove.find(chunk_index_old);
 	if (0 <= pos)
-		p_body->delayed_commands.particle_to_remove[pos] = p_index_new;
+		p_body->delayed_commands.particle_to_remove[pos] = chunk_index_new;
 }
