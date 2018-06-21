@@ -225,7 +225,7 @@ void FlexMemoryAllocator::resize_chunk(MemoryChunk *&r_chunk, FlexUnit p_size) {
 }
 
 void FlexMemoryAllocator::copy_chunk(MemoryChunk *p_to, MemoryChunk *p_from) {
-	FlexUnit copy_size = MIN(p_from->size, p_to->size); // Avoid to copy more then the destination size
+	const FlexUnit copy_size = MIN(p_from->size, p_to->size); // Avoid to copy more then the destination size
 	memory->copy(p_to->begin_index, copy_size, p_from->begin_index);
 }
 

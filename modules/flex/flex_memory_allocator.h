@@ -45,6 +45,7 @@ protected:
 	virtual void resize_memory(FlexUnit p_size) = 0;
 	virtual void copy_unit(FlexUnit p_to, FlexUnit p_from) = 0;
 
+public:
 	void copy(FlexBufferIndex p_to_begin_index, FlexUnit p_size, FlexBufferIndex p_from_begin_index);
 };
 
@@ -139,12 +140,14 @@ public:
 	bool resize_memory(FlexUnit p_size);
 	void sanitize(bool p_want_update_cache = true, bool p_trim = true);
 
-	// Allocate memory, return null if no more space available
+	FlexMemory *get_memory() { return memory; }
+
+	/// Allocate memory, return null if no more space available
 	MemoryChunk *allocate_chunk(FlexUnit p_size);
 	void deallocate_chunk(MemoryChunk *&r_chunk);
 	void resize_chunk(MemoryChunk *&r_chunk, FlexUnit p_size);
 
-	// If the chunks have different sizes the copy will be performed only by the size of smaller chunk
+	/// If the chunks have different sizes the copy will be performed only by the size of smaller chunk
 	void copy_chunk(MemoryChunk *p_to, MemoryChunk *p_from);
 
 	FlexUnit get_last_used_index();
@@ -159,6 +162,11 @@ private:
 	MemoryChunk *insert_chunk(FlexBufferIndex p_index);
 	MemoryChunk *create_chunk();
 	void delete_chunk(FlexBufferIndex p_index);
+};
+
+class FlexMemoryModificator {
+public:
+	virtual void exec() = 0;
 };
 
 #endif // FLEX_MEMORY_ALLOCATOR_H

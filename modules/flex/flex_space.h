@@ -122,4 +122,33 @@ private:
 	void on_particle_index_changed(FlexParticleBody *p_body, ParticleBufferIndex p_index_old, ParticleBufferIndex p_index_new);
 };
 
+class FlexMemorySweeper : public FlexMemoryModificator {
+};
+
+/// Maintain order
+/// r_indices_to_remove will be unusable after this
+class FlexMemorySweeperSlow : public FlexMemorySweeper {
+
+	FlexMemoryAllocator *rigids_components_allocator;
+	MemoryChunk *&rigids_components_mchunk;
+	Vector<FlexChunkIndex> &indices_to_remove;
+
+public:
+	FlexMemorySweeperSlow(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove);
+
+	virtual void on_component_removed(RigidComponentIndex p_component_removed) = 0;
+	virtual void exec();
+};
+
+class RigidsComponentsMemorySweeper : public FlexMemorySweeperSlow {
+
+	RigidsMemory *rigids_memory;
+	MemoryChunk *&rigids_mchunk;
+
+public:
+	RigidsComponentsMemorySweeper(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove, RigidsMemory *p_rigids_memory, MemoryChunk *&r_rigids_mchunk);
+
+	virtual void on_component_removed(RigidComponentIndex p_component_removed);
+};
+
 #endif // FLEX_SPACE_H

@@ -145,10 +145,12 @@ void FlexParticleBody::add_rigid(const Transform &p_global_transform, float p_st
 
 void FlexParticleBody::remove_rigid(RigidIndex p_rigid_index) {
 	ERR_FAIL_COND(!is_owner_of_rigid(p_rigid_index));
-	delayed_commands.rigids_to_remove.insert(p_rigid_index);
+	if (-1 == delayed_commands.rigids_to_remove.find(p_rigid_index))
+		delayed_commands.rigids_to_remove.push_back(p_rigid_index);
 }
 
 void FlexParticleBody::remove_rigid_component(RigidComponentIndex p_rigid_component_index) {
+	ERR_FAIL_COND(!is_owner_of_rigid_component(p_rigid_component_index));
 	if (-1 == delayed_commands.rigids_components_to_remove.find(p_rigid_component_index))
 		delayed_commands.rigids_components_to_remove.push_back(p_rigid_component_index);
 }
@@ -394,21 +396,19 @@ void FlexParticleBody::reload_rigid_COM(RigidIndex p_rigid) {
 }
 
 bool FlexParticleBody::is_owner_of_particle(ParticleIndex p_particle) const {
-	if (!particles_mchunk)
-		return false;
 	return (particles_mchunk && (particles_mchunk->get_buffer_index(p_particle)) <= particles_mchunk->get_end_index());
 }
 
 bool FlexParticleBody::is_owner_of_spring(SpringIndex p_spring) const {
-	if (!springs_mchunk)
-		return false;
 	return (springs_mchunk && (springs_mchunk->get_buffer_index(p_spring)) <= springs_mchunk->get_end_index());
 }
 
 bool FlexParticleBody::is_owner_of_rigid(RigidIndex p_rigid) const {
-	if (!rigids_mchunk)
-		return false;
 	return (rigids_mchunk && (rigids_mchunk->get_buffer_index(p_rigid)) <= rigids_mchunk->get_end_index());
+}
+
+bool FlexParticleBody::is_owner_of_rigid_component(RigidComponentIndex p_rigid_component) const {
+	return (rigids_components_mchunk && (rigids_components_mchunk->get_buffer_index(p_rigid_component)) <= rigids_components_mchunk->get_end_index());
 }
 
 void FlexParticleBody::clear_changed_params() {
