@@ -45,7 +45,7 @@ class NvFlexSolver;
 class FlexParticleBody;
 class FlexPrimitiveBody;
 class FlexMemoryAllocator;
-class ParticleBodiesMemory;
+class ParticlesMemory;
 class ActiveParticlesMemory;
 class SpringMemory;
 class RigidsMemory;
@@ -59,8 +59,8 @@ class FlexSpace : public RIDFlex {
 	NvFlexLibrary *flex_lib;
 	NvFlexSolver *solver;
 
-	FlexMemoryAllocator *particle_bodies_allocator;
-	ParticleBodiesMemory *particle_bodies_memory;
+	FlexMemoryAllocator *particles_allocator;
+	ParticlesMemory *particles_memory;
 
 	FlexMemoryAllocator *active_particles_allocator;
 	ActiveParticlesMemory *active_particles_memory;
@@ -94,10 +94,11 @@ public:
 	void sync();
 	void step(real_t p_delta_time);
 
-	_FORCE_INLINE_ FlexMemoryAllocator *get_particle_bodies_allocator() { return particle_bodies_allocator; }
-	_FORCE_INLINE_ ParticleBodiesMemory *get_particle_bodies_memory() { return particle_bodies_memory; }
+	_FORCE_INLINE_ FlexMemoryAllocator *get_particles_allocator() { return particles_allocator; }
+	_FORCE_INLINE_ ParticlesMemory *get_particles_memory() { return particles_memory; }
 	_FORCE_INLINE_ FlexMemoryAllocator *get_springs_allocator() { return springs_allocator; }
 	_FORCE_INLINE_ RigidsMemory *get_rigids_memory() { return rigids_memory; }
+	_FORCE_INLINE_ RigidsComponentsMemory *get_rigids_components_memory() { return rigids_components_memory; }
 	_FORCE_INLINE_ SpringMemory *get_springs_memory() { return springs_memory; }
 
 	void add_particle_body(FlexParticleBody *p_body);

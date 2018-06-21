@@ -42,37 +42,37 @@
 	FlexBufferIndex index = p_chunk->get_buffer_index(p_index); \
 	ERR_FAIL_COND_V(index > p_chunk->get_end_index(), ret);
 
-void ParticleBodiesMemory::set_particle(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, FlVector4 p_particle) {
+void ParticlesMemory::set_particle(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, FlVector4 p_particle) {
 	make_memory_index(p_chunk, p_particle_index);
 	particles[index] = p_particle;
 }
 
-const FlVector4 &ParticleBodiesMemory::get_particle(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const {
+const FlVector4 &ParticlesMemory::get_particle(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const {
 	make_memory_index_V(p_chunk, p_particle_index, return_err_flvec4);
 	return particles[index];
 }
 
-void ParticleBodiesMemory::set_velocity(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, Vector3 p_velocity) {
+void ParticlesMemory::set_velocity(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, Vector3 p_velocity) {
 	make_memory_index(p_chunk, p_particle_index);
 	velocities[index] = p_velocity;
 }
 
-const Vector3 &ParticleBodiesMemory::get_velocity(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const {
+const Vector3 &ParticlesMemory::get_velocity(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const {
 	make_memory_index_V(p_chunk, p_particle_index, return_err_vec3);
 	return velocities[index];
 }
 
-void ParticleBodiesMemory::set_phase(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, int p_phase) {
+void ParticlesMemory::set_phase(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, int p_phase) {
 	make_memory_index(p_chunk, p_particle_index);
 	phases[index] = p_phase;
 }
 
-int ParticleBodiesMemory::get_phase(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const {
+int ParticlesMemory::get_phase(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const {
 	make_memory_index_V(p_chunk, p_particle_index, 0);
 	return phases[index];
 }
 
-const FlVector4 &ParticleBodiesMemory::get_normal(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const {
+const FlVector4 &ParticlesMemory::get_normal(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const {
 	make_memory_index_V(p_chunk, p_particle_index, return_err_flvec4);
 	return normals[index];
 }
