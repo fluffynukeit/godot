@@ -830,6 +830,8 @@ void FlexMemorySweeperSlow::exec() {
 		const FlexChunkIndex index_to_remove(indices_to_remove[i]);
 		const FlexBufferIndex buffer_index_to_remove(mchunk->get_buffer_index(index_to_remove));
 
+		on_element_remove(index_to_remove);
+
 		int sub_chunk_size(chunk_end_index - (buffer_index_to_remove + 1) + 1);
 		allocator->get_memory()->copy(buffer_index_to_remove, sub_chunk_size, buffer_index_to_remove + 1);
 
@@ -873,14 +875,23 @@ RigidsMemorySweeper::RigidsMemorySweeper(FlexMemoryAllocator *p_allocator, Memor
 		rigids_components_memory(p_rigids_components_memory),
 		rigids_components_mchunk(r_rigids_components_mchunk) {}
 
-void RigidsMemorySweeper::on_element_removed(RigidIndex p_removed_index) {
-
-	// Remove all indices of rigid
+void RigidsMemorySweeper::on_element_remove(RigidIndex p_removed_index) {
 	RigidComponentIndex rigids_start_index = p_removed_index == 0 ? RigidComponentIndex(0) : rigids_memory->get_offset(mchunk, p_removed_index - 1);
 	RigidComponentIndex next_rigid_index = rigids_memory->get_offset(mchunk, p_removed_index);
+	rigid_particle_index_count = next_rigid_index - rigids_start_index;
+}
 
+void RigidsMemorySweeper::on_element_removed(RigidIndex p_removed_index) {
+
+	RigidComponentIndex rigids_start_index = p_removed_index == 0 ? RigidComponentIndex(0) : rigids_memory->get_offset(mchunk, p_removed_index - 1);
+	RigidComponentIndex next_rigid_index = rigids_start_index + rigid_particle_index_count;
+
+	// Recreate offset
+	rigids_memory->set_offset(mchunk, p_removed_index, next_rigid_index);
+
+	// Remove all indices of rigid
 	int sub_chunk_size(rigids_components_mchunk->get_end_index() - next_rigid_index + 1);
 	rigids_components_memory->copy(rigids_components_mchunk->get_buffer_index(rigids_start_index), sub_chunk_size, rigids_components_mchunk->get_buffer_index(next_rigid_index));
 
-	rigids_components_allocator->resize_chunk(mchunk, rigids_start_index + sub_chunk_size);
+	rigids_components_allocator->resize_chunk(rigids_components_mchunk, rigids_start_index + sub_chunk_size);
 }

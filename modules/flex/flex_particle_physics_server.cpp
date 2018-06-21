@@ -201,6 +201,13 @@ void FlexParticlePhysicsServer::body_remove_particle(RID p_body, int p_particle_
 	body->remove_particle(p_particle_index);
 }
 
+void FlexParticlePhysicsServer::body_remove_rigid(RID p_body, int p_rigid_index) {
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND(!body);
+
+	body->remove_rigid(p_rigid_index);
+}
+
 int FlexParticlePhysicsServer::body_get_particle_count(RID p_body) const {
 	FlexParticleBody *body = body_owner.get(p_body);
 	ERR_FAIL_COND_V(!body, 0);
