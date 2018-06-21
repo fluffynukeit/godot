@@ -72,6 +72,8 @@ public:
 	void add_particle(const Vector3 &p_local_position, real_t p_mass);
 	void remove_particle(int p_particle_index);
 
+	void remove_rigid(int p_rigid_index);
+
 	void set_collision_group(uint32_t p_layer);
 	uint32_t get_collision_group() const;
 
