@@ -480,16 +480,21 @@ void FlexSpace::execute_delayed_commands() {
 			sweeper.exec();
 			body->reload_rigids_COM();
 
-			//for(rigids_memory->get_offset(body->rigids_mchunk))
-			// TODO check here if ther'are rigids without particles
+			// Check if there are particles to remove
+			int previous_offset(0);
+			for (int i(0); i < body->rigids_mchunk->get_size(); ++i) {
+				if (previous_offset == rigids_memory->get_offset(body->rigids_mchunk, i)) {
+					body->remove_rigid(i);
+				} else {
+					previous_offset = rigids_memory->get_offset(body->rigids_mchunk, i);
+				}
+			}
 		}
 
 		if (body->delayed_commands.rigids_to_remove.size()) {
 
-			RigidsMemorySweeper sweeper(rigids_allocator, body->rigids_mchunk, body->delayed_commands.rigids_to_remove);
+			RigidsMemorySweeper sweeper(rigids_allocator, body->rigids_mchunk, body->delayed_commands.rigids_to_remove, rigids_memory, rigids_components_allocator, rigids_components_memory, body->rigids_components_mchunk);
 			sweeper.exec();
-
-			// TODO remove all rigids comopnent associated
 		}
 
 		// Apply changed properties
@@ -811,22 +816,22 @@ void FlexSpace::on_particle_index_changed(FlexParticleBody *p_body, ParticleBuff
 }
 
 FlexMemorySweeperSlow::FlexMemorySweeperSlow(FlexMemoryAllocator *p_rigids_components_allocator, MemoryChunk *&r_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove) :
-		rigids_components_allocator(p_rigids_components_allocator),
-		rigids_components_mchunk(r_mchunk),
+		allocator(p_rigids_components_allocator),
+		mchunk(r_mchunk),
 		indices_to_remove(r_indices_to_remove) {}
 
 void FlexMemorySweeperSlow::exec() {
 
-	FlexBufferIndex chunk_end_index(rigids_components_mchunk->get_end_index());
+	FlexBufferIndex chunk_end_index(mchunk->get_end_index());
 	const int rem_indices_count(indices_to_remove.size());
 
 	for (int i = 0; i < rem_indices_count; ++i) {
 
 		const FlexChunkIndex index_to_remove(indices_to_remove[i]);
-		const FlexBufferIndex buffer_index_to_remove(rigids_components_mchunk->get_buffer_index(index_to_remove));
+		const FlexBufferIndex buffer_index_to_remove(mchunk->get_buffer_index(index_to_remove));
 
 		int sub_chunk_size(chunk_end_index - (buffer_index_to_remove + 1) + 1);
-		rigids_components_allocator->get_memory()->copy(buffer_index_to_remove, sub_chunk_size, buffer_index_to_remove + 1);
+		allocator->get_memory()->copy(buffer_index_to_remove, sub_chunk_size, buffer_index_to_remove + 1);
 
 		on_element_removed(index_to_remove);
 
@@ -840,7 +845,7 @@ void FlexMemorySweeperSlow::exec() {
 
 		--chunk_end_index;
 	}
-	rigids_components_allocator->resize_chunk(rigids_components_mchunk, chunk_end_index - rigids_components_mchunk->get_begin_index() + 1);
+	allocator->resize_chunk(mchunk, chunk_end_index - mchunk->get_begin_index() + 1);
 	indices_to_remove.clear(); // This clear is here to be sure that this vector not used anymore
 }
 
@@ -861,8 +866,21 @@ void RigidsComponentsMemorySweeper::on_element_removed(RigidComponentIndex p_rem
 	}
 }
 
-RigidsMemorySweeper::RigidsMemorySweeper(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove) :
-		FlexMemorySweeperSlow(p_allocator, r_rigids_components_mchunk, r_indices_to_remove) {}
+RigidsMemorySweeper::RigidsMemorySweeper(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove, RigidsMemory *p_rigids_memory, FlexMemoryAllocator *p_rigids_components_allocator, RigidsComponentsMemory *p_rigids_components_memory, MemoryChunk *&r_rigids_components_mchunk) :
+		FlexMemorySweeperSlow(p_allocator, r_rigids_mchunk, r_indices_to_remove),
+		rigids_memory(p_rigids_memory),
+		rigids_components_allocator(p_rigids_components_allocator),
+		rigids_components_memory(p_rigids_components_memory),
+		rigids_components_mchunk(r_rigids_components_mchunk) {}
 
 void RigidsMemorySweeper::on_element_removed(RigidIndex p_removed_index) {
+
+	// Remove all indices of rigid
+	RigidComponentIndex rigids_start_index = p_removed_index == 0 ? RigidComponentIndex(0) : rigids_memory->get_offset(mchunk, p_removed_index - 1);
+	RigidComponentIndex next_rigid_index = rigids_memory->get_offset(mchunk, p_removed_index);
+
+	int sub_chunk_size(rigids_components_mchunk->get_end_index() - next_rigid_index + 1);
+	rigids_components_memory->copy(rigids_components_mchunk->get_buffer_index(rigids_start_index), sub_chunk_size, rigids_components_mchunk->get_buffer_index(next_rigid_index));
+
+	rigids_components_allocator->resize_chunk(mchunk, rigids_start_index + sub_chunk_size);
 }
