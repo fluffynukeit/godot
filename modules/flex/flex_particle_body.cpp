@@ -307,8 +307,8 @@ void FlexParticleBody::load_model(Ref<ParticleBodyModel> p_model, const Transfor
 void FlexParticleBody::reset_particle(ParticleIndex p_particle_index, const Vector3 &p_position, real_t p_mass) {
 	if (!particles_mchunk)
 		return;
-	space->get_particle_bodies_memory()->set_particle(particles_mchunk, p_particle_index, CreateParticle(p_position, p_mass));
-	space->get_particle_bodies_memory()->set_velocity(particles_mchunk, p_particle_index, Vector3(0, 0, 0));
+	space->get_particles_memory()->set_particle(particles_mchunk, p_particle_index, CreateParticle(p_position, p_mass));
+	space->get_particles_memory()->set_velocity(particles_mchunk, p_particle_index, Vector3(0, 0, 0));
 	changed_parameters |= eChangedBodyParamPositionMass | eChangedBodyParamVelocity;
 }
 
@@ -326,20 +326,20 @@ void FlexParticleBody::reset_rigid(RigidIndex p_rigid) {
 Vector3 FlexParticleBody::get_particle_position(ParticleIndex p_particle_index) const {
 	if (!particles_mchunk)
 		return return_err_vec3;
-	const FlVector4 &p(space->get_particle_bodies_memory()->get_particle(particles_mchunk, p_particle_index));
+	const FlVector4 &p(space->get_particles_memory()->get_particle(particles_mchunk, p_particle_index));
 	return extract_position(p);
 }
 
 const Vector3 &FlexParticleBody::get_particle_velocity(ParticleIndex p_particle_index) const {
 	if (!particles_mchunk)
 		return return_err_vec3;
-	return space->get_particle_bodies_memory()->get_velocity(particles_mchunk, p_particle_index);
+	return space->get_particles_memory()->get_velocity(particles_mchunk, p_particle_index);
 }
 
 void FlexParticleBody::set_particle_velocity(ParticleIndex p_particle_index, const Vector3 &p_velocity) {
 	if (!particles_mchunk)
 		return;
-	space->get_particle_bodies_memory()->set_velocity(particles_mchunk, p_particle_index, p_velocity);
+	space->get_particles_memory()->set_velocity(particles_mchunk, p_particle_index, p_velocity);
 	changed_parameters |= eChangedBodyParamVelocity;
 }
 
@@ -353,6 +353,44 @@ const Quat &FlexParticleBody::get_rigid_rotation(RigidIndex p_rigid_index) const
 	if (!rigids_mchunk)
 		return return_err_quat;
 	return space->get_rigids_memory()->get_rotation(rigids_mchunk, p_rigid_index);
+}
+
+void FlexParticleBody::reload_rigids_COM() {
+	for (int i(rigids_mchunk->get_size() - 1); 0 <= i; --i) {
+		reload_rigid_COM(i);
+	}
+}
+
+void FlexParticleBody::reload_rigid_COM(RigidIndex p_rigid) {
+
+	// calculate ne center of mass
+	const RigidComponentIndex start_offset = p_rigid == 0 ? RigidComponentIndex(0) : space->get_rigids_memory()->get_offset(rigids_mchunk, p_rigid - 1);
+	const RigidComponentIndex end_offset = space->get_rigids_memory()->get_offset(rigids_mchunk, p_rigid);
+
+	const int size(end_offset - start_offset);
+
+	if (!size)
+		return;
+
+	// In global space
+	Vector3 center;
+	for (RigidComponentIndex i(start_offset); i < end_offset; ++i) {
+		ParticleBufferIndex particle = space->get_rigids_components_memory()->get_index(rigids_components_mchunk, i);
+		const FlVector4 &particle_data(space->get_particles_memory()->get_particle(particles_mchunk, particles_mchunk->get_chunk_index(particle)));
+		center += extract_position(particle_data);
+	}
+	center /= (float)size;
+
+	// calculate rests
+	for (RigidComponentIndex i(start_offset); i < end_offset; ++i) {
+		ParticleBufferIndex particle = space->get_rigids_components_memory()->get_index(rigids_components_mchunk, i);
+		const FlVector4 &particle_data(space->get_particles_memory()->get_particle(particles_mchunk, particles_mchunk->get_chunk_index(particle)));
+
+		space->get_rigids_components_memory()->set_rest(rigids_components_mchunk, i, extract_position(particle_data) - center);
+	}
+
+	// Assign new position
+	space->get_rigids_memory()->set_position(rigids_mchunk, p_rigid, center);
 }
 
 bool FlexParticleBody::is_owner_of_particle(ParticleIndex p_particle) const {
@@ -373,8 +411,18 @@ bool FlexParticleBody::is_owner_of_rigid(RigidIndex p_rigid) const {
 	return (rigids_mchunk && (rigids_mchunk->get_buffer_index(p_rigid)) <= rigids_mchunk->get_end_index());
 }
 
-void FlexParticleBody::set_clean() {
+void FlexParticleBody::clear_changed_params() {
 	changed_parameters = 0;
+}
+
+void FlexParticleBody::clear_commands() {
+	delayed_commands.particle_to_add.clear();
+	delayed_commands.springs_to_add.clear();
+	delayed_commands.rigids_to_add.clear();
+	delayed_commands.particle_to_remove.clear();
+	delayed_commands.springs_to_remove.clear();
+	delayed_commands.rigids_to_remove.clear();
+	delayed_commands.rigids_components_to_remove.clear();
 }
 
 void FlexParticleBody::dispatch_sync_callback() {
@@ -395,14 +443,4 @@ void FlexParticleBody::spring_index_changed(SpringIndex p_old_spring_index, Spri
 	if (!spring_index_changed_callback.receiver)
 		return;
 	spring_index_changed_callback.receiver->call(spring_index_changed_callback.method, (int)p_old_spring_index, (int)p_new_spring_index);
-}
-
-void FlexParticleBody::clear_commands() {
-	delayed_commands.particle_to_add.clear();
-	delayed_commands.springs_to_add.clear();
-	delayed_commands.rigids_to_add.clear();
-	delayed_commands.particle_to_remove.clear();
-	delayed_commands.springs_to_remove.clear();
-	delayed_commands.rigids_to_remove.clear();
-	delayed_commands.rigids_components_to_remove.clear();
 }

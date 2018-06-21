@@ -195,6 +195,9 @@ public:
 
 	const Vector3 &get_rigid_position(RigidIndex p_rigid_index) const;
 	const Quat &get_rigid_rotation(RigidIndex p_rigid_index) const;
+
+	void reload_rigids_COM();
+	void reload_rigid_COM(RigidIndex p_rigid);
 	// ~CMD
 
 	bool is_owner_of_particle(ParticleIndex p_particle) const;
@@ -202,11 +205,11 @@ public:
 	bool is_owner_of_rigid(RigidIndex p_rigid) const;
 
 private:
-	void set_clean();
+	void clear_changed_params();
+	void clear_commands();
 	void dispatch_sync_callback();
 	void particle_index_changed(ParticleIndex p_old_particle_index, ParticleIndex p_new_particle_index);
 	void spring_index_changed(SpringIndex p_old_spring_index, SpringIndex p_new_spring_index);
-	void clear_commands();
 };
 
 #endif // FLEX_PARTICLE_BODY_H

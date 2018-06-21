@@ -316,12 +316,12 @@ protected:
 	}
 };
 
-class ParticleBodiesMemory : public FlexBufferMemory {
+class ParticlesMemory : public FlexBufferMemory {
 
 	// particles: XYZ world position, W inverse mass
 	// Phases: This is a flag that specify behaviour of particle like collision etc.. https://docs.nvidia.com/gameworks/content/gameworkslibrary/physx/flex/manual.html#phase
 	// TODO remove normals
-	FLEXBUFFERCLASS_4(ParticleBodiesMemory, FlVector4, particles, Vector3, velocities, int, phases, FlVector4, normals);
+	FLEXBUFFERCLASS_4(ParticlesMemory, FlVector4, particles, Vector3, velocities, int, phases, FlVector4, normals);
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped

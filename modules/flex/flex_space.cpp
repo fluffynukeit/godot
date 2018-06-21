@@ -63,8 +63,8 @@ FlexSpace::FlexSpace() :
 		RIDFlex(),
 		flex_lib(NULL),
 		solver(NULL),
-		particle_bodies_allocator(NULL),
-		particle_bodies_memory(NULL),
+		particles_allocator(NULL),
+		particles_memory(NULL),
 		active_particles_allocator(NULL),
 		active_particles_memory(NULL),
 		active_particles_mchunk(NULL),
@@ -118,11 +118,11 @@ void FlexSpace::init() {
 	CRASH_COND(has_error());
 
 	// Init buffers
-	CRASH_COND(particle_bodies_memory);
-	CRASH_COND(particle_bodies_allocator);
-	particle_bodies_memory = memnew(ParticleBodiesMemory(flex_lib));
-	particle_bodies_allocator = memnew(FlexMemoryAllocator(particle_bodies_memory, MAXPARTICLES)); // TODO must be dynamic
-	particle_bodies_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
+	CRASH_COND(particles_memory);
+	CRASH_COND(particles_allocator);
+	particles_memory = memnew(ParticlesMemory(flex_lib));
+	particles_allocator = memnew(FlexMemoryAllocator(particles_memory, MAXPARTICLES)); // TODO must be dynamic
+	particles_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
 
 	CRASH_COND(active_particles_allocator);
 	CRASH_COND(active_particles_memory);
@@ -183,15 +183,15 @@ void FlexSpace::init() {
 
 void FlexSpace::terminate() {
 
-	if (particle_bodies_memory) {
-		particle_bodies_memory->terminate();
-		memdelete(particle_bodies_memory);
-		particle_bodies_memory = NULL;
+	if (particles_memory) {
+		particles_memory->terminate();
+		memdelete(particles_memory);
+		particles_memory = NULL;
 	}
 
-	if (particle_bodies_allocator) {
-		memdelete(particle_bodies_allocator);
-		particle_bodies_allocator = NULL;
+	if (particles_allocator) {
+		memdelete(particles_allocator);
+		particles_allocator = NULL;
 	}
 
 	if (active_particles_memory) {
@@ -265,7 +265,7 @@ void FlexSpace::sync() {
 
 	///
 	/// Map phase
-	particle_bodies_memory->map();
+	particles_memory->map();
 	active_particles_memory->map();
 	springs_memory->map();
 	rigids_memory->map();
@@ -280,7 +280,7 @@ void FlexSpace::sync() {
 
 	///
 	/// Unmap phase
-	particle_bodies_memory->unmap();
+	particles_memory->unmap();
 
 	active_particles_memory->unmap();
 
@@ -319,7 +319,7 @@ void FlexSpace::add_particle_body(FlexParticleBody *p_body) {
 void FlexSpace::remove_particle_body(FlexParticleBody *p_body) {
 
 	if (p_body->particles_mchunk)
-		particle_bodies_allocator->deallocate_chunk(p_body->particles_mchunk);
+		particles_allocator->deallocate_chunk(p_body->particles_mchunk);
 	if (p_body->springs_mchunk)
 		springs_allocator->deallocate_chunk(p_body->springs_mchunk);
 	p_body->space = NULL;
@@ -364,18 +364,18 @@ void FlexSpace::execute_delayed_commands() {
 			if (body->particles_mchunk) {
 				previous_size = body->particles_mchunk->get_size();
 				// Resize existing memory chunk
-				particle_bodies_allocator->resize_chunk(body->particles_mchunk, previous_size + body->delayed_commands.particle_to_add.size());
+				particles_allocator->resize_chunk(body->particles_mchunk, previous_size + body->delayed_commands.particle_to_add.size());
 			} else {
 				// Allocate new one
-				body->particles_mchunk = particle_bodies_allocator->allocate_chunk(body->delayed_commands.particle_to_add.size());
+				body->particles_mchunk = particles_allocator->allocate_chunk(body->delayed_commands.particle_to_add.size());
 			}
 
 			// Write on memory
 			for (int p(body->delayed_commands.particle_to_add.size() - 1); 0 <= p; --p) {
 
-				particle_bodies_memory->set_particle(body->particles_mchunk, previous_size + p, body->delayed_commands.particle_to_add[p].particle);
-				particle_bodies_memory->set_velocity(body->particles_mchunk, previous_size + p, Vector3());
-				particle_bodies_memory->set_phase(body->particles_mchunk, previous_size + p, NvFlexMakePhase(body->get_collision_group(), 0));
+				particles_memory->set_particle(body->particles_mchunk, previous_size + p, body->delayed_commands.particle_to_add[p].particle);
+				particles_memory->set_velocity(body->particles_mchunk, previous_size + p, Vector3());
+				particles_memory->set_phase(body->particles_mchunk, previous_size + p, NvFlexMakePhase(body->get_collision_group(), 0));
 			}
 		}
 
@@ -435,7 +435,7 @@ void FlexSpace::execute_delayed_commands() {
 				body->rigids_components_mchunk = rigids_components_allocator->allocate_chunk(index_count);
 			}
 
-			RigidComponentIndex rigid_comp_index(previous_size == 0 ? RigidComponentIndex(0) : rigids_memory->get_offset(body->rigids_mchunk, previous_size - 1));
+			RigidIndex rigid_comp_index(previous_size == 0 ? RigidIndex(0) : rigids_memory->get_offset(body->rigids_mchunk, previous_size - 1));
 			for (int r(0); r < body->delayed_commands.rigids_to_add.size(); ++r) {
 
 				rigids_memory->set_offset(body->rigids_mchunk, previous_size + r, rigid_comp_index + body->delayed_commands.rigids_to_add[r].indices.size());
@@ -446,11 +446,11 @@ void FlexSpace::execute_delayed_commands() {
 
 				for (int rigid_p_index(body->delayed_commands.rigids_to_add[r].indices.size() - 1); 0 <= rigid_p_index; --rigid_p_index) {
 					rigids_components_memory->set_index(body->rigids_components_mchunk, rigid_comp_index + rigid_p_index, body->particles_mchunk->get_buffer_index(indices_r[rigid_p_index]));
-					rigids_components_memory->set_rest(body->rigids_components_mchunk, rigid_comp_index + rigid_p_index, rests_r[rigid_p_index]);
 					//rigids_components_memory->set_normal(body->rigids_components_mchunk, rigid_comp_index + rigid_p_index, rests_r[rigid_p_index].normalized() * -1);
 				}
 				rigid_comp_index += body->delayed_commands.rigids_to_add[r].indices.size();
 			}
+			body->reload_rigids_COM();
 		}
 
 		if (body->delayed_commands.particle_to_remove.size() && body->particles_mchunk) {
@@ -465,7 +465,7 @@ void FlexSpace::execute_delayed_commands() {
 
 				on_particle_removed(body, buffer_index_to_remove);
 				if (last_buffer_index != buffer_index_to_remove) {
-					particle_bodies_memory->copy(last_buffer_index, 1, buffer_index_to_remove);
+					particles_memory->copy(last_buffer_index, 1, buffer_index_to_remove);
 					on_particle_index_changed(body, last_buffer_index, buffer_index_to_remove);
 					body->particle_index_changed(body->particles_mchunk->get_chunk_index(last_buffer_index), body->delayed_commands.particle_to_remove[i]);
 				}
@@ -473,7 +473,7 @@ void FlexSpace::execute_delayed_commands() {
 				--last_buffer_index;
 			}
 			const FlexUnit new_size = body->particles_mchunk->get_size() - body->delayed_commands.particle_to_remove.size();
-			particle_bodies_allocator->resize_chunk(body->particles_mchunk, new_size);
+			particles_allocator->resize_chunk(body->particles_mchunk, new_size);
 		}
 
 		if (body->delayed_commands.springs_to_remove.size() && body->springs_mchunk) {
@@ -526,6 +526,7 @@ void FlexSpace::execute_delayed_commands() {
 			}
 
 			rigids_components_allocator->resize_chunk(body->rigids_components_mchunk, chunk_size);
+			body->reload_rigids_COM();
 		}
 
 		// Apply changed properties
@@ -533,7 +534,7 @@ void FlexSpace::execute_delayed_commands() {
 		if (body_changed_parameters != 0) {
 			for (int i(body->get_particle_count() - 1); 0 <= i; --i) {
 				if (body_changed_parameters & eChangedBodyParamPhase) {
-					particle_bodies_memory->set_phase(body->particles_mchunk, i, NvFlexMakePhaseWithChannels(body->collision_group, body->collision_flags, body->collision_primitive_mask));
+					particles_memory->set_phase(body->particles_mchunk, i, NvFlexMakePhaseWithChannels(body->collision_group, body->collision_flags, body->collision_primitive_mask));
 				}
 			}
 		}
@@ -706,13 +707,13 @@ void FlexSpace::commands_write_buffer() {
 			copy_desc.elementCount = body->particles_mchunk->get_size();
 
 			if (changed_params & eChangedBodyParamPositionMass)
-				NvFlexSetParticles(solver, particle_bodies_memory->particles.buffer, &copy_desc);
+				NvFlexSetParticles(solver, particles_memory->particles.buffer, &copy_desc);
 			if (changed_params & eChangedBodyParamVelocity)
-				NvFlexSetVelocities(solver, particle_bodies_memory->velocities.buffer, &copy_desc);
+				NvFlexSetVelocities(solver, particles_memory->velocities.buffer, &copy_desc);
 			if (changed_params & eChangedBodyParamPhase)
-				NvFlexSetPhases(solver, particle_bodies_memory->phases.buffer, &copy_desc);
+				NvFlexSetPhases(solver, particles_memory->phases.buffer, &copy_desc);
 
-			body->set_clean();
+			body->clear_changed_params();
 		}
 	}
 
@@ -764,9 +765,9 @@ void FlexSpace::commands_read_buffer() {
 		copy_desc.elementCount = particle_bodies[i]->particles_mchunk->get_size();
 
 		// TODO read only necessary (part of buffer or just skip an entire buffer if not necessary)
-		NvFlexGetParticles(solver, particle_bodies_memory->particles.buffer, &copy_desc);
-		NvFlexGetVelocities(solver, particle_bodies_memory->velocities.buffer, &copy_desc);
-		NvFlexGetNormals(solver, particle_bodies_memory->normals.buffer, &copy_desc);
+		NvFlexGetParticles(solver, particles_memory->particles.buffer, &copy_desc);
+		NvFlexGetVelocities(solver, particles_memory->velocities.buffer, &copy_desc);
+		NvFlexGetNormals(solver, particles_memory->normals.buffer, &copy_desc);
 
 		particle_bodies[i]->clear_commands();
 	}
