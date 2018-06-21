@@ -478,30 +478,19 @@ void FlexSpace::execute_delayed_commands() {
 
 			RigidsComponentsMemorySweeper sweeper(rigids_components_allocator, body->rigids_components_mchunk, body->delayed_commands.rigids_components_to_remove, rigids_memory, body->rigids_mchunk);
 			sweeper.exec();
-			// TODO check here if ther'are rigids without particles
-
 			body->reload_rigids_COM();
+
+			//for(rigids_memory->get_offset(body->rigids_mchunk))
+			// TODO check here if ther'are rigids without particles
 		}
 
-		// Rigids commands
-		//if (body->delayed_commands.rigids_to_remove.size()) {
-		//
-		//	const int rigids_to_rem_count(body->delayed_commands.rigids_to_remove.size());
-		//	int rigids_count(body->rigids_mchunk->get_size());
-		//
-		//	RigidBufferIndex chunk_end_index(body->rigids_mchunk->get_end_index());
-		//	for (int i = 0; i < rigids_to_rem_count; ++i) {
-		//
-		//		const RigidIndex rigid_to_remove_index(body->delayed_commands.rigids_to_remove[i]);
-		//		const RigidBufferIndex rigid_to_remove_buffer_index(body->rigids_mchunk->get_buffer_index(rigid_to_remove_index));
-		//
-		//		int sub_chunk_size(chunk_end_index - (rigid_to_remove_index + 1) + 1);
-		//		rigids_memory->copy(rigid_to_remove_buffer_index, 1, rigid_to_remove_buffer_index + 1);
-		//
-		//		--chunk_end_index;
-		//	}
-		//	rigids_allocator->resize_chunk(body->rigids_mchunk, rigids_count);
-		//}
+		if (body->delayed_commands.rigids_to_remove.size()) {
+
+			RigidsMemorySweeper sweeper(rigids_allocator, body->rigids_mchunk, body->delayed_commands.rigids_to_remove);
+			sweeper.exec();
+
+			// TODO remove all rigids comopnent associated
+		}
 
 		// Apply changed properties
 		const uint32_t body_changed_parameters = body->get_changed_parameters();
@@ -839,7 +828,7 @@ void FlexMemorySweeperSlow::exec() {
 		int sub_chunk_size(chunk_end_index - (buffer_index_to_remove + 1) + 1);
 		rigids_components_allocator->get_memory()->copy(buffer_index_to_remove, sub_chunk_size, buffer_index_to_remove + 1);
 
-		on_component_removed(index_to_remove);
+		on_element_removed(index_to_remove);
 
 		// Change the index from the next elements to remove
 		if ((i + 1) < rem_indices_count)
@@ -860,14 +849,20 @@ RigidsComponentsMemorySweeper::RigidsComponentsMemorySweeper(FlexMemoryAllocator
 		rigids_memory(p_rigids_memory),
 		rigids_mchunk(r_rigids_mchunk) {}
 
-void RigidsComponentsMemorySweeper::on_component_removed(RigidComponentIndex p_component_removed) {
+void RigidsComponentsMemorySweeper::on_element_removed(RigidComponentIndex p_removed_index) {
 	// Update offset in rigid body
-	for (RigidIndex i(rigids_mchunk->get_size() - 1); 0 <= i; --i) {
+	for (int i(rigids_mchunk->get_size() - 1); 0 <= i; --i) {
 		RigidComponentIndex offset(rigids_memory->get_offset(rigids_mchunk, i));
-		if (offset >= p_component_removed) {
+		if (offset > p_removed_index) {
 			rigids_memory->set_offset(rigids_mchunk, i, offset - 1);
 		} else {
 			break;
 		}
 	}
+}
+
+RigidsMemorySweeper::RigidsMemorySweeper(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove) :
+		FlexMemorySweeperSlow(p_allocator, r_rigids_components_mchunk, r_indices_to_remove) {}
+
+void RigidsMemorySweeper::on_element_removed(RigidIndex p_removed_index) {
 }
