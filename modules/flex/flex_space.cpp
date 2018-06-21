@@ -314,14 +314,20 @@ void FlexSpace::add_particle_body(FlexParticleBody *p_body) {
 	ERR_FAIL_COND(p_body->space);
 	p_body->space = this;
 	particle_bodies.push_back(p_body);
+
+	p_body->particles_mchunk = particles_allocator->allocate_chunk(0);
+	p_body->springs_mchunk = springs_allocator->allocate_chunk(0);
+	p_body->rigids_mchunk = rigids_allocator->allocate_chunk(0);
+	p_body->rigids_components_mchunk = rigids_components_allocator->allocate_chunk(0);
 }
 
 void FlexSpace::remove_particle_body(FlexParticleBody *p_body) {
 
-	if (p_body->particles_mchunk)
-		particles_allocator->deallocate_chunk(p_body->particles_mchunk);
-	if (p_body->springs_mchunk)
-		springs_allocator->deallocate_chunk(p_body->springs_mchunk);
+	rigids_components_allocator->deallocate_chunk(p_body->rigids_components_mchunk);
+	rigids_allocator->deallocate_chunk(p_body->rigids_mchunk);
+	springs_allocator->deallocate_chunk(p_body->springs_mchunk);
+	particles_allocator->deallocate_chunk(p_body->particles_mchunk);
+
 	p_body->space = NULL;
 	particle_bodies.erase(p_body);
 }
@@ -358,17 +364,10 @@ void FlexSpace::execute_delayed_commands() {
 		FlexParticleBody *body = particle_bodies[body_index];
 		if (body->delayed_commands.particle_to_add.size()) {
 
-			int previous_size = 0;
-
 			// Allocate memory for particles
-			if (body->particles_mchunk) {
-				previous_size = body->particles_mchunk->get_size();
-				// Resize existing memory chunk
-				particles_allocator->resize_chunk(body->particles_mchunk, previous_size + body->delayed_commands.particle_to_add.size());
-			} else {
-				// Allocate new one
-				body->particles_mchunk = particles_allocator->allocate_chunk(body->delayed_commands.particle_to_add.size());
-			}
+			int previous_size = body->particles_mchunk->get_size();
+			// Resize existing memory chunk
+			particles_allocator->resize_chunk(body->particles_mchunk, previous_size + body->delayed_commands.particle_to_add.size());
 
 			// Write on memory
 			for (int p(body->delayed_commands.particle_to_add.size() - 1); 0 <= p; --p) {
@@ -381,17 +380,10 @@ void FlexSpace::execute_delayed_commands() {
 
 		if (body->delayed_commands.springs_to_add.size()) {
 
-			int previous_size = 0;
-
 			// Allocate memory for springs
-			if (body->springs_mchunk) {
-				previous_size = body->springs_mchunk->get_size();
-				// Resize existing memory chunk
-				springs_allocator->resize_chunk(body->springs_mchunk, previous_size + body->delayed_commands.springs_to_add.size());
-			} else {
-				// Allocate new chunk
-				body->springs_mchunk = springs_allocator->allocate_chunk(body->delayed_commands.springs_to_add.size());
-			}
+			int previous_size = body->springs_mchunk->get_size();
+			// Resize existing memory chunk
+			springs_allocator->resize_chunk(body->springs_mchunk, previous_size + body->delayed_commands.springs_to_add.size());
 
 			// Write on memory
 			for (int s(body->delayed_commands.springs_to_add.size() - 1); 0 <= s; --s) {
@@ -405,14 +397,9 @@ void FlexSpace::execute_delayed_commands() {
 			ERR_FAIL_COND(!body->particles_mchunk);
 
 			int index_count = 0;
-			int previous_size = 0;
 
-			if (body->rigids_mchunk) {
-				previous_size = body->rigids_mchunk->get_size();
-				rigids_allocator->resize_chunk(body->rigids_mchunk, previous_size + body->delayed_commands.rigids_to_add.size());
-			} else {
-				body->rigids_mchunk = rigids_allocator->allocate_chunk(body->delayed_commands.rigids_to_add.size());
-			}
+			int previous_size = body->rigids_mchunk->get_size();
+			rigids_allocator->resize_chunk(body->rigids_mchunk, previous_size + body->delayed_commands.rigids_to_add.size());
 
 			for (int r(body->delayed_commands.rigids_to_add.size() - 1); 0 <= r; --r) {
 
@@ -426,14 +413,8 @@ void FlexSpace::execute_delayed_commands() {
 			}
 
 			// Insert indices
-
-			previous_size = 0;
-			if (body->rigids_components_mchunk) {
-				previous_size = body->rigids_components_mchunk->get_size();
-				rigids_components_allocator->resize_chunk(body->rigids_components_mchunk, previous_size + index_count);
-			} else {
-				body->rigids_components_mchunk = rigids_components_allocator->allocate_chunk(index_count);
-			}
+			previous_size = body->rigids_components_mchunk->get_size();
+			rigids_components_allocator->resize_chunk(body->rigids_components_mchunk, previous_size + index_count);
 
 			RigidIndex rigid_comp_index(previous_size == 0 ? RigidIndex(0) : rigids_memory->get_offset(body->rigids_mchunk, previous_size - 1));
 			for (int r(0); r < body->delayed_commands.rigids_to_add.size(); ++r) {
@@ -453,7 +434,7 @@ void FlexSpace::execute_delayed_commands() {
 			}
 		}
 
-		if (body->delayed_commands.particle_to_remove.size() && body->particles_mchunk) {
+		if (body->delayed_commands.particle_to_remove.size()) {
 
 			// Remove particles
 
@@ -476,7 +457,7 @@ void FlexSpace::execute_delayed_commands() {
 			particles_allocator->resize_chunk(body->particles_mchunk, new_size);
 		}
 
-		if (body->delayed_commands.springs_to_remove.size() && body->springs_mchunk) {
+		if (body->delayed_commands.springs_to_remove.size()) {
 
 			// Remove springs
 
@@ -493,7 +474,7 @@ void FlexSpace::execute_delayed_commands() {
 			springs_allocator->resize_chunk(body->springs_mchunk, new_size);
 		}
 
-		if (body->delayed_commands.rigids_components_to_remove.size() && body->rigids_components_mchunk) {
+		if (body->delayed_commands.rigids_components_to_remove.size()) {
 
 			const int comp_to_rem_size(body->delayed_commands.rigids_components_to_remove.size());
 
@@ -533,18 +514,19 @@ void FlexSpace::execute_delayed_commands() {
 			body->reload_rigids_COM();
 		}
 
-		if (body->delayed_commands.rigids_to_remove.size() && body->rigids_mchunk) {
+		if (body->delayed_commands.rigids_to_remove.size()) {
 
 			const int rigids_to_rem_count(body->delayed_commands.rigids_to_remove.size());
 			int rigids_count(body->rigids_mchunk->get_size());
 
+			RigidBufferIndex chunk_end_index(body->rigids_mchunk->get_end_index());
 			for (int i = 0; i < rigids_to_rem_count; ++i) {
 				//const RigidIndex index(body->delayed_commands.rigids_to_remove[i]);
 				if (1 < rigids_count) {
 
 					//rigids_memory->copy(body->rigids_mchunk->get_buffer_index(index),)
 				}
-				--rigids_count;
+				--chunk_end_index;
 			}
 			rigids_allocator->resize_chunk(body->rigids_mchunk, rigids_count);
 		}

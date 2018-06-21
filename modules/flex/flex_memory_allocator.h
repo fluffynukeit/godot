@@ -122,6 +122,8 @@ public:
 ///
 class FlexMemoryAllocator {
 
+	static MemoryChunk zero_memory_chunk; // Special MemoryChunk that is used when the chunk has 0 size
+
 	Vector<MemoryChunk *> memory_table;
 	FlexUnit memory_size;
 	struct {

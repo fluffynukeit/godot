@@ -35,6 +35,8 @@
 #include "flex_memory_allocator.h"
 #include "print_string.h"
 
+MemoryChunk FlexMemoryAllocator::zero_memory_chunk(0, -1, false);
+
 void FlexMemory::copy(FlexBufferIndex p_to_begin_index, FlexUnit p_size, FlexBufferIndex p_from_begin_index) {
 	for (int i(0); i < p_size; ++i) {
 		copy_unit(p_to_begin_index + i, p_from_begin_index + i);
@@ -134,6 +136,10 @@ void FlexMemoryAllocator::sanitize(bool p_want_update_cache, bool p_trim) {
 }
 
 MemoryChunk *FlexMemoryAllocator::allocate_chunk(FlexUnit p_size) {
+
+	if (0 >= p_size)
+		return &zero_memory_chunk;
+
 	bool space_available = false;
 	if (p_size <= cache.biggest_free_chunk_size) {
 		space_available = true;
@@ -171,6 +177,10 @@ MemoryChunk *FlexMemoryAllocator::allocate_chunk(FlexUnit p_size) {
 }
 
 void FlexMemoryAllocator::deallocate_chunk(MemoryChunk *&r_chunk) {
+
+	if (r_chunk == (&zero_memory_chunk))
+		return;
+
 	r_chunk->is_free = true;
 
 	sanitize(false, false); // Merge only, no cache update, no trim
