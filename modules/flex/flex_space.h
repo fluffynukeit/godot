@@ -128,9 +128,9 @@ class FlexMemorySweeper : public FlexMemoryModificator {
 /// Maintain order
 /// r_indices_to_remove will be unusable after this
 class FlexMemorySweeperSlow : public FlexMemorySweeper {
-
-	FlexMemoryAllocator *rigids_components_allocator;
-	MemoryChunk *&rigids_components_mchunk;
+protected:
+	FlexMemoryAllocator *allocator;
+	MemoryChunk *&mchunk;
 	Vector<FlexChunkIndex> &indices_to_remove;
 
 public:
@@ -153,8 +153,14 @@ public:
 
 class RigidsMemorySweeper : public FlexMemorySweeperSlow {
 
+	RigidsMemory *rigids_memory;
+
+	FlexMemoryAllocator *rigids_components_allocator;
+	RigidsComponentsMemory *rigids_components_memory;
+	MemoryChunk *&rigids_components_mchunk;
+
 public:
-	RigidsMemorySweeper(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove);
+	RigidsMemorySweeper(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove, RigidsMemory *p_rigids_memory, FlexMemoryAllocator *p_rigids_components_allocator, RigidsComponentsMemory *p_rigids_components_memory, MemoryChunk *&r_rigids_components_mchunk);
 
 	virtual void on_element_removed(RigidIndex on_element_removed);
 };
