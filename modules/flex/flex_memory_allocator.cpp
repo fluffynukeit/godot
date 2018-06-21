@@ -35,7 +35,7 @@
 #include "flex_memory_allocator.h"
 #include "print_string.h"
 
-void FlexMemory::copy(FlexBufferIndex p_from_begin_index, FlexUnit p_size, FlexBufferIndex p_to_begin_index) {
+void FlexMemory::copy(FlexBufferIndex p_to_begin_index, FlexUnit p_size, FlexBufferIndex p_from_begin_index) {
 	for (int i(0); i < p_size; ++i) {
 		copy_unit(p_to_begin_index + i, p_from_begin_index + i);
 	}
@@ -125,7 +125,7 @@ void FlexMemoryAllocator::sanitize(bool p_want_update_cache, bool p_trim) {
 			memory_table[next_i] = i_chunk;
 
 			// Shift back data, even if the chunks collides it will work because the copy is performed incrementally (in the opposite way of the swap [free space] <- [data])
-			memory->copy(next_i_chunk_cpy.begin_index, next_i_chunk_cpy.size, memory_table[i]->begin_index);
+			memory->copy(memory_table[i]->begin_index, next_i_chunk_cpy.size, next_i_chunk_cpy.begin_index);
 		}
 	}
 
@@ -208,15 +208,15 @@ void FlexMemoryAllocator::resize_chunk(MemoryChunk *&r_chunk, FlexUnit p_size) {
 
 		// Re allocate all chunk
 		MemoryChunk *new_chunk = allocate_chunk(p_size);
-		copy_chunk(r_chunk, new_chunk);
+		copy_chunk(new_chunk, r_chunk);
 		deallocate_chunk(r_chunk);
 		r_chunk = new_chunk;
 	}
 }
 
-void FlexMemoryAllocator::copy_chunk(MemoryChunk *p_from, MemoryChunk *p_to) {
-	FlexUnit copy_size = MIN(p_from->size, p_to->size);
-	memory->copy(p_from->begin_index, copy_size, p_to->begin_index);
+void FlexMemoryAllocator::copy_chunk(MemoryChunk *p_to, MemoryChunk *p_from) {
+	FlexUnit copy_size = MIN(p_from->size, p_to->size); // Avoid to copy more then the destination size
+	memory->copy(p_to->begin_index, copy_size, p_from->begin_index);
 }
 
 FlexUnit FlexMemoryAllocator::get_last_used_index() {

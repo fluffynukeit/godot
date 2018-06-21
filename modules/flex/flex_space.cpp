@@ -465,7 +465,7 @@ void FlexSpace::execute_delayed_commands() {
 
 				on_particle_removed(body, buffer_index_to_remove);
 				if (last_buffer_index != buffer_index_to_remove) {
-					particles_memory->copy(last_buffer_index, 1, buffer_index_to_remove);
+					particles_memory->copy(buffer_index_to_remove, 1, last_buffer_index);
 					on_particle_index_changed(body, last_buffer_index, buffer_index_to_remove);
 					body->particle_index_changed(body->particles_mchunk->get_chunk_index(last_buffer_index), body->delayed_commands.particle_to_remove[i]);
 				}
@@ -485,7 +485,7 @@ void FlexSpace::execute_delayed_commands() {
 
 				// Copy the values of last ID to the ID to remove (lose order)
 				const SpringBufferIndex buffer_index_to_remove(body->springs_mchunk->get_buffer_index(e->get()));
-				springs_memory->copy(last_buffer_index, 1, buffer_index_to_remove);
+				springs_memory->copy(buffer_index_to_remove, 1, last_buffer_index);
 				body->spring_index_changed(body->springs_mchunk->get_chunk_index(last_buffer_index), e->get());
 				--last_buffer_index;
 			}
@@ -504,7 +504,7 @@ void FlexSpace::execute_delayed_commands() {
 				--chunk_size;
 				const RigidComponentIndex component_to_remove_index(body->delayed_commands.rigids_components_to_remove[i]);
 				const RigidComponentBufferIndex component_to_remove_buffer_index(body->rigids_components_mchunk->get_buffer_index(component_to_remove_index));
-				rigids_components_memory->copy(component_to_remove_buffer_index + 1, chunk_size, component_to_remove_buffer_index);
+				rigids_components_memory->copy(component_to_remove_buffer_index, chunk_size, component_to_remove_buffer_index + 1);
 
 				// Update offset in rigid body
 				for (RigidIndex i(body->rigids_mchunk->get_size() - 1); 0 <= i; --i) {
@@ -526,7 +526,13 @@ void FlexSpace::execute_delayed_commands() {
 			}
 
 			rigids_components_allocator->resize_chunk(body->rigids_components_mchunk, chunk_size);
+			// TODO check here if ther'are rigids without particles
+
 			body->reload_rigids_COM();
+		}
+
+		if (body->delayed_commands.rigids_to_remove.size() && body->rigids_mchunk) {
+			//rigids_memory->copy()
 		}
 
 		// Apply changed properties
@@ -571,7 +577,7 @@ void FlexSpace::rebuild_rigids_offsets() {
 	rigids_allocator->sanitize();
 	rigids_components_allocator->sanitize();
 
-	// 2. Step get buffer offsets
+	// 2. Step make buffer offsets
 	for (int body_i(particle_bodies.size() - 1); 0 <= body_i; --body_i) {
 		FlexParticleBody *body = particle_bodies[body_i];
 
@@ -616,9 +622,9 @@ void FlexSpace::rebuild_rigids_offsets() {
 		}
 
 		if (lowest_chunk != initial_chunk) {
-			rigids_allocator->copy_chunk(initial_chunk, swap_area);
-			rigids_allocator->copy_chunk(lowest_chunk, initial_chunk);
-			rigids_allocator->copy_chunk(swap_area, lowest_chunk);
+			rigids_allocator->copy_chunk(swap_area, initial_chunk);
+			rigids_allocator->copy_chunk(initial_chunk, lowest_chunk);
+			rigids_allocator->copy_chunk(lowest_chunk, swap_area);
 		}
 	}
 

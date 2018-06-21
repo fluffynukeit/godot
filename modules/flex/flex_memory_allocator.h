@@ -45,7 +45,7 @@ protected:
 	virtual void resize_memory(FlexUnit p_size) = 0;
 	virtual void copy_unit(FlexUnit p_to, FlexUnit p_from) = 0;
 
-	void copy(FlexBufferIndex p_from_begin_index, FlexUnit p_size, FlexBufferIndex p_to_begin_index);
+	void copy(FlexBufferIndex p_to_begin_index, FlexUnit p_size, FlexBufferIndex p_from_begin_index);
 };
 
 struct MemoryChunk {
@@ -143,7 +143,7 @@ public:
 	void resize_chunk(MemoryChunk *&r_chunk, FlexUnit p_size);
 
 	// If the chunks have different sizes the copy will be performed only by the size of smaller chunk
-	void copy_chunk(MemoryChunk *p_from, MemoryChunk *p_to);
+	void copy_chunk(MemoryChunk *p_to, MemoryChunk *p_from);
 
 	FlexUnit get_last_used_index();
 
