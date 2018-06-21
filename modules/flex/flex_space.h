@@ -136,7 +136,7 @@ class FlexMemorySweeperSlow : public FlexMemorySweeper {
 public:
 	FlexMemorySweeperSlow(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove);
 
-	virtual void on_component_removed(RigidComponentIndex p_component_removed) = 0;
+	virtual void on_element_removed(FlexChunkIndex on_element_removed) = 0;
 	virtual void exec();
 };
 
@@ -148,7 +148,15 @@ class RigidsComponentsMemorySweeper : public FlexMemorySweeperSlow {
 public:
 	RigidsComponentsMemorySweeper(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove, RigidsMemory *p_rigids_memory, MemoryChunk *&r_rigids_mchunk);
 
-	virtual void on_component_removed(RigidComponentIndex p_component_removed);
+	virtual void on_element_removed(RigidComponentIndex on_element_removed);
+};
+
+class RigidsMemorySweeper : public FlexMemorySweeperSlow {
+
+public:
+	RigidsMemorySweeper(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove);
+
+	virtual void on_element_removed(RigidIndex on_element_removed);
 };
 
 #endif // FLEX_SPACE_H
