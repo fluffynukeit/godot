@@ -449,8 +449,8 @@ void FlexSpace::execute_delayed_commands() {
 					//rigids_components_memory->set_normal(body->rigids_components_mchunk, rigid_comp_index + rigid_p_index, rests_r[rigid_p_index].normalized() * -1);
 				}
 				rigid_comp_index += body->delayed_commands.rigids_to_add[r].indices.size();
+				body->reload_rigid_COM(previous_size + r);
 			}
-			body->reload_rigids_COM();
 		}
 
 		if (body->delayed_commands.particle_to_remove.size() && body->particles_mchunk) {
@@ -497,14 +497,14 @@ void FlexSpace::execute_delayed_commands() {
 
 			const int comp_to_rem_size(body->delayed_commands.rigids_components_to_remove.size());
 
-			FlexUnit chunk_size(body->rigids_components_mchunk->get_size());
+			RigidComponentBufferIndex chunk_end_index(body->rigids_components_mchunk->get_end_index());
 			for (int i = 0; i < comp_to_rem_size; ++i) {
 
 				// Shift left memory data from the component to remove +1
-				--chunk_size;
 				const RigidComponentIndex component_to_remove_index(body->delayed_commands.rigids_components_to_remove[i]);
 				const RigidComponentBufferIndex component_to_remove_buffer_index(body->rigids_components_mchunk->get_buffer_index(component_to_remove_index));
-				rigids_components_memory->copy(component_to_remove_buffer_index, chunk_size, component_to_remove_buffer_index + 1);
+				const int sub_chunk_size(chunk_end_index - (component_to_remove_buffer_index + 1) + 1);
+				rigids_components_memory->copy(component_to_remove_buffer_index, sub_chunk_size, component_to_remove_buffer_index + 1);
 
 				// Update offset in rigid body
 				for (RigidIndex i(body->rigids_mchunk->get_size() - 1); 0 <= i; --i) {
@@ -523,16 +523,30 @@ void FlexSpace::execute_delayed_commands() {
 							body->delayed_commands.rigids_components_to_remove[b] -= 1;
 						}
 					}
+
+				--chunk_end_index;
 			}
 
-			rigids_components_allocator->resize_chunk(body->rigids_components_mchunk, chunk_size);
+			rigids_components_allocator->resize_chunk(body->rigids_components_mchunk, chunk_end_index - body->rigids_components_mchunk->get_begin_index() + 1);
 			// TODO check here if ther'are rigids without particles
 
 			body->reload_rigids_COM();
 		}
 
 		if (body->delayed_commands.rigids_to_remove.size() && body->rigids_mchunk) {
-			//rigids_memory->copy()
+
+			const int rigids_to_rem_count(body->delayed_commands.rigids_to_remove.size());
+			int rigids_count(body->rigids_mchunk->get_size());
+
+			for (int i = 0; i < rigids_to_rem_count; ++i) {
+				//const RigidIndex index(body->delayed_commands.rigids_to_remove[i]);
+				if (1 < rigids_count) {
+
+					//rigids_memory->copy(body->rigids_mchunk->get_buffer_index(index),)
+				}
+				--rigids_count;
+			}
+			rigids_allocator->resize_chunk(body->rigids_mchunk, rigids_count);
 		}
 
 		// Apply changed properties
