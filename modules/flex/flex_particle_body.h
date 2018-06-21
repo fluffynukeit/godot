@@ -127,7 +127,7 @@ class FlexParticleBody : public RIDFlex {
 		Vector<RigidToAdd> rigids_to_add;
 		Vector<ParticleIndex> particle_to_remove;
 		Set<SpringIndex> springs_to_remove;
-		Set<RigidIndex> rigids_to_remove;
+		Vector<RigidIndex> rigids_to_remove;
 		// rigid component to add
 		Vector<RigidComponentIndex> rigids_components_to_remove;
 	} delayed_commands;
@@ -203,6 +203,7 @@ public:
 	bool is_owner_of_particle(ParticleIndex p_particle) const;
 	bool is_owner_of_spring(SpringIndex p_spring) const;
 	bool is_owner_of_rigid(RigidIndex p_rigid) const;
+	bool is_owner_of_rigid_component(RigidComponentIndex p_rigid_component) const;
 
 private:
 	void clear_changed_params();
