@@ -276,7 +276,7 @@ void FlexParticleBody::load_model(Ref<ParticleBodyModel> p_model, const Transfor
 void FlexParticleBody::reset_particle(ParticleIndex p_particle_index, const Vector3 &p_position, real_t p_mass) {
 	if (!particles_mchunk)
 		return;
-	space->get_particles_memory()->set_particle(particles_mchunk, p_particle_index, CreateParticle(p_position, p_mass));
+	space->get_particles_memory()->set_particle(particles_mchunk, p_particle_index, make_particle(p_position, p_mass));
 	space->get_particles_memory()->set_velocity(particles_mchunk, p_particle_index, Vector3(0, 0, 0));
 	changed_parameters |= eChangedBodyParamPositionMass | eChangedBodyParamVelocity;
 }
