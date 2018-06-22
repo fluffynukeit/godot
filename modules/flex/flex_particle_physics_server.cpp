@@ -387,6 +387,8 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_soft_particle_body_mode
 			p_plastic_threshold,
 			p_plastic_creep);
 
+	ERR_FAIL_COND_V(!generated_assets, Ref<ParticleBodyModel>());
+
 	Ref<ParticleBodyModel> model = make_model(generated_assets);
 
 	NvFlexExtDestroyAsset(generated_assets);
@@ -398,8 +400,8 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_soft_particle_body_mode
 Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_cloth_particle_body_model(Ref<TriangleMesh> p_mesh, float p_stretch_stiffness, float p_bend_stiffness, float p_tether_stiffness, float p_tether_give, float p_pressure) {
 	ERR_FAIL_COND_V(p_mesh.is_null(), Ref<ParticleBodyModel>());
 
-	PoolVector<FlVector4> welded_vertices;
-	PoolVector<int> welded_indices;
+	PoolVector<FlVector4> welded_particles;
+	PoolVector<int> welded_particles_indices;
 
 	{ // Merge all overlapping vertices
 		PoolVector<Vector3>::Read mesh_vertices_read = p_mesh->get_vertices().read();
@@ -420,51 +422,54 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_cloth_particle_body_mod
 		int unique_vertices(0);
 
 		{ // Merge vertices
-			PoolVector<int>::Write welded_indices_w = welded_vertex_indices.write();
+			PoolVector<int>::Write welded_vertex_indices_w = welded_vertex_indices.write();
 			PoolVector<int>::Write original_to_unique_w = original_to_unique.write();
 
 			unique_vertices = NvFlexExtCreateWeldedMeshIndices(
 					(float *)mesh_vertices_read.ptr(),
 					mesh_vertex_count,
-					welded_indices_w.ptr(),
+					welded_vertex_indices_w.ptr(),
 					original_to_unique_w.ptr(),
-					0.05);
+					0.001);
 		}
 
 		PoolVector<int>::Read mesh_indices_r = mesh_indices.read();
-		PoolVector<int>::Read welded_indices_r = welded_vertex_indices.read();
+		PoolVector<int>::Read welded_vertex_indices_r = welded_vertex_indices.read();
 		PoolVector<int>::Read original_to_unique_r = original_to_unique.read();
 
-		welded_vertices.resize(unique_vertices);
-		welded_indices.resize(mesh_index_count);
+		welded_particles.resize(unique_vertices);
+		welded_particles_indices.resize(mesh_index_count);
 
 		{ // Populate vertices and indices
-			PoolVector<FlVector4>::Write particles_w = welded_vertices.write();
-			PoolVector<int>::Write welded_indices_w = welded_indices.write();
+			PoolVector<FlVector4>::Write welded_particles_w = welded_particles.write();
+			PoolVector<int>::Write welded_particles_indices_w = welded_particles_indices.write();
 
 			for (int i(0); i < unique_vertices; ++i) {
-				Vector3 pos(mesh_vertices_read[welded_indices_r[original_to_unique_r[i]]]);
-				particles_w[i] = make_particle(pos, 1);
+				Vector3 pos(mesh_vertices_read[welded_vertex_indices_r[original_to_unique_r[i]]]);
+				welded_particles_w[i] = make_particle(pos, 1);
 			}
 
 			for (int i(0); i < mesh_index_count; ++i) {
-				welded_indices_w[i] = welded_indices_r[original_to_unique_r[mesh_indices_r[i]]];
+				welded_particles_indices_w[i] = welded_vertex_indices_r[original_to_unique_r[mesh_indices_r[i]]];
 			}
 		}
 	}
 
-	PoolVector<FlVector4>::Read welded_vertices_r = welded_vertices.read();
-	PoolVector<int>::Read welded_indices_r = welded_indices.read();
+	PoolVector<FlVector4>::Read welded_vertices_r = welded_particles.read();
+	PoolVector<int>::Read welded_indices_r = welded_particles_indices.read();
 
 	NvFlexExtAsset *generated_assets = NvFlexExtCreateClothFromMesh(
 			(float *)welded_vertices_r.ptr(),
-			welded_vertices.size(),
+			welded_particles.size(),
 			welded_indices_r.ptr(),
-			welded_indices.size() / 3,
+			welded_particles_indices.size() / 3,
 			p_stretch_stiffness,
 			p_bend_stiffness,
 			p_tether_stiffness,
-			p_tether_give, p_pressure);
+			p_tether_give,
+			p_pressure);
+
+	ERR_FAIL_COND_V(!generated_assets, Ref<ParticleBodyModel>());
 
 	Ref<ParticleBodyModel> model = make_model(generated_assets);
 
@@ -491,6 +496,8 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_rigid_particle_body_mod
 
 			p_radius,
 			p_expand);
+
+	ERR_FAIL_COND_V(!generated_assets, Ref<ParticleBodyModel>());
 
 	Ref<ParticleBodyModel> model = make_model(generated_assets);
 
