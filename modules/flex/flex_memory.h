@@ -323,7 +323,7 @@ protected:
 			(*buffers_spring[i])[p_to] = (*buffers_spring[i])[p_from];
 		}
 		for (int i(buffers_dintriangles.size() - 1); 0 <= i; --i) {
-			(*buffers_dintriangles[i])[p_to] = (*buffers_spring[i])[p_from];
+			(*buffers_dintriangles[i])[p_to] = (*buffers_dintriangles[i])[p_from];
 		}
 		for (int i(buffers_flvec4.size() - 1); 0 <= i; --i) {
 			(*buffers_flvec4[i])[p_to] = (*buffers_flvec4[i])[p_from];
@@ -403,10 +403,10 @@ class SpringMemory : public FlexBufferMemory {
 	float get_stiffness(const MemoryChunk *p_chunk, SpringIndex p_spring_index) const;
 };
 
-class DynamicTriangleMemory : public FlexBufferMemory {
+class DynamicTrianglesMemory : public FlexBufferMemory {
 
 	bool changed;
-	FLEXBUFFERCLASS_1(DynamicTriangleMemory, DynamicTriangle, triangles);
+	FLEXBUFFERCLASS_1(DynamicTrianglesMemory, DynamicTriangle, triangles);
 
 	virtual void _on_mapped() { changed = false; }
 

@@ -136,7 +136,7 @@ class FlexParticleBody : public RIDFlex {
 
 	MemoryChunk *particles_mchunk;
 	MemoryChunk *springs_mchunk;
-
+	MemoryChunk *triangles_mchunk;
 	MemoryChunk *rigids_mchunk;
 	MemoryChunk *rigids_components_mchunk;
 

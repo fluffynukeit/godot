@@ -70,6 +70,8 @@ FlexSpace::FlexSpace() :
 		active_particles_mchunk(NULL),
 		springs_allocator(NULL),
 		springs_memory(NULL),
+		triangles_allocator(NULL),
+		triangles_memory(NULL),
 		rigids_allocator(NULL),
 		rigids_memory(NULL),
 		rigids_components_allocator(NULL),
@@ -122,13 +124,13 @@ void FlexSpace::init() {
 	CRASH_COND(particles_allocator);
 	particles_memory = memnew(ParticlesMemory(flex_lib));
 	particles_allocator = memnew(FlexMemoryAllocator(particles_memory, MAXPARTICLES)); // TODO must be dynamic
-	particles_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
+	particles_memory->unmap(); // *1
 
 	CRASH_COND(active_particles_allocator);
 	CRASH_COND(active_particles_memory);
 	active_particles_memory = memnew(ActiveParticlesMemory(flex_lib));
 	active_particles_allocator = memnew(FlexMemoryAllocator(active_particles_memory, MAXPARTICLES)); // TODO must be dynamic
-	active_particles_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
+	active_particles_memory->unmap(); // *1
 
 	active_particles_mchunk = active_particles_allocator->allocate_chunk(0);
 
@@ -136,25 +138,33 @@ void FlexSpace::init() {
 	CRASH_COND(springs_memory);
 	springs_memory = memnew(SpringMemory(flex_lib));
 	springs_allocator = memnew(FlexMemoryAllocator(springs_memory, ((FlexUnit)(MAXPARTICLES * 100)))); // TODO must be dynamic
-	springs_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
+	springs_memory->unmap(); // *1
+
+	CRASH_COND(triangles_allocator);
+	CRASH_COND(triangles_memory);
+	triangles_memory = memnew(DynamicTrianglesMemory(flex_lib));
+	triangles_allocator = memnew(FlexMemoryAllocator(triangles_memory, ((FlexUnit)(MAXPARTICLES * 100)))); // TODO must be dynamic
+	triangles_memory->unmap(); // *1
 
 	CRASH_COND(rigids_allocator);
 	CRASH_COND(rigids_memory);
 	rigids_memory = memnew(RigidsMemory(flex_lib));
 	rigids_allocator = memnew(FlexMemoryAllocator(rigids_memory, ((FlexUnit)(MAXPARTICLES * 100)))); // TODO must be dynamic
-	rigids_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
+	rigids_memory->unmap(); // *1
 
 	CRASH_COND(rigids_components_allocator);
 	CRASH_COND(rigids_components_memory);
 	rigids_components_memory = memnew(RigidsComponentsMemory(flex_lib));
 	rigids_components_allocator = memnew(FlexMemoryAllocator(rigids_components_memory, ((FlexUnit)(MAXPARTICLES * 100)))); // TODO must be dynamic
-	rigids_components_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
+	rigids_components_memory->unmap(); // *1
 
 	CRASH_COND(geometries_allocator);
 	CRASH_COND(geometries_memory);
 	geometries_memory = memnew(GeometryMemory(flex_lib));
 	geometries_allocator = memnew(FlexMemoryAllocator(geometries_memory, MAXGEOMETRIES)); // TODO must be dynamic
-	geometries_memory->unmap(); // This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
+	geometries_memory->unmap(); // *1
+
+	// *1: This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
 
 	NvFlexParams params;
 	// Initialize solver parameter
@@ -268,6 +278,7 @@ void FlexSpace::sync() {
 	particles_memory->map();
 	active_particles_memory->map();
 	springs_memory->map();
+	triangles_memory->map();
 	rigids_memory->map();
 	rigids_components_memory->map();
 	geometries_memory->map();
@@ -285,15 +296,21 @@ void FlexSpace::sync() {
 	active_particles_memory->unmap();
 
 	if (springs_memory->was_changed())
-		springs_allocator->sanitize(); // The memory must be consecutive to be sent to GPU
+		springs_allocator->sanitize(); // *1
 	springs_memory->unmap();
+
+	if (triangles_memory->was_changed())
+		triangles_allocator->sanitize(); // *1
+	triangles_memory->unmap();
 
 	rigids_memory->unmap();
 	rigids_components_memory->unmap();
 
 	if (geometries_memory->was_changed())
-		geometries_allocator->sanitize(); // The memory must be consecutive to be sent to GPU
+		geometries_allocator->sanitize(); // *1
 	geometries_memory->unmap();
+
+	// *1: The memory must be consecutive to correctly write it on GPU
 
 	///
 	/// Write phase
@@ -317,6 +334,7 @@ void FlexSpace::add_particle_body(FlexParticleBody *p_body) {
 
 	p_body->particles_mchunk = particles_allocator->allocate_chunk(0);
 	p_body->springs_mchunk = springs_allocator->allocate_chunk(0);
+	p_body->triangles_mchunk = triangles_allocator->allocate_chunk(0);
 	p_body->rigids_mchunk = rigids_allocator->allocate_chunk(0);
 	p_body->rigids_components_mchunk = rigids_components_allocator->allocate_chunk(0);
 }
@@ -325,6 +343,7 @@ void FlexSpace::remove_particle_body(FlexParticleBody *p_body) {
 
 	rigids_components_allocator->deallocate_chunk(p_body->rigids_components_mchunk);
 	rigids_allocator->deallocate_chunk(p_body->rigids_mchunk);
+	triangles_allocator->deallocate_chunk(p_body->triangles_mchunk);
 	springs_allocator->deallocate_chunk(p_body->springs_mchunk);
 	particles_allocator->deallocate_chunk(p_body->particles_mchunk);
 
@@ -696,6 +715,9 @@ void FlexSpace::commands_write_buffer() {
 
 	if (springs_memory->was_changed())
 		NvFlexSetSprings(solver, springs_memory->springs.buffer, springs_memory->lengths.buffer, springs_memory->stiffness.buffer, springs_allocator->get_last_used_index() + 1);
+
+	if (triangles_memory->was_changed())
+		NvFlexSetDynamicTriangles(solver, triangles_memory->triangles.buffer, NULL, triangles_allocator->get_last_used_index() + 1);
 
 	if (rigids_memory->was_changed())
 		NvFlexSetRigids(

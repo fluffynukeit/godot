@@ -48,6 +48,7 @@ class FlexMemoryAllocator;
 class ParticlesMemory;
 class ActiveParticlesMemory;
 class SpringMemory;
+class DynamicTrianglesMemory;
 class RigidsMemory;
 class RigidsComponentsMemory;
 class GeometryMemory;
@@ -68,6 +69,9 @@ class FlexSpace : public RIDFlex {
 
 	FlexMemoryAllocator *springs_allocator;
 	SpringMemory *springs_memory;
+
+	FlexMemoryAllocator *triangles_allocator;
+	DynamicTrianglesMemory *triangles_memory;
 
 	FlexMemoryAllocator *rigids_allocator;
 	RigidsMemory *rigids_memory;
