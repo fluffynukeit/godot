@@ -423,7 +423,6 @@ void FlexSpace::execute_delayed_commands() {
 
 				// Allocate components
 				PoolVector<ParticleIndex>::Read indices_r = body->delayed_commands.rigids_to_add[r].indices.read();
-				PoolVector<Vector3>::Read rests_r = body->delayed_commands.rigids_to_add[r].rests.read();
 
 				for (int rigid_p_index(body->delayed_commands.rigids_to_add[r].indices.size() - 1); 0 <= rigid_p_index; --rigid_p_index) {
 					rigids_components_memory->set_index(body->rigids_components_mchunk, rigid_comp_index + rigid_p_index, body->particles_mchunk->get_buffer_index(indices_r[rigid_p_index]));

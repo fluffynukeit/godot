@@ -447,13 +447,11 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::make_model(NvFlexExtAsset *p_a
 	}
 
 	model->get_clusters_offsets_ref().resize(p_assets->numShapes);
-	model->get_clusters_positions_ref().resize(p_assets->numShapes);
 	model->get_clusters_stiffness_ref().resize(p_assets->numShapes);
 	model->get_clusters_plastic_threshold_ref().resize(p_assets->numShapes);
 	model->get_clusters_plastic_creep_ref().resize(p_assets->numShapes);
 	for (int i(0); i < p_assets->numShapes; ++i) {
 		model->get_clusters_offsets_ref().set(i, p_assets->shapeOffsets[i]);
-		model->get_clusters_positions_ref().set(i, ((Vector3 *)p_assets->shapeCenters)[i]);
 		model->get_clusters_stiffness_ref().set(i, p_assets->shapeCoefficients[i]);
 		model->get_clusters_plastic_threshold_ref().set(i, p_assets->shapePlasticThresholds ? p_assets->shapePlasticThresholds[i] : 0);
 		model->get_clusters_plastic_creep_ref().set(i, p_assets->shapePlasticCreeps ? p_assets->shapePlasticCreeps[i] : 0);

@@ -139,8 +139,8 @@ void FlexParticleBody::remove_spring(SpringIndex p_spring_index) {
 	delayed_commands.springs_to_remove.insert(p_spring_index);
 }
 
-void FlexParticleBody::add_rigid(const Transform &p_global_transform, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, PoolVector<ParticleIndex> p_indices, PoolVector<Vector3> p_rests) {
-	delayed_commands.rigids_to_add.push_back(RigidToAdd(p_global_transform, p_stiffness, p_plastic_threshold, p_plastic_creep, p_indices, p_rests));
+void FlexParticleBody::add_rigid(const Transform &p_global_transform, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, PoolVector<ParticleIndex> p_indices) {
+	delayed_commands.rigids_to_add.push_back(RigidToAdd(p_global_transform, p_stiffness, p_plastic_threshold, p_plastic_creep, p_indices));
 }
 
 void FlexParticleBody::remove_rigid(RigidIndex p_rigid_index) {
@@ -184,24 +184,6 @@ PoolVector<ParticleIndex> extract_rigid_indices(int index, PoolVector<int> p_off
 	}
 
 	return rigid_indices;
-}
-
-PoolVector<Vector3> extract_rigid_rests(PoolVector<ParticleIndex> p_rigid_indices, PoolVector<Vector3> p_particles_positions, const Vector3 &p_rigid_position) {
-
-	PoolVector<ParticleIndex>::Read rigid_indices_r = p_rigid_indices.read();
-	PoolVector<Vector3>::Read positions_r = p_particles_positions.read();
-
-	PoolVector<Vector3> rests;
-	rests.resize(p_rigid_indices.size());
-
-	PoolVector<Vector3>::Write rests_w = rests.write();
-
-	for (int i(p_rigid_indices.size() - 1); 0 <= i; --i) {
-
-		rests_w[i] = positions_r[rigid_indices_r[i]] - p_rigid_position;
-	}
-
-	return rests;
 }
 
 void FlexParticleBody::load_model(Ref<ParticleBodyModel> p_model, const Transform &initial_transform) {
@@ -295,8 +277,7 @@ void FlexParticleBody::load_model(Ref<ParticleBodyModel> p_model, const Transfor
 			for (int i(0); i < dif; ++i) {
 				const int r(active_r_count + i);
 
-				PoolVector<ParticleIndex> indices = extract_rigid_indices(r, p_model->get_clusters_offsets(), p_model->get_clusters_particle_indices());
-				add_rigid(initial_transform.translated(cluster_pos_r[r]), cluster_stiffness_r[r], cluster_plastic_threshold_r[r], cluster_plastic_creep_r[r], indices, extract_rigid_rests(indices, p_model->get_particles(), cluster_pos_r[r]));
+				add_rigid(initial_transform.translated(cluster_pos_r[r]), cluster_stiffness_r[r], cluster_plastic_threshold_r[r], cluster_plastic_creep_r[r], extract_rigid_indices(r, p_model->get_clusters_offsets(), p_model->get_clusters_particle_indices()));
 			}
 		}
 
