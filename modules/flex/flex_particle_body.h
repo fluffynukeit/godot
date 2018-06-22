@@ -124,9 +124,11 @@ class FlexParticleBody : public RIDFlex {
 	struct {
 		Vector<ParticleToAdd> particle_to_add;
 		Vector<SpringToAdd> springs_to_add;
+		Vector<DynamicTriangle> triangles_to_add;
 		Vector<RigidToAdd> rigids_to_add;
 		Vector<ParticleIndex> particle_to_remove;
 		Set<SpringIndex> springs_to_remove;
+		Vector<TriangleIndex> triangles_to_remove;
 		Vector<RigidIndex> rigids_to_remove;
 		// rigid component to add
 		Vector<RigidComponentIndex> rigids_components_to_remove;
@@ -172,6 +174,9 @@ public:
 	void add_spring(ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness);
 	void remove_spring(SpringIndex p_spring_index);
 
+	void add_triangle(const DynamicTriangle &p_triangle);
+	void remove_triangle(const TriangleIndex p_triangle_index);
+
 	void add_rigid(const Transform &p_transform, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, PoolVector<ParticleIndex> p_indices, PoolVector<Vector3> p_rests);
 	void remove_rigid(RigidIndex p_rigid_index);
 
@@ -201,7 +206,8 @@ public:
 
 	bool is_owner_of_particle(ParticleIndex p_particle) const;
 	bool is_owner_of_spring(SpringIndex p_spring) const;
-	bool is_owner_of_rigid(RigidIndex p_rigid) const;
+	bool is_owner_of_triangle(TriangleIndex p_rigid) const;
+	bool is_owner_of_rigid(RigidIndex p_triangle) const;
 	bool is_owner_of_rigid_component(RigidComponentIndex p_rigid_component) const;
 
 private:
