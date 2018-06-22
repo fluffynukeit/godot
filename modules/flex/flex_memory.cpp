@@ -116,13 +116,13 @@ float SpringMemory::get_stiffness(const MemoryChunk *p_chunk, SpringIndex p_spri
 	return stiffness[index];
 }
 
-void DynamicTriangleMemory::set_triangle(const MemoryChunk *p_chunk, TriangleIndex p_triangle_index, const DynamicTriangle &p_triangle) {
+void DynamicTrianglesMemory::set_triangle(const MemoryChunk *p_chunk, TriangleIndex p_triangle_index, const DynamicTriangle &p_triangle) {
 	make_memory_index(p_chunk, p_triangle_index);
 	triangles[index] = p_triangle;
 	changed = true;
 }
 
-const DynamicTriangle &DynamicTriangleMemory::get_triangle(const MemoryChunk *p_chunk, TriangleIndex p_triangle_index) const {
+const DynamicTriangle &DynamicTrianglesMemory::get_triangle(const MemoryChunk *p_chunk, TriangleIndex p_triangle_index) const {
 	make_memory_index_V(p_chunk, p_triangle_index, return_err_triangle);
 	return triangles[index];
 }

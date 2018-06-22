@@ -222,7 +222,7 @@ struct Spring {
 struct DynamicTriangle {
 	ParticleBufferIndex index0;
 	ParticleBufferIndex index1;
-	ParticleBufferIndex index3;
+	ParticleBufferIndex index2;
 
 	DynamicTriangle() {}
 
@@ -243,7 +243,7 @@ struct FlexCallBackData {
 static const FlVector4 return_err_flvec4(0, 0, 0, 0);
 static const Vector3 return_err_vec3(0, 0, 0);
 static const Spring return_err_spring(-1, -1);
-static const DynamicTriangle return_err_triangle(-1, -1);
+static const DynamicTriangle return_err_triangle(-1, -1, -1);
 static const Quat return_err_quat;
 
 #endif // FLEX_UTILITY_H
