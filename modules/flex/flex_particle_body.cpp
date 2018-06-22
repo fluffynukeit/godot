@@ -250,39 +250,25 @@ void FlexParticleBody::load_model(Ref<ParticleBodyModel> p_model, const Transfor
 		}
 	}
 
-	{ // Rigids
-		uint32_t active_r_count(get_rigid_count());
-		int resource_r_count(p_model->get_clusters_offsets().size());
-
-		if (active_r_count > resource_r_count) {
-
-			// Remove last
-			const int dif = active_r_count - resource_r_count;
-			for (int i(0); i < dif; ++i) {
-				remove_rigid(resource_r_count + i);
-			}
-
-			active_r_count = resource_r_count;
-
-		} else {
-
-			// Add
-
-			PoolVector<Vector3>::Read cluster_pos_r = p_model->get_clusters_positions().read();
-			PoolVector<float>::Read cluster_stiffness_r = p_model->get_clusters_stiffness().read();
-			PoolVector<float>::Read cluster_plastic_threshold_r = p_model->get_clusters_plastic_threshold().read();
-			PoolVector<float>::Read cluster_plastic_creep_r = p_model->get_clusters_plastic_creep().read();
-
-			const int dif = resource_r_count - active_r_count;
-			for (int i(0); i < dif; ++i) {
-				const int r(active_r_count + i);
-
-				add_rigid(initial_transform.translated(cluster_pos_r[r]), cluster_stiffness_r[r], cluster_plastic_threshold_r[r], cluster_plastic_creep_r[r], extract_rigid_indices(r, p_model->get_clusters_offsets(), p_model->get_clusters_particle_indices()));
-			}
+	// Rigids
+	{
+		// Remove all current rigids
+		for (int i(0); i < get_rigid_count(); ++i) {
+			remove_rigid(i);
 		}
 
-		for (int i(0); i < active_r_count; ++i) {
-			// TODO RESET HERE RIGIDS
+		// Add all model rigids
+
+		const int resource_r_count(p_model->get_clusters_offsets().size());
+
+		PoolVector<Vector3>::Read cluster_pos_r = p_model->get_clusters_positions().read();
+		PoolVector<float>::Read cluster_stiffness_r = p_model->get_clusters_stiffness().read();
+		PoolVector<float>::Read cluster_plastic_threshold_r = p_model->get_clusters_plastic_threshold().read();
+		PoolVector<float>::Read cluster_plastic_creep_r = p_model->get_clusters_plastic_creep().read();
+
+		for (int i(0); i < resource_r_count; ++i) {
+
+			add_rigid(initial_transform.translated(cluster_pos_r[i]), cluster_stiffness_r[i], cluster_plastic_threshold_r[i], cluster_plastic_creep_r[i], extract_rigid_indices(i, p_model->get_clusters_offsets(), p_model->get_clusters_particle_indices()));
 		}
 	}
 }
@@ -301,9 +287,6 @@ void FlexParticleBody::reset_spring(SpringIndex p_spring, ParticleIndex p_partic
 	space->get_springs_memory()->set_spring(springs_mchunk, p_spring, Spring(particles_mchunk->get_buffer_index(p_particle_0), particles_mchunk->get_buffer_index(p_particle_1)));
 	space->get_springs_memory()->set_length(springs_mchunk, p_spring, p_length);
 	space->get_springs_memory()->set_stiffness(springs_mchunk, p_spring, p_stiffness);
-}
-
-void FlexParticleBody::reset_rigid(RigidIndex p_rigid) {
 }
 
 Vector3 FlexParticleBody::get_particle_position(ParticleIndex p_particle_index) const {
