@@ -427,10 +427,10 @@ void FlexSpace::execute_delayed_commands() {
 
 				for (int rigid_p_index(body->delayed_commands.rigids_to_add[r].indices.size() - 1); 0 <= rigid_p_index; --rigid_p_index) {
 					rigids_components_memory->set_index(body->rigids_components_mchunk, rigid_comp_index + rigid_p_index, body->particles_mchunk->get_buffer_index(indices_r[rigid_p_index]));
+					rigids_components_memory->set_rest(body->rigids_components_mchunk, rigid_comp_index + rigid_p_index, rests_r[rigid_p_index]); // This seems better of runtime generation
 					//rigids_components_memory->set_normal(body->rigids_components_mchunk, rigid_comp_index + rigid_p_index, rests_r[rigid_p_index].normalized() * -1);
 				}
 				rigid_comp_index += body->delayed_commands.rigids_to_add[r].indices.size();
-				body->reload_rigid_COM(previous_size + r);
 			}
 		}
 
