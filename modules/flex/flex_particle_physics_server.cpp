@@ -360,7 +360,7 @@ void FlexParticlePhysicsServer::free(RID p_rid) {
 	}
 }
 
-Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_soft_particle_body_model(Ref<TriangleMesh> p_mesh, float p_radius, float p_global_stiffness, bool p_cloth, float p_particle_spacing, float p_sampling, float p_clusterSpacing, float p_clusterRadius, float p_clusterStiffness, float p_linkRadius, float p_linkStiffness, float p_plastic_threshold, float p_plastic_creep) {
+Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_soft_particle_body_model(Ref<TriangleMesh> p_mesh, float p_radius, float p_global_stiffness, bool p_internal_sample, float p_particle_spacing, float p_sampling, float p_clusterSpacing, float p_clusterRadius, float p_clusterStiffness, float p_linkRadius, float p_linkStiffness, float p_plastic_threshold, float p_plastic_creep) {
 	ERR_FAIL_COND_V(p_mesh.is_null(), Ref<ParticleBodyModel>());
 
 	PoolVector<Vector3>::Read vertices_read = p_mesh->get_vertices().read();
@@ -376,8 +376,8 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_soft_particle_body_mode
 			indices.size(),
 
 			p_radius * p_particle_spacing, // Distance between 2 particle
-			p_cloth ? 0.0 : p_sampling, // (0-1) This parameter regulate the number of particle that should be put inside the mesh (in case of cloth it should be 0)
-			p_cloth ? p_sampling : 0.0, // (0-1) This parameter regulate the number of particle that should be put on the surface of mesh (in case of cloth it should be 1)
+			p_internal_sample ? p_sampling : 0.0, // (0-1) This parameter regulate the number of particle that should be put inside the mesh (in case of cloth it should be 0)
+			p_internal_sample ? 0.0 : p_sampling, // (0-1) This parameter regulate the number of particle that should be put on the surface of mesh (in case of cloth it should be 1)
 			p_clusterSpacing * p_radius,
 			p_clusterRadius * p_radius,
 			p_clusterStiffness,
@@ -386,6 +386,85 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_soft_particle_body_mode
 			p_global_stiffness,
 			p_plastic_threshold,
 			p_plastic_creep);
+
+	Ref<ParticleBodyModel> model = make_model(generated_assets);
+
+	NvFlexExtDestroyAsset(generated_assets);
+	generated_assets = NULL;
+
+	return model;
+}
+
+Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_cloth_particle_body_model(Ref<TriangleMesh> p_mesh, float p_stretch_stiffness, float p_bend_stiffness, float p_tether_stiffness, float p_tether_give, float p_pressure) {
+	ERR_FAIL_COND_V(p_mesh.is_null(), Ref<ParticleBodyModel>());
+
+	PoolVector<FlVector4> welded_vertices;
+	PoolVector<int> welded_indices;
+
+	{ // Merge all overlapping vertices
+		PoolVector<Vector3>::Read mesh_vertices_read = p_mesh->get_vertices().read();
+
+		PoolVector<int> mesh_indices;
+		p_mesh->get_indices(&mesh_indices);
+		const int mesh_index_count(mesh_indices.size());
+		const int mesh_vertex_count(p_mesh->get_vertices().size());
+
+		// A list of unique vertex index
+		PoolVector<int> welded_vertex_indices;
+		welded_vertex_indices.resize(mesh_vertex_count);
+
+		// The list that map all vertex indices from original to unique
+		PoolVector<int> original_to_unique;
+		original_to_unique.resize(mesh_vertex_count);
+
+		int unique_vertices(0);
+
+		{ // Merge vertices
+			PoolVector<int>::Write welded_indices_w = welded_vertex_indices.write();
+			PoolVector<int>::Write original_to_unique_w = original_to_unique.write();
+
+			unique_vertices = NvFlexExtCreateWeldedMeshIndices(
+					(float *)mesh_vertices_read.ptr(),
+					mesh_vertex_count,
+					welded_indices_w.ptr(),
+					original_to_unique_w.ptr(),
+					0.05);
+		}
+
+		PoolVector<int>::Read mesh_indices_r = mesh_indices.read();
+		PoolVector<int>::Read welded_indices_r = welded_vertex_indices.read();
+		PoolVector<int>::Read original_to_unique_r = original_to_unique.read();
+
+		welded_vertices.resize(unique_vertices);
+		welded_indices.resize(mesh_index_count);
+
+		{ // Populate vertices and indices
+			PoolVector<FlVector4>::Write particles_w = welded_vertices.write();
+			PoolVector<int>::Write welded_indices_w = welded_indices.write();
+
+			for (int i(0); i < unique_vertices; ++i) {
+				Vector3 pos(mesh_vertices_read[welded_indices_r[original_to_unique_r[i]]]);
+				particles_w[i] = make_particle(pos, 1);
+			}
+
+			for (int i(0); i < mesh_index_count; ++i) {
+				welded_indices_w[i] = welded_indices_r[original_to_unique_r[mesh_indices_r[i]]];
+			}
+		}
+	}
+
+	PoolVector<FlVector4>::Read welded_vertices_r = welded_vertices.read();
+	PoolVector<int>::Read welded_indices_r = welded_indices.read();
+
+	NvFlexExtAsset *generated_assets = NvFlexExtCreateClothFromMesh(
+			(float *)welded_vertices_r.ptr(),
+			welded_vertices.size(),
+			welded_indices_r.ptr(),
+			welded_indices.size() / 3,
+			p_stretch_stiffness,
+			p_bend_stiffness,
+			p_tether_stiffness,
+			p_tether_give, p_pressure);
 
 	Ref<ParticleBodyModel> model = make_model(generated_assets);
 
@@ -447,11 +526,13 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::make_model(NvFlexExtAsset *p_a
 	}
 
 	model->get_clusters_offsets_ref().resize(p_assets->numShapes);
+	model->get_clusters_positions_ref().resize(p_assets->numShapes);
 	model->get_clusters_stiffness_ref().resize(p_assets->numShapes);
 	model->get_clusters_plastic_threshold_ref().resize(p_assets->numShapes);
 	model->get_clusters_plastic_creep_ref().resize(p_assets->numShapes);
 	for (int i(0); i < p_assets->numShapes; ++i) {
 		model->get_clusters_offsets_ref().set(i, p_assets->shapeOffsets[i]);
+		model->get_clusters_positions_ref().set(i, ((Vector3 *)p_assets->shapeCenters)[i]);
 		model->get_clusters_stiffness_ref().set(i, p_assets->shapeCoefficients[i]);
 		model->get_clusters_plastic_threshold_ref().set(i, p_assets->shapePlasticThresholds ? p_assets->shapePlasticThresholds[i] : 0);
 		model->get_clusters_plastic_creep_ref().set(i, p_assets->shapePlasticCreeps ? p_assets->shapePlasticCreeps[i] : 0);

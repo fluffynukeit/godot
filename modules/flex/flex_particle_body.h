@@ -51,7 +51,7 @@ struct ParticleToAdd {
 	ParticleToAdd() {}
 
 	ParticleToAdd(const Vector3 &p_position, real_t p_mass) {
-		particle = CreateParticle(p_position, p_mass);
+		particle = make_particle(p_position, p_mass);
 		want_reference = false;
 	}
 };

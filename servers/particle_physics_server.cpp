@@ -59,7 +59,8 @@ void ParticlePhysicsServer::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("free", "rid"), &ParticlePhysicsServer::free);
 
-	ClassDB::bind_method(D_METHOD("create_soft_particle_body_model", "trimesh", "radius", "global_stiffness", "cloth", "particle_spacing", "sampling", "cluster_spacing", "cluster_radius", "cluster_stiffness", "link_radius", "link_stiffness", "plastic_thresold", "plastic_creep"), &ParticlePhysicsServer::create_soft_particle_body_model);
+	ClassDB::bind_method(D_METHOD("create_soft_particle_body_model", "trimesh", "radius", "global_stiffness", "internal_sample", "particle_spacing", "sampling", "cluster_spacing", "cluster_radius", "cluster_stiffness", "link_radius", "link_stiffness", "plastic_thresold", "plastic_creep"), &ParticlePhysicsServer::create_soft_particle_body_model);
+	ClassDB::bind_method(D_METHOD("create_cloth_particle_body_model", "trimesh", "stretch_stiffness", "bend_stiffness", "tether_stiffness", "tether_give", "pressure"), &ParticlePhysicsServer::create_cloth_particle_body_model);
 	ClassDB::bind_method(D_METHOD("create_rigid_particle_body_model", "trimesh", "radius", "expand"), &ParticlePhysicsServer::create_rigid_particle_body_model);
 
 	BIND_ENUM_CONSTANT(PARTICLE_BODY_CALLBACK_SYNC);

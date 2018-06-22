@@ -194,7 +194,7 @@ typedef int FlexIndex;
 #define vec3_from_flvec4(vec4) \
 	Vector3(vec4[0], vec4[1], vec4[2])
 
-#define CreateParticle(position, mass) \
+#define make_particle(position, mass) \
 	FlVector4(position.x, position.y, position.z, mass ? (1 / mass) : 0)
 
 #define extract_position(particle) \
