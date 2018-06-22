@@ -186,6 +186,8 @@ typedef FlexChunkIndex ActiveParticleIndex; // Active Particle index relative to
 typedef FlexBufferIndex ActiveParticleBufferIndex; // Active Particle global index, can change during time
 typedef FlexChunkIndex SpringIndex; // Spring index relative to the memory chunk, can change during time
 typedef FlexBufferIndex SpringBufferIndex; // Spring global index, can change during time
+typedef FlexChunkIndex TriangleIndex; // Triangle index relative to the memory chunk, can change during time
+typedef FlexBufferIndex TriangleBufferIndex; // Triangle global index, can change during time
 typedef FlexChunkIndex GeometryIndex; // Geometry index relative to the memory chunk, can change during time
 typedef FlexBufferIndex GeometryBufferIndex; // Geometry global index, cavec3_from_flvec4time
 
@@ -210,13 +212,24 @@ struct Spring {
 	ParticleBufferIndex index0;
 	ParticleBufferIndex index1;
 
-	Spring() :
-			index0(0),
-			index1(0) {}
+	Spring() {}
 
 	Spring(ParticleBufferIndex p_index0, ParticleBufferIndex p_index1) :
 			index0(p_index0),
 			index1(p_index1) {}
+};
+
+struct DynamicTriangle {
+	ParticleBufferIndex index0;
+	ParticleBufferIndex index1;
+	ParticleBufferIndex index3;
+
+	DynamicTriangle() {}
+
+	DynamicTriangle(ParticleBufferIndex p_index0, ParticleBufferIndex p_index1, ParticleBufferIndex p_index2) :
+			index0(p_index0),
+			index1(p_index1),
+			index2(p_index2) {}
 };
 
 struct FlexCallBackData {
@@ -230,6 +243,7 @@ struct FlexCallBackData {
 static const FlVector4 return_err_flvec4(0, 0, 0, 0);
 static const Vector3 return_err_vec3(0, 0, 0);
 static const Spring return_err_spring(-1, -1);
+static const DynamicTriangle return_err_triangle(-1, -1);
 static const Quat return_err_quat;
 
 #endif // FLEX_UTILITY_H

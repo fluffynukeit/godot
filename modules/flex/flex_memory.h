@@ -157,6 +157,7 @@ class FlexBufferMemory : public FlexMemory {
 	Vector<NvFlexVector<Quat> *> buffers_quat;
 	Vector<NvFlexVector<Vector3> *> buffers_vec3;
 	Vector<NvFlexVector<Spring> *> buffers_spring;
+	Vector<NvFlexVector<DynamicTriangle> *> buffers_dintriangles;
 	Vector<NvFlexVector<FlVector4> *> buffers_flvec4;
 	Vector<NvFlexVector<NvFlexCollisionGeometry> *> buffers_colgeo;
 
@@ -175,6 +176,9 @@ protected:
 	}
 	void __add_buffer(NvFlexVector<Spring> *buffer) {
 		buffers_spring.push_back(buffer);
+	}
+	void __add_buffer(NvFlexVector<DynamicTriangle> *buffer) {
+		buffers_dintriangles.push_back(buffer);
 	}
 	void __add_buffer(NvFlexVector<FlVector4> *buffer) {
 		buffers_flvec4.push_back(buffer);
@@ -202,6 +206,9 @@ public:
 		for (int i(buffers_spring.size() - 1); 0 <= i; --i) {
 			buffers_spring[i]->map();
 		}
+		for (int i(buffers_dintriangles.size() - 1); 0 <= i; --i) {
+			buffers_dintriangles[i]->map();
+		}
 		for (int i(buffers_flvec4.size() - 1); 0 <= i; --i) {
 			buffers_flvec4[i]->map();
 		}
@@ -227,6 +234,9 @@ public:
 		for (int i(buffers_spring.size() - 1); 0 <= i; --i) {
 			buffers_spring[i]->unmap();
 		}
+		for (int i(buffers_dintriangles.size() - 1); 0 <= i; --i) {
+			buffers_dintriangles[i]->unmap();
+		}
 		for (int i(buffers_flvec4.size() - 1); 0 <= i; --i) {
 			buffers_flvec4[i]->unmap();
 		}
@@ -251,6 +261,9 @@ public:
 		}
 		for (int i(buffers_spring.size() - 1); 0 <= i; --i) {
 			buffers_spring[i]->destroy();
+		}
+		for (int i(buffers_dintriangles.size() - 1); 0 <= i; --i) {
+			buffers_dintriangles[i]->destroy();
 		}
 		for (int i(buffers_flvec4.size() - 1); 0 <= i; --i) {
 			buffers_flvec4[i]->destroy();
@@ -282,6 +295,9 @@ protected:
 		for (int i(buffers_spring.size() - 1); 0 <= i; --i) {
 			buffers_spring[i]->resize(p_size);
 		}
+		for (int i(buffers_dintriangles.size() - 1); 0 <= i; --i) {
+			buffers_dintriangles[i]->resize(p_size);
+		}
 		for (int i(buffers_flvec4.size() - 1); 0 <= i; --i) {
 			buffers_flvec4[i]->resize(p_size);
 		}
@@ -305,6 +321,9 @@ protected:
 		}
 		for (int i(buffers_spring.size() - 1); 0 <= i; --i) {
 			(*buffers_spring[i])[p_to] = (*buffers_spring[i])[p_from];
+		}
+		for (int i(buffers_dintriangles.size() - 1); 0 <= i; --i) {
+			(*buffers_dintriangles[i])[p_to] = (*buffers_spring[i])[p_from];
 		}
 		for (int i(buffers_flvec4.size() - 1); 0 <= i; --i) {
 			(*buffers_flvec4[i])[p_to] = (*buffers_flvec4[i])[p_from];
@@ -382,6 +401,26 @@ class SpringMemory : public FlexBufferMemory {
 
 	void set_stiffness(const MemoryChunk *p_chunk, SpringIndex p_spring_index, float p_stifness);
 	float get_stiffness(const MemoryChunk *p_chunk, SpringIndex p_spring_index) const;
+};
+
+class DynamicTriangleMemory : public FlexBufferMemory {
+
+	bool changed;
+	FLEXBUFFERCLASS_1(DynamicTriangleMemory, DynamicTriangle, triangles);
+
+	virtual void _on_mapped() { changed = false; }
+
+	bool was_changed() { return changed; }
+
+	/// IMPORTANT
+	/// These functions must be called only if the buffers are mapped
+	/// |
+	/// |
+	/// V
+	///
+
+	void set_triangle(const MemoryChunk *p_chunk, TriangleIndex p_triangle_index, const DynamicTriangle &p_triangle);
+	const DynamicTriangle &get_triangle(const MemoryChunk *p_chunk, TriangleIndex p_triangle_index) const;
 };
 
 /// This represent primitive body
@@ -518,4 +557,5 @@ class RigidsComponentsMemory : public FlexBufferMemory {
 	//void set_normal(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index, const Vector3 &p_normal);
 	//const Vector3 &get_normal(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index) const;
 };
+
 #endif // FLEX_MEMORY_H
