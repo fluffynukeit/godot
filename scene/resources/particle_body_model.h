@@ -60,6 +60,8 @@ private:
 	PoolVector<int> clusters_offsets; // This represent the last id of a group of particles
 	PoolVector<int> clusters_particle_indices; // Cluster index organized per offset
 
+	PoolVector<int> dynamic_triangles_indices; // pair of 3
+
 public:
 	ParticleBodyModel();
 
@@ -102,6 +104,10 @@ public:
 	void set_clusters_particle_indices(const PoolVector<int> p_clusters_particle_indices);
 	PoolVector<int> get_clusters_particle_indices() { return clusters_particle_indices; }
 	PoolVector<int> &get_clusters_particle_indices_ref() { return clusters_particle_indices; }
+
+	void set_dynamic_triangles_indices(const PoolVector<int> p_dynamic_triangles_indices);
+	PoolVector<int> get_dynamic_triangles_indices() { return dynamic_triangles_indices; }
+	PoolVector<int> &get_dynamic_triangles_indices_ref() { return dynamic_triangles_indices; }
 };
 
 #endif // PARTICLE_BODY_MODEL_H

@@ -279,8 +279,12 @@ void FlexParticleBody::load_model(Ref<ParticleBodyModel> p_model, const Transfor
 		}
 	}
 
-	// Rigids
 	{
+		// Dynamic triangles
+		// TODO load dynamic triangle here
+	}
+
+	{ // Rigids
 		// Remove all current rigids
 		for (int i(0); i < get_rigid_count(); ++i) {
 			remove_rigid(i);

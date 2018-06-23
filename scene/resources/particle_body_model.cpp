@@ -65,6 +65,9 @@ void ParticleBodyModel::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_clusters_particle_indices", "clusters_particle_indices"), &ParticleBodyModel::set_clusters_particle_indices);
 	ClassDB::bind_method(D_METHOD("get_clusters_particle_indices"), &ParticleBodyModel::get_clusters_particle_indices);
 
+	ClassDB::bind_method(D_METHOD("set_dynamic_triangles_indices", "dynamic_triangles_indices"), &ParticleBodyModel::set_dynamic_triangles_indices);
+	ClassDB::bind_method(D_METHOD("get_dynamic_triangles_indices"), &ParticleBodyModel::get_dynamic_triangles_indices);
+
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_VECTOR3_ARRAY, "particles"), "set_particles", "get_particles");
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_REAL_ARRAY, "masses"), "set_masses", "get_masses");
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_INT_ARRAY, "constraints_indexes"), "set_constraints_indexes", "get_constraints_indexes");
@@ -76,6 +79,8 @@ void ParticleBodyModel::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_REAL_ARRAY, "clusters_plastic_creep"), "set_clusters_plastic_creep", "get_clusters_plastic_creep");
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_INT_ARRAY, "clusters_offsets"), "set_clusters_offsets", "get_clusters_offsets");
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_INT_ARRAY, "clusters_particle_indices"), "set_clusters_particle_indices", "get_clusters_particle_indices");
+
+	ADD_PROPERTY(PropertyInfo(Variant::POOL_INT_ARRAY, "dynamic_triangles_indices"), "set_dynamic_triangles_indices", "get_dynamic_triangles_indices");
 }
 
 ParticleBodyModel::ParticleBodyModel() {}
@@ -118,4 +123,8 @@ void ParticleBodyModel::set_clusters_offsets(const PoolVector<int> p_clusters_of
 
 void ParticleBodyModel::set_clusters_particle_indices(const PoolVector<int> p_clusters_particle_indices) {
 	clusters_particle_indices = p_clusters_particle_indices;
+}
+
+void ParticleBodyModel::set_dynamic_triangles_indices(const PoolVector<int> p_dynamic_triangles_indices) {
+	dynamic_triangles_indices = p_dynamic_triangles_indices;
 }
