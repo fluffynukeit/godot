@@ -550,6 +550,14 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::make_model(NvFlexExtAsset *p_a
 		model->get_clusters_particle_indices_ref().set(i, p_assets->shapeIndices[i]);
 	}
 
+	model->get_dynamic_triangles_indices_ref().resize(p_assets->numTriangles * 3);
+	PoolVector<int>::Write dynamic_triangles_indices_w = model->get_dynamic_triangles_indices_ref().write();
+	for (int i(0); i < p_assets->numTriangles; ++i) {
+		dynamic_triangles_indices_w[i * 3 + 0] = p_assets->triangleIndices[i * 3 + 0];
+		dynamic_triangles_indices_w[i * 3 + 1] = p_assets->triangleIndices[i * 3 + 1];
+		dynamic_triangles_indices_w[i * 3 + 2] = p_assets->triangleIndices[i * 3 + 2];
+	}
+
 	return model;
 }
 
