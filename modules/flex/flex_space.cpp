@@ -411,6 +411,18 @@ void FlexSpace::execute_delayed_commands() {
 			}
 		}
 
+		if (body->delayed_commands.triangles_to_add.size()) {
+
+			// Allocate memory for triangles
+			int previous_size = body->triangles_mchunk->get_size();
+			// Resize existing memory chunk
+			triangles_allocator->resize_chunk(body->triangles_mchunk, previous_size + body->delayed_commands.triangles_to_add.size());
+
+			for (int t(body->delayed_commands.triangles_to_add.size() - 1); 0 <= t; --t) {
+				triangles_memory->set_triangle(body->triangles_mchunk, previous_size + t, body->delayed_commands.triangles_to_add[t]);
+			}
+		}
+
 		if (body->delayed_commands.rigids_to_add.size()) {
 
 			ERR_FAIL_COND(!body->particles_mchunk);
@@ -492,6 +504,8 @@ void FlexSpace::execute_delayed_commands() {
 			const FlexUnit new_size = body->springs_mchunk->get_size() - body->delayed_commands.springs_to_remove.size();
 			springs_allocator->resize_chunk(body->springs_mchunk, new_size);
 		}
+
+		// TODO add here triangles removal
 
 		if (body->delayed_commands.rigids_components_to_remove.size()) {
 
