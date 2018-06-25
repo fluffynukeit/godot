@@ -51,6 +51,18 @@ public:
 
 	virtual void load_model(Ref<ParticleBodyModel> p_model, const Transform &initial_transform);
 
+	virtual void add_particle(const Vector3 &p_local_position, real_t p_mass);
+	virtual void set_particle(ParticleIndex p_index, const Vector3 &p_local_position, real_t p_mass);
+
+	virtual void add_spring(ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness);
+	virtual void set_spring(SpringIndex p_index, ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness);
+
+	virtual void add_rigid(const Transform &p_transform, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, RigidComponentIndex p_offset);
+	virtual void set_rigid(RigidIndex p_index, const Transform &p_transform, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, RigidComponentIndex p_offset);
+
+	virtual void add_rigid_component(ParticleBufferIndex p_particle_index, const Vector3 &p_rest);
+	virtual void set_rigid_component(RigidComponentIndex p_index, ParticleBufferIndex p_particle_index, const Vector3 &p_rest);
+
 	virtual void reset_particle(int p_particle_index, const Vector3 &p_position, real_t p_mass);
 
 	virtual Vector3 get_particle_position(int p_particle_index) const;
