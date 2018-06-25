@@ -174,6 +174,10 @@ int FlexParticleBody::get_spring_count() const {
 	return springs_mchunk ? springs_mchunk->get_size() : 0;
 }
 
+int FlexParticleBody::get_triangle_count() const {
+	return triangles_mchunk ? triangles_mchunk->get_size() : 0;
+}
+
 int FlexParticleBody::get_rigid_count() const {
 	return rigids_mchunk ? rigids_mchunk->get_size() : 0;
 }
@@ -217,9 +221,12 @@ PoolVector<Vector3> extract_rigid_rests(PoolVector<ParticleIndex> p_rigid_indice
 
 void FlexParticleBody::load_model(Ref<ParticleBodyModel> p_model, const Transform &initial_transform) {
 
+	if (p_model.is_null())
+		return;
+
 	{ // Particle
 		int active_p_count(get_particle_count());
-		const int resource_p_count(p_model.is_null() ? 0 : p_model->get_particles_ref().size());
+		const int resource_p_count(p_model->get_particles_ref().size());
 
 		if (active_p_count > resource_p_count) {
 
@@ -248,7 +255,7 @@ void FlexParticleBody::load_model(Ref<ParticleBodyModel> p_model, const Transfor
 
 	{ // Spring
 		uint32_t active_s_count(get_spring_count());
-		int resource_s_count(p_model.is_null() ? 0 : p_model->get_constraints_indexes_ref().size() / 2);
+		int resource_s_count(p_model->get_constraints_indexes_ref().size() / 2);
 
 		if (active_s_count > resource_s_count) {
 
@@ -281,7 +288,36 @@ void FlexParticleBody::load_model(Ref<ParticleBodyModel> p_model, const Transfor
 
 	{
 		// Dynamic triangles
-		// TODO load dynamic triangle here
+		//uint32_t active_t_count(get_triangle_count());
+		//int resource_t_count(p_model->get_dynamic_triangles_indices_ref().size());
+		//
+		//if (active_t_count > resource_t_count) {
+		//
+		//	// Remove last
+		//	const int dif = active_s_count - resource_s_count;
+		//	for (int i(0); i < dif; ++i) {
+		//		remove_triangle(resource_t_count + i);
+		//	}
+		//
+		//	active_t_count = resource_t_count;
+		//
+		//} else {
+		//
+		//	// Add
+		//	const int dif = resource_t_count - active_t_count;
+		//	for (int i(0); i < dif; ++i) {
+		//		const int t(active_t_count + i);
+		//		//add_triangle(p_model->get_constraints_indexes_ref().get(s * 2), p_model->get_constraints_indexes_ref().get(s * 2 + 1), p_model->get_constraints_info_ref().get(s).x, p_model->get_constraints_info_ref().get(s).y);
+		//	}
+		//}
+
+		//for (int i(0); i < active_s_count; ++i) {
+		//	reset_triangle(i,
+		//			p_model->get_constraints_indexes_ref().get(i),
+		//			p_model->get_constraints_indexes_ref().get(i + 1),
+		//			p_model->get_constraints_info_ref().get(i).x,
+		//			p_model->get_constraints_info_ref().get(i).y);
+		//}
 	}
 
 	{ // Rigids

@@ -184,6 +184,7 @@ public:
 
 	int get_particle_count() const;
 	int get_spring_count() const;
+	int get_triangle_count() const;
 	int get_rigid_count() const;
 
 	// CMD
