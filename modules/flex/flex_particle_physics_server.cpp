@@ -30,6 +30,9 @@
 
 #include "flex_particle_physics_server.h"
 
+#include "flex_memory.h"
+#include "flex_utility.h"
+
 #include "thirdparty/flex/include/NvFlex.h"
 #include "thirdparty/flex/include/NvFlexExt.h"
 
@@ -43,8 +46,166 @@
 	rid_data->__set_physics_server(this);    \
 	return rid;
 
+PoolVector<ParticleIndex> extract_rigid_indices(int index, PoolVector<int> p_offsets, PoolVector<int> p_indices) {
+
+	PoolVector<int>::Read offsets_r = p_offsets.read();
+	PoolVector<int>::Read indices_r = p_indices.read();
+
+	const int offset_start = index == 0 ? 0 : offsets_r[index - 1];
+	const int size = offsets_r[index] - offset_start;
+
+	PoolVector<ParticleIndex> rigid_indices;
+	rigid_indices.resize(size);
+	PoolVector<ParticleIndex>::Write rigid_indices_w = rigid_indices.write();
+
+	for (int i(0); i < size; i++) {
+		rigid_indices_w[i] = indices_r[offset_start + i];
+	}
+
+	return rigid_indices;
+}
+
+PoolVector<Vector3> extract_rigid_rests(PoolVector<ParticleIndex> p_rigid_indices, PoolVector<Vector3> p_particles_positions, const Vector3 &p_rigid_position) {
+
+	PoolVector<ParticleIndex>::Read rigid_indices_r = p_rigid_indices.read();
+	PoolVector<Vector3>::Read positions_r = p_particles_positions.read();
+
+	PoolVector<Vector3> rests;
+	rests.resize(p_rigid_indices.size());
+
+	PoolVector<Vector3>::Write rests_w = rests.write();
+
+	for (int i(p_rigid_indices.size() - 1); 0 <= i; --i) {
+
+		rests_w[i] = positions_r[rigid_indices_r[i]] - p_rigid_position;
+	}
+
+	return rests;
+}
+
 void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const Transform &initial_transform) {
-	body->load_model(p_model, initial_transform);
+	if (p_model.is_null())
+		return;
+
+	{ // Particle
+		const int resource_p_count(p_model->get_particles_ref().size());
+		body->space->particles_allocator->resize_chunk(body->particles_mchunk, resource_p_count);
+
+		PoolVector<Vector3>::Read positions_r = p_model->get_particles().read();
+		PoolVector<real_t>::Read masses_r = p_model->get_masses().read();
+
+		for (int i(0); i < resource_p_count; ++i) {
+			set_particle(i, initial_transform.xform(positions_r[i]), masses_r[i]);
+		}
+	}
+
+	{ // Spring
+		const int resource_s_count(p_model->get_constraints_indexes_ref().size() / 2);
+		body->space->springs_allocator->resize_chunk(body->springs_mchunk, resource_s_count);
+
+		for (int i(0); i < resource_s_count; ++i) {
+			set_spring(i,
+					p_model->get_constraints_indexes_ref().get(i * 2),
+					p_model->get_constraints_indexes_ref().get(i * 2 + 1),
+					p_model->get_constraints_info_ref().get(i).x,
+					p_model->get_constraints_info_ref().get(i).y);
+		}
+	}
+
+	{ // Rigids
+
+		const int resource_r_count(p_model->get_clusters_offsets().size());
+
+		body->space->rigids_allocator->resize_chunk(body->rigids_mchunk, resource_r_count);
+
+		PoolVector<Vector3>::Read cluster_pos_r = p_model->get_clusters_positions().read();
+		PoolVector<float>::Read cluster_stiffness_r = p_model->get_clusters_stiffness().read();
+		PoolVector<float>::Read cluster_plastic_threshold_r = p_model->get_clusters_plastic_threshold().read();
+		PoolVector<float>::Read cluster_plastic_creep_r = p_model->get_clusters_plastic_creep().read();
+		PoolVector<int>::Read cluster_offsets_r = p_model->get_clusters_offsets().read();
+
+		for (int i(0); i < resource_r_count; ++i) {
+			rigid_comp_index += body->delayed_commands.rigids_to_add[r].indices.size();
+			set_rigid(i, initial_transform.translated(cluster_pos_r[i]), cluster_stiffness_r[i], cluster_plastic_threshold_r[i], cluster_plastic_creep_r[i], cluster_offsets_r[i]);
+		}
+
+		// Rigids components
+
+		const int resource_rc_count(p_model->get_clusters_particle_indices().size());
+		body->space->rigids_components_allocator->resize_chunk(body->rigids_components_mchunk, resource_rc_count);
+
+		PoolVector<int>::Read indices_r = p_model->get_clusters_particle_indices().read();
+
+		for (int i(0); i < resource_rc_count; ++i) {
+			// Ptrovare un modo per popolare p_rigid_position
+			set_rigid_component(i, indices_r[i], get_particle_position(indices_r[i]) - p_rigid_position);
+		}
+	}
+}
+
+void FlexParticleBodyCommands::add_particle(const Vector3 &p_local_position, real_t p_mass) {
+	const int previous_size = body->particles_mchunk->get_size();
+	body->space->particles_allocator->resize_chunk(body->particles_mchunk, previous_size + 1);
+	set_particle(previous_size, p_local_position, p_mass);
+}
+
+void FlexParticleBodyCommands::set_particle(ParticleIndex p_index, const Vector3 &p_local_position, real_t p_mass) {
+
+	ERR_FAIL_COND(!body->is_owner_of_particle(p_index));
+
+	body->space->particles_memory->set_particle(body->particles_mchunk, p_index, make_particle(p_local_position, p_mass));
+	body->space->particles_memory->set_velocity(body->particles_mchunk, p_index, Vector3());
+	body->space->particles_memory->set_phase(body->particles_mchunk, p_index, NvFlexMakePhaseWithChannels(body->collision_group, body->collision_flags, body->collision_primitive_mask));
+	body->changed_parameters |= eChangedBodyParamParticleJustAdded;
+}
+
+void FlexParticleBodyCommands::add_spring(ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness) {
+	const int previous_size = body->springs_mchunk->get_size();
+	body->space->springs_allocator->resize_chunk(body->springs_mchunk, previous_size + 1);
+	set_spring(previous_size, p_particle_0, p_particle_1, p_length, p_stiffness);
+}
+
+void FlexParticleBodyCommands::set_spring(SpringIndex p_index, ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness) {
+
+	ERR_FAIL_COND(!body->is_owner_of_spring(p_index));
+
+	body->space->get_springs_memory()->set_spring(body->springs_mchunk, p_index, Spring(body->particles_mchunk->get_buffer_index(p_particle_0), body->particles_mchunk->get_buffer_index(p_particle_1)));
+	body->space->get_springs_memory()->set_length(body->springs_mchunk, p_index, p_length);
+	body->space->get_springs_memory()->set_stiffness(body->springs_mchunk, p_index, p_stiffness);
+}
+
+void FlexParticleBodyCommands::add_rigid(const Transform &p_transform, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, RigidComponentIndex p_offset) {
+	const int previous_size = body->rigids_mchunk->get_size();
+	body->space->rigids_allocator->resize_chunk(body->rigids_mchunk, previous_size + 1);
+	set_rigid(previous_size, p_transform, p_stiffness, p_plastic_threshold, p_plastic_creep, p_offset);
+}
+
+void FlexParticleBodyCommands::set_rigid(RigidIndex p_index, const Transform &p_transform, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, RigidComponentIndex p_offset) {
+
+	ERR_FAIL_COND(!body->is_owner_of_rigid(p_index));
+
+	FlexSpace *space(body->space);
+
+	space->rigids_memory->set_position(body->rigids_mchunk, p_index, p_transform.origin);
+	space->rigids_memory->set_rotation(body->rigids_mchunk, p_index, p_transform.basis.get_quat());
+	space->rigids_memory->set_stiffness(body->rigids_mchunk, p_index, p_stiffness);
+	space->rigids_memory->set_threshold(body->rigids_mchunk, p_index, p_plastic_threshold);
+	space->rigids_memory->set_creep(body->rigids_mchunk, p_index, p_plastic_creep);
+	space->rigids_memory->set_offset(body->rigids_mchunk, p_index, p_offset);
+}
+
+void FlexParticleBodyCommands::add_rigid_component(ParticleBufferIndex p_particle_index, const Vector3 &p_rest) {
+	const int previous_size = body->rigids_components_mchunk->get_size();
+	body->space->rigids_components_allocator->resize_chunk(body->rigids_components_mchunk, previous_size + 1);
+	set_rigid_component(previous_size, p_particle_index, p_rest);
+}
+
+void FlexParticleBodyCommands::set_rigid_component(RigidComponentIndex p_index, ParticleBufferIndex p_particle_index, const Vector3 &p_rest) {
+
+	ERR_FAIL_COND(!body->is_owner_of_rigid_component(p_index));
+
+	body->space->rigids_components_memory->set_index(body->rigids_components_mchunk, p_index, p_particle_index);
+	body->space->rigids_components_memory->set_rest(body->rigids_components_mchunk, p_index, p_rest);
 }
 
 void FlexParticleBodyCommands::reset_particle(int p_particle_index, const Vector3 &p_position, real_t p_mass) {

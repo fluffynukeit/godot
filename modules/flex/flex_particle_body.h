@@ -99,9 +99,10 @@ struct RigidToAdd {
 };
 
 enum ChangedBodyParameter {
-	eChangedBodyParamPositionMass = 1 << 0,
-	eChangedBodyParamVelocity = 1 << 1,
-	eChangedBodyParamPhase = 1 << 2
+	eChangedBodyParamParticleJustAdded = 1 << 0,
+	eChangedBodyParamPositionMass = 1 << 1,
+	eChangedBodyParamVelocity = 1 << 2,
+	eChangedBodyParamPhase = 1 << 3
 };
 
 /// This class represent a group of particles that are constrained each other and form a body.
@@ -188,8 +189,6 @@ public:
 	int get_rigid_count() const;
 
 	// CMD
-	void load_model(Ref<ParticleBodyModel> p_model, const Transform &initial_transform);
-
 	void reset_particle(ParticleIndex p_particle, const Vector3 &p_position, real_t p_mass);
 	void reset_spring(SpringIndex p_spring, ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness);
 
