@@ -46,43 +46,6 @@
 	rid_data->__set_physics_server(this);    \
 	return rid;
 
-PoolVector<ParticleIndex> extract_rigid_indices(int index, PoolVector<int> p_offsets, PoolVector<int> p_indices) {
-
-	PoolVector<int>::Read offsets_r = p_offsets.read();
-	PoolVector<int>::Read indices_r = p_indices.read();
-
-	const int offset_start = index == 0 ? 0 : offsets_r[index - 1];
-	const int size = offsets_r[index] - offset_start;
-
-	PoolVector<ParticleIndex> rigid_indices;
-	rigid_indices.resize(size);
-	PoolVector<ParticleIndex>::Write rigid_indices_w = rigid_indices.write();
-
-	for (int i(0); i < size; i++) {
-		rigid_indices_w[i] = indices_r[offset_start + i];
-	}
-
-	return rigid_indices;
-}
-
-PoolVector<Vector3> extract_rigid_rests(PoolVector<ParticleIndex> p_rigid_indices, PoolVector<Vector3> p_particles_positions, const Vector3 &p_rigid_position) {
-
-	PoolVector<ParticleIndex>::Read rigid_indices_r = p_rigid_indices.read();
-	PoolVector<Vector3>::Read positions_r = p_particles_positions.read();
-
-	PoolVector<Vector3> rests;
-	rests.resize(p_rigid_indices.size());
-
-	PoolVector<Vector3>::Write rests_w = rests.write();
-
-	for (int i(p_rigid_indices.size() - 1); 0 <= i; --i) {
-
-		rests_w[i] = positions_r[rigid_indices_r[i]] - p_rigid_position;
-	}
-
-	return rests;
-}
-
 void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const Transform &initial_transform) {
 	if (p_model.is_null())
 		return;
@@ -116,7 +79,7 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 	{ // Dynamic triangle
 		const int resource_t_count(p_model->get_dynamic_triangles_indices().size() / 3);
 		// Resize existing memory chunk
-		body->space->triangles_allocator->resize_chunk(body->triangles_mchunk, resource_t_count);
+		triangles_set_count(resource_t_count);
 
 		PoolVector<int>::Read triangles_indices_r(p_model->get_dynamic_triangles_indices().read());
 		for (int t(0); t < resource_t_count; ++t) {
@@ -194,9 +157,21 @@ void FlexParticleBodyCommands::set_spring(SpringIndex p_index, ParticleIndex p_p
 	body->space->get_springs_memory()->set_stiffness(body->springs_mchunk, p_index, p_stiffness);
 }
 
+void FlexParticleBodyCommands::triangles_set_count(int p_count) {
+	body->space->triangles_allocator->resize_chunk(body->triangles_mchunk, p_count);
+
+	if (p_count) {
+		body->space->inflatables_allocator->resize_chunk(body->inflatable_mchunk, 1);
+		body->space->inflatables_memory->set_start_triangle_index(body->inflatable_mchunk, 0, body->triangles_mchunk->get_begin_index());
+		body->space->inflatables_memory->set_triangle_count(body->inflatable_mchunk, 0, p_count);
+	} else {
+		body->space->inflatables_allocator->resize_chunk(body->inflatable_mchunk, 0);
+	}
+}
+
 void FlexParticleBodyCommands::add_triangle(ParticleIndex p_particle_0, ParticleIndex p_particle_1, ParticleIndex p_particle_2) {
 	const int previous_size(body->triangles_mchunk->get_size());
-	body->space->triangles_allocator->resize_chunk(body->triangles_mchunk, previous_size + 1);
+	triangles_set_count(previous_size + 1);
 	set_triangle(previous_size, p_particle_0, p_particle_1, p_particle_2);
 }
 

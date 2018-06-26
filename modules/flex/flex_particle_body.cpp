@@ -43,6 +43,7 @@ FlexParticleBody::FlexParticleBody() :
 		particles_mchunk(NULL),
 		springs_mchunk(NULL),
 		triangles_mchunk(NULL),
+		inflatable_mchunk(NULL),
 		rigids_mchunk(NULL),
 		rigids_components_mchunk(NULL),
 		changed_parameters(0),
@@ -51,7 +52,7 @@ FlexParticleBody::FlexParticleBody() :
 		collision_primitive_mask(eNvFlexPhaseShapeChannel0),
 		rest_volume(0),
 		pressure(1),
-		constraint_scale(1) {
+		constraint_scale(0) {
 	sync_callback.receiver = NULL;
 }
 
@@ -121,6 +122,33 @@ void FlexParticleBody::set_collision_primitive_mask(uint32_t p_primitive_mask) {
 
 uint32_t FlexParticleBody::get_collision_primitive_mask() const {
 	return collision_primitive_mask >> 24;
+}
+
+void FlexParticleBody::set_rest_volume(float p_rest_volume) {
+	rest_volume = p_rest_volume;
+	changed_parameters |= eChangedBodyParamInflatable;
+}
+
+float FlexParticleBody::get_rest_volume() const {
+	return rest_volume;
+}
+
+void FlexParticleBody::set_pressure(float p_pressure) {
+	pressure = p_pressure;
+	changed_parameters |= eChangedBodyParamInflatable;
+}
+
+float FlexParticleBody::get_pressure() const {
+	return pressure;
+}
+
+void FlexParticleBody::set_constraint_scale(float p_constraint_scale) {
+	constraint_scale = p_constraint_scale;
+	changed_parameters |= eChangedBodyParamInflatable;
+}
+
+float FlexParticleBody::get_constraint_scale() const {
+	return constraint_scale;
 }
 
 void FlexParticleBody::remove_particle(ParticleIndex p_particle) {

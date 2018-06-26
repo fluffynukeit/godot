@@ -49,9 +49,9 @@ enum ChangedBodyParameter {
 	eChangedBodyParamPositionMass = 1 << 1,
 	eChangedBodyParamVelocity = 1 << 2,
 	eChangedBodyParamPhase = 1 << 3,
-	eChangedBodyParamRestVolume = 1 << 4,
-	eChangedBodyParamPressure = 1 << 5,
-	eChangedBodyParamConstraintScale = 1 << 6
+	eChangedBodyParamInflatable = 1 << 4,
+
+	eChangedBodyParamALL = eChangedBodyParamParticleJustAdded | eChangedBodyParamPositionMass | eChangedBodyParamVelocity | eChangedBodyParamPhase | eChangedBodyParamInflatable
 };
 
 /// This class represent a group of particles that are constrained each other and form a body.
@@ -85,6 +85,7 @@ class FlexParticleBody : public RIDFlex {
 	MemoryChunk *particles_mchunk;
 	MemoryChunk *springs_mchunk;
 	MemoryChunk *triangles_mchunk;
+	MemoryChunk *inflatable_mchunk;
 	MemoryChunk *rigids_mchunk;
 	MemoryChunk *rigids_components_mchunk;
 
@@ -116,6 +117,15 @@ public:
 	// Accept only first 7 bit
 	void set_collision_primitive_mask(uint32_t p_primitive_mask);
 	uint32_t get_collision_primitive_mask() const;
+
+	void set_rest_volume(float p_rest_volume);
+	float get_rest_volume() const;
+
+	void set_pressure(float p_pressure);
+	float get_pressure() const;
+
+	void set_constraint_scale(float p_constraint_scale);
+	float get_constraint_scale() const;
 
 	void remove_particle(ParticleIndex p_particle);
 	void remove_spring(SpringIndex p_spring_index);

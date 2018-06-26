@@ -130,6 +130,7 @@ const DynamicTriangle &DynamicTrianglesMemory::get_triangle(const MemoryChunk *p
 void InflatablesMemory::set_start_triangle_index(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index, TriangleBufferIndex p_triangle_index) {
 	make_memory_index(p_chunk, p_inflatable_index);
 	start_triangle_indices[index] = p_triangle_index;
+	changed = true;
 }
 
 TriangleBufferIndex InflatablesMemory::get_start_triangle_index(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index) const {
@@ -140,6 +141,7 @@ TriangleBufferIndex InflatablesMemory::get_start_triangle_index(const MemoryChun
 void InflatablesMemory::set_triangle_count(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index, int p_triangle_count) {
 	make_memory_index(p_chunk, p_inflatable_index);
 	triangle_counts[index] = p_triangle_count;
+	changed = true;
 }
 
 int InflatablesMemory::get_triangle_count(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index) const {
@@ -150,6 +152,7 @@ int InflatablesMemory::get_triangle_count(const MemoryChunk *p_chunk, Inflatable
 void InflatablesMemory::set_rest_volume(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index, float p_rest_volume) {
 	make_memory_index(p_chunk, p_inflatable_index);
 	rest_volumes[index] = p_rest_volume;
+	changed = true;
 }
 
 float InflatablesMemory::get_rest_volume(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index) const {
@@ -160,6 +163,7 @@ float InflatablesMemory::get_rest_volume(const MemoryChunk *p_chunk, InflatableI
 void InflatablesMemory::set_pressure(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index, float p_pressure) {
 	make_memory_index(p_chunk, p_inflatable_index);
 	pressures[index] = p_pressure;
+	changed = true;
 }
 
 TriangleBufferIndex InflatablesMemory::get_pressure(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index) const {
@@ -170,6 +174,7 @@ TriangleBufferIndex InflatablesMemory::get_pressure(const MemoryChunk *p_chunk, 
 void InflatablesMemory::set_constraint_scale(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index, float p_constraint_scale) {
 	make_memory_index(p_chunk, p_inflatable_index);
 	constraint_scales[index] = p_constraint_scale;
+	changed = true;
 }
 
 float InflatablesMemory::get_constraint_scale(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index) const {
