@@ -56,7 +56,7 @@ public:
 
 private:
 	void prepare_mesh_for_rendering();
-	void prepare_mesh_for_ppvertices();
+	void prepare_mesh_for_pvparticles();
 	void prepare_mesh_skeleton_deformation();
 };
 

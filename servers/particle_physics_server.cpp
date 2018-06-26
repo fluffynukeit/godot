@@ -49,7 +49,7 @@ void ParticlePhysicsServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("body_get_pressure", "body"), &ParticlePhysicsServer::body_get_pressure);
 
 	ClassDB::bind_method(D_METHOD("can_rendered_using_skeleton", "body"), &ParticlePhysicsServer::can_rendered_using_skeleton);
-	ClassDB::bind_method(D_METHOD("can_rendered_using_ppvertices", "body"), &ParticlePhysicsServer::can_rendered_using_ppvertices);
+	ClassDB::bind_method(D_METHOD("can_rendered_using_pvparticles", "body"), &ParticlePhysicsServer::can_rendered_using_pvparticles);
 
 	ClassDB::bind_method(D_METHOD("primitive_body_create"), &ParticlePhysicsServer::primitive_body_create);
 	ClassDB::bind_method(D_METHOD("primitive_body_set_space", "body", "space"), &ParticlePhysicsServer::primitive_body_set_space);

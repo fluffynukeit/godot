@@ -418,7 +418,7 @@ bool FlexParticlePhysicsServer::can_rendered_using_skeleton(RID p_body) const {
 	return 0 < body->get_rigid_count();
 }
 
-bool FlexParticlePhysicsServer::can_rendered_using_ppvertices(RID p_body) const {
+bool FlexParticlePhysicsServer::can_rendered_using_pvparticles(RID p_body) const {
 	FlexParticleBody *body = body_owner.get(p_body);
 	ERR_FAIL_COND_V(!body, false);
 

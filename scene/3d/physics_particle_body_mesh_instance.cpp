@@ -102,10 +102,10 @@ void ParticleBodyMeshInstance::prepare_mesh_for_rendering() {
 		prepare_mesh_skeleton_deformation();
 
 	else if (model->get_dynamic_triangles_indices().size())
-		prepare_mesh_for_ppvertices();
+		prepare_mesh_for_pvparticles();
 }
 
-void ParticleBodyMeshInstance::prepare_mesh_for_ppvertices() {
+void ParticleBodyMeshInstance::prepare_mesh_for_pvparticles() {
 
 	Ref<ParticleBodyModel> model = particle_body->get_particle_body_model();
 	if (model.is_null())
