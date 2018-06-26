@@ -106,6 +106,7 @@ public:
 	_FORCE_INLINE_ ParticlesMemory *get_particles_memory() { return particles_memory; }
 	_FORCE_INLINE_ FlexMemoryAllocator *get_springs_allocator() { return springs_allocator; }
 	_FORCE_INLINE_ SpringMemory *get_springs_memory() { return springs_memory; }
+	_FORCE_INLINE_ InflatablesMemory *get_inflatables_memory() { return inflatables_memory; }
 	_FORCE_INLINE_ RigidsMemory *get_rigids_memory() { return rigids_memory; }
 	_FORCE_INLINE_ RigidsComponentsMemory *get_rigids_components_memory() { return rigids_components_memory; }
 
@@ -175,7 +176,7 @@ class TrianglesMemorySweeper : public FlexMemorySweeperFast {
 public:
 	TrianglesMemorySweeper(FlexParticleBody *p_body, FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove);
 
-	virtual void on_element_index_changed(FlexBufferIndex old_element_index, FlexBufferIndex new_element_index);
+	virtual void on_element_removed(FlexBufferIndex on_element_removed);
 };
 
 /// Maintain order but change indices

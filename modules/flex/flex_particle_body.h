@@ -166,6 +166,7 @@ public:
 	void dispatch_sync_callback();
 	void particle_index_changed(ParticleIndex p_old_particle_index, ParticleIndex p_new_particle_index);
 	void spring_index_changed(SpringIndex p_old_spring_index, SpringIndex p_new_spring_index);
+	void reload_inflatables();
 };
 
 #endif // FLEX_PARTICLE_BODY_H

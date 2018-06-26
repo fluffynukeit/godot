@@ -46,13 +46,12 @@ class ParticleBodyMeshInstance;
 class ParticleBody : public ParticleObject {
 	GDCLASS(ParticleBody, ParticleObject);
 
-	bool reset_particles_to_base_shape;
+	bool reload_particle_model;
 	ParticleBodyMeshInstance *particle_body_mesh;
 	Ref<ParticleBodyModel> particle_body_model;
 
 	Vector3 COM_global_position;
 
-	MeshInstance *debug_COM_particles_mesh;
 	Vector<MeshInstance *> debug_particles_mesh;
 	Ref<SphereMesh> debug_particle_mesh;
 

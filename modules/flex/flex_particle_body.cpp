@@ -339,3 +339,11 @@ void FlexParticleBody::spring_index_changed(SpringIndex p_old_spring_index, Spri
 		return;
 	spring_index_changed_callback.receiver->call(spring_index_changed_callback.method, (int)p_old_spring_index, (int)p_new_spring_index);
 }
+
+void FlexParticleBody::reload_inflatables() {
+	if (!inflatable_mchunk->get_size())
+		return;
+
+	space->get_inflatables_memory()->set_start_triangle_index(inflatable_mchunk, 0, triangles_mchunk->get_begin_index());
+	space->get_inflatables_memory()->set_triangle_count(inflatable_mchunk, 0, triangles_mchunk->get_size());
+}

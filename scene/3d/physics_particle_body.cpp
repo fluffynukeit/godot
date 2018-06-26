@@ -100,9 +100,8 @@ void ParticleBody::_bind_methods() {
 
 ParticleBody::ParticleBody() :
 		ParticleObject(ParticlePhysicsServer::get_singleton()->body_create()),
-		reset_particles_to_base_shape(true),
-		particle_body_mesh(NULL),
-		debug_COM_particles_mesh(NULL) {
+		reload_particle_model(true),
+		particle_body_mesh(NULL) {
 
 	set_notify_transform(true);
 
@@ -218,15 +217,6 @@ void ParticleBody::_notification(int p_what) {
 			ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SYNC, this, "commands_process_internal");
 			resource_changed(particle_body_model);
 
-			Ref<SpatialMaterial> red_mat;
-			red_mat = Ref<SpatialMaterial>(memnew(SpatialMaterial));
-			red_mat->set_flag(SpatialMaterial::FLAG_UNSHADED, true);
-			red_mat->set_line_width(20.0);
-			red_mat->set_feature(SpatialMaterial::FEATURE_TRANSPARENT, true);
-			red_mat->set_flag(SpatialMaterial::FLAG_ALBEDO_FROM_VERTEX_COLOR, true);
-			red_mat->set_flag(SpatialMaterial::FLAG_SRGB_VERTEX_COLOR, true);
-			red_mat->set_albedo(Color(1, 0, 0, 1));
-
 		} break;
 		case NOTIFICATION_TRANSFORM_CHANGED: {
 
@@ -251,22 +241,10 @@ void ParticleBody::commands_process_internal(Object *p_cmds) {
 
 	ParticleBodyCommands *cmds(static_cast<ParticleBodyCommands *>(p_cmds));
 
-	if (reset_particles_to_base_shape) {
-		reset_particles_to_base_shape = false;
+	if (reload_particle_model) {
+		reload_particle_model = false;
 		cmds->load_model(particle_body_model, get_global_transform());
 		emit_signal("resource_loaded");
-	}
-
-	// TODO remove this, and calculate only when the transform is required
-	// Update COM
-	const int particle_count = ParticlePhysicsServer::get_singleton()->body_get_particle_count(rid);
-	if (particle_count) {
-		AABB aabb;
-		aabb.set_position(cmds->get_particle_position(0));
-		for (int i = 1; i < particle_count; ++i) {
-			aabb.expand_to(cmds->get_particle_position(i));
-		}
-		COM_global_position = aabb.get_position() + aabb.get_size() * 0.5f;
 	}
 
 	body_mesh_skeleton_update(cmds);
@@ -292,7 +270,7 @@ void ParticleBody::_on_script_changed() {
 }
 
 void ParticleBody::_on_model_change() {
-	reset_particles_to_base_shape = true;
+	reload_particle_model = true;
 	debug_initialize_resource();
 }
 
@@ -359,13 +337,6 @@ void ParticleBody::debug_resize_particle_visual_instance(int new_size) {
 			add_child(debug_particles_mesh[p]);
 		}
 	}
-
-	if (!debug_COM_particles_mesh) {
-		debug_COM_particles_mesh = memnew(MeshInstance);
-		debug_COM_particles_mesh->set_as_toplevel(true);
-		debug_COM_particles_mesh->set_mesh(debug_particle_mesh);
-		add_child(debug_COM_particles_mesh);
-	}
 }
 
 void ParticleBody::debug_update(ParticleBodyCommands *p_cmds) {
@@ -382,10 +353,6 @@ void ParticleBody::debug_update(ParticleBodyCommands *p_cmds) {
 		transf.origin = p_cmds->get_particle_position(i);
 		debug_particles_mesh[i]->set_global_transform(transf);
 	}
-
-	transf.origin = COM_global_position;
-	if (debug_COM_particles_mesh)
-		debug_COM_particles_mesh->set_transform(transf);
 }
 
 void ParticleBody::debug_reset_particle_positions() {
@@ -405,6 +372,4 @@ void ParticleBody::debug_reset_particle_positions() {
 			debug_particles_mesh[i]->set_global_transform(get_global_transform() * particle_relative_transf);
 		}
 	}
-	if (debug_COM_particles_mesh)
-		debug_COM_particles_mesh->set_transform(Transform().translated(COM_global_position));
 }
