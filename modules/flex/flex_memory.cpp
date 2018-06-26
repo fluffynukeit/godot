@@ -127,6 +127,56 @@ const DynamicTriangle &DynamicTrianglesMemory::get_triangle(const MemoryChunk *p
 	return triangles[index];
 }
 
+void InflatablesMemory::set_start_triangle_index(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index, TriangleBufferIndex p_triangle_index) {
+	make_memory_index(p_chunk, p_inflatable_index);
+	start_triangle_indices[index] = p_triangle_index;
+}
+
+TriangleBufferIndex InflatablesMemory::get_start_triangle_index(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index) const {
+	make_memory_index_V(p_chunk, p_inflatable_index, 0);
+	return start_triangle_indices[index];
+}
+
+void InflatablesMemory::set_triangle_count(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index, int p_triangle_count) {
+	make_memory_index(p_chunk, p_inflatable_index);
+	triangle_counts[index] = p_triangle_count;
+}
+
+int InflatablesMemory::get_triangle_count(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index) const {
+	make_memory_index_V(p_chunk, p_inflatable_index, 0);
+	return triangle_counts[index];
+}
+
+void InflatablesMemory::set_rest_volume(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index, float p_rest_volume) {
+	make_memory_index(p_chunk, p_inflatable_index);
+	rest_volumes[index] = p_rest_volume;
+}
+
+float InflatablesMemory::get_rest_volume(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index) const {
+	make_memory_index_V(p_chunk, p_inflatable_index, 0);
+	return rest_volumes[index];
+}
+
+void InflatablesMemory::set_pressure(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index, float p_pressure) {
+	make_memory_index(p_chunk, p_inflatable_index);
+	pressures[index] = p_pressure;
+}
+
+TriangleBufferIndex InflatablesMemory::get_pressure(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index) const {
+	make_memory_index_V(p_chunk, p_inflatable_index, 0);
+	return pressures[index];
+}
+
+void InflatablesMemory::set_constraint_scale(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index, float p_constraint_scale) {
+	make_memory_index(p_chunk, p_inflatable_index);
+	constraint_scales[index] = p_constraint_scale;
+}
+
+float InflatablesMemory::get_constraint_scale(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index) const {
+	make_memory_index_V(p_chunk, p_inflatable_index, 0);
+	return constraint_scales[index];
+}
+
 void GeometryMemory::set_shape(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index, const NvFlexCollisionGeometry &p_shape) {
 	make_memory_index(p_chunk, p_geometry_index);
 	collision_shapes[index] = p_shape;

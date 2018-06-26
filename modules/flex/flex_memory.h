@@ -413,6 +413,33 @@ class DynamicTrianglesMemory : public FlexBufferMemory {
 	const DynamicTriangle &get_triangle(const MemoryChunk *p_chunk, TriangleIndex p_triangle_index) const;
 };
 
+class InflatablesMemory : public FlexBufferMemory {
+
+	FLEXBUFFERCLASS_5(InflatablesMemory, FlexIndex, start_triangle_indices, int, triangle_counts, float, rest_volumes, float, pressures, float, constraint_scales);
+
+	/// IMPORTANT
+	/// These functions must be called only if the buffers are mapped
+	/// |
+	/// |
+	/// V
+	///
+
+	void set_start_triangle_index(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index, TriangleBufferIndex p_triangle_index);
+	TriangleBufferIndex get_start_triangle_index(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index) const;
+
+	void set_triangle_count(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index, int p_triangle_count);
+	int get_triangle_count(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index) const;
+
+	void set_rest_volume(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index, float p_rest_volume);
+	float get_rest_volume(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index) const;
+
+	void set_pressure(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index, float p_pressure);
+	TriangleBufferIndex get_pressure(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index) const;
+
+	void set_constraint_scale(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index, float p_constraint_scale);
+	float get_constraint_scale(const MemoryChunk *p_chunk, InflatableIndex p_inflatable_index) const;
+};
+
 /// This represent primitive body
 class GeometryMemory : public FlexBufferMemory {
 

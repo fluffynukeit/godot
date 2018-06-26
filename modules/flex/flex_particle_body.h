@@ -48,7 +48,10 @@ enum ChangedBodyParameter {
 	eChangedBodyParamParticleJustAdded = 1 << 0,
 	eChangedBodyParamPositionMass = 1 << 1,
 	eChangedBodyParamVelocity = 1 << 2,
-	eChangedBodyParamPhase = 1 << 3
+	eChangedBodyParamPhase = 1 << 3,
+	eChangedBodyParamRestVolume = 1 << 4,
+	eChangedBodyParamPressure = 1 << 5,
+	eChangedBodyParamConstraintScale = 1 << 6
 };
 
 /// This class represent a group of particles that are constrained each other and form a body.
@@ -89,6 +92,9 @@ class FlexParticleBody : public RIDFlex {
 	uint32_t collision_group;
 	uint32_t collision_flags;
 	uint32_t collision_primitive_mask;
+	float rest_volume;
+	float pressure; // 1 mean rest_volume
+	float constraint_scale;
 
 public:
 	FlexParticleBody();

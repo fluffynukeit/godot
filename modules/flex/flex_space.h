@@ -48,6 +48,7 @@ class FlexMemoryAllocator;
 class ParticlesMemory;
 class ActiveParticlesMemory;
 class SpringMemory;
+class InflatablesMemory;
 class DynamicTrianglesMemory;
 class RigidsMemory;
 class RigidsComponentsMemory;
@@ -69,6 +70,9 @@ class FlexSpace : public RIDFlex {
 
 	FlexMemoryAllocator *springs_allocator;
 	SpringMemory *springs_memory;
+
+	FlexMemoryAllocator *inflatables_allocator;
+	InflatablesMemory *inflatables_memory;
 
 	FlexMemoryAllocator *triangles_allocator;
 	DynamicTrianglesMemory *triangles_memory;
@@ -101,9 +105,9 @@ public:
 	_FORCE_INLINE_ FlexMemoryAllocator *get_particles_allocator() { return particles_allocator; }
 	_FORCE_INLINE_ ParticlesMemory *get_particles_memory() { return particles_memory; }
 	_FORCE_INLINE_ FlexMemoryAllocator *get_springs_allocator() { return springs_allocator; }
+	_FORCE_INLINE_ SpringMemory *get_springs_memory() { return springs_memory; }
 	_FORCE_INLINE_ RigidsMemory *get_rigids_memory() { return rigids_memory; }
 	_FORCE_INLINE_ RigidsComponentsMemory *get_rigids_components_memory() { return rigids_components_memory; }
-	_FORCE_INLINE_ SpringMemory *get_springs_memory() { return springs_memory; }
 
 	void add_particle_body(FlexParticleBody *p_body);
 	void remove_particle_body(FlexParticleBody *p_body);
