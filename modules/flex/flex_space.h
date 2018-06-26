@@ -156,6 +156,15 @@ public:
 	virtual void on_element_index_changed(FlexBufferIndex old_element_index, FlexBufferIndex new_element_index);
 };
 
+class SpringsMemorySweeper : public FlexMemorySweeperFast {
+	FlexParticleBody *body;
+
+public:
+	SpringsMemorySweeper(FlexParticleBody *p_body, FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove);
+
+	virtual void on_element_index_changed(FlexBufferIndex old_element_index, FlexBufferIndex new_element_index);
+};
+
 /// Maintain order but change indices
 /// r_indices_to_remove will be unusable after this
 class FlexMemorySweeperSlow : public FlexMemorySweeper {

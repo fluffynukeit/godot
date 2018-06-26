@@ -70,7 +70,7 @@ class FlexParticleBody : public RIDFlex {
 
 	struct {
 		Vector<ParticleIndex> particles_to_remove;
-		Set<SpringIndex> springs_to_remove;
+		Vector<SpringIndex> springs_to_remove;
 		Vector<TriangleIndex> triangles_to_remove;
 		Vector<RigidIndex> rigids_to_remove;
 		// rigid component to add

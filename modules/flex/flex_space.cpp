@@ -393,18 +393,8 @@ void FlexSpace::execute_delayed_commands() {
 		if (body->delayed_commands.springs_to_remove.size()) {
 
 			// Remove springs
-
-			SpringBufferIndex last_buffer_index(body->springs_mchunk->get_end_index());
-			for (Set<SpringIndex>::Element *e = body->delayed_commands.springs_to_remove.front(); e; e = e->next()) {
-
-				// Copy the values of last ID to the ID to remove (lose order)
-				const SpringBufferIndex buffer_index_to_remove(body->springs_mchunk->get_buffer_index(e->get()));
-				springs_memory->copy(buffer_index_to_remove, 1, last_buffer_index);
-				body->spring_index_changed(body->springs_mchunk->get_chunk_index(last_buffer_index), e->get());
-				--last_buffer_index;
-			}
-			const FlexUnit new_size = body->springs_mchunk->get_size() - body->delayed_commands.springs_to_remove.size();
-			springs_allocator->resize_chunk(body->springs_mchunk, new_size);
+			SpringsMemorySweeper sweeper(body, springs_allocator, body->springs_mchunk, body->delayed_commands.springs_to_remove);
+			sweeper.exec();
 		}
 
 		if (body->delayed_commands.triangles_to_remove.size()) {
@@ -819,6 +809,15 @@ void ParticlesMemorySweeper::on_element_removed(FlexBufferIndex on_element_remov
 void ParticlesMemorySweeper::on_element_index_changed(FlexBufferIndex old_element_index, FlexBufferIndex new_element_index) {
 	space->on_particle_index_changed(body, old_element_index, new_element_index);
 	body->particle_index_changed(mchunk->get_chunk_index(old_element_index), mchunk->get_chunk_index(new_element_index));
+}
+
+SpringsMemorySweeper::SpringsMemorySweeper(FlexParticleBody *p_body, FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove) :
+		FlexMemorySweeperFast(p_allocator, r_rigids_components_mchunk, r_indices_to_remove),
+		body(p_body) {
+}
+
+void SpringsMemorySweeper::on_element_index_changed(FlexBufferIndex old_element_index, FlexBufferIndex new_element_index) {
+	body->spring_index_changed(mchunk->get_chunk_index(old_element_index), mchunk->get_chunk_index(new_element_index));
 }
 
 FlexMemorySweeperSlow::FlexMemorySweeperSlow(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove) :
