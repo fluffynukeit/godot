@@ -128,7 +128,8 @@ void FlexParticleBody::remove_particle(ParticleIndex p_particle) {
 
 void FlexParticleBody::remove_spring(SpringIndex p_spring_index) {
 	ERR_FAIL_COND(!is_owner_of_spring(p_spring_index));
-	delayed_commands.springs_to_remove.insert(p_spring_index);
+	if (-1 == delayed_commands.springs_to_remove.find(p_spring_index))
+		delayed_commands.springs_to_remove.push_back(p_spring_index);
 }
 
 void FlexParticleBody::remove_triangle(const TriangleIndex p_triangle_index) {
