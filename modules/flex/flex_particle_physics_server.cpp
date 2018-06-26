@@ -87,15 +87,16 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 	if (p_model.is_null())
 		return;
 
+	PoolVector<Vector3>::Read particle_positions_r = p_model->get_particles().read();
+
 	{ // Particle
 		const int resource_p_count(p_model->get_particles_ref().size());
 		body->space->particles_allocator->resize_chunk(body->particles_mchunk, resource_p_count);
 
-		PoolVector<Vector3>::Read positions_r = p_model->get_particles().read();
 		PoolVector<real_t>::Read masses_r = p_model->get_masses().read();
 
 		for (int i(0); i < resource_p_count; ++i) {
-			set_particle(i, initial_transform.xform(positions_r[i]), masses_r[i]);
+			set_particle(i, initial_transform.xform(particle_positions_r[i]), masses_r[i]);
 		}
 	}
 
@@ -125,7 +126,6 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 		PoolVector<int>::Read cluster_offsets_r = p_model->get_clusters_offsets().read();
 
 		for (int i(0); i < resource_r_count; ++i) {
-			rigid_comp_index += body->delayed_commands.rigids_to_add[r].indices.size();
 			set_rigid(i, initial_transform.translated(cluster_pos_r[i]), cluster_stiffness_r[i], cluster_plastic_threshold_r[i], cluster_plastic_creep_r[i], cluster_offsets_r[i]);
 		}
 
@@ -136,9 +136,18 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 
 		PoolVector<int>::Read indices_r = p_model->get_clusters_particle_indices().read();
 
+		int cluster_index(-1);
+		int cluster_offset(-1);
+		Vector3 cluster_position;
+
 		for (int i(0); i < resource_rc_count; ++i) {
-			// Ptrovare un modo per popolare p_rigid_position
-			set_rigid_component(i, indices_r[i], get_particle_position(indices_r[i]) - p_rigid_position);
+			if (i >= cluster_offset) {
+				++cluster_index;
+				cluster_offset = cluster_offsets_r[cluster_index];
+				cluster_position = cluster_pos_r[cluster_index];
+			}
+
+			set_rigid_component(i, body->particles_mchunk->get_buffer_index(indices_r[i]), particle_positions_r[indices_r[i]] - cluster_position);
 		}
 	}
 }
