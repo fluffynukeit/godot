@@ -381,6 +381,8 @@ void FlexSpace::execute_delayed_commands() {
 	int particles_count = 0;
 	for (int body_index(particle_bodies.size() - 1); 0 <= body_index; --body_index) {
 
+		// TODO remove addition of particles and all other things
+
 		FlexParticleBody *body = particle_bodies[body_index];
 		if (body->delayed_commands.particle_to_add.size()) {
 

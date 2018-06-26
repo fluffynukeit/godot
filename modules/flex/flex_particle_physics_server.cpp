@@ -113,6 +113,17 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 		}
 	}
 
+	{ // Dynamic triangle
+		const int resource_t_count(p_model->get_dynamic_triangles_indices().size() / 3);
+		// Resize existing memory chunk
+		body->space->triangles_allocator->resize_chunk(body->triangles_mchunk, resource_t_count);
+
+		PoolVector<int>::Read triangles_indices_r(p_model->get_dynamic_triangles_indices().read());
+		for (int t(0); t < resource_t_count; ++t) {
+			set_triangle(t, triangles_indices_r[t * 3], triangles_indices_r[t * 3 + 1], triangles_indices_r[t * 3 + 2]);
+		}
+	}
+
 	{ // Rigids
 
 		const int resource_r_count(p_model->get_clusters_offsets().size());
@@ -181,6 +192,19 @@ void FlexParticleBodyCommands::set_spring(SpringIndex p_index, ParticleIndex p_p
 	body->space->get_springs_memory()->set_spring(body->springs_mchunk, p_index, Spring(body->particles_mchunk->get_buffer_index(p_particle_0), body->particles_mchunk->get_buffer_index(p_particle_1)));
 	body->space->get_springs_memory()->set_length(body->springs_mchunk, p_index, p_length);
 	body->space->get_springs_memory()->set_stiffness(body->springs_mchunk, p_index, p_stiffness);
+}
+
+void FlexParticleBodyCommands::add_triangle(ParticleIndex p_particle_0, ParticleIndex p_particle_1, ParticleIndex p_particle_2) {
+	const int previous_size(body->triangles_mchunk->get_size());
+	body->space->triangles_allocator->resize_chunk(body->triangles_mchunk, previous_size + 1);
+	set_triangle(previous_size, p_particle_0, p_particle_1, p_particle_2);
+}
+
+void FlexParticleBodyCommands::set_triangle(TriangleIndex p_index, ParticleIndex p_particle_0, ParticleIndex p_particle_1, ParticleIndex p_particle_2) {
+
+	ERR_FAIL_COND(!body->is_owner_of_triangle(p_index));
+
+	body->space->triangles_memory->set_triangle(body->triangles_mchunk, p_index, DynamicTriangle(body->triangles_mchunk->get_buffer_index(p_particle_0), body->triangles_mchunk->get_buffer_index(p_particle_1), body->triangles_mchunk->get_buffer_index(p_particle_2)));
 }
 
 void FlexParticleBodyCommands::add_rigid(const Transform &p_transform, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, RigidComponentIndex p_offset) {
