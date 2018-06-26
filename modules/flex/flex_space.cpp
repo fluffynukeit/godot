@@ -385,19 +385,20 @@ void FlexSpace::execute_delayed_commands() {
 
 		if (body->delayed_commands.particles_to_remove.size()) {
 
-			// Remove particles
 			ParticlesMemorySweeper sweeper(this, body, particles_allocator, body->particles_mchunk, body->delayed_commands.particles_to_remove);
 			sweeper.exec();
 		}
 
 		if (body->delayed_commands.springs_to_remove.size()) {
 
-			// Remove springs
 			SpringsMemorySweeper sweeper(body, springs_allocator, body->springs_mchunk, body->delayed_commands.springs_to_remove);
 			sweeper.exec();
 		}
 
 		if (body->delayed_commands.triangles_to_remove.size()) {
+
+			TrianglesMemorySweeper sweeper(body, triangles_allocator, body->triangles_mchunk, body->delayed_commands.triangles_to_remove);
+			sweeper.exec();
 		}
 
 		if (body->delayed_commands.rigids_components_to_remove.size()) {
@@ -700,54 +701,72 @@ void FlexSpace::commands_read_buffer() {
 }
 
 void FlexSpace::on_particle_removed(FlexParticleBody *p_body, ParticleBufferIndex p_index) {
+	ERR_FAIL_COND(p_body->space != this);
+
 	// Find and remove springs associated to the particle to remove
-	if (p_body->springs_mchunk) {
-		// Find all springs associated to removed particle and put in the remove list
-		for (int spring_index(p_body->springs_mchunk->get_size() - 1); 0 <= spring_index; --spring_index) {
-			const Spring &spring = springs_memory->get_spring(p_body->springs_mchunk, spring_index);
-			if (spring.index0 == p_index || spring.index1 == p_index) {
-				p_body->remove_spring(spring_index);
-			}
+	for (int spring_index(p_body->springs_mchunk->get_size() - 1); 0 <= spring_index; --spring_index) {
+		const Spring &spring = springs_memory->get_spring(p_body->springs_mchunk, spring_index);
+		if (spring.index0 == p_index || spring.index1 == p_index) {
+			p_body->remove_spring(spring_index);
+		}
+	}
+
+	// Find and remove triangles associated to the particle to remove
+	for (int triangle_index(p_body->triangles_mchunk->get_size() - 1); 0 <= triangle_index; --triangle_index) {
+		const DynamicTriangle &triangle = triangles_memory->get_triangle(p_body->triangles_mchunk, triangle_index);
+		if (triangle.index0 == p_index || triangle.index1 == p_index || triangle.index2 == p_index) {
+			p_body->remove_triangle(triangle_index);
 		}
 	}
 
 	// Remove rigid components associated to this body
-	if (p_body->rigids_components_mchunk) {
-		for (RigidComponentIndex i(p_body->rigids_components_mchunk->get_size() - 1); 0 <= i; --i) {
+	for (RigidComponentIndex i(p_body->rigids_components_mchunk->get_size() - 1); 0 <= i; --i) {
 
-			if (p_index == rigids_components_memory->get_index(p_body->rigids_components_mchunk, i)) {
-				p_body->remove_rigid_component(i);
-			}
+		if (p_index == rigids_components_memory->get_index(p_body->rigids_components_mchunk, i)) {
+			p_body->remove_rigid_component(i);
 		}
 	}
 }
 
 void FlexSpace::on_particle_index_changed(FlexParticleBody *p_body, ParticleBufferIndex p_index_old, ParticleBufferIndex p_index_new) {
+	ERR_FAIL_COND(p_body->space != this);
 
 	// Change springs index
-	if (p_body->springs_mchunk) {
-		for (int i(p_body->springs_mchunk->get_size() - 1); 0 <= i; --i) {
+	for (int i(p_body->springs_mchunk->get_size() - 1); 0 <= i; --i) {
 
-			const Spring &spring(springs_memory->get_spring(p_body->springs_mchunk, i));
-			if (spring.index0 == p_index_old) {
+		const Spring &spring(springs_memory->get_spring(p_body->springs_mchunk, i));
+		if (spring.index0 == p_index_old) {
 
-				springs_memory->set_spring(p_body->springs_mchunk, i, Spring(p_index_new, spring.index1));
-			} else if (spring.index1 == p_index_old) {
+			springs_memory->set_spring(p_body->springs_mchunk, i, Spring(p_index_new, spring.index1));
+		} else if (spring.index1 == p_index_old) {
 
-				springs_memory->set_spring(p_body->springs_mchunk, i, Spring(spring.index0, p_index_new));
-			}
+			springs_memory->set_spring(p_body->springs_mchunk, i, Spring(spring.index0, p_index_new));
+		}
+	}
+
+	// Change triangle index
+	for (int i(p_body->triangles_mchunk->get_size() - 1); 0 <= i; --i) {
+
+		const DynamicTriangle &triangle = triangles_memory->get_triangle(p_body->triangles_mchunk, i);
+		if (triangle.index0 == p_index_old) {
+
+			triangles_memory->set_triangle(p_body->triangles_mchunk, i, DynamicTriangle(p_index_new, triangle.index1, triangle.index2));
+		} else if (triangle.index1 == p_index_old) {
+
+			triangles_memory->set_triangle(p_body->triangles_mchunk, i, DynamicTriangle(triangle.index0, p_index_new, triangle.index2));
+		} else if (triangle.index2 == p_index_old) {
+
+			triangles_memory->set_triangle(p_body->triangles_mchunk, i, DynamicTriangle(triangle.index0, triangle.index1, p_index_new));
 		}
 	}
 
 	// Change rigid index
-	if (p_body->rigids_components_mchunk) {
-		for (int i(p_body->rigids_components_mchunk->get_size() - 1); 0 <= i; --i) {
+	for (int i(p_body->rigids_components_mchunk->get_size() - 1); 0 <= i; --i) {
 
-			ParticleBufferIndex buffer_index = rigids_components_memory->get_index(p_body->rigids_components_mchunk, i);
-			if (p_index_old == buffer_index) {
+		ParticleBufferIndex buffer_index = rigids_components_memory->get_index(p_body->rigids_components_mchunk, i);
+		if (p_index_old == buffer_index) {
 
-				rigids_components_memory->set_index(p_body->rigids_components_mchunk, i, p_index_new);
-			}
+			rigids_components_memory->set_index(p_body->rigids_components_mchunk, i, p_index_new);
 		}
 	}
 
@@ -817,6 +836,15 @@ SpringsMemorySweeper::SpringsMemorySweeper(FlexParticleBody *p_body, FlexMemoryA
 }
 
 void SpringsMemorySweeper::on_element_index_changed(FlexBufferIndex old_element_index, FlexBufferIndex new_element_index) {
+	body->spring_index_changed(mchunk->get_chunk_index(old_element_index), mchunk->get_chunk_index(new_element_index));
+}
+
+TrianglesMemorySweeper::TrianglesMemorySweeper(FlexParticleBody *p_body, FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove) :
+		FlexMemorySweeperFast(p_allocator, r_rigids_components_mchunk, r_indices_to_remove),
+		body(p_body) {
+}
+
+void TrianglesMemorySweeper::on_element_index_changed(FlexBufferIndex old_element_index, FlexBufferIndex new_element_index) {
 	body->spring_index_changed(mchunk->get_chunk_index(old_element_index), mchunk->get_chunk_index(new_element_index));
 }
 

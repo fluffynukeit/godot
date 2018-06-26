@@ -162,6 +162,9 @@ class FlexBufferMemory : public FlexMemory {
 	Vector<NvFlexVector<NvFlexCollisionGeometry> *> buffers_colgeo;
 
 protected:
+	bool changed;
+
+protected:
 	void __add_buffer(NvFlexVector<int> *buffer) {
 		buffers_int.push_back(buffer);
 	}
@@ -273,10 +276,12 @@ public:
 		}
 	}
 
-	virtual void _on_mapped() {}
+	bool was_changed() { return changed; }
+
+	virtual void _on_mapped() { changed = false; }
 	virtual void _on_unmapped() {}
-	virtual void _on_resized(FlexUnit p_size) {}
-	virtual void _on_copied_unit(FlexUnit p_to, FlexUnit p_from) {}
+	virtual void _on_resized(FlexUnit p_size) { changed = true; }
+	virtual void _on_copied_unit(FlexUnit p_to, FlexUnit p_from) { changed = true; }
 
 protected:
 	virtual void resize_memory(FlexUnit p_size) {
@@ -362,12 +367,7 @@ class ParticlesMemory : public FlexBufferMemory {
 
 class ActiveParticlesMemory : public FlexBufferMemory {
 
-	bool changed;
 	FLEXBUFFERCLASS_1(ActiveParticlesMemory, FlexIndex, active_particles);
-
-	virtual void _on_mapped() { changed = false; }
-
-	bool was_changed() { return changed; }
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped
@@ -380,12 +380,7 @@ class ActiveParticlesMemory : public FlexBufferMemory {
 
 class SpringMemory : public FlexBufferMemory {
 
-	bool changed;
 	FLEXBUFFERCLASS_3(SpringMemory, Spring, springs, float, lengths, float, stiffness);
-
-	virtual void _on_mapped() { changed = false; }
-
-	bool was_changed() { return changed; }
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped
@@ -405,12 +400,7 @@ class SpringMemory : public FlexBufferMemory {
 
 class DynamicTrianglesMemory : public FlexBufferMemory {
 
-	bool changed;
 	FLEXBUFFERCLASS_1(DynamicTrianglesMemory, DynamicTriangle, triangles);
-
-	virtual void _on_mapped() { changed = false; }
-
-	bool was_changed() { return changed; }
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped
@@ -426,12 +416,7 @@ class DynamicTrianglesMemory : public FlexBufferMemory {
 /// This represent primitive body
 class GeometryMemory : public FlexBufferMemory {
 
-	bool changed;
 	FLEXBUFFERCLASS_6(GeometryMemory, NvFlexCollisionGeometry, collision_shapes, FlVector4, positions, Quat, rotations, FlVector4, positions_prev, Quat, rotations_prev, int, flags);
-
-	virtual void _on_mapped() { changed = false; }
-
-	bool was_changed() { return changed; }
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped
@@ -462,13 +447,7 @@ class GeometryMemory : public FlexBufferMemory {
 class RawRigidsMemory : public FlexBufferMemory {
 
 protected:
-	bool changed;
-
 	FLEXBUFFERCLASS_5(RawRigidsMemory, float, stiffness, float, thresholds, float, creeps, Quat, rotation, Vector3, position);
-
-	virtual void _on_mapped() { changed = false; }
-
-	bool was_changed() { return changed; }
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped
@@ -532,14 +511,8 @@ public:
 /// This memory is used to store information for each rigid
 class RigidsComponentsMemory : public FlexBufferMemory {
 
-	bool changed;
-
 	FLEXBUFFERCLASS_2(RigidsComponentsMemory, FlexIndex, indices, Vector3, rests);
 	//FLEXBUFFERCLASS_3(RigidsComponentsMemory, ParticleBufferIndex, indices, Vector3, rests, Vector3, normals);
-
-	virtual void _on_mapped() { changed = false; }
-
-	bool was_changed() { return changed; }
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped
