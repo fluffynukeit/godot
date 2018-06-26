@@ -122,8 +122,8 @@ uint32_t FlexParticleBody::get_collision_primitive_mask() const {
 
 void FlexParticleBody::remove_particle(ParticleIndex p_particle) {
 	ERR_FAIL_COND(!is_owner_of_particle(p_particle));
-	if (-1 == delayed_commands.particle_to_remove.find(p_particle))
-		delayed_commands.particle_to_remove.push_back(p_particle);
+	if (-1 == delayed_commands.particles_to_remove.find(p_particle))
+		delayed_commands.particles_to_remove.push_back(p_particle);
 }
 
 void FlexParticleBody::remove_spring(SpringIndex p_spring_index) {
@@ -281,7 +281,7 @@ void FlexParticleBody::clear_changed_params() {
 }
 
 void FlexParticleBody::clear_commands() {
-	delayed_commands.particle_to_remove.clear();
+	delayed_commands.particles_to_remove.clear();
 	delayed_commands.springs_to_remove.clear();
 	delayed_commands.triangles_to_remove.clear();
 	delayed_commands.rigids_to_remove.clear();

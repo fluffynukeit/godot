@@ -113,7 +113,7 @@ public:
 
 	float get_particle_radius() const { return particle_radius; }
 
-private:
+	// internals
 	void dispatch_callbacks();
 	void execute_delayed_commands();
 	void rebuild_rigids_offsets();
@@ -129,7 +129,34 @@ private:
 class FlexMemorySweeper : public FlexMemoryModificator {
 };
 
-/// Maintain order
+// Change index of last index
+class FlexMemorySweeperFast : public FlexMemorySweeper {
+protected:
+	FlexMemoryAllocator *allocator;
+	MemoryChunk *&mchunk;
+	Vector<FlexChunkIndex> &indices_to_remove;
+
+public:
+	FlexMemorySweeperFast(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove);
+
+	virtual void on_element_removed(FlexBufferIndex on_element_removed) {} // Just after removal
+	virtual void on_element_index_changed(FlexBufferIndex old_element_index, FlexBufferIndex new_element_index) {}
+
+	virtual void exec();
+};
+
+class ParticlesMemorySweeper : public FlexMemorySweeperFast {
+	FlexSpace *space;
+	FlexParticleBody *body;
+
+public:
+	ParticlesMemorySweeper(FlexSpace *p_space, FlexParticleBody *p_body, FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove);
+
+	virtual void on_element_removed(FlexBufferIndex on_element_removed);
+	virtual void on_element_index_changed(FlexBufferIndex old_element_index, FlexBufferIndex new_element_index);
+};
+
+/// Maintain order but change indices
 /// r_indices_to_remove will be unusable after this
 class FlexMemorySweeperSlow : public FlexMemorySweeper {
 protected:
