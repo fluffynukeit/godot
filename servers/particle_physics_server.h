@@ -71,7 +71,6 @@ public:
 	virtual void body_set_collision_primitive_mask(RID p_body, uint32_t p_mask) = 0;
 	virtual uint32_t body_get_collision_primitive_mask(RID p_body) const = 0;
 
-	virtual void body_add_particle(RID p_body, const Vector3 &p_local_position, real_t p_mass) = 0;
 	virtual void body_remove_particle(RID p_body, int p_particle_index) = 0;
 
 	virtual void body_remove_rigid(RID p_body, int p_rigid_index) = 0;

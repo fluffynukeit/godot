@@ -381,13 +381,6 @@ uint32_t FlexParticlePhysicsServer::body_get_collision_primitive_mask(RID p_body
 	return body->get_collision_primitive_mask();
 }
 
-void FlexParticlePhysicsServer::body_add_particle(RID p_body, const Vector3 &p_local_position, real_t p_mass) {
-	FlexParticleBody *body = body_owner.get(p_body);
-	ERR_FAIL_COND(!body);
-
-	body->add_particle(p_local_position, p_mass);
-}
-
 void FlexParticlePhysicsServer::body_remove_particle(RID p_body, int p_particle_index) {
 	FlexParticleBody *body = body_owner.get(p_body);
 	ERR_FAIL_COND(!body);

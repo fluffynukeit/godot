@@ -120,19 +120,10 @@ uint32_t FlexParticleBody::get_collision_primitive_mask() const {
 	return collision_primitive_mask >> 24;
 }
 
-void FlexParticleBody::add_particle(const Vector3 &p_local_position, real_t p_mass) {
-	delayed_commands.particle_to_add.push_back(ParticleToAdd(p_local_position, p_mass));
-	changed_parameters |= eChangedBodyParamPositionMass | eChangedBodyParamVelocity | eChangedBodyParamPhase;
-}
-
 void FlexParticleBody::remove_particle(ParticleIndex p_particle) {
 	ERR_FAIL_COND(!is_owner_of_particle(p_particle));
 	if (-1 == delayed_commands.particle_to_remove.find(p_particle))
 		delayed_commands.particle_to_remove.push_back(p_particle);
-}
-
-void FlexParticleBody::add_spring(ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness) {
-	delayed_commands.springs_to_add.push_back(SpringToAdd(p_particle_0, p_particle_1, p_length, p_stiffness));
 }
 
 void FlexParticleBody::remove_spring(SpringIndex p_spring_index) {
@@ -140,18 +131,10 @@ void FlexParticleBody::remove_spring(SpringIndex p_spring_index) {
 	delayed_commands.springs_to_remove.insert(p_spring_index);
 }
 
-void FlexParticleBody::add_triangle(const DynamicTriangle &p_triangle) {
-	delayed_commands.triangles_to_add.push_back(p_triangle);
-}
-
 void FlexParticleBody::remove_triangle(const TriangleIndex p_triangle_index) {
 	ERR_FAIL_COND(!is_owner_of_triangle(p_triangle_index));
 	if (-1 == delayed_commands.triangles_to_remove.find(p_triangle_index))
 		delayed_commands.triangles_to_remove.push_back(p_triangle_index);
-}
-
-void FlexParticleBody::add_rigid(const Transform &p_global_transform, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, PoolVector<ParticleIndex> p_indices, PoolVector<Vector3> p_rests) {
-	delayed_commands.rigids_to_add.push_back(RigidToAdd(p_global_transform, p_stiffness, p_plastic_threshold, p_plastic_creep, p_indices, p_rests));
 }
 
 void FlexParticleBody::remove_rigid(RigidIndex p_rigid_index) {
@@ -298,10 +281,6 @@ void FlexParticleBody::clear_changed_params() {
 }
 
 void FlexParticleBody::clear_commands() {
-	delayed_commands.particle_to_add.clear();
-	delayed_commands.springs_to_add.clear();
-	delayed_commands.triangles_to_add.clear();
-	delayed_commands.rigids_to_add.clear();
 	delayed_commands.particle_to_remove.clear();
 	delayed_commands.springs_to_remove.clear();
 	delayed_commands.triangles_to_remove.clear();

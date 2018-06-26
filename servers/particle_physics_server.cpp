@@ -37,7 +37,6 @@ void ParticlePhysicsServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("body_set_primitive_collision_mask", "body", "mask"), &ParticlePhysicsServer::body_set_collision_primitive_mask);
 	ClassDB::bind_method(D_METHOD("body_get_primitive_collision_mask", "body"), &ParticlePhysicsServer::body_get_collision_primitive_mask);
 
-	ClassDB::bind_method(D_METHOD("body_add_particle", "body", "local_position", "mass"), &ParticlePhysicsServer::body_add_particle);
 	ClassDB::bind_method(D_METHOD("body_remove_particle", "body", "particle_index"), &ParticlePhysicsServer::body_remove_particle);
 
 	ClassDB::bind_method(D_METHOD("body_remove_rigid", "body", "rigid_index"), &ParticlePhysicsServer::body_remove_rigid);
