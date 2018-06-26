@@ -44,60 +44,6 @@ class FlexSpace;
 class Object;
 class MemoryChunk;
 
-struct ParticleToAdd {
-	FlVector4 particle;
-	bool want_reference;
-
-	ParticleToAdd() {}
-
-	ParticleToAdd(const Vector3 &p_position, real_t p_mass) {
-		particle = make_particle(p_position, p_mass);
-		want_reference = false;
-	}
-};
-
-struct SpringToAdd {
-
-	ParticleIndex particle_0;
-	ParticleIndex particle_1;
-	float length;
-	float stiffness;
-
-	SpringToAdd() :
-			particle_0(-1),
-			particle_1(-1),
-			length(0),
-			stiffness(0) {}
-
-	SpringToAdd(ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness) :
-			particle_0(p_particle_0),
-			particle_1(p_particle_1),
-			length(p_length),
-			stiffness(p_stiffness) {
-	}
-};
-
-struct RigidToAdd {
-
-	Transform global_transform;
-	float stiffness;
-	float plastic_threshold;
-	float plastic_creep;
-	PoolVector<ParticleIndex> indices;
-	PoolVector<Vector3> rests;
-
-	RigidToAdd() :
-			stiffness(0) {}
-
-	RigidToAdd(const Transform &p_global_transform, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, PoolVector<ParticleIndex> p_indices, PoolVector<Vector3> p_rests) :
-			global_transform(p_global_transform),
-			stiffness(p_stiffness),
-			plastic_threshold(p_plastic_threshold),
-			plastic_creep(p_plastic_creep),
-			indices(p_indices),
-			rests(p_rests) {}
-};
-
 enum ChangedBodyParameter {
 	eChangedBodyParamParticleJustAdded = 1 << 0,
 	eChangedBodyParamPositionMass = 1 << 1,
@@ -123,10 +69,6 @@ class FlexParticleBody : public RIDFlex {
 	FlexCallBackData spring_index_changed_callback;
 
 	struct {
-		Vector<ParticleToAdd> particle_to_add;
-		Vector<SpringToAdd> springs_to_add;
-		Vector<DynamicTriangle> triangles_to_add;
-		Vector<RigidToAdd> rigids_to_add;
 		Vector<ParticleIndex> particle_to_remove;
 		Set<SpringIndex> springs_to_remove;
 		Vector<TriangleIndex> triangles_to_remove;
@@ -169,18 +111,10 @@ public:
 	void set_collision_primitive_mask(uint32_t p_primitive_mask);
 	uint32_t get_collision_primitive_mask() const;
 
-	void add_particle(const Vector3 &p_local_position, real_t p_mass);
 	void remove_particle(ParticleIndex p_particle);
-
-	void add_spring(ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness);
 	void remove_spring(SpringIndex p_spring_index);
-
-	void add_triangle(const DynamicTriangle &p_triangle);
 	void remove_triangle(const TriangleIndex p_triangle_index);
-
-	void add_rigid(const Transform &p_transform, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, PoolVector<ParticleIndex> p_indices, PoolVector<Vector3> p_rests);
 	void remove_rigid(RigidIndex p_rigid_index);
-
 	void remove_rigid_component(RigidComponentIndex p_rigid_component_index);
 
 	int get_particle_count() const;

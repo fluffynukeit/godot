@@ -48,9 +48,7 @@ void ParticleBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_particle_body_model", "model"), &ParticleBody::set_particle_body_model);
 	ClassDB::bind_method(D_METHOD("get_particle_body_model"), &ParticleBody::get_particle_body_model);
 
-	ClassDB::bind_method(D_METHOD("add_particle", "local_position", "mass"), &ParticleBody::add_particle);
 	ClassDB::bind_method(D_METHOD("remove_particle", "particle_index"), &ParticleBody::remove_particle);
-
 	ClassDB::bind_method(D_METHOD("remove_rigid", "rigid_index"), &ParticleBody::remove_rigid);
 
 	ClassDB::bind_method(D_METHOD("set_collision_group", "layer"), &ParticleBody::set_collision_group);
@@ -138,10 +136,6 @@ void ParticleBody::set_particle_body_model(Ref<ParticleBodyModel> p_model) {
 
 Ref<ParticleBodyModel> ParticleBody::get_particle_body_model() const {
 	return particle_body_model;
-}
-
-void ParticleBody::add_particle(const Vector3 &p_local_position, real_t p_mass) {
-	ParticlePhysicsServer::get_singleton()->body_add_particle(rid, p_local_position, p_mass);
 }
 
 void ParticleBody::remove_particle(int p_particle_index) {
