@@ -144,7 +144,7 @@ public:
 	virtual float body_get_pressure(RID p_body) const;
 
 	virtual bool can_rendered_using_skeleton(RID p_body) const;
-	virtual bool can_rendered_using_ppvertices(RID p_body) const;
+	virtual bool can_rendered_using_pvparticles(RID p_body) const;
 
 	/* PRIMITIVE BODY */
 	virtual RID primitive_body_create();
