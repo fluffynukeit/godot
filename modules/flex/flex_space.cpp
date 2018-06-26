@@ -367,9 +367,11 @@ void FlexSpace::add_particle_body(FlexParticleBody *p_body) {
 	p_body->space = this;
 	particle_bodies.push_back(p_body);
 
+	p_body->changed_parameters = eChangedBodyParamALL;
 	p_body->particles_mchunk = particles_allocator->allocate_chunk(0);
 	p_body->springs_mchunk = springs_allocator->allocate_chunk(0);
 	p_body->triangles_mchunk = triangles_allocator->allocate_chunk(0);
+	p_body->inflatable_mchunk = inflatables_allocator->allocate_chunk(0);
 	p_body->rigids_mchunk = rigids_allocator->allocate_chunk(0);
 	p_body->rigids_components_mchunk = rigids_components_allocator->allocate_chunk(0);
 }
@@ -380,6 +382,7 @@ void FlexSpace::remove_particle_body(FlexParticleBody *p_body) {
 	rigids_components_allocator->deallocate_chunk(p_body->rigids_components_mchunk);
 	rigids_allocator->deallocate_chunk(p_body->rigids_mchunk);
 	triangles_allocator->deallocate_chunk(p_body->triangles_mchunk);
+	inflatables_allocator->deallocate_chunk(p_body->inflatable_mchunk);
 	springs_allocator->deallocate_chunk(p_body->springs_mchunk);
 	particles_allocator->deallocate_chunk(p_body->particles_mchunk);
 
@@ -476,6 +479,12 @@ void FlexSpace::execute_delayed_commands() {
 				if (body_changed_parameters & eChangedBodyParamPhase) {
 					particles_memory->set_phase(body->particles_mchunk, i, NvFlexMakePhaseWithChannels(body->collision_group, body->collision_flags, body->collision_primitive_mask));
 				}
+			}
+
+			if (body_changed_parameters & eChangedBodyParamInflatable && body->inflatable_mchunk->get_size()) {
+				inflatables_memory->set_rest_volume(body->inflatable_mchunk, 0, body->rest_volume);
+				inflatables_memory->set_pressure(body->inflatable_mchunk, 0, body->pressure);
+				inflatables_memory->set_constraint_scale(body->inflatable_mchunk, 0, body->constraint_scale);
 			}
 		}
 
