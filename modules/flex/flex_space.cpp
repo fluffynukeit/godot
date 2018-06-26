@@ -897,8 +897,8 @@ TrianglesMemorySweeper::TrianglesMemorySweeper(FlexParticleBody *p_body, FlexMem
 		body(p_body) {
 }
 
-void TrianglesMemorySweeper::on_element_index_changed(FlexBufferIndex old_element_index, FlexBufferIndex new_element_index) {
-	body->spring_index_changed(mchunk->get_chunk_index(old_element_index), mchunk->get_chunk_index(new_element_index));
+void TrianglesMemorySweeper::on_element_removed(FlexBufferIndex on_element_removed) {
+	body->reload_inflatables();
 }
 
 FlexMemorySweeperSlow::FlexMemorySweeperSlow(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove) :
