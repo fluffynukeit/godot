@@ -397,6 +397,20 @@ int FlexParticlePhysicsServer::body_get_rigid_count(RID p_body) const {
 	return body->get_rigid_count();
 }
 
+void FlexParticlePhysicsServer::body_set_pressure(RID p_body, float p_pressure) {
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND(!body);
+
+	body->set_pressure(p_pressure);
+}
+
+float FlexParticlePhysicsServer::body_get_pressure(RID p_body) const {
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND_V(!body, 0);
+
+	return body->get_pressure();
+}
+
 RID FlexParticlePhysicsServer::primitive_body_create() {
 	FlexPrimitiveBody *primitive = memnew(FlexPrimitiveBody);
 	CreateThenReturnRID(primitive_body_owner, primitive);

@@ -48,6 +48,9 @@ void ParticleBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_particle_body_model", "model"), &ParticleBody::set_particle_body_model);
 	ClassDB::bind_method(D_METHOD("get_particle_body_model"), &ParticleBody::get_particle_body_model);
 
+	ClassDB::bind_method(D_METHOD("set_pressure", "pressure"), &ParticleBody::set_pressure);
+	ClassDB::bind_method(D_METHOD("get_pressure"), &ParticleBody::get_pressure);
+
 	ClassDB::bind_method(D_METHOD("remove_particle", "particle_index"), &ParticleBody::remove_particle);
 	ClassDB::bind_method(D_METHOD("remove_rigid", "rigid_index"), &ParticleBody::remove_rigid);
 
@@ -82,6 +85,8 @@ void ParticleBody::_bind_methods() {
 	BIND_VMETHOD(MethodInfo("_on_spring_index_change", PropertyInfo(Variant::OBJECT, "old_index"), PropertyInfo(Variant::OBJECT, "new_index")));
 
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "particle_body_model", PROPERTY_HINT_RESOURCE_TYPE, "ParticleBodyModel"), "set_particle_body_model", "get_particle_body_model");
+
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "pressure"), "set_pressure", "get_pressure");
 
 	ADD_GROUP("Collision", "collision_");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_group", PROPERTY_HINT_RANGE, "0,21,1"), "set_collision_group", "get_collision_group");
@@ -184,6 +189,14 @@ void ParticleBody::set_collision_primitive_mask(uint32_t p_mask) {
 
 uint32_t ParticleBody::get_collision_primitive_mask() const {
 	return ParticlePhysicsServer::get_singleton()->body_get_collision_primitive_mask(rid);
+}
+
+void ParticleBody::set_pressure(real_t p_pressure) {
+	ParticlePhysicsServer::get_singleton()->body_set_pressure(rid, p_pressure);
+}
+
+real_t ParticleBody::get_pressure() const {
+	return ParticlePhysicsServer::get_singleton()->body_get_pressure(rid);
 }
 
 int ParticleBody::get_particle_count() const {

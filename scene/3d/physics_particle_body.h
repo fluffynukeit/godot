@@ -69,6 +69,9 @@ public:
 	void set_particle_body_model(Ref<ParticleBodyModel> p_model);
 	Ref<ParticleBodyModel> get_particle_body_model() const;
 
+	void set_pressure(real_t p_pressure);
+	real_t get_pressure() const;
+
 	void remove_particle(int p_particle_index);
 	void remove_rigid(int p_rigid_index);
 
