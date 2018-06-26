@@ -252,15 +252,18 @@ void RigidsMemory::_on_mapped() {
 }
 
 void RigidsMemory::_on_unmapped() {
+	RawRigidsMemory::_on_unmapped();
 	buffer_offsets.unmap();
 }
 
 void RigidsMemory::_on_resized(FlexUnit p_size) {
+	RawRigidsMemory::_on_resized(p_size);
 	offsets.resize(p_size);
 	buffer_offsets.resize(p_size + 1);
 }
 
 void RigidsMemory::_on_copied_unit(FlexUnit p_to, FlexUnit p_from) {
+	RawRigidsMemory::_on_copied_unit(p_to, p_from);
 	offsets[p_to] = offsets[p_from];
 	buffer_offsets[p_to + 1] = buffer_offsets[p_from + 1];
 }
