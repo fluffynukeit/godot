@@ -56,7 +56,7 @@ void ParticleBodyMeshInstance::_notification(int p_what) {
 			particle_body = Object::cast_to<ParticleBody>(get_parent());
 			if (particle_body) {
 				particle_body->set_particle_body_mesh(this);
-				_reload_skeleton();
+				prepare_mesh_skeleton_deformation();
 			}
 
 		} break;
@@ -89,7 +89,7 @@ ParticleBodyMeshInstance::ParticleBodyMeshInstance() :
 		set_notify_local_transform(true);
 }
 
-void ParticleBodyMeshInstance::_reload_skeleton() {
+void ParticleBodyMeshInstance::prepare_mesh_for_rendering() {
 
 	if (Engine::get_singleton()->is_editor_hint())
 		return;
@@ -98,12 +98,48 @@ void ParticleBodyMeshInstance::_reload_skeleton() {
 	if (model.is_null())
 		return;
 
+	if (model->get_clusters_positions().size())
+		prepare_mesh_skeleton_deformation();
+
+	else if (model->get_dynamic_triangles_indices().size())
+		prepare_mesh_for_ppvertices();
+}
+
+void ParticleBodyMeshInstance::prepare_mesh_for_ppvertices() {
+
+	Ref<ParticleBodyModel> model = particle_body->get_particle_body_model();
+	if (model.is_null())
+		return;
+
+	ERR_FAIL_COND(!model->get_dynamic_triangles_indices().size());
+
+	ERR_FAIL_COND(!get_mesh()->get_surface_count());
+
+	// Get current mesh array and create new mesh array with necessary flag for softbody
+	Array surface_arrays = get_mesh()->surface_get_arrays(0);
+	Array surface_blend_arrays = get_mesh()->surface_get_blend_shape_arrays(0);
+	uint32_t surface_format = get_mesh()->surface_get_format(0);
+
+	surface_format &= ~(Mesh::ARRAY_COMPRESS_VERTEX | Mesh::ARRAY_COMPRESS_NORMAL);
+	surface_format |= Mesh::ARRAY_FLAG_USE_DYNAMIC_UPDATE;
+
+	Ref<ArrayMesh> soft_mesh;
+	soft_mesh.instance();
+	soft_mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, surface_arrays, surface_blend_arrays, surface_format);
+
+	set_mesh(soft_mesh);
+}
+
+void ParticleBodyMeshInstance::prepare_mesh_skeleton_deformation() {
+
 	if (get_mesh().is_null())
 		return;
 
-	if (!model->get_clusters_positions().size())
+	Ref<ParticleBodyModel> model = particle_body->get_particle_body_model();
+	if (model.is_null())
 		return;
 
+	ERR_FAIL_COND(!model->get_clusters_positions().size());
 	ERR_FAIL_COND(get_mesh()->get_surface_count() != 1);
 
 	const int surface_id = 0;
