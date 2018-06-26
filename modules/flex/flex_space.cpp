@@ -70,6 +70,8 @@ FlexSpace::FlexSpace() :
 		active_particles_mchunk(NULL),
 		springs_allocator(NULL),
 		springs_memory(NULL),
+		inflatables_allocator(NULL),
+		inflatables_memory(NULL),
 		triangles_allocator(NULL),
 		triangles_memory(NULL),
 		rigids_allocator(NULL),
@@ -145,6 +147,12 @@ void FlexSpace::init() {
 	triangles_memory = memnew(DynamicTrianglesMemory(flex_lib));
 	triangles_allocator = memnew(FlexMemoryAllocator(triangles_memory, ((FlexUnit)(MAXPARTICLES * 100)))); // TODO must be dynamic
 	triangles_memory->unmap(); // *1
+
+	CRASH_COND(inflatables_allocator);
+	CRASH_COND(inflatables_memory);
+	inflatables_memory = memnew(InflatablesMemory(flex_lib));
+	inflatables_allocator = memnew(FlexMemoryAllocator(inflatables_memory, ((FlexUnit)(MAXPARTICLES)))); // TODO must be dynamic
+	inflatables_memory->unmap(); // *1
 
 	CRASH_COND(rigids_allocator);
 	CRASH_COND(rigids_memory);
@@ -227,6 +235,28 @@ void FlexSpace::terminate() {
 		springs_allocator = NULL;
 	}
 
+	if (triangles_memory) {
+		triangles_memory->terminate();
+		memdelete(triangles_memory);
+		triangles_memory = NULL;
+	}
+
+	if (triangles_allocator) {
+		memdelete(triangles_allocator);
+		triangles_allocator = NULL;
+	}
+
+	if (inflatables_memory) {
+		inflatables_memory->terminate();
+		memdelete(inflatables_memory);
+		inflatables_memory = NULL;
+	}
+
+	if (inflatables_allocator) {
+		memdelete(inflatables_allocator);
+		inflatables_allocator = NULL;
+	}
+
 	if (rigids_memory) {
 		rigids_memory->terminate();
 		memdelete(rigids_memory);
@@ -279,6 +309,7 @@ void FlexSpace::sync() {
 	active_particles_memory->map();
 	springs_memory->map();
 	triangles_memory->map();
+	inflatables_memory->map();
 	rigids_memory->map();
 	rigids_components_memory->map();
 	geometries_memory->map();
@@ -302,6 +333,10 @@ void FlexSpace::sync() {
 	if (triangles_memory->was_changed())
 		triangles_allocator->sanitize(); // *1
 	triangles_memory->unmap();
+
+	if (inflatables_memory->was_changed())
+		inflatables_allocator->sanitize(); // *1
+	inflatables_memory->unmap();
 
 	rigids_memory->unmap();
 	rigids_components_memory->unmap();
@@ -642,6 +677,9 @@ void FlexSpace::commands_write_buffer() {
 
 	if (triangles_memory->was_changed())
 		NvFlexSetDynamicTriangles(solver, triangles_memory->triangles.buffer, NULL, triangles_allocator->get_last_used_index() + 1);
+
+	if (inflatables_memory->was_changed())
+		NvFlexSetInflatables(solver, inflatables_memory->start_triangle_indices.buffer, inflatables_memory->triangle_counts.buffer, inflatables_memory->rest_volumes.buffer, inflatables_memory->pressures.buffer, inflatables_memory->constraint_scales.buffer, inflatables_allocator->get_last_used_index() + 1);
 
 	if (rigids_memory->was_changed())
 		NvFlexSetRigids(

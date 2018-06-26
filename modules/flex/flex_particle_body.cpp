@@ -48,7 +48,10 @@ FlexParticleBody::FlexParticleBody() :
 		changed_parameters(0),
 		collision_group(0),
 		collision_flags(0),
-		collision_primitive_mask(eNvFlexPhaseShapeChannel0) {
+		collision_primitive_mask(eNvFlexPhaseShapeChannel0),
+		rest_volume(0),
+		pressure(1),
+		constraint_scale(1) {
 	sync_callback.receiver = NULL;
 }
 

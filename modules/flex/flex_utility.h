@@ -188,6 +188,8 @@ typedef FlexChunkIndex SpringIndex; // Spring index relative to the memory chunk
 typedef FlexBufferIndex SpringBufferIndex; // Spring global index, can change during time
 typedef FlexChunkIndex TriangleIndex; // Triangle index relative to the memory chunk, can change during time
 typedef FlexBufferIndex TriangleBufferIndex; // Triangle global index, can change during time
+typedef FlexChunkIndex InflatableIndex; // Inflatable index relative to the memory chunk, can change during time
+typedef FlexBufferIndex InflatableBufferIndex; // Inflatable global index, can change during time
 typedef FlexChunkIndex GeometryIndex; // Geometry index relative to the memory chunk, can change during time
 typedef FlexBufferIndex GeometryBufferIndex; // Geometry global index, cavec3_from_flvec4time
 
