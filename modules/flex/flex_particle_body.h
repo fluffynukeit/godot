@@ -69,7 +69,7 @@ class FlexParticleBody : public RIDFlex {
 	FlexCallBackData spring_index_changed_callback;
 
 	struct {
-		Vector<ParticleIndex> particle_to_remove;
+		Vector<ParticleIndex> particles_to_remove;
 		Set<SpringIndex> springs_to_remove;
 		Vector<TriangleIndex> triangles_to_remove;
 		Vector<RigidIndex> rigids_to_remove;
@@ -144,7 +144,7 @@ public:
 	bool is_owner_of_rigid(RigidIndex p_triangle) const;
 	bool is_owner_of_rigid_component(RigidComponentIndex p_rigid_component) const;
 
-private:
+	// Internals
 	void clear_changed_params();
 	void clear_commands();
 	void dispatch_sync_callback();

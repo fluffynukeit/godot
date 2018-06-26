@@ -383,27 +383,11 @@ void FlexSpace::execute_delayed_commands() {
 
 		FlexParticleBody *body = particle_bodies[body_index];
 
-		if (body->delayed_commands.particle_to_remove.size()) {
+		if (body->delayed_commands.particles_to_remove.size()) {
 
 			// Remove particles
-
-			ParticleBufferIndex last_buffer_index(body->particles_mchunk->get_end_index());
-			for (int i(0); i < body->delayed_commands.particle_to_remove.size(); ++i) {
-
-				// Copy the values of last index to the index to remove (lose order)
-				const ParticleBufferIndex buffer_index_to_remove(body->particles_mchunk->get_buffer_index(body->delayed_commands.particle_to_remove[i]));
-
-				on_particle_removed(body, buffer_index_to_remove);
-				if (last_buffer_index != buffer_index_to_remove) {
-					particles_memory->copy(buffer_index_to_remove, 1, last_buffer_index);
-					on_particle_index_changed(body, last_buffer_index, buffer_index_to_remove);
-					body->particle_index_changed(body->particles_mchunk->get_chunk_index(last_buffer_index), body->delayed_commands.particle_to_remove[i]);
-				}
-
-				--last_buffer_index;
-			}
-			const FlexUnit new_size = body->particles_mchunk->get_size() - body->delayed_commands.particle_to_remove.size();
-			particles_allocator->resize_chunk(body->particles_mchunk, new_size);
+			ParticlesMemorySweeper sweeper(this, body, particles_allocator, body->particles_mchunk, body->delayed_commands.particles_to_remove);
+			sweeper.exec();
 		}
 
 		if (body->delayed_commands.springs_to_remove.size()) {
@@ -423,7 +407,8 @@ void FlexSpace::execute_delayed_commands() {
 			springs_allocator->resize_chunk(body->springs_mchunk, new_size);
 		}
 
-		// TODO add here triangles removal
+		if (body->delayed_commands.triangles_to_remove.size()) {
+		}
 
 		if (body->delayed_commands.rigids_components_to_remove.size()) {
 
@@ -780,13 +765,64 @@ void FlexSpace::on_particle_index_changed(FlexParticleBody *p_body, ParticleBuff
 	const int chunk_index_old(p_body->particles_mchunk->get_chunk_index(p_index_old));
 	const int chunk_index_new(p_body->particles_mchunk->get_chunk_index(p_index_new));
 
-	const int pos = p_body->delayed_commands.particle_to_remove.find(chunk_index_old);
+	const int pos = p_body->delayed_commands.particles_to_remove.find(chunk_index_old);
 	if (0 <= pos)
-		p_body->delayed_commands.particle_to_remove[pos] = chunk_index_new;
+		p_body->delayed_commands.particles_to_remove[pos] = chunk_index_new;
 }
 
-FlexMemorySweeperSlow::FlexMemorySweeperSlow(FlexMemoryAllocator *p_rigids_components_allocator, MemoryChunk *&r_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove) :
-		allocator(p_rigids_components_allocator),
+FlexMemorySweeperFast::FlexMemorySweeperFast(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove) :
+		allocator(p_allocator),
+		mchunk(r_mchunk),
+		indices_to_remove(r_indices_to_remove) {}
+
+void FlexMemorySweeperFast::exec() {
+
+	FlexBufferIndex chunk_end_buffer_index(mchunk->get_end_index());
+	const int rem_indices_count(indices_to_remove.size());
+
+	for (int i = 0; i < rem_indices_count; ++i) {
+
+		const FlexChunkIndex index_to_remove(indices_to_remove[i]);
+		const FlexBufferIndex buffer_index_to_remove(mchunk->get_buffer_index(index_to_remove));
+
+		on_element_removed(buffer_index_to_remove);
+		if (chunk_end_buffer_index != buffer_index_to_remove) {
+			allocator->get_memory()->copy(buffer_index_to_remove, 1, chunk_end_buffer_index);
+			on_element_index_changed(chunk_end_buffer_index, buffer_index_to_remove);
+		}
+
+		const FlexChunkIndex old_chunk_index(mchunk->get_chunk_index(chunk_end_buffer_index));
+		// Change the index from the next elements to remove
+		if ((i + 1) < rem_indices_count)
+			for (int b(i + 1); b < rem_indices_count; ++b) {
+				if (old_chunk_index == indices_to_remove[b]) {
+					indices_to_remove[b] = index_to_remove;
+				}
+			}
+
+		--chunk_end_buffer_index;
+	}
+	allocator->resize_chunk(mchunk, chunk_end_buffer_index - mchunk->get_begin_index() + 1);
+	indices_to_remove.clear(); // This clear is here to be sure that this vector not used anymore
+}
+
+ParticlesMemorySweeper::ParticlesMemorySweeper(FlexSpace *p_space, FlexParticleBody *p_body, FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove) :
+		FlexMemorySweeperFast(p_allocator, r_rigids_components_mchunk, r_indices_to_remove),
+		space(p_space),
+		body(p_body) {
+}
+
+void ParticlesMemorySweeper::on_element_removed(FlexBufferIndex on_element_removed) {
+	space->on_particle_removed(body, on_element_removed);
+}
+
+void ParticlesMemorySweeper::on_element_index_changed(FlexBufferIndex old_element_index, FlexBufferIndex new_element_index) {
+	space->on_particle_index_changed(body, old_element_index, new_element_index);
+	body->particle_index_changed(mchunk->get_chunk_index(old_element_index), mchunk->get_chunk_index(new_element_index));
+}
+
+FlexMemorySweeperSlow::FlexMemorySweeperSlow(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove) :
+		allocator(p_allocator),
 		mchunk(r_mchunk),
 		indices_to_remove(r_indices_to_remove) {}
 
