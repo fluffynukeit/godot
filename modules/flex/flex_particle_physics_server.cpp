@@ -87,6 +87,20 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 		}
 	}
 
+	{ // inflatables
+		if (p_model->get_want_inflatable()) {
+
+			body->space->inflatables_allocator->resize_chunk(body->inflatable_mchunk, 1);
+			body->space->inflatables_memory->set_start_triangle_index(body->inflatable_mchunk, 0, body->triangles_mchunk->get_begin_index());
+			body->space->inflatables_memory->set_triangle_count(body->inflatable_mchunk, 0, body->triangles_mchunk->get_size());
+
+			body->set_rest_volume(p_model->get_rest_volume());
+			body->set_constraint_scale(p_model->get_constraint_scale());
+		} else {
+			body->space->inflatables_allocator->resize_chunk(body->inflatable_mchunk, 0);
+		}
+	}
+
 	{ // Rigids
 
 		const int resource_r_count(p_model->get_clusters_offsets().size());
@@ -159,14 +173,6 @@ void FlexParticleBodyCommands::set_spring(SpringIndex p_index, ParticleIndex p_p
 
 void FlexParticleBodyCommands::triangles_set_count(int p_count) {
 	body->space->triangles_allocator->resize_chunk(body->triangles_mchunk, p_count);
-
-	if (p_count) {
-		body->space->inflatables_allocator->resize_chunk(body->inflatable_mchunk, 1);
-		body->space->inflatables_memory->set_start_triangle_index(body->inflatable_mchunk, 0, body->triangles_mchunk->get_begin_index());
-		body->space->inflatables_memory->set_triangle_count(body->inflatable_mchunk, 0, p_count);
-	} else {
-		body->space->inflatables_allocator->resize_chunk(body->inflatable_mchunk, 0);
-	}
 }
 
 void FlexParticleBodyCommands::add_triangle(ParticleIndex p_particle_0, ParticleIndex p_particle_1, ParticleIndex p_particle_2) {
@@ -719,6 +725,10 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::make_model(NvFlexExtAsset *p_a
 		dynamic_triangles_indices_w[i * 3 + 1] = p_assets->triangleIndices[i * 3 + 1];
 		dynamic_triangles_indices_w[i * 3 + 2] = p_assets->triangleIndices[i * 3 + 2];
 	}
+
+	model->set_want_inflatable(p_assets->inflatable);
+	model->set_rest_volume(p_assets->inflatableVolume);
+	model->set_constraint_scale(p_assets->inflatableStiffness);
 
 	return model;
 }

@@ -62,6 +62,10 @@ private:
 
 	PoolVector<int> dynamic_triangles_indices; // pair of 3
 
+	bool want_inflatable;
+	float rest_volume;
+	float constraint_scale;
+
 public:
 	ParticleBodyModel();
 
@@ -108,6 +112,15 @@ public:
 	void set_dynamic_triangles_indices(const PoolVector<int> p_dynamic_triangles_indices);
 	PoolVector<int> get_dynamic_triangles_indices() { return dynamic_triangles_indices; }
 	PoolVector<int> &get_dynamic_triangles_indices_ref() { return dynamic_triangles_indices; }
+
+	void set_want_inflatable(bool p_want);
+	bool get_want_inflatable() { return want_inflatable; }
+
+	void set_rest_volume(float p_rest_volume);
+	float get_rest_volume() const { return rest_volume; }
+
+	void set_constraint_scale(float p_constraint_scale);
+	float get_constraint_scale() const { return constraint_scale; }
 };
 
 #endif // PARTICLE_BODY_MODEL_H

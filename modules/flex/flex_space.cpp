@@ -482,9 +482,15 @@ void FlexSpace::execute_delayed_commands() {
 			}
 
 			if (body_changed_parameters & eChangedBodyParamInflatable && body->inflatable_mchunk->get_size()) {
-				inflatables_memory->set_rest_volume(body->inflatable_mchunk, 0, body->rest_volume);
-				inflatables_memory->set_pressure(body->inflatable_mchunk, 0, body->pressure);
-				inflatables_memory->set_constraint_scale(body->inflatable_mchunk, 0, body->constraint_scale);
+
+				if (body->get_rest_volume()) {
+					body->space->inflatables_allocator->resize_chunk(body->inflatable_mchunk, 1);
+					inflatables_memory->set_rest_volume(body->inflatable_mchunk, 0, body->rest_volume);
+					inflatables_memory->set_pressure(body->inflatable_mchunk, 0, body->pressure);
+					inflatables_memory->set_constraint_scale(body->inflatable_mchunk, 0, body->constraint_scale);
+				} else {
+					body->space->inflatables_allocator->resize_chunk(body->inflatable_mchunk, 0);
+				}
 			}
 		}
 
