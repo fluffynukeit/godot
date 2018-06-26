@@ -68,6 +68,15 @@ void ParticleBodyModel::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_dynamic_triangles_indices", "dynamic_triangles_indices"), &ParticleBodyModel::set_dynamic_triangles_indices);
 	ClassDB::bind_method(D_METHOD("get_dynamic_triangles_indices"), &ParticleBodyModel::get_dynamic_triangles_indices);
 
+	ClassDB::bind_method(D_METHOD("set_want_inflatable", "want_inflatable"), &ParticleBodyModel::set_want_inflatable);
+	ClassDB::bind_method(D_METHOD("get_want_inflatable"), &ParticleBodyModel::get_want_inflatable);
+
+	ClassDB::bind_method(D_METHOD("set_rest_volume", "rest_volume"), &ParticleBodyModel::set_rest_volume);
+	ClassDB::bind_method(D_METHOD("get_rest_volume"), &ParticleBodyModel::get_rest_volume);
+
+	ClassDB::bind_method(D_METHOD("set_constraint_scale", "constraint_scale"), &ParticleBodyModel::set_constraint_scale);
+	ClassDB::bind_method(D_METHOD("get_constraint_scale"), &ParticleBodyModel::get_constraint_scale);
+
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_VECTOR3_ARRAY, "particles"), "set_particles", "get_particles");
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_REAL_ARRAY, "masses"), "set_masses", "get_masses");
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_INT_ARRAY, "constraints_indexes"), "set_constraints_indexes", "get_constraints_indexes");
@@ -81,9 +90,14 @@ void ParticleBodyModel::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_INT_ARRAY, "clusters_particle_indices"), "set_clusters_particle_indices", "get_clusters_particle_indices");
 
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_INT_ARRAY, "dynamic_triangles_indices"), "set_dynamic_triangles_indices", "get_dynamic_triangles_indices");
+
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "want_inflatable"), "set_want_inflatable", "get_want_inflatable");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "rest_volume"), "set_rest_volume", "get_rest_volume");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "constraint_scale"), "set_constraint_scale", "get_constraint_scale");
 }
 
-ParticleBodyModel::ParticleBodyModel() {}
+ParticleBodyModel::ParticleBodyModel() :
+		want_inflatable(false) {}
 
 void ParticleBodyModel::set_particles(PoolVector<Vector3> p_particles) {
 	particles = p_particles;
@@ -127,4 +141,16 @@ void ParticleBodyModel::set_clusters_particle_indices(const PoolVector<int> p_cl
 
 void ParticleBodyModel::set_dynamic_triangles_indices(const PoolVector<int> p_dynamic_triangles_indices) {
 	dynamic_triangles_indices = p_dynamic_triangles_indices;
+}
+
+void ParticleBodyModel::set_want_inflatable(bool p_want) {
+	want_inflatable = p_want;
+}
+
+void ParticleBodyModel::set_rest_volume(float p_rest_volume) {
+	rest_volume = p_rest_volume;
+}
+
+void ParticleBodyModel::set_constraint_scale(float p_constraint_scale) {
+	constraint_scale = p_constraint_scale;
 }
