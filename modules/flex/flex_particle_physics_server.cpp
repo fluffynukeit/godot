@@ -141,7 +141,7 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 }
 
 void FlexParticleBodyCommands::add_particle(const Vector3 &p_local_position, real_t p_mass) {
-	const int previous_size = body->particles_mchunk->get_size();
+	const int previous_size = body->get_particle_count();
 	body->space->particles_allocator->resize_chunk(body->particles_mchunk, previous_size + 1);
 	set_particle(previous_size, p_local_position, p_mass);
 }
@@ -157,7 +157,7 @@ void FlexParticleBodyCommands::set_particle(ParticleIndex p_index, const Vector3
 }
 
 void FlexParticleBodyCommands::add_spring(ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness) {
-	const int previous_size = body->springs_mchunk->get_size();
+	const int previous_size = body->get_spring_count();
 	body->space->springs_allocator->resize_chunk(body->springs_mchunk, previous_size + 1);
 	set_spring(previous_size, p_particle_0, p_particle_1, p_length, p_stiffness);
 }
@@ -176,7 +176,7 @@ void FlexParticleBodyCommands::triangles_set_count(int p_count) {
 }
 
 void FlexParticleBodyCommands::add_triangle(ParticleIndex p_particle_0, ParticleIndex p_particle_1, ParticleIndex p_particle_2) {
-	const int previous_size(body->triangles_mchunk->get_size());
+	const int previous_size(body->get_triangle_count());
 	triangles_set_count(previous_size + 1);
 	set_triangle(previous_size, p_particle_0, p_particle_1, p_particle_2);
 }
@@ -189,7 +189,7 @@ void FlexParticleBodyCommands::set_triangle(TriangleIndex p_index, ParticleIndex
 }
 
 void FlexParticleBodyCommands::add_rigid(const Transform &p_transform, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, RigidComponentIndex p_offset) {
-	const int previous_size = body->rigids_mchunk->get_size();
+	const int previous_size(body->get_rigid_count());
 	body->space->rigids_allocator->resize_chunk(body->rigids_mchunk, previous_size + 1);
 	set_rigid(previous_size, p_transform, p_stiffness, p_plastic_threshold, p_plastic_creep, p_offset);
 }
@@ -209,7 +209,7 @@ void FlexParticleBodyCommands::set_rigid(RigidIndex p_index, const Transform &p_
 }
 
 void FlexParticleBodyCommands::add_rigid_component(ParticleBufferIndex p_particle_index, const Vector3 &p_rest) {
-	const int previous_size = body->rigids_components_mchunk->get_size();
+	const int previous_size(body->rigids_components_mchunk->get_size());
 	body->space->rigids_components_allocator->resize_chunk(body->rigids_components_mchunk, previous_size + 1);
 	set_rigid_component(previous_size, p_particle_index, p_rest);
 }
@@ -409,6 +409,20 @@ float FlexParticlePhysicsServer::body_get_pressure(RID p_body) const {
 	ERR_FAIL_COND_V(!body, 0);
 
 	return body->get_pressure();
+}
+
+bool FlexParticlePhysicsServer::can_rendered_using_skeleton(RID p_body) const {
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND_V(!body, false);
+
+	return 0 < body->get_rigid_count();
+}
+
+bool FlexParticlePhysicsServer::can_rendered_using_ppvertices(RID p_body) const {
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND_V(!body, false);
+
+	return body->get_triangle_count();
 }
 
 RID FlexParticlePhysicsServer::primitive_body_create() {

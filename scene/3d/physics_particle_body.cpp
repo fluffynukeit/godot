@@ -38,9 +38,6 @@
 #include "scene/3d/physics_particle_body_mesh_instance.h"
 #include "scene/3d/skeleton.h"
 
-// TODO remove
-#include "scene/3d/immediate_geometry.h"
-
 void ParticleBody::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("get_particle_body_mesh"), &ParticleBody::get_particle_body_mesh);
