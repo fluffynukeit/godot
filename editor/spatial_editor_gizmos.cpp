@@ -3498,6 +3498,8 @@ void ParticleBodySpatialGizmo::redraw(EditorSpatialGizmo *p_gizmo) {
 
 	p_gizmo->clear();
 
+	clear();
+
 	if (!body)
 		return;
 
