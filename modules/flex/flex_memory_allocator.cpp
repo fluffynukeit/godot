@@ -181,6 +181,10 @@ void FlexMemoryAllocator::deallocate_chunk(MemoryChunk *&r_chunk) {
 	if (r_chunk == (&zero_memory_chunk))
 		return;
 
+#ifdef DEBUG_ENABLED
+	ERR_FAIL_COND(r_chunk->owner_memory_allocator != this);
+#endif
+
 	r_chunk->is_free = true;
 
 	sanitize(false, false); // Merge only, no cache update, no trim
@@ -200,7 +204,13 @@ void FlexMemoryAllocator::resize_chunk(MemoryChunk *&r_chunk, FlexUnit p_size) {
 
 	if (r_chunk->size == p_size)
 		return;
-	else if (r_chunk->size > p_size) {
+
+#ifdef DEBUG_ENABLED
+	if (r_chunk != (&zero_memory_chunk))
+		ERR_FAIL_COND(r_chunk->owner_memory_allocator != this);
+#endif
+
+	if (r_chunk->size > p_size) {
 
 		/// Redux memory, don't need reallocation
 		// 1. Split chunk
@@ -225,6 +235,15 @@ void FlexMemoryAllocator::resize_chunk(MemoryChunk *&r_chunk, FlexUnit p_size) {
 }
 
 void FlexMemoryAllocator::copy_chunk(MemoryChunk *p_to, MemoryChunk *p_from) {
+
+#ifdef DEBUG_ENABLED
+	if (p_to != (&zero_memory_chunk))
+		ERR_FAIL_COND(p_to->owner_memory_allocator != this);
+
+	if (p_from != (&zero_memory_chunk))
+		ERR_FAIL_COND(p_from->owner_memory_allocator != this);
+#endif
+
 	const FlexUnit copy_size = MIN(p_from->size, p_to->size); // Avoid to copy more then the destination size
 	memory->copy(p_to->begin_index, copy_size, p_from->begin_index);
 }
@@ -283,12 +302,20 @@ void FlexMemoryAllocator::find_biggest_chunk_size() {
 
 MemoryChunk *FlexMemoryAllocator::insert_chunk(FlexBufferIndex p_index) {
 	MemoryChunk *chunk = new MemoryChunk;
+#ifdef DEBUG_ENABLED
+	chunk->owner_memory = memory;
+	chunk->owner_memory_allocator = this;
+#endif
 	memory_table.insert(p_index, chunk);
 	return chunk;
 }
 
 MemoryChunk *FlexMemoryAllocator::create_chunk() {
 	MemoryChunk *chunk = new MemoryChunk;
+#ifdef DEBUG_ENABLED
+	chunk->owner_memory = memory;
+	chunk->owner_memory_allocator = this;
+#endif
 	memory_table.push_back(chunk);
 	return chunk;
 }

@@ -34,6 +34,20 @@
 
 #include "flex_memory.h"
 
+#ifdef DEBUG_ENABLED
+
+#define make_memory_index(p_chunk, p_index)                     \
+	ERR_FAIL_COND(p_chunk->owner_memory != this);               \
+	FlexBufferIndex index = p_chunk->get_buffer_index(p_index); \
+	ERR_FAIL_COND(index > p_chunk->get_end_index());
+
+#define make_memory_index_V(p_chunk, p_index, ret)              \
+	ERR_FAIL_COND_V(p_chunk->owner_memory != this, ret);        \
+	FlexBufferIndex index = p_chunk->get_buffer_index(p_index); \
+	ERR_FAIL_COND_V(index > p_chunk->get_end_index(), ret);
+
+#else
+
 #define make_memory_index(p_chunk, p_index)                     \
 	FlexBufferIndex index = p_chunk->get_buffer_index(p_index); \
 	ERR_FAIL_COND(index > p_chunk->get_end_index());
@@ -41,6 +55,8 @@
 #define make_memory_index_V(p_chunk, p_index, ret)              \
 	FlexBufferIndex index = p_chunk->get_buffer_index(p_index); \
 	ERR_FAIL_COND_V(index > p_chunk->get_end_index(), ret);
+
+#endif
 
 void ParticlesMemory::set_particle(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, FlVector4 p_particle) {
 	make_memory_index(p_chunk, p_particle_index);
