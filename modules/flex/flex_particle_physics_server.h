@@ -116,7 +116,9 @@ public:
 	virtual void space_set_active(RID p_space, bool p_active);
 	virtual bool space_is_active(RID p_space) const;
 
-	virtual float space_get_particle_radius(RID p_space);
+	virtual void space_get_params_defaults(Map<String, Variant> *r_defs) const;
+	virtual bool space_set_param(RID p_space, const StringName &p_name, const Variant &p_property);
+	virtual bool space_get_param(RID p_space, const StringName &p_name, Variant &r_property) const;
 
 	/* BODY */
 	virtual RID body_create();
