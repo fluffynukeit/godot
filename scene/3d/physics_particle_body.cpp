@@ -244,7 +244,8 @@ void ParticleBody::commands_process_internal(Object *p_cmds) {
 		emit_signal("resource_loaded");
 	}
 
-	body_mesh_skeleton_update(cmds);
+	if (particle_body_mesh)
+		particle_body_mesh->update_mesh(cmds);
 	debug_update(cmds);
 
 	if (!get_script().is_null() && has_method("_commands_process")) {
@@ -269,19 +270,6 @@ void ParticleBody::_on_script_changed() {
 void ParticleBody::_on_model_change() {
 	reload_particle_model = true;
 	debug_initialize_resource();
-}
-
-void ParticleBody::body_mesh_skeleton_update(ParticleBodyCommands *p_cmds) {
-
-	const int rigids_count = ParticlePhysicsServer::get_singleton()->body_get_rigid_count(rid);
-	const PoolVector<Vector3>::Read rigids_local_pos_r = particle_body_model->get_clusters_positions().read();
-
-	for (int i = 0; i < rigids_count; ++i) {
-
-		Transform t(Basis(p_cmds->get_rigid_rotation(i)), p_cmds->get_rigid_position(i));
-		t.translate(rigids_local_pos_r[i] * -1);
-		particle_body_mesh->get_skeleton()->set_bone_pose(i, t);
-	}
 }
 
 void ParticleBody::debug_initialize_resource() {
