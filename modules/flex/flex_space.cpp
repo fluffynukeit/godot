@@ -329,12 +329,8 @@ void FlexSpace::sync() {
 		springs_allocator->sanitize(); // *1
 	springs_memory->unmap();
 
-	if (triangles_memory->was_changed())
-		triangles_allocator->sanitize(); // *1
+	rebuild_inflatables_indices();
 	triangles_memory->unmap();
-
-	if (inflatables_memory->was_changed())
-		inflatables_allocator->sanitize(); // *1
 	inflatables_memory->unmap();
 
 	rigids_memory->unmap();
@@ -1089,6 +1085,27 @@ void FlexSpace::on_particle_index_changed(FlexParticleBody *p_body, ParticleBuff
 	const int pos = p_body->delayed_commands.particles_to_remove.find(chunk_index_old);
 	if (0 <= pos)
 		p_body->delayed_commands.particles_to_remove[pos] = chunk_index_new;
+}
+
+void FlexSpace::rebuild_inflatables_indices() {
+	if (!triangles_memory->was_changed()) {
+		if (inflatables_memory->was_changed()) {
+			inflatables_allocator->sanitize();
+		}
+		return;
+	}
+	triangles_allocator->sanitize();
+	inflatables_allocator->sanitize();
+
+	for (int body_i(particle_bodies.size() - 1); 0 <= body_i; --body_i) {
+		FlexParticleBody *body = particle_bodies[body_i];
+
+		if (!body->inflatable_mchunk->get_size())
+			continue;
+
+		inflatables_memory->set_start_triangle_index(body->inflatable_mchunk, 0, body->triangles_mchunk->get_begin_index());
+		inflatables_memory->set_triangle_count(body->inflatable_mchunk, 0, body->triangles_mchunk->get_size());
+	}
 }
 
 FlexMemorySweeperFast::FlexMemorySweeperFast(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove) :

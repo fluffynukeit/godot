@@ -97,13 +97,12 @@ public:
 
 protected:
 	void _notification(int p_what);
-	void resource_changed(const RES &p_res);
+	void resource_changed(RES p_res);
 
 	void commands_process_internal(Object *p_cmds);
 
 private:
 	void _on_script_changed();
-	void _on_model_change();
 
 	void debug_initialize_resource();
 	void debug_resize_particle_visual_instance(int new_size);
