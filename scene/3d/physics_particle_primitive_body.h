@@ -74,6 +74,7 @@ public:
 
 private:
 	void _create_debug_shape();
+	void resource_changed(RES res);
 };
 
 #endif // PARTICLE_PRIMITIVE_BODY_H
