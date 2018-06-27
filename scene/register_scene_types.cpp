@@ -68,6 +68,7 @@
 #include "scene/3d/physics_particle_body_mesh_instance.h"
 #include "scene/3d/physics_particle_object.h"
 #include "scene/3d/physics_particle_primitive_body.h"
+#include "scene/3d/physics_particle_world.h"
 #include "scene/animation/animation_blend_space_1d.h"
 #include "scene/animation/animation_blend_space_2d.h"
 #include "scene/animation/animation_blend_tree.h"
@@ -445,6 +446,8 @@ void register_scene_types() {
 
 	ClassDB::register_class<SkeletonIK>();
 	ClassDB::register_class<BoneAttachment>();
+
+	ClassDB::register_class<PhysicsParticleWorld>();
 	ClassDB::register_virtual_class<ParticleObject>();
 	ClassDB::register_class<ParticleBody>();
 	ClassDB::register_class<ParticlePrimitiveBody>();

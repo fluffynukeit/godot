@@ -91,8 +91,6 @@ class FlexSpace : public RIDFlex {
 
 	Vector<MemoryChunk *> geometry_chunks_to_deallocate;
 
-	float particle_radius;
-
 public:
 	FlexSpace();
 	~FlexSpace();
@@ -116,7 +114,8 @@ public:
 	void add_primitive_body(FlexPrimitiveBody *p_body);
 	void remove_primitive_body(FlexPrimitiveBody *p_body);
 
-	float get_particle_radius() const { return particle_radius; }
+	bool set_param(const StringName &p_name, const Variant &p_property);
+	bool get_param(const StringName &p_name, Variant &r_property) const;
 
 	// internals
 	void dispatch_callbacks();

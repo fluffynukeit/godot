@@ -287,11 +287,36 @@ bool FlexParticlePhysicsServer::space_is_active(RID p_space) const {
 	return active_spaces.find(space) != -1;
 }
 
-float FlexParticlePhysicsServer::space_get_particle_radius(RID p_space) {
+void FlexParticlePhysicsServer::space_get_params_defaults(Map<String, Variant> *r_defs) const {
+	(*r_defs)["numIterations"] = 3;
+	(*r_defs)["gravity"] = Vector3(0, -10, 0);
+	(*r_defs)["radius"] = 0.1f;
+	(*r_defs)["solidRestDistance"] = real_t((*r_defs)["radius"]) * 0.9;
+	(*r_defs)["fluidRestDistance"] = real_t((*r_defs)["radius"]) * 0.5;
+	(*r_defs)["dynamicFriction"] = 0.1;
+	(*r_defs)["staticFriction"] = 0.1;
+	(*r_defs)["particleFriction"] = 0.1;
+	(*r_defs)["maxSpeed"] = FLT_MAX;
+	(*r_defs)["maxAcceleration"] = Vector3((*r_defs)["gravity"]).length() * 10.0;
+	(*r_defs)["solidPressure"] = 1.0;
+	(*r_defs)["collisionDistance"] = MAX(real_t((*r_defs)["solidRestDistance"]), real_t((*r_defs)["fluidRestDistance"])) * 0.5;
+	(*r_defs)["shapeCollisionMargin"] = real_t((*r_defs)["collisionDistance"]) * 0.5;
+	(*r_defs)["relaxationMode"] = "global";
+	(*r_defs)["relaxationFactor"] = 0.8;
+}
+
+bool FlexParticlePhysicsServer::space_set_param(RID p_space, const StringName &p_name, const Variant &p_property) {
+	FlexSpace *space = space_owner.get(p_space);
+	ERR_FAIL_COND_V(!space, false);
+
+	return space->set_param(p_name, p_property);
+}
+
+bool FlexParticlePhysicsServer::space_get_param(RID p_space, const StringName &p_name, Variant &r_property) const {
 	const FlexSpace *space = space_owner.get(p_space);
 	ERR_FAIL_COND_V(!space, false);
 
-	return space->get_particle_radius();
+	return space->get_param(p_name, r_property);
 }
 
 RID FlexParticlePhysicsServer::body_create() {
