@@ -101,56 +101,70 @@ ParticleBodyModel::ParticleBodyModel() :
 
 void ParticleBodyModel::set_particles(PoolVector<Vector3> p_particles) {
 	particles = p_particles;
+	notify_change_to_owners();
 }
 
 void ParticleBodyModel::set_masses(PoolVector<real_t> p_mass) {
 	masses = p_mass;
+	notify_change_to_owners();
 }
 
 void ParticleBodyModel::set_constraints_indexes(const PoolVector<int> p_constraints_index) {
 	constraints_indexes = p_constraints_index;
+	notify_change_to_owners();
 }
 
 void ParticleBodyModel::set_constraints_info(const PoolVector<Vector2> p_constraints_info) {
 	constraints_info = p_constraints_info;
+	notify_change_to_owners();
 }
 
 void ParticleBodyModel::set_clusters_positions(const PoolVector<Vector3> p_clusters_position) {
 	clusters_positions = p_clusters_position;
+	notify_change_to_owners();
 }
 
 void ParticleBodyModel::set_clusters_stiffness(const PoolVector<float> p_clusters_stiffness) {
 	clusters_stiffness = p_clusters_stiffness;
+	notify_change_to_owners();
 }
 
 void ParticleBodyModel::set_clusters_plastic_threshold(const PoolVector<float> p_clusters_plastic_threshold) {
 	clusters_plastic_threshold = p_clusters_plastic_threshold;
+	notify_change_to_owners();
 }
 
 void ParticleBodyModel::set_clusters_plastic_creep(const PoolVector<float> p_clusters_plastic_creep) {
 	clusters_plastic_creep = p_clusters_plastic_creep;
+	notify_change_to_owners();
 }
 
 void ParticleBodyModel::set_clusters_offsets(const PoolVector<int> p_clusters_offsets) {
 	clusters_offsets = p_clusters_offsets;
+	notify_change_to_owners();
 }
 
 void ParticleBodyModel::set_clusters_particle_indices(const PoolVector<int> p_clusters_particle_indices) {
 	clusters_particle_indices = p_clusters_particle_indices;
+	notify_change_to_owners();
 }
 
 void ParticleBodyModel::set_dynamic_triangles_indices(const PoolVector<int> p_dynamic_triangles_indices) {
 	dynamic_triangles_indices = p_dynamic_triangles_indices;
+	notify_change_to_owners();
 }
 
 void ParticleBodyModel::set_want_inflatable(bool p_want) {
 	want_inflatable = p_want;
+	notify_change_to_owners();
 }
 
 void ParticleBodyModel::set_rest_volume(float p_rest_volume) {
 	rest_volume = p_rest_volume;
+	notify_change_to_owners();
 }
 
 void ParticleBodyModel::set_constraint_scale(float p_constraint_scale) {
 	constraint_scale = p_constraint_scale;
+	notify_change_to_owners();
 }
