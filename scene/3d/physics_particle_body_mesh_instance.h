@@ -38,13 +38,22 @@
 #define PHYSICS_PARTICLE_BODY_MESH_INSTANCE_H
 
 class ParticleBody;
+class ParticleBodyCommands;
 class Skeleton;
 
 class ParticleBodyMeshInstance : public MeshInstance {
 	GDCLASS(ParticleBodyMeshInstance, MeshInstance);
 
+	enum RenderingUpdateApproach {
+		RENDERING_UPDATE_APPROACH_NONE,
+		RENDERING_UPDATE_APPROACH_PVP,
+		RENDERING_UPDATE_APPROACH_SKELETON
+	};
+
 	ParticleBody *particle_body;
 	Skeleton *skeleton;
+
+	RenderingUpdateApproach rendering_approach;
 
 	static void _bind_methods();
 	virtual void _notification(int p_what);
@@ -53,6 +62,10 @@ public:
 	ParticleBodyMeshInstance();
 
 	_FORCE_INLINE_ Skeleton *get_skeleton() { return skeleton; }
+	void update_mesh(ParticleBodyCommands *p_cmds);
+
+	void update_mesh_pvparticles(ParticleBodyCommands *p_cmds);
+	void update_mesh_skeleton(ParticleBodyCommands *p_cmds);
 
 private:
 	void prepare_mesh_for_rendering();

@@ -104,7 +104,6 @@ protected:
 private:
 	void _on_script_changed();
 	void _on_model_change();
-	void body_mesh_skeleton_update(ParticleBodyCommands *p_cmds);
 
 	void debug_initialize_resource();
 	void debug_resize_particle_visual_instance(int new_size);

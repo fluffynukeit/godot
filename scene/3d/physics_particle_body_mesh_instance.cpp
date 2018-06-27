@@ -83,10 +83,37 @@ void ParticleBodyMeshInstance::_notification(int p_what) {
 ParticleBodyMeshInstance::ParticleBodyMeshInstance() :
 		MeshInstance(),
 		particle_body(NULL),
-		skeleton(NULL) {
+		skeleton(NULL),
+		rendering_approach(RENDERING_UPDATE_APPROACH_NONE) {
 
 	if (Engine::get_singleton()->is_editor_hint())
 		set_notify_local_transform(true);
+}
+
+void ParticleBodyMeshInstance::update_mesh(ParticleBodyCommands *p_cmds) {
+	switch (rendering_approach) {
+		case RENDERING_UPDATE_APPROACH_PVP:
+			update_mesh_pvparticles(p_cmds);
+			break;
+		case RENDERING_UPDATE_APPROACH_SKELETON:
+			update_mesh_skeleton(p_cmds);
+			break;
+	}
+}
+
+void ParticleBodyMeshInstance::update_mesh_pvparticles(ParticleBodyCommands *p_cmds) {
+}
+
+void ParticleBodyMeshInstance::update_mesh_skeleton(ParticleBodyCommands *p_cmds) {
+	const int rigids_count = ParticlePhysicsServer::get_singleton()->body_get_rigid_count(particle_body->get_rid());
+	const PoolVector<Vector3>::Read rigids_local_pos_r = particle_body->get_particle_body_model()->get_clusters_positions().read();
+
+	for (int i = 0; i < rigids_count; ++i) {
+
+		Transform t(Basis(p_cmds->get_rigid_rotation(i)), p_cmds->get_rigid_position(i));
+		t.translate(rigids_local_pos_r[i] * -1);
+		skeleton->set_bone_pose(i, t);
+	}
 }
 
 void ParticleBodyMeshInstance::prepare_mesh_for_rendering() {
@@ -128,6 +155,7 @@ void ParticleBodyMeshInstance::prepare_mesh_for_pvparticles() {
 	soft_mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, surface_arrays, surface_blend_arrays, surface_format);
 
 	set_mesh(soft_mesh);
+	rendering_approach = RENDERING_UPDATE_APPROACH_PVP;
 }
 
 void ParticleBodyMeshInstance::prepare_mesh_skeleton_deformation() {
@@ -182,4 +210,6 @@ void ParticleBodyMeshInstance::prepare_mesh_skeleton_deformation() {
 	new_mesh->add_surface_from_arrays(get_mesh()->surface_get_primitive_type(surface_id), array_mesh);
 
 	set_mesh(new_mesh);
+
+	rendering_approach = RENDERING_UPDATE_APPROACH_SKELETON;
 }
