@@ -91,8 +91,6 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 		if (p_model->get_want_inflatable()) {
 
 			body->space->inflatables_allocator->resize_chunk(body->inflatable_mchunk, 1);
-			body->space->inflatables_memory->set_start_triangle_index(body->inflatable_mchunk, 0, body->triangles_mchunk->get_begin_index());
-			body->space->inflatables_memory->set_triangle_count(body->inflatable_mchunk, 0, body->triangles_mchunk->get_size());
 
 			body->set_rest_volume(p_model->get_rest_volume());
 			body->set_constraint_scale(p_model->get_constraint_scale());
@@ -185,7 +183,7 @@ void FlexParticleBodyCommands::set_triangle(TriangleIndex p_index, ParticleIndex
 
 	ERR_FAIL_COND(!body->is_owner_of_triangle(p_index));
 
-	body->space->triangles_memory->set_triangle(body->triangles_mchunk, p_index, DynamicTriangle(body->triangles_mchunk->get_buffer_index(p_particle_0), body->triangles_mchunk->get_buffer_index(p_particle_1), body->triangles_mchunk->get_buffer_index(p_particle_2)));
+	body->space->triangles_memory->set_triangle(body->triangles_mchunk, p_index, DynamicTriangle(body->particles_mchunk->get_buffer_index(p_particle_0), body->particles_mchunk->get_buffer_index(p_particle_1), body->particles_mchunk->get_buffer_index(p_particle_2)));
 }
 
 void FlexParticleBodyCommands::add_rigid(const Transform &p_transform, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, RigidComponentIndex p_offset) {
@@ -651,7 +649,7 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_cloth_particle_body_mod
 					mesh_vertex_count,
 					welded_vertex_indices_w.ptr(),
 					original_to_unique_w.ptr(),
-					0.001);
+					0.00005);
 		}
 
 		PoolVector<int>::Read mesh_indices_r = mesh_indices.read();

@@ -228,10 +228,12 @@ void ParticleBody::_notification(int p_what) {
 	}
 }
 
-void ParticleBody::resource_changed(const RES &p_res) {
+void ParticleBody::resource_changed(RES p_res) {
 	if (particle_body_model == p_res) {
-		_on_model_change();
+		reload_particle_model = true;
+		debug_initialize_resource();
 	}
+	update_gizmo();
 }
 
 void ParticleBody::commands_process_internal(Object *p_cmds) {
@@ -265,11 +267,6 @@ void ParticleBody::_on_script_changed() {
 	} else {
 		ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SPRINGINDEXCHANGED, NULL, "");
 	}
-}
-
-void ParticleBody::_on_model_change() {
-	reload_particle_model = true;
-	debug_initialize_resource();
 }
 
 void ParticleBody::debug_initialize_resource() {

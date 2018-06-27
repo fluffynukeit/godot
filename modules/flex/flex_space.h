@@ -128,6 +128,8 @@ public:
 
 	void on_particle_removed(FlexParticleBody *p_body, ParticleBufferIndex p_index);
 	void on_particle_index_changed(FlexParticleBody *p_body, ParticleBufferIndex p_index_old, ParticleBufferIndex p_index_new);
+
+	void rebuild_inflatables_indices();
 };
 
 class FlexMemorySweeper : public FlexMemoryModificator {
