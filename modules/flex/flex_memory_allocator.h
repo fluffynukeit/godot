@@ -38,6 +38,8 @@
 #include "flex_utility.h"
 #include "vector.h"
 
+class FlexMemoryAllocator;
+
 class FlexMemory {
 	friend class FlexMemoryAllocator;
 
@@ -51,6 +53,11 @@ public:
 
 struct MemoryChunk {
 	friend class FlexMemoryAllocator;
+
+#ifdef DEBUG_ENABLED
+	FlexMemory *owner_memory;
+	FlexMemoryAllocator *owner_memory_allocator;
+#endif
 
 private:
 	FlexBufferIndex begin_index;
