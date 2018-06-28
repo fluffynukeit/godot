@@ -401,35 +401,35 @@ const Vector3 &RigidsComponentsMemory::get_normal(const MemoryChunk *p_chunk, Ri
 */
 
 ContactsBuffers::ContactsBuffers(NvFlexLibrary *p_lib) :
-		planes(p_lib),
+		normals(p_lib),
 		velocities_prim_indices(p_lib),
 		indices(p_lib),
 		counts(p_lib) {
 }
 
 void ContactsBuffers::resize(int p_size) {
-	planes.resize(p_size * MAX_PERPARTICLE_CONTACT_COUNT);
+	normals.resize(p_size * MAX_PERPARTICLE_CONTACT_COUNT);
 	velocities_prim_indices.resize(p_size * MAX_PERPARTICLE_CONTACT_COUNT);
 	indices.resize(p_size);
 	counts.resize(p_size);
 }
 
 void ContactsBuffers::terminate() {
-	planes.destroy();
+	normals.destroy();
 	velocities_prim_indices.destroy();
 	indices.destroy();
 	counts.destroy();
 }
 
 void ContactsBuffers::map() {
-	planes.map();
+	normals.map();
 	velocities_prim_indices.map();
 	indices.map();
 	counts.map();
 }
 
 void ContactsBuffers::unmap() {
-	planes.unmap();
+	normals.unmap();
 	velocities_prim_indices.unmap();
 	indices.unmap();
 	counts.unmap();
