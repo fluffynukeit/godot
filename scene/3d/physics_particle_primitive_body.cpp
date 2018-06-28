@@ -180,3 +180,8 @@ void ParticlePrimitiveBody::resource_changed(RES res) {
 
 	update_gizmo();
 }
+
+ParticlePrimitiveArea::ParticlePrimitiveArea() :
+		ParticlePrimitiveBody() {
+	ParticlePhysicsServer::get_singleton()->primitive_body_set_as_area(rid, true);
+}

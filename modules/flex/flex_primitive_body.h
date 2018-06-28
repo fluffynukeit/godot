@@ -63,7 +63,8 @@ class FlexPrimitiveBody : public RIDFlex {
 
 	// allow only first 7 bit (max 7 channel)
 	uint32_t layer;
-	bool kinematic; // if false is static
+	bool _is_kinematic; // if false is static
+	bool _is_area;
 
 public:
 	FlexPrimitiveBody();
@@ -83,7 +84,10 @@ public:
 	uint32_t get_layer() const { return layer; }
 
 	void set_kinematic(bool p_kinematic);
-	bool is_kinematic() const { return kinematic; }
+	bool is_kinematic() const { return _is_kinematic; }
+
+	void set_area(bool p_area);
+	bool is_area() const { return _is_area; }
 
 private:
 	void set_clean();

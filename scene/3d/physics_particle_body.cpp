@@ -138,6 +138,7 @@ String ParticleBody::get_configuration_warning() const {
 void ParticleBody::set_particle_body_mesh(ParticleBodyMeshInstance *p_mesh) {
 	ERR_FAIL_COND(particle_body_mesh);
 	particle_body_mesh = p_mesh;
+	update_configuration_warning();
 }
 
 void ParticleBody::set_particle_body_model(Ref<ParticleBodyModel> p_model) {
@@ -254,6 +255,7 @@ void ParticleBody::resource_changed(RES p_res) {
 		debug_initialize_resource();
 	}
 	update_gizmo();
+	update_configuration_warning();
 }
 
 void ParticleBody::commands_process_internal(Object *p_cmds) {

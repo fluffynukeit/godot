@@ -53,6 +53,7 @@ class DynamicTrianglesMemory;
 class RigidsMemory;
 class RigidsComponentsMemory;
 class GeometryMemory;
+class ContactsBuffers;
 
 class FlexSpace : public RIDFlex {
 	friend class FlexBuffers;
@@ -86,6 +87,8 @@ class FlexSpace : public RIDFlex {
 	FlexMemoryAllocator *geometries_allocator;
 	GeometryMemory *geometries_memory;
 
+	ContactsBuffers *contacts_buffers;
+
 	Vector<FlexParticleBody *> particle_bodies;
 	Vector<FlexPrimitiveBody *> primitive_bodies;
 
@@ -118,6 +121,7 @@ public:
 	bool get_param(const StringName &p_name, Variant &r_property) const;
 
 	// internals
+	void check_contacts();
 	void dispatch_callbacks();
 	void execute_delayed_commands();
 	void rebuild_rigids_offsets();

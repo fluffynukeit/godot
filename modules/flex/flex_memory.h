@@ -39,6 +39,8 @@
 #include "flex_utility.h"
 #include "thirdparty/flex/include/NvFlexExt.h"
 
+#define MAX_PERPARTICLE_CONTACT_COUNT 4
+
 #define FLEXBUFFERCLASS_1(clazz, type0, name0) \
 	friend class FlexSpace;                    \
 											   \
@@ -556,6 +558,26 @@ class RigidsComponentsMemory : public FlexBufferMemory {
 
 	//void set_normal(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index, const Vector3 &p_normal);
 	//const Vector3 &get_normal(const MemoryChunk *p_chunk, RigidComponentIndex p_rigid_comp_index) const;
+};
+
+/// This class is responsible hold contacts information and doesn't need the memory abstraction
+/// because doesn't refer to any body directly
+class ContactsBuffers {
+
+	friend class FlexSpace;
+
+	//NvFlexVector<FlVector4> planes;
+	NvFlexVector<FlVector4> velocities_prim_indices;
+	NvFlexVector<int> indices;
+	NvFlexVector<int> counts;
+
+public:
+	ContactsBuffers(NvFlexLibrary *p_lib);
+
+	void resize(int p_size);
+	void terminate();
+	void map();
+	void unmap();
 };
 
 #endif // FLEX_MEMORY_H

@@ -77,4 +77,11 @@ private:
 	void resource_changed(RES res);
 };
 
+class ParticlePrimitiveArea : public ParticlePrimitiveBody {
+	GDCLASS(ParticlePrimitiveArea, ParticlePrimitiveBody);
+
+public:
+	ParticlePrimitiveArea();
+};
+
 #endif // PARTICLE_PRIMITIVE_BODY_H
