@@ -116,7 +116,7 @@ void FlexSpace::init() {
 	solver_desc.maxParticles = MAXPARTICLES; // TODO should be customizable
 	solver_desc.maxDiffuseParticles = MAXPARTICLES; // TODO should be customizable
 	solver_desc.maxNeighborsPerParticle = 32; // TODO should be customizable
-	solver_desc.maxContactsPerParticle = 10; // TODO should be customizable
+	solver_desc.maxContactsPerParticle = MAX_PERPARTICLE_CONTACT_COUNT;
 
 	solver = NvFlexCreateSolver(flex_lib, &solver_desc);
 	CRASH_COND(has_error());
@@ -328,6 +328,7 @@ void FlexSpace::sync() {
 
 	///
 	/// Stepping phase
+	check_contacts();
 	dispatch_callbacks();
 	execute_delayed_commands();
 	execute_geometries_commands();
@@ -368,7 +369,7 @@ void FlexSpace::step(real_t p_delta_time) {
 	const int substep = 1;
 	const bool enable_timer = false; // Used for profiling
 	NvFlexUpdateSolver(solver, p_delta_time, substep, enable_timer);
-	NvFlexGetContacts(solver, NULL, contacts_buffers->velocities_prim_indices.buffer, contacts_buffers->indices.buffer, contacts_buffers->counts.buffer);
+	NvFlexGetContacts(solver, contacts_buffers->normals.buffer, contacts_buffers->velocities_prim_indices.buffer, contacts_buffers->indices.buffer, contacts_buffers->counts.buffer);
 
 	commands_read_buffer();
 }
@@ -682,13 +683,17 @@ bool FlexSpace::get_param(const StringName &p_name, Variant &r_property) const {
 void FlexSpace::check_contacts() {
 	const int active_count(active_particles_mchunk->get_size());
 	for (int i(0); i < active_count; ++i) {
-		const int particle_buffer_index = contacts_buffers->indices[i];
-		const int particle_contact_count = contacts_buffers->counts[particle_buffer_index];
+		const int particle_buffer_index(contacts_buffers->indices[i]);
+		const uint32_t particle_contact_count(contacts_buffers->counts[particle_buffer_index]);
 
-		for (int c(0); c < particle_contact_count; ++c) {
-			const FlVector4 &velocity_primitive(contacts_buffers->velocities_prim_indices[particle_buffer_index * MAX_PERPARTICLE_CONTACT_COUNT + c]);
-			Vector3 velocity(vec3_from_flvec4(velocity_primitive));
-			int primitive_body_index(int(velocity_primitive.w));
+		for (uint32_t c(0); c < particle_contact_count; ++c) {
+			const FlVector4 &velocity_and_primitive(contacts_buffers->velocities_prim_indices[particle_buffer_index * MAX_PERPARTICLE_CONTACT_COUNT + c]);
+			const int primitive_body_index(velocity_and_primitive.w);
+
+			// TODO Put here the algorithm to handle collision
+			Vector3 velocity(vec3_from_flvec4(velocity_and_primitive));
+			const FlVector4 &raw_normal(contacts_buffers->normals[particle_buffer_index * MAX_PERPARTICLE_CONTACT_COUNT + c]);
+			Vector3 normal(vec3_from_flvec4(raw_normal));
 		}
 	}
 }
