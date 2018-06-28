@@ -353,17 +353,19 @@ void FlexParticleBody::spring_index_changed(SpringIndex p_old_spring_index, Spri
 	spring_index_changed_callback.receiver->call(spring_index_changed_callback.method, (int)p_old_spring_index, (int)p_new_spring_index);
 }
 
-void FlexParticleBody::primitive_contact(FlexPrimitiveBody *p_primitive, ParticleIndex p_particle_index) {
+void FlexParticleBody::dispatch_primitive_contact(FlexPrimitiveBody *p_primitive, ParticleIndex p_particle_index, const Vector3 &p_velocity, const Vector3 &p_normal) {
 	if (!primitive_contact_callback.receiver)
 		return;
 
-	Variant prim(p_primitive);
-	Variant particle((int)p_particle_index);
+	const Variant prim(p_primitive->get_self());
+	const Variant particle((int)p_particle_index);
+	const Variant velocity(p_velocity);
+	const Variant normal(p_normal);
 
-	const Variant *p[2] = { &prim, &particle };
+	const Variant *p[4] = { &prim, &particle, &velocity, &normal };
 
 	static Variant::CallError error;
-	primitive_contact_callback.receiver->call(primitive_contact_callback.method, p, 2, error);
+	primitive_contact_callback.receiver->call(primitive_contact_callback.method, p, 4, error);
 }
 
 void FlexParticleBody::reload_inflatables() {

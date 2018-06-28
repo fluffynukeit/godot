@@ -53,6 +53,8 @@ class FlexPrimitiveBody : public RIDFlex {
 
 	friend class FlexSpace;
 
+	FlexCallBackData particles_contact_callback;
+
 	uint32_t changed_parameters;
 	MemoryChunk *geometry_mchunk;
 
@@ -94,8 +96,9 @@ public:
 	void set_monitoring_particles(bool p_monitoring);
 	_FORCE_INLINE_ bool is_monitoring_particles() const { return _is_monitoring_particles; }
 
-private:
+	// Internals
 	void set_clean();
+	void dispatch_particle_contact(FlexParticleBody *p_body, ParticleIndex p_particle_index, const Vector3 &p_velocity, const Vector3 &p_normal);
 };
 
 #endif // FLEX_PRIMITIVE_BODY_H

@@ -79,6 +79,7 @@ void ParticleBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("resource_changed", "resource"), &ParticleBody::resource_changed);
 
 	ClassDB::bind_method(D_METHOD("commands_process_internal", "commands"), &ParticleBody::commands_process_internal);
+	ClassDB::bind_method(D_METHOD("on_primitive_contact", "other_primitive", "particle_index", "velocity", "normal"), &ParticleBody::on_primitive_contact);
 
 	ClassDB::bind_method(D_METHOD("_on_script_changed"), &ParticleBody::_on_script_changed);
 
@@ -101,6 +102,7 @@ void ParticleBody::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_primitive_mask", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collision_primitive_mask", "get_collision_primitive_mask");
 
 	ADD_SIGNAL(MethodInfo("resource_loaded"));
+	ADD_SIGNAL(MethodInfo("primitive_contact", PropertyInfo(Variant::INT, "particle_index"), PropertyInfo(Variant::VECTOR3, "velocity"), PropertyInfo(Variant::VECTOR3, "normal")));
 }
 
 ParticleBody::ParticleBody() :
@@ -111,6 +113,7 @@ ParticleBody::ParticleBody() :
 	set_notify_transform(true);
 
 	connect(CoreStringNames::get_singleton()->script_changed, this, "_on_script_changed");
+	ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_PRIMITIVECONTACT, this, "on_primitive_contact");
 }
 
 ParticleBody::~ParticleBody() {
@@ -121,6 +124,7 @@ ParticleBody::~ParticleBody() {
 	ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SYNC, NULL, "");
 	ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_PARTICLEINDEXCHANGED, NULL, "");
 	ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SPRINGINDEXCHANGED, NULL, "");
+	ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_PRIMITIVECONTACT, NULL, "");
 }
 
 String ParticleBody::get_configuration_warning() const {
@@ -299,6 +303,14 @@ void ParticleBody::commands_process_internal(Object *p_cmds) {
 	if (!get_script().is_null() && has_method("_commands_process")) {
 		call("_commands_process", p_cmds);
 	}
+}
+
+void ParticleBody::on_primitive_contact(RID p_primitive_body, int p_particle_index, Vector3 p_velocity, Vector3 p_normal) {
+
+	//Object *obj = ObjectDB::get_instance(primitive_body_id);
+	//Node *node = Object::cast_to<Node>(obj);
+
+	emit_signal("primitive_contact", p_particle_index, p_velocity, p_normal);
 }
 
 void ParticleBody::_on_script_changed() {

@@ -33,6 +33,9 @@
 */
 
 #include "flex_primitive_body.h"
+
+#include "core/object.h"
+#include "flex_particle_body.h"
 #include "flex_primitive_shapes.h"
 
 FlexPrimitiveBody::FlexPrimitiveBody() :
@@ -102,10 +105,25 @@ void FlexPrimitiveBody::set_area(bool p_area) {
 	changed_parameters |= eChangedPrimitiveBodyParamFlags;
 }
 
+void FlexPrimitiveBody::set_monitoring_particles(bool p_monitoring) {
+	_is_monitoring_particles = p_monitoring;
+}
+
 void FlexPrimitiveBody::set_clean() {
 	changed_parameters = 0;
 }
 
-void FlexPrimitiveBody::set_monitoring_particles(bool p_monitoring) {
-	_is_monitoring_particles = p_monitoring;
+void FlexPrimitiveBody::dispatch_particle_contact(FlexParticleBody *p_body, ParticleIndex p_particle_index, const Vector3 &p_velocity, const Vector3 &p_normal) {
+	if (!particles_contact_callback.receiver)
+		return;
+
+	const Variant body(p_body->get_self());
+	const Variant particle((int)p_particle_index);
+	const Variant velocity(p_velocity);
+	const Variant normal(p_normal);
+
+	const Variant *p[4] = { &body, &particle, &velocity, &normal };
+
+	static Variant::CallError error;
+	particles_contact_callback.receiver->call(particles_contact_callback.method, p, 4, error);
 }
