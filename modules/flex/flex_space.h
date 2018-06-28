@@ -134,6 +134,9 @@ public:
 	void on_particle_index_changed(FlexParticleBody *p_body, ParticleBufferIndex p_index_old, ParticleBufferIndex p_index_new);
 
 	void rebuild_inflatables_indices();
+
+	FlexParticleBody *find_particle_body(ParticleBufferIndex p_index) const;
+	FlexPrimitiveBody *find_primitive_body(GeometryBufferIndex p_index) const;
 };
 
 class FlexMemorySweeper : public FlexMemoryModificator {

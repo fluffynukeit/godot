@@ -66,6 +66,8 @@ class FlexPrimitiveBody : public RIDFlex {
 	bool _is_kinematic; // if false is static
 	bool _is_area;
 
+	bool _is_monitoring_particles;
+
 public:
 	FlexPrimitiveBody();
 	~FlexPrimitiveBody();
@@ -88,6 +90,9 @@ public:
 
 	void set_area(bool p_area);
 	bool is_area() const { return _is_area; }
+
+	void set_monitoring_particles(bool p_monitoring);
+	_FORCE_INLINE_ bool is_monitoring_particles() const { return _is_monitoring_particles; }
 
 private:
 	void set_clean();

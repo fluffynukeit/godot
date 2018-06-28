@@ -50,7 +50,8 @@ public:
 	enum ParticleBodyCallback {
 		PARTICLE_BODY_CALLBACK_SYNC,
 		PARTICLE_BODY_CALLBACK_PARTICLEINDEXCHANGED,
-		PARTICLE_BODY_CALLBACK_SPRINGINDEXCHANGED
+		PARTICLE_BODY_CALLBACK_SPRINGINDEXCHANGED,
+		PARTICLE_BODY_CALLBACK_PRIMITIVECONTACT
 	};
 
 	enum ParticleCollisionFlag {
@@ -84,8 +85,14 @@ public:
 	virtual void body_set_pressure(RID p_body, float p_pressure) = 0;
 	virtual float body_get_pressure(RID p_body) const = 0;
 
-	virtual bool can_rendered_using_skeleton(RID p_body) const = 0;
-	virtual bool can_rendered_using_pvparticles(RID p_body) const = 0; // Per particle vertex
+	virtual bool body_can_rendered_using_skeleton(RID p_body) const = 0;
+	virtual bool body_can_rendered_using_pvparticles(RID p_body) const = 0; // Per particle vertex
+
+	virtual void body_set_monitorable(RID p_body, bool p_monitorable) = 0;
+	virtual bool body_is_monitorable(RID p_body) const = 0;
+
+	virtual void body_set_monitoring_primitives(RID p_body, bool p_monitoring) = 0;
+	virtual bool body_is_monitoring_primitives(RID p_body) const = 0;
 
 	/* PRIMITIVE BODY */
 	virtual RID primitive_body_create() = 0;
@@ -101,7 +108,10 @@ public:
 	virtual bool primitive_body_is_kinematic(RID p_body) const = 0;
 
 	virtual void primitive_body_set_as_area(RID p_body, bool p_area) = 0;
-	virtual bool primitive_body_is_area(RID p_body) = 0;
+	virtual bool primitive_body_is_area(RID p_body) const = 0;
+
+	virtual void primitive_body_set_monitoring_particles(RID p_body, bool p_monitoring) = 0;
+	virtual bool primitive_body_is_monitoring_particles(RID p_body) const = 0;
 
 	/* PRIMITIVE SHAPE */
 	enum PrimitiveShapeType {

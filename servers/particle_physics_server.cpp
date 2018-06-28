@@ -48,8 +48,14 @@ void ParticlePhysicsServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("body_set_pressure", "body", "pressure"), &ParticlePhysicsServer::body_set_pressure);
 	ClassDB::bind_method(D_METHOD("body_get_pressure", "body"), &ParticlePhysicsServer::body_get_pressure);
 
-	ClassDB::bind_method(D_METHOD("can_rendered_using_skeleton", "body"), &ParticlePhysicsServer::can_rendered_using_skeleton);
-	ClassDB::bind_method(D_METHOD("can_rendered_using_pvparticles", "body"), &ParticlePhysicsServer::can_rendered_using_pvparticles);
+	ClassDB::bind_method(D_METHOD("body_can_rendered_using_skeleton", "body"), &ParticlePhysicsServer::body_can_rendered_using_skeleton);
+	ClassDB::bind_method(D_METHOD("body_can_rendered_using_pvparticles", "body"), &ParticlePhysicsServer::body_can_rendered_using_pvparticles);
+
+	ClassDB::bind_method(D_METHOD("body_set_monitorable", "body", "monitorable"), &ParticlePhysicsServer::body_set_monitorable);
+	ClassDB::bind_method(D_METHOD("body_is_monitorable", "body"), &ParticlePhysicsServer::body_is_monitorable);
+
+	ClassDB::bind_method(D_METHOD("body_set_monitoring_primitives", "body", "monitoring"), &ParticlePhysicsServer::body_set_monitoring_primitives);
+	ClassDB::bind_method(D_METHOD("body_is_monitoring_primitives", "body"), &ParticlePhysicsServer::body_is_monitoring_primitives);
 
 	ClassDB::bind_method(D_METHOD("primitive_body_create"), &ParticlePhysicsServer::primitive_body_create);
 	ClassDB::bind_method(D_METHOD("primitive_body_set_space", "body", "space"), &ParticlePhysicsServer::primitive_body_set_space);
@@ -59,6 +65,9 @@ void ParticlePhysicsServer::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("primitive_body_set_as_area", "body", "area"), &ParticlePhysicsServer::primitive_body_set_as_area);
 	ClassDB::bind_method(D_METHOD("primitive_body_is_area", "body"), &ParticlePhysicsServer::primitive_body_is_area);
+
+	ClassDB::bind_method(D_METHOD("primitive_body_set_particles_monitoring", "body", "monitoring"), &ParticlePhysicsServer::primitive_body_set_monitoring_particles);
+	ClassDB::bind_method(D_METHOD("primitive_body_is_particles_monitoring", "body"), &ParticlePhysicsServer::primitive_body_is_monitoring_particles);
 
 	ClassDB::bind_method(D_METHOD("primitive_shape_create", "shape_type"), &ParticlePhysicsServer::primitive_shape_create);
 
@@ -74,6 +83,7 @@ void ParticlePhysicsServer::_bind_methods() {
 	BIND_ENUM_CONSTANT(PARTICLE_BODY_CALLBACK_SYNC);
 	BIND_ENUM_CONSTANT(PARTICLE_BODY_CALLBACK_PARTICLEINDEXCHANGED);
 	BIND_ENUM_CONSTANT(PARTICLE_BODY_CALLBACK_SPRINGINDEXCHANGED);
+	BIND_ENUM_CONSTANT(PARTICLE_BODY_CALLBACK_PRIMITIVECONTACT);
 
 	BIND_ENUM_CONSTANT(PARTICLE_COLLISION_FLAG_SELF_COLLIDE);
 	BIND_ENUM_CONSTANT(PARTICLE_COLLISION_FLAG_SELF_COLLIDE_FILTER);
