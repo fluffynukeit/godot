@@ -566,7 +566,7 @@ class ContactsBuffers {
 
 	friend class FlexSpace;
 
-	NvFlexVector<FlVector4> planes;
+	NvFlexVector<FlVector4> normals;
 	NvFlexVector<FlVector4> velocities_prim_indices;
 	NvFlexVector<int> indices;
 	NvFlexVector<uint32_t> counts;
