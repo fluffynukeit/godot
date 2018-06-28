@@ -62,6 +62,8 @@ public:
 	ParticleBody();
 	virtual ~ParticleBody();
 
+	virtual String get_configuration_warning() const;
+
 	void set_particle_body_mesh(ParticleBodyMeshInstance *p_mesh);
 	ParticleBodyMeshInstance *get_particle_body_mesh() const { return particle_body_mesh; }
 

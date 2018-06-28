@@ -115,6 +115,26 @@ ParticleBody::~ParticleBody() {
 	ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SPRINGINDEXCHANGED, NULL, "");
 }
 
+String ParticleBody::get_configuration_warning() const {
+	String warning = ParticleObject::get_configuration_warning();
+
+	if (!particle_body_mesh) {
+		if (warning != String()) {
+			warning += "\n\n";
+		}
+		warning += TTR("The body will be ignored until you set a ParticleBodyMeshInstance");
+	}
+
+	if (particle_body_model.is_null()) {
+		if (warning != String()) {
+			warning += "\n\n";
+		}
+		warning += TTR("The body will be ignored until you set a ParticleBodyModel.\nTo craete one is possible to use the ParticleBody menu in the top bar.");
+	}
+
+	return warning;
+}
+
 void ParticleBody::set_particle_body_mesh(ParticleBodyMeshInstance *p_mesh) {
 	ERR_FAIL_COND(particle_body_mesh);
 	particle_body_mesh = p_mesh;
