@@ -43,6 +43,7 @@ class FlexParticleBody;
 class FlexSpace;
 class Object;
 class MemoryChunk;
+class FlexPrimitiveBody;
 
 enum ChangedBodyParameter {
 	eChangedBodyParamParticleJustAdded = 1 << 0,
@@ -70,6 +71,7 @@ class FlexParticleBody : public RIDFlex {
 	FlexCallBackData sync_callback;
 	FlexCallBackData particle_index_changed_callback;
 	FlexCallBackData spring_index_changed_callback;
+	FlexCallBackData primitive_contact_callback;
 
 	struct {
 		Vector<ParticleIndex> particles_to_remove;
@@ -96,6 +98,9 @@ class FlexParticleBody : public RIDFlex {
 	float rest_volume;
 	float pressure; // 1 mean rest_volume
 	float constraint_scale;
+
+	bool _is_monitorable;
+	bool _is_monitoring_primitives;
 
 public:
 	FlexParticleBody();
@@ -126,6 +131,12 @@ public:
 
 	void set_constraint_scale(float p_constraint_scale);
 	float get_constraint_scale() const;
+
+	void set_monitorable(bool p_monitorable);
+	_FORCE_INLINE_ bool is_monitorable() const { return _is_monitorable; }
+
+	void set_monitoring_primitives(bool p_monitoring);
+	_FORCE_INLINE_ bool is_monitoring_primitives() const { return _is_monitoring_primitives; }
 
 	void remove_particle(ParticleIndex p_particle);
 	void remove_spring(SpringIndex p_spring_index);
@@ -166,6 +177,7 @@ public:
 	void dispatch_sync_callback();
 	void particle_index_changed(ParticleIndex p_old_particle_index, ParticleIndex p_new_particle_index);
 	void spring_index_changed(SpringIndex p_old_spring_index, SpringIndex p_new_spring_index);
+	void primitive_contact(FlexPrimitiveBody *p_primitive, ParticleIndex p_particle_index);
 	void reload_inflatables();
 };
 

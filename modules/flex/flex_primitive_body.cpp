@@ -43,7 +43,8 @@ FlexPrimitiveBody::FlexPrimitiveBody() :
 		shape(NULL),
 		_is_kinematic(false),
 		_is_area(false),
-		layer(1) {
+		layer(1),
+		_is_monitoring_particles(false) {
 }
 
 FlexPrimitiveBody::~FlexPrimitiveBody() {
@@ -103,4 +104,8 @@ void FlexPrimitiveBody::set_area(bool p_area) {
 
 void FlexPrimitiveBody::set_clean() {
 	changed_parameters = 0;
+}
+
+void FlexPrimitiveBody::set_monitoring_particles(bool p_monitoring) {
+	_is_monitoring_particles = p_monitoring;
 }

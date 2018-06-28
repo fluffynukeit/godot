@@ -686,14 +686,30 @@ void FlexSpace::check_contacts() {
 		const int particle_buffer_index(contacts_buffers->indices[i]);
 		const uint32_t particle_contact_count(contacts_buffers->counts[particle_buffer_index]);
 
+		if (!particle_contact_count)
+			continue;
+
+		FlexParticleBody *particle_body = find_particle_body(particle_buffer_index);
+		if (!particle_body->is_monitorable())
+			continue;
+
+		const ParticleIndex particle_index(particle_body->particles_mchunk->get_chunk_index(particle_buffer_index));
+
 		for (uint32_t c(0); c < particle_contact_count; ++c) {
 			const FlVector4 &velocity_and_primitive(contacts_buffers->velocities_prim_indices[particle_buffer_index * MAX_PERPARTICLE_CONTACT_COUNT + c]);
 			const int primitive_body_index(velocity_and_primitive.w);
 
-			// TODO Put here the algorithm to handle collision
+			FlexPrimitiveBody *primitive_body = find_primitive_body(primitive_body_index);
+
 			Vector3 velocity(vec3_from_flvec4(velocity_and_primitive));
+
 			const FlVector4 &raw_normal(contacts_buffers->normals[particle_buffer_index * MAX_PERPARTICLE_CONTACT_COUNT + c]);
 			Vector3 normal(vec3_from_flvec4(raw_normal));
+
+			if (particle_body->is_monitoring_primitives())
+				particle_body->primitive_contact(primitive_body, particle_index);
+
+			//if (primitive_body->is_particles_monitoring())
 		}
 	}
 }
@@ -1136,6 +1152,24 @@ void FlexSpace::rebuild_inflatables_indices() {
 		inflatables_memory->set_start_triangle_index(body->inflatable_mchunk, 0, body->triangles_mchunk->get_begin_index());
 		inflatables_memory->set_triangle_count(body->inflatable_mchunk, 0, body->triangles_mchunk->get_size());
 	}
+}
+
+FlexParticleBody *FlexSpace::find_particle_body(ParticleBufferIndex p_index) const {
+	for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
+		if (p_index >= particle_bodies[i]->particles_mchunk->get_begin_index() || p_index <= particle_bodies[i]->particles_mchunk->get_end_index()) {
+			return particle_bodies[i];
+		}
+	}
+	return NULL;
+}
+
+FlexPrimitiveBody *FlexSpace::find_primitive_body(GeometryBufferIndex p_index) const {
+	for (int i(primitive_bodies.size() - 1); 0 <= i; --i) {
+		if (p_index == primitive_bodies[i]->geometry_mchunk->get_begin_index()) {
+			return primitive_bodies[i];
+		}
+	}
+	return NULL;
 }
 
 FlexMemorySweeperFast::FlexMemorySweeperFast(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove) :

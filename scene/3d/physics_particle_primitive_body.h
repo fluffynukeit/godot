@@ -72,6 +72,9 @@ public:
 	void set_collision_layer_bit(int p_bit, bool p_value);
 	bool get_collision_layer_bit(int p_bit) const;
 
+	void set_monitoring_particles(bool p_monitoring);
+	bool is_monitoring_particles() const;
+
 private:
 	void _create_debug_shape();
 	void resource_changed(RES res);

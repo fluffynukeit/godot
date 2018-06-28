@@ -50,11 +50,15 @@ void ParticlePrimitiveBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_collision_layer_bit", "bit", "value"), &ParticlePrimitiveBody::set_collision_layer_bit);
 	ClassDB::bind_method(D_METHOD("get_collision_layer_bit", "bit"), &ParticlePrimitiveBody::get_collision_layer_bit);
 
+	ClassDB::bind_method(D_METHOD("set_monitoring_particles", "monitoring"), &ParticlePrimitiveBody::set_monitoring_particles);
+	ClassDB::bind_method(D_METHOD("is_monitoring_particles"), &ParticlePrimitiveBody::is_monitoring_particles);
+
 	ClassDB::bind_method(D_METHOD("resource_changed", "resource"), &ParticlePrimitiveBody::resource_changed);
 
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "shape", PROPERTY_HINT_RESOURCE_TYPE, "Shape"), "set_shape", "get_shape");
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "kinematic"), "set_kinematic", "is_kinematic");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitoring_particles"), "set_monitoring_particles", "is_monitoring_particles");
 
 	ADD_GROUP("Collision", "collision_");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_layer", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collision_layer", "get_collision_layer");
@@ -153,6 +157,14 @@ void ParticlePrimitiveBody::set_collision_layer_bit(int p_bit, bool p_value) {
 bool ParticlePrimitiveBody::get_collision_layer_bit(int p_bit) const {
 
 	return get_collision_layer() & (1 << p_bit);
+}
+
+void ParticlePrimitiveBody::set_monitoring_particles(bool p_monitoring) {
+	ParticlePhysicsServer::get_singleton()->primitive_body_set_monitoring_particles(rid, p_monitoring);
+}
+
+bool ParticlePrimitiveBody::is_monitoring_particles() const {
+	return ParticlePhysicsServer::get_singleton()->primitive_body_is_monitoring_particles(rid);
 }
 
 void ParticlePrimitiveBody::_create_debug_shape() {

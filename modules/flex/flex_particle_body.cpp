@@ -52,7 +52,8 @@ FlexParticleBody::FlexParticleBody() :
 		collision_primitive_mask(eNvFlexPhaseShapeChannel0),
 		rest_volume(0),
 		pressure(1),
-		constraint_scale(0) {
+		constraint_scale(0),
+		_is_monitorable(false) {
 	sync_callback.receiver = NULL;
 }
 
@@ -74,6 +75,10 @@ void FlexParticleBody::set_callback(ParticlePhysicsServer::ParticleBodyCallback 
 		case ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SPRINGINDEXCHANGED:
 			spring_index_changed_callback.receiver = p_receiver;
 			spring_index_changed_callback.method = p_method;
+			break;
+		case ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_PRIMITIVECONTACT:
+			primitive_contact_callback.receiver = p_receiver;
+			primitive_contact_callback.method = p_method;
 			break;
 	}
 }
@@ -149,6 +154,14 @@ void FlexParticleBody::set_constraint_scale(float p_constraint_scale) {
 
 float FlexParticleBody::get_constraint_scale() const {
 	return constraint_scale;
+}
+
+void FlexParticleBody::set_monitorable(bool p_monitorable) {
+	_is_monitorable = p_monitorable;
+}
+
+void FlexParticleBody::set_monitoring_primitives(bool p_monitoring) {
+	_is_monitoring_primitives = p_monitoring;
 }
 
 void FlexParticleBody::remove_particle(ParticleIndex p_particle) {
@@ -338,6 +351,19 @@ void FlexParticleBody::spring_index_changed(SpringIndex p_old_spring_index, Spri
 	if (!spring_index_changed_callback.receiver)
 		return;
 	spring_index_changed_callback.receiver->call(spring_index_changed_callback.method, (int)p_old_spring_index, (int)p_new_spring_index);
+}
+
+void FlexParticleBody::primitive_contact(FlexPrimitiveBody *p_primitive, ParticleIndex p_particle_index) {
+	if (!primitive_contact_callback.receiver)
+		return;
+
+	Variant prim(p_primitive);
+	Variant particle((int)p_particle_index);
+
+	const Variant *p[2] = { &prim, &particle };
+
+	static Variant::CallError error;
+	primitive_contact_callback.receiver->call(primitive_contact_callback.method, p, 2, error);
 }
 
 void FlexParticleBody::reload_inflatables() {

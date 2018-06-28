@@ -91,6 +91,12 @@ public:
 	void set_collision_primitive_mask(uint32_t p_mask);
 	uint32_t get_collision_primitive_mask() const;
 
+	void set_monitorable(bool p_monitorable);
+	bool is_monitorable() const;
+
+	void set_monitoring_primitives(bool p_monitoring);
+	bool is_monitoring_primitives() const;
+
 	// Utility:
 
 	int get_particle_count() const;

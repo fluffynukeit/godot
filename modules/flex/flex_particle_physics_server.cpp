@@ -434,18 +434,46 @@ float FlexParticlePhysicsServer::body_get_pressure(RID p_body) const {
 	return body->get_pressure();
 }
 
-bool FlexParticlePhysicsServer::can_rendered_using_skeleton(RID p_body) const {
+bool FlexParticlePhysicsServer::body_can_rendered_using_skeleton(RID p_body) const {
 	FlexParticleBody *body = body_owner.get(p_body);
 	ERR_FAIL_COND_V(!body, false);
 
 	return 0 < body->get_rigid_count();
 }
 
-bool FlexParticlePhysicsServer::can_rendered_using_pvparticles(RID p_body) const {
+bool FlexParticlePhysicsServer::body_can_rendered_using_pvparticles(RID p_body) const {
 	FlexParticleBody *body = body_owner.get(p_body);
 	ERR_FAIL_COND_V(!body, false);
 
 	return body->get_triangle_count();
+}
+
+void FlexParticlePhysicsServer::body_set_monitorable(RID p_body, bool p_monitorable) {
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND(!body);
+
+	body->set_monitorable(p_monitorable);
+}
+
+bool FlexParticlePhysicsServer::body_is_monitorable(RID p_body) const {
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND_V(!body, false);
+
+	return body->is_monitorable();
+}
+
+void FlexParticlePhysicsServer::body_set_monitoring_primitives(RID p_body, bool p_monitoring) {
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND(!body);
+
+	body->set_monitoring_primitives(p_monitoring);
+}
+
+bool FlexParticlePhysicsServer::body_is_monitoring_primitives(RID p_body) const {
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND_V(!body, false);
+
+	return body->is_monitoring_primitives();
 }
 
 RID FlexParticlePhysicsServer::primitive_body_create() {
@@ -527,11 +555,25 @@ void FlexParticlePhysicsServer::primitive_body_set_as_area(RID p_body, bool p_ar
 	body->set_area(p_area);
 }
 
-bool FlexParticlePhysicsServer::primitive_body_is_area(RID p_body) {
+bool FlexParticlePhysicsServer::primitive_body_is_area(RID p_body) const {
 	FlexPrimitiveBody *body = primitive_body_owner.get(p_body);
 	ERR_FAIL_COND_V(!body, false);
 
 	return body->is_area();
+}
+
+void FlexParticlePhysicsServer::primitive_body_set_monitoring_particles(RID p_body, bool p_monitoring) {
+	FlexPrimitiveBody *body = primitive_body_owner.get(p_body);
+	ERR_FAIL_COND(!body);
+
+	body->set_monitoring_particles(p_monitoring);
+}
+
+bool FlexParticlePhysicsServer::primitive_body_is_monitoring_particles(RID p_body) const {
+	FlexPrimitiveBody *body = primitive_body_owner.get(p_body);
+	ERR_FAIL_COND_V(!body, false);
+
+	return body->is_monitoring_particles();
 }
 
 RID FlexParticlePhysicsServer::primitive_shape_create(PrimitiveShapeType p_type) {
