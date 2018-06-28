@@ -41,19 +41,86 @@
 
 void ParticleBodyEditor::_menu_option(int p_option) {
 	switch (p_option) {
-		case MENU_OPTION_CREATE_PARTICLE_SOFT_BODY: {
-			soft_body_dialog.dialog->popup_centered(Vector2(200, 600));
-		} break;
+		case MENU_OPTION_CREATE_PARTICLE_SOFT_BODY:
+			soft_body_dialog.dialog->popup_centered(Vector2(200, 700));
+			break;
+		case MENU_OPTION_CREATE_PARTICLE_RIGID_BODY:
+			rigid_body_dialog.dialog->popup_centered(Vector2(200, 120));
+			break;
+		case MENU_OPTION_CREATE_PARTICLE_CLOTH:
+			cloth_dialog.dialog->popup_centered(Vector2(200, 300));
+			break;
 	}
 }
 
 void ParticleBodyEditor::_create_soft_body() {
+
+	ERR_FAIL_COND(!node);
+	ERR_FAIL_COND(!node->get_particle_body_mesh());
+	ERR_FAIL_COND(node->get_particle_body_mesh()->get_mesh().is_null());
+
+	Ref<ParticleBodyModel> model = ParticlePhysicsServer::get_singleton()->create_soft_particle_body_model(
+			node->get_particle_body_mesh()->get_mesh()->generate_triangle_mesh(),
+			soft_body_dialog.radius_input->get_value(),
+			soft_body_dialog.global_stiffness_input->get_value(),
+			soft_body_dialog.internal_sample_check->is_pressed(),
+			soft_body_dialog.particle_spacing_input->get_value(),
+			soft_body_dialog.sampling_input->get_value(),
+			soft_body_dialog.clusterSpacing_input->get_value(),
+			soft_body_dialog.clusterRadius_input->get_value(),
+			soft_body_dialog.clusterStiffness_input->get_value(),
+			soft_body_dialog.linkRadius_input->get_value(),
+			soft_body_dialog.linkStiffness_input->get_value(),
+			soft_body_dialog.plastic_threshold_input->get_value(),
+			soft_body_dialog.plastic_creep_input->get_value());
+
+	UndoRedo *ur = EditorNode::get_singleton()->get_undo_redo();
+
+	ur->create_action(TTR("Create particle Soft body"));
+	ur->add_do_method(node, "set_particle_body_model", model);
+	ur->add_undo_method(node, "set_particle_body_model", node->get_particle_body_model());
+	ur->commit_action();
 }
 
 void ParticleBodyEditor::_create_rigid_body() {
+
+	ERR_FAIL_COND(!node);
+	ERR_FAIL_COND(!node->get_particle_body_mesh());
+	ERR_FAIL_COND(node->get_particle_body_mesh()->get_mesh().is_null());
+
+	Ref<ParticleBodyModel> model = ParticlePhysicsServer::get_singleton()->create_rigid_particle_body_model(
+			node->get_particle_body_mesh()->get_mesh()->generate_triangle_mesh(),
+			rigid_body_dialog.radius_input->get_value(),
+			rigid_body_dialog.expand_input->get_value());
+
+	UndoRedo *ur = EditorNode::get_singleton()->get_undo_redo();
+
+	ur->create_action(TTR("Create particle Rigid body"));
+	ur->add_do_method(node, "set_particle_body_model", model);
+	ur->add_undo_method(node, "set_particle_body_model", node->get_particle_body_model());
+	ur->commit_action();
 }
 
 void ParticleBodyEditor::_create_cloth() {
+
+	ERR_FAIL_COND(!node);
+	ERR_FAIL_COND(!node->get_particle_body_mesh());
+	ERR_FAIL_COND(node->get_particle_body_mesh()->get_mesh().is_null());
+
+	Ref<ParticleBodyModel> model = ParticlePhysicsServer::get_singleton()->create_cloth_particle_body_model(
+			node->get_particle_body_mesh()->get_mesh()->generate_triangle_mesh(),
+			cloth_dialog.stretch_stiffness_input->get_value(),
+			cloth_dialog.bend_stiffness_input->get_value(),
+			cloth_dialog.tether_stiffness_input->get_value(),
+			cloth_dialog.tether_give_input->get_value(),
+			cloth_dialog.pressure_input->get_value());
+
+	UndoRedo *ur = EditorNode::get_singleton()->get_undo_redo();
+
+	ur->create_action(TTR("Create cloth"));
+	ur->add_do_method(node, "set_particle_body_model", model);
+	ur->add_undo_method(node, "set_particle_body_model", node->get_particle_body_model());
+	ur->commit_action();
 }
 
 void ParticleBodyEditor::_node_removed(Node *p_node) {
@@ -66,6 +133,7 @@ void ParticleBodyEditor::_node_removed(Node *p_node) {
 
 void ParticleBodyEditor::_bind_methods() {
 	ClassDB::bind_method("_menu_option", &ParticleBodyEditor::_menu_option);
+	ClassDB::bind_method("_create_soft_body", &ParticleBodyEditor::_create_soft_body);
 	ClassDB::bind_method("_create_rigid_body", &ParticleBodyEditor::_create_rigid_body);
 	ClassDB::bind_method("_create_cloth", &ParticleBodyEditor::_create_cloth);
 	ClassDB::bind_method("_node_removed", &ParticleBodyEditor::_node_removed);
@@ -116,7 +184,7 @@ ParticleBodyEditor::ParticleBodyEditor() {
 		make_spin_box(soft_body_dialog.particle_spacing_input, 0.001, 10, 0.01, 1, dialog_vbc, TTR("Particle spacing:"));
 		make_spin_box(soft_body_dialog.sampling_input, 0.001, 1, 0.01, 1, dialog_vbc, TTR("Sampling:"));
 		make_spin_box(soft_body_dialog.clusterSpacing_input, 0.001, 1, 0.1, 1, dialog_vbc, TTR("Cluster spacing:"));
-		make_spin_box(soft_body_dialog.clusterRadius_input, 0.1, 1, 0.1, 2, dialog_vbc, TTR("Cluster radius:"));
+		make_spin_box(soft_body_dialog.clusterRadius_input, 0.1, 10, 0.1, 2, dialog_vbc, TTR("Cluster radius:"));
 		make_spin_box(soft_body_dialog.clusterStiffness_input, 0.01, 1, 0.01, 0.2, dialog_vbc, TTR("Cluster stiffness:"));
 		make_spin_box(soft_body_dialog.linkRadius_input, 0.01, 50, 0.01, 0.5, dialog_vbc, TTR("Link radius:"));
 		make_spin_box(soft_body_dialog.linkStiffness_input, 0.01, 1, 0.01, 0.1, dialog_vbc, TTR("Link stiffness:"));
@@ -136,10 +204,8 @@ ParticleBodyEditor::ParticleBodyEditor() {
 		VBoxContainer *dialog_vbc = memnew(VBoxContainer);
 		rigid_body_dialog.dialog->add_child(dialog_vbc);
 
-		make_spin_box(soft_body_dialog.radius_input, 0.001, 1, 0.001, 0.1, dialog_vbc, TTR("Radius:"));
-		make_spin_box(soft_body_dialog.expand_x_input, 0.001, 10, 0.001, 0.05, dialog_vbc, TTR("Expand x:"));
-		make_spin_box(soft_body_dialog.expand_y_input, 0.001, 10, 0.001, 0.05, dialog_vbc, TTR("Expand y:"));
-		make_spin_box(soft_body_dialog.expand_z_input, 0.001, 10, 0.001, 0.05, dialog_vbc, TTR("Expand z:"));
+		make_spin_box(rigid_body_dialog.radius_input, 0.001, 1, 0.001, 0.1, dialog_vbc, TTR("Radius:"));
+		make_spin_box(rigid_body_dialog.expand_input, 0.0, 10, 0.001, 0.05, dialog_vbc, TTR("Expand:"));
 
 		add_child(rigid_body_dialog.dialog);
 		rigid_body_dialog.dialog->connect("confirmed", this, "_create_rigid_body");
@@ -153,6 +219,12 @@ ParticleBodyEditor::ParticleBodyEditor() {
 
 		VBoxContainer *dialog_vbc = memnew(VBoxContainer);
 		cloth_dialog.dialog->add_child(dialog_vbc);
+
+		make_spin_box(cloth_dialog.stretch_stiffness_input, 0.01, 1, 0.01, 0.8, dialog_vbc, TTR("Stretch stiffness:"));
+		make_spin_box(cloth_dialog.bend_stiffness_input, 0.01, 1, 0.01, 0.8, dialog_vbc, TTR("Bend stiffness:"));
+		make_spin_box(cloth_dialog.tether_stiffness_input, 0.01, 1, 0.01, 0.8, dialog_vbc, TTR("Tether stiffness:"));
+		make_spin_box(cloth_dialog.tether_give_input, 0.01, 1, 0.01, 0.8, dialog_vbc, TTR("Tether give:"));
+		make_spin_box(cloth_dialog.pressure_input, 0.0, 10, 0.001, 1, dialog_vbc, TTR("Pressure:"));
 
 		add_child(cloth_dialog.dialog);
 		cloth_dialog.dialog->connect("confirmed", this, "_create_cloth");

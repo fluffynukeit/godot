@@ -74,14 +74,16 @@ class ParticleBodyEditor : public Control {
 	struct {
 		ConfirmationDialog *dialog;
 		SpinBox *radius_input;
-		SpinBox *expand_x_input;
-		SpinBox *expand_y_input;
-		SpinBox *expand_z_input;
+		SpinBox *expand_input;
 	} rigid_body_dialog;
 
 	struct {
 		ConfirmationDialog *dialog;
-		SpinBox *size_input;
+		SpinBox *stretch_stiffness_input;
+		SpinBox *bend_stiffness_input;
+		SpinBox *tether_stiffness_input;
+		SpinBox *tether_give_input;
+		SpinBox *pressure_input;
 	} cloth_dialog;
 
 	ParticleBody *node;
