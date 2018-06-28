@@ -41,7 +41,8 @@ FlexPrimitiveBody::FlexPrimitiveBody() :
 		geometry_mchunk(NULL),
 		space(NULL),
 		shape(NULL),
-		kinematic(false),
+		_is_kinematic(false),
+		_is_area(false),
 		layer(1) {
 }
 
@@ -91,7 +92,12 @@ void FlexPrimitiveBody::set_layer(uint32_t p_layer) {
 }
 
 void FlexPrimitiveBody::set_kinematic(bool p_kinematic) {
-	kinematic = p_kinematic;
+	_is_kinematic = p_kinematic;
+	changed_parameters |= eChangedPrimitiveBodyParamFlags;
+}
+
+void FlexPrimitiveBody::set_area(bool p_area) {
+	_is_area = p_area;
 	changed_parameters |= eChangedPrimitiveBodyParamFlags;
 }
 

@@ -79,7 +79,8 @@ FlexSpace::FlexSpace() :
 		rigids_components_allocator(NULL),
 		rigids_components_memory(NULL),
 		geometries_allocator(NULL),
-		geometries_memory(NULL) {
+		geometries_memory(NULL),
+		contacts_buffers(NULL) {
 	init();
 }
 
@@ -170,6 +171,11 @@ void FlexSpace::init() {
 	geometries_memory = memnew(GeometryMemory(flex_lib));
 	geometries_allocator = memnew(FlexMemoryAllocator(geometries_memory, MAXGEOMETRIES)); // TODO must be dynamic
 	geometries_memory->unmap(); // *1
+
+	CRASH_COND(contacts_buffers);
+	contacts_buffers = memnew(ContactsBuffers(flex_lib));
+	contacts_buffers->resize(MAXPARTICLES); // TODO must be dynamic
+	contacts_buffers->unmap(); // *1
 
 	// *1: This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
 
@@ -289,6 +295,12 @@ void FlexSpace::terminate() {
 		geometries_allocator = NULL;
 	}
 
+	if (contacts_buffers) {
+		contacts_buffers->terminate();
+		memdelete(contacts_buffers);
+		contacts_buffers = NULL;
+	}
+
 	if (solver) {
 		NvFlexDestroySolver(solver);
 		solver = NULL;
@@ -312,6 +324,7 @@ void FlexSpace::sync() {
 	rigids_memory->map();
 	rigids_components_memory->map();
 	geometries_memory->map();
+	contacts_buffers->map();
 
 	///
 	/// Stepping phase
@@ -340,6 +353,8 @@ void FlexSpace::sync() {
 		geometries_allocator->sanitize(); // *1
 	geometries_memory->unmap();
 
+	contacts_buffers->unmap();
+
 	// *1: The memory must be consecutive to correctly write it on GPU
 
 	///
@@ -353,6 +368,7 @@ void FlexSpace::step(real_t p_delta_time) {
 	const int substep = 1;
 	const bool enable_timer = false; // Used for profiling
 	NvFlexUpdateSolver(solver, p_delta_time, substep, enable_timer);
+	NvFlexGetContacts(solver, NULL, contacts_buffers->velocities_prim_indices.buffer, contacts_buffers->indices.buffer, contacts_buffers->counts.buffer);
 
 	commands_read_buffer();
 }
@@ -663,6 +679,20 @@ bool FlexSpace::get_param(const StringName &p_name, Variant &r_property) const {
 	return true;
 }
 
+void FlexSpace::check_contacts() {
+	const int active_count(active_particles_mchunk->get_size());
+	for (int i(0); i < active_count; ++i) {
+		const int particle_buffer_index = contacts_buffers->indices[i];
+		const int particle_contact_count = contacts_buffers->counts[particle_buffer_index];
+
+		for (int c(0); c < particle_contact_count; ++c) {
+			const FlVector4 &velocity_primitive(contacts_buffers->velocities_prim_indices[particle_buffer_index * MAX_PERPARTICLE_CONTACT_COUNT + c]);
+			Vector3 velocity(vec3_from_flvec4(velocity_primitive));
+			int primitive_body_index(int(velocity_primitive.w));
+		}
+	}
+}
+
 void FlexSpace::dispatch_callbacks() {
 	for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
 		particle_bodies[i]->dispatch_sync_callback();
@@ -889,8 +919,7 @@ void FlexSpace::execute_geometries_commands() {
 
 		if (body->changed_parameters & eChangedPrimitiveBodyParamFlags) {
 			//shift layer by 23 to match: NvFlexPhase
-			uint32_t flag = NvFlexMakeShapeFlagsWithChannels(body->get_shape()->get_type(), body->is_kinematic(), body->get_layer() << 24);
-			geometries_memory->set_flags(body->geometry_mchunk, 0, NvFlexMakeShapeFlagsWithChannels(body->get_shape()->get_type(), body->is_kinematic(), body->get_layer() << 24));
+			geometries_memory->set_flags(body->geometry_mchunk, 0, (NvFlexMakeShapeFlagsWithChannels(body->get_shape()->get_type(), body->is_kinematic(), body->get_layer() << 24) | (body->is_area() ? eNvFlexShapeFlagTrigger : 0)));
 		}
 
 		body->set_clean();
@@ -965,10 +994,6 @@ void FlexSpace::commands_write_buffer() {
 				rigids_memory->position.buffer,
 				rigids_allocator->get_last_used_index() + 1,
 				rigids_components_allocator->get_last_used_index() + 1);
-
-	// TODO remove this
-	int a = rigids_allocator->get_last_used_index() + 1;
-	int b = rigids_components_allocator->get_last_used_index() + 1;
 
 	if (geometries_memory->was_changed())
 		NvFlexSetShapes(solver, geometries_memory->collision_shapes.buffer, geometries_memory->positions.buffer, geometries_memory->rotations.buffer, geometries_memory->positions_prev.buffer, geometries_memory->rotations_prev.buffer, geometries_memory->flags.buffer, geometries_allocator->get_last_used_index() + 1);

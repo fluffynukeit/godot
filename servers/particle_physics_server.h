@@ -100,6 +100,9 @@ public:
 	virtual void primitive_body_set_kinematic(RID p_body, bool p_kinematic) = 0;
 	virtual bool primitive_body_is_kinematic(RID p_body) const = 0;
 
+	virtual void primitive_body_set_as_area(RID p_body, bool p_area) = 0;
+	virtual bool primitive_body_is_area(RID p_body) = 0;
+
 	/* PRIMITIVE SHAPE */
 	enum PrimitiveShapeType {
 		PARTICLE_PRIMITIVE_SHAPE_TYPE_BOX,

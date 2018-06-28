@@ -161,6 +161,9 @@ public:
 	virtual void primitive_body_set_kinematic(RID p_body, bool p_kinematic);
 	virtual bool primitive_body_is_kinematic(RID p_body) const;
 
+	virtual void primitive_body_set_as_area(RID p_body, bool p_area);
+	virtual bool primitive_body_is_area(RID p_body);
+
 	/* PRIMITIVE SHAPE */
 	virtual RID primitive_shape_create(ParticlePhysicsServer::PrimitiveShapeType p_type);
 

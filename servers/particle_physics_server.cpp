@@ -57,6 +57,9 @@ void ParticlePhysicsServer::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("primitive_body_set_transform", "body", "transform", "is_teleport"), &ParticlePhysicsServer::primitive_body_set_transform);
 
+	ClassDB::bind_method(D_METHOD("primitive_body_set_as_area", "body", "area"), &ParticlePhysicsServer::primitive_body_set_as_area);
+	ClassDB::bind_method(D_METHOD("primitive_body_is_area", "body"), &ParticlePhysicsServer::primitive_body_is_area);
+
 	ClassDB::bind_method(D_METHOD("primitive_shape_create", "shape_type"), &ParticlePhysicsServer::primitive_shape_create);
 
 	ClassDB::bind_method(D_METHOD("primitive_shape_set_data", "shape", "data"), &ParticlePhysicsServer::primitive_shape_set_data);

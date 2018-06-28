@@ -520,6 +520,20 @@ bool FlexParticlePhysicsServer::primitive_body_is_kinematic(RID p_body) const {
 	return body->is_kinematic();
 }
 
+void FlexParticlePhysicsServer::primitive_body_set_as_area(RID p_body, bool p_area) {
+	FlexPrimitiveBody *body = primitive_body_owner.get(p_body);
+	ERR_FAIL_COND(!body);
+
+	body->set_area(p_area);
+}
+
+bool FlexParticlePhysicsServer::primitive_body_is_area(RID p_body) {
+	FlexPrimitiveBody *body = primitive_body_owner.get(p_body);
+	ERR_FAIL_COND_V(!body, false);
+
+	return body->is_area();
+}
+
 RID FlexParticlePhysicsServer::primitive_shape_create(PrimitiveShapeType p_type) {
 
 	FlexPrimitiveShape *primitive_shape = NULL;
