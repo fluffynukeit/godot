@@ -177,7 +177,7 @@ public:
 	void dispatch_sync_callback();
 	void particle_index_changed(ParticleIndex p_old_particle_index, ParticleIndex p_new_particle_index);
 	void spring_index_changed(SpringIndex p_old_spring_index, SpringIndex p_new_spring_index);
-	void primitive_contact(FlexPrimitiveBody *p_primitive, ParticleIndex p_particle_index);
+	void dispatch_primitive_contact(FlexPrimitiveBody *p_primitive, ParticleIndex p_particle_index, const Vector3 &p_velocity, const Vector3 &p_normal);
 	void reload_inflatables();
 };
 

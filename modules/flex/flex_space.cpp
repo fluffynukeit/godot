@@ -707,9 +707,10 @@ void FlexSpace::check_contacts() {
 			Vector3 normal(vec3_from_flvec4(raw_normal));
 
 			if (particle_body->is_monitoring_primitives())
-				particle_body->primitive_contact(primitive_body, particle_index);
+				particle_body->dispatch_primitive_contact(primitive_body, particle_index, velocity, normal);
 
-			//if (primitive_body->is_particles_monitoring())
+			if (primitive_body->is_monitoring_particles())
+				primitive_body->dispatch_particle_contact(particle_body, particle_index, velocity, normal);
 		}
 	}
 }
