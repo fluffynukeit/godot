@@ -94,8 +94,8 @@ public:
 	void set_monitorable(bool p_monitorable);
 	bool is_monitorable() const;
 
-	void set_monitoring_primitives(bool p_monitoring);
-	bool is_monitoring_primitives() const;
+	void set_monitoring_primitives_contacts(bool p_monitoring);
+	bool is_monitoring_primitives_contacts() const;
 
 	// Utility:
 

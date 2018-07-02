@@ -96,8 +96,8 @@ public:
 	virtual void body_set_monitorable(RID p_body, bool p_monitorable) = 0;
 	virtual bool body_is_monitorable(RID p_body) const = 0;
 
-	virtual void body_set_monitoring_primitives(RID p_body, bool p_monitoring) = 0;
-	virtual bool body_is_monitoring_primitives(RID p_body) const = 0;
+	virtual void body_set_monitoring_primitives_contacts(RID p_body, bool p_monitoring) = 0;
+	virtual bool body_is_monitoring_primitives_contacts(RID p_body) const = 0;
 
 	/* PRIMITIVE BODY */
 	virtual RID primitive_body_create() = 0;
@@ -118,8 +118,8 @@ public:
 	virtual void primitive_body_set_as_area(RID p_body, bool p_area) = 0;
 	virtual bool primitive_body_is_area(RID p_body) const = 0;
 
-	virtual void primitive_body_set_monitoring_particles(RID p_body, bool p_monitoring) = 0;
-	virtual bool primitive_body_is_monitoring_particles(RID p_body) const = 0;
+	virtual void primitive_body_set_monitoring_particles_contacts(RID p_body, bool p_monitoring) = 0;
+	virtual bool primitive_body_is_monitoring_particles_contacts(RID p_body) const = 0;
 
 	/* PRIMITIVE SHAPE */
 	enum PrimitiveShapeType {

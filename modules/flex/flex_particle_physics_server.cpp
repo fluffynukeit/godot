@@ -468,18 +468,18 @@ bool FlexParticlePhysicsServer::body_is_monitorable(RID p_body) const {
 	return body->is_monitorable();
 }
 
-void FlexParticlePhysicsServer::body_set_monitoring_primitives(RID p_body, bool p_monitoring) {
+void FlexParticlePhysicsServer::body_set_monitoring_primitives_contacts(RID p_body, bool p_monitoring) {
 	FlexParticleBody *body = body_owner.get(p_body);
 	ERR_FAIL_COND(!body);
 
-	body->set_monitoring_primitives(p_monitoring);
+	body->set_monitoring_primitives_contacts(p_monitoring);
 }
 
-bool FlexParticlePhysicsServer::body_is_monitoring_primitives(RID p_body) const {
+bool FlexParticlePhysicsServer::body_is_monitoring_primitives_contacts(RID p_body) const {
 	FlexParticleBody *body = body_owner.get(p_body);
 	ERR_FAIL_COND_V(!body, false);
 
-	return body->is_monitoring_primitives();
+	return body->is_monitoring_primitives_contacts();
 }
 
 RID FlexParticlePhysicsServer::primitive_body_create() {
@@ -583,18 +583,18 @@ bool FlexParticlePhysicsServer::primitive_body_is_area(RID p_body) const {
 	return body->is_area();
 }
 
-void FlexParticlePhysicsServer::primitive_body_set_monitoring_particles(RID p_body, bool p_monitoring) {
+void FlexParticlePhysicsServer::primitive_body_set_monitoring_particles_contacts(RID p_body, bool p_monitoring) {
 	FlexPrimitiveBody *body = primitive_body_owner.get(p_body);
 	ERR_FAIL_COND(!body);
 
-	body->set_monitoring_particles(p_monitoring);
+	body->set_monitoring_particles_contacts(p_monitoring);
 }
 
-bool FlexParticlePhysicsServer::primitive_body_is_monitoring_particles(RID p_body) const {
+bool FlexParticlePhysicsServer::primitive_body_is_monitoring_particles_contacts(RID p_body) const {
 	FlexPrimitiveBody *body = primitive_body_owner.get(p_body);
 	ERR_FAIL_COND_V(!body, false);
 
-	return body->is_monitoring_particles();
+	return body->is_monitoring_particles_contacts();
 }
 
 RID FlexParticlePhysicsServer::primitive_shape_create(PrimitiveShapeType p_type) {

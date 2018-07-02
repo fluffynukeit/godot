@@ -152,8 +152,8 @@ public:
 	virtual void body_set_monitorable(RID p_body, bool p_monitorable);
 	virtual bool body_is_monitorable(RID p_body) const;
 
-	virtual void body_set_monitoring_primitives(RID p_body, bool p_monitoring);
-	virtual bool body_is_monitoring_primitives(RID p_body) const;
+	virtual void body_set_monitoring_primitives_contacts(RID p_body, bool p_monitoring);
+	virtual bool body_is_monitoring_primitives_contacts(RID p_body) const;
 
 	/* PRIMITIVE BODY */
 	virtual RID primitive_body_create();
@@ -174,8 +174,8 @@ public:
 	virtual void primitive_body_set_as_area(RID p_body, bool p_area);
 	virtual bool primitive_body_is_area(RID p_body) const;
 
-	virtual void primitive_body_set_monitoring_particles(RID p_body, bool p_monitoring);
-	virtual bool primitive_body_is_monitoring_particles(RID p_body) const;
+	virtual void primitive_body_set_monitoring_particles_contacts(RID p_body, bool p_monitoring);
+	virtual bool primitive_body_is_monitoring_particles_contacts(RID p_body) const;
 
 	/* PRIMITIVE SHAPE */
 	virtual RID primitive_shape_create(ParticlePhysicsServer::PrimitiveShapeType p_type);

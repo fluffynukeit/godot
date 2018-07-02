@@ -101,7 +101,7 @@ class FlexParticleBody : public RIDFlex {
 	float constraint_scale;
 
 	bool _is_monitorable;
-	bool _is_monitoring_primitives;
+	bool _is_monitoring_primitives_contacts;
 
 public:
 	FlexParticleBody();
@@ -138,8 +138,8 @@ public:
 	void set_monitorable(bool p_monitorable);
 	_FORCE_INLINE_ bool is_monitorable() const { return _is_monitorable; }
 
-	void set_monitoring_primitives(bool p_monitoring);
-	_FORCE_INLINE_ bool is_monitoring_primitives() const { return _is_monitoring_primitives; }
+	void set_monitoring_primitives_contacts(bool p_monitoring);
+	_FORCE_INLINE_ bool is_monitoring_primitives_contacts() const { return _is_monitoring_primitives_contacts; }
 
 	void remove_particle(ParticleIndex p_particle);
 	void remove_spring(SpringIndex p_spring_index);

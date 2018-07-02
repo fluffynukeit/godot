@@ -33,6 +33,7 @@
  */
 
 #include "physics_particle_primitive_body.h"
+#include "engine.h"
 #include "scene/3d/mesh_instance.h"
 
 void ParticlePrimitiveBody::_bind_methods() {
@@ -50,8 +51,8 @@ void ParticlePrimitiveBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_collision_layer_bit", "bit", "value"), &ParticlePrimitiveBody::set_collision_layer_bit);
 	ClassDB::bind_method(D_METHOD("get_collision_layer_bit", "bit"), &ParticlePrimitiveBody::get_collision_layer_bit);
 
-	ClassDB::bind_method(D_METHOD("set_monitoring_particles", "monitoring"), &ParticlePrimitiveBody::set_monitoring_particles);
-	ClassDB::bind_method(D_METHOD("is_monitoring_particles"), &ParticlePrimitiveBody::is_monitoring_particles);
+	ClassDB::bind_method(D_METHOD("set_monitoring_particles_contacts", "monitoring"), &ParticlePrimitiveBody::set_monitoring_particles_contacts);
+	ClassDB::bind_method(D_METHOD("is_monitoring_particles_contacts"), &ParticlePrimitiveBody::is_monitoring_particles_contacts);
 
 	ClassDB::bind_method(D_METHOD("on_particle_contact", "particle_body_commands", "particle_body", "particle_index", "velocity", "normal"), &ParticlePrimitiveBody::on_particle_contact);
 
@@ -60,7 +61,7 @@ void ParticlePrimitiveBody::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "shape", PROPERTY_HINT_RESOURCE_TYPE, "Shape"), "set_shape", "get_shape");
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "kinematic"), "set_kinematic", "is_kinematic");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitoring_particles"), "set_monitoring_particles", "is_monitoring_particles");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitoring_particles_contacts"), "set_monitoring_particles_contacts", "is_monitoring_particles_contacts");
 
 	ADD_GROUP("Collision", "collision_");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_layer", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collision_layer", "get_collision_layer");
@@ -167,12 +168,12 @@ bool ParticlePrimitiveBody::get_collision_layer_bit(int p_bit) const {
 	return get_collision_layer() & (1 << p_bit);
 }
 
-void ParticlePrimitiveBody::set_monitoring_particles(bool p_monitoring) {
-	ParticlePhysicsServer::get_singleton()->primitive_body_set_monitoring_particles(rid, p_monitoring);
+void ParticlePrimitiveBody::set_monitoring_particles_contacts(bool p_monitoring) {
+	ParticlePhysicsServer::get_singleton()->primitive_body_set_monitoring_particles_contacts(rid, p_monitoring);
 }
 
-bool ParticlePrimitiveBody::is_monitoring_particles() const {
-	return ParticlePhysicsServer::get_singleton()->primitive_body_is_monitoring_particles(rid);
+bool ParticlePrimitiveBody::is_monitoring_particles_contacts() const {
+	return ParticlePhysicsServer::get_singleton()->primitive_body_is_monitoring_particles_contacts(rid);
 }
 
 void ParticlePrimitiveBody::on_particle_contact(Object *p_particle_body_commands, Object *p_particle_body, int p_particle_index, Vector3 p_velocity, Vector3 p_normal) {
@@ -206,7 +207,100 @@ void ParticlePrimitiveBody::resource_changed(RES res) {
 	update_gizmo();
 }
 
+ParticlePrimitiveArea::ParticleBodyContacts::ParticleBodyContacts(Object *p_particle_object) :
+		particle_body(p_particle_object),
+		just_entered(true),
+		particle_count(0) {}
+
+void ParticlePrimitiveArea::_bind_methods() {
+
+	ClassDB::bind_method(D_METHOD("set_monitor_particle_bodies_entering", "monitor"), &ParticlePrimitiveArea::set_monitor_particle_bodies_entering);
+	ClassDB::bind_method(D_METHOD("get_monitor_particle_bodies_entering"), &ParticlePrimitiveArea::get_monitor_particle_bodies_entering);
+
+	ClassDB::bind_method(D_METHOD("set_monitor_particles_entering", "monitor"), &ParticlePrimitiveArea::set_monitor_particles_entering);
+	ClassDB::bind_method(D_METHOD("get_monitor_particles_entering"), &ParticlePrimitiveArea::get_monitor_particles_entering);
+
+	ClassDB::bind_method(D_METHOD("get_overlapping_particles", "body"), &ParticlePrimitiveArea::get_overlapping_particles);
+
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitor_particle_bodies_entering"), "set_monitor_particle_bodies_entering", "get_monitor_particle_bodies_entering");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitor_particles_entering"), "set_monitor_particles_entering", "get_monitor_particles_entering");
+
+	ADD_SIGNAL(MethodInfo("on_body_enter", PropertyInfo(Variant::OBJECT, "particle_body")));
+	ADD_SIGNAL(MethodInfo("on_body_exit", PropertyInfo(Variant::OBJECT, "particle_body")));
+}
+
+void ParticlePrimitiveArea::_notification(int p_what) {
+
+	ParticlePrimitiveBody::_notification(p_what);
+
+	if (NOTIFICATION_INTERNAL_PHYSICS_PROCESS != p_what)
+		return;
+
+	for (int i(body_contacts.size() - 1); 0 <= i; --i) {
+		if (!body_contacts[i].particle_count) {
+
+			emit_signal("on_body_exit", body_contacts[i].particle_body);
+			body_contacts.remove(i);
+			continue;
+		}
+
+		if (body_contacts[i].just_entered) {
+
+			body_contacts[i].just_entered = false;
+			emit_signal("on_body_enter", body_contacts[i].particle_body);
+		}
+
+		// Reset
+		body_contacts[i].particle_count = 0;
+	}
+}
+
 ParticlePrimitiveArea::ParticlePrimitiveArea() :
 		ParticlePrimitiveBody() {
 	ParticlePhysicsServer::get_singleton()->primitive_body_set_as_area(rid, true);
+
+	set_physics_process_internal(false);
+}
+
+void ParticlePrimitiveArea::set_monitor_particle_bodies_entering(bool p_monitor) {
+	monitor_particle_bodies_entering = p_monitor;
+	if (!Engine::get_singleton()->is_editor_hint())
+		set_physics_process_internal(monitor_particle_bodies_entering && monitor_particles_entering);
+}
+
+void ParticlePrimitiveArea::set_monitor_particles_entering(bool p_monitor) {
+	monitor_particles_entering = p_monitor;
+	if (!Engine::get_singleton()->is_editor_hint())
+		set_physics_process_internal(monitor_particle_bodies_entering && monitor_particles_entering);
+}
+
+Vector<int> ParticlePrimitiveArea::get_overlapping_particles(Object *p_particle_body) {
+	int i = body_contacts.find(ParticleBodyContacts(p_particle_body));
+	if (-1 != i)
+		return body_contacts[i].particles;
+	return Vector<int>();
+}
+
+void ParticlePrimitiveArea::on_particle_contact(Object *p_particle_body_commands, Object *p_particle_body, int p_particle_index, Vector3 p_velocity, Vector3 p_normal) {
+
+	ParticlePrimitiveBody::on_particle_contact(p_particle_body_commands, p_particle_body, p_particle_index, p_velocity, p_normal);
+
+	if (!monitor_particle_bodies_entering && !monitor_particles_entering)
+		return;
+
+	int data_id = body_contacts.find(ParticleBodyContacts(p_particle_body));
+	if (-1 == data_id) {
+		data_id = body_contacts.size();
+		body_contacts.push_back(ParticleBodyContacts(p_particle_body));
+	}
+
+	if (monitor_particles_entering) {
+		if (!body_contacts[data_id].particle_count) {
+			// When particle_count is 0 at this stage mean that is the first particle of body to be readed so is required to perform a cleaning of old particles contacts
+			body_contacts[data_id].particles.clear();
+		}
+		body_contacts[data_id].particles.push_back(p_particle_index);
+	}
+
+	++(body_contacts[data_id].particle_count);
 }

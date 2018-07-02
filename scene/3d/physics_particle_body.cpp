@@ -69,8 +69,8 @@ void ParticleBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_monitorable", "monitorable"), &ParticleBody::set_monitorable);
 	ClassDB::bind_method(D_METHOD("is_monitorable"), &ParticleBody::is_monitorable);
 
-	ClassDB::bind_method(D_METHOD("set_monitoring_primitives", "monitoring"), &ParticleBody::set_monitoring_primitives);
-	ClassDB::bind_method(D_METHOD("is_monitoring_primitives"), &ParticleBody::is_monitoring_primitives);
+	ClassDB::bind_method(D_METHOD("set_monitoring_primitives_contacts", "monitoring"), &ParticleBody::set_monitoring_primitives_contacts);
+	ClassDB::bind_method(D_METHOD("is_monitoring_primitives_contacts"), &ParticleBody::is_monitoring_primitives_contacts);
 
 	ClassDB::bind_method(D_METHOD("get_particle_count"), &ParticleBody::get_particle_count);
 	ClassDB::bind_method(D_METHOD("get_spring_count"), &ParticleBody::get_spring_count);
@@ -92,7 +92,7 @@ void ParticleBody::_bind_methods() {
 
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "pressure"), "set_pressure", "get_pressure");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitorable"), "set_monitorable", "is_monitorable");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitoring_primitives"), "set_monitoring_primitives", "is_monitoring_primitives");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitoring_primitives_contacts"), "set_monitoring_primitives_contacts", "is_monitoring_primitives_contacts");
 
 	ADD_GROUP("Collision", "collision_");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_group", PROPERTY_HINT_RANGE, "0,21,1"), "set_collision_group", "get_collision_group");
@@ -230,12 +230,12 @@ bool ParticleBody::is_monitorable() const {
 	return ParticlePhysicsServer::get_singleton()->body_is_monitorable(rid);
 }
 
-void ParticleBody::set_monitoring_primitives(bool p_monitoring) {
-	ParticlePhysicsServer::get_singleton()->body_set_monitoring_primitives(rid, p_monitoring);
+void ParticleBody::set_monitoring_primitives_contacts(bool p_monitoring) {
+	ParticlePhysicsServer::get_singleton()->body_set_monitoring_primitives_contacts(rid, p_monitoring);
 }
 
-bool ParticleBody::is_monitoring_primitives() const {
-	return ParticlePhysicsServer::get_singleton()->body_is_monitoring_primitives(rid);
+bool ParticleBody::is_monitoring_primitives_contacts() const {
+	return ParticlePhysicsServer::get_singleton()->body_is_monitoring_primitives_contacts(rid);
 }
 
 void ParticleBody::set_pressure(real_t p_pressure) {

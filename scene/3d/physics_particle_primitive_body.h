@@ -72,8 +72,8 @@ public:
 	void set_collision_layer_bit(int p_bit, bool p_value);
 	bool get_collision_layer_bit(int p_bit) const;
 
-	void set_monitoring_particles(bool p_monitoring);
-	bool is_monitoring_particles() const;
+	void set_monitoring_particles_contacts(bool p_monitoring);
+	bool is_monitoring_particles_contacts() const;
 
 protected:
 	virtual void on_particle_contact(Object *p_particle_body_commands, Object *p_particle_body, int p_particle_index, Vector3 p_velocity, Vector3 p_normal);
@@ -86,8 +86,45 @@ private:
 class ParticlePrimitiveArea : public ParticlePrimitiveBody {
 	GDCLASS(ParticlePrimitiveArea, ParticlePrimitiveBody);
 
+	bool monitor_particle_bodies_entering;
+	bool monitor_particles_entering;
+
+	struct ParticleBodyContacts {
+		Object *particle_body;
+		bool just_entered;
+		int particle_count;
+		Vector<int> particles;
+
+		ParticleBodyContacts() :
+				just_entered(true),
+				particle_count(0) {}
+
+		ParticleBodyContacts(Object *p_particle_object);
+
+		bool operator==(const ParticleBodyContacts &p_other) const {
+			return p_other.particle_body == particle_body;
+		}
+	};
+
+	Vector<ParticleBodyContacts> body_contacts;
+
+protected:
+	static void _bind_methods();
+	virtual void _notification(int p_what);
+
 public:
 	ParticlePrimitiveArea();
+
+	void set_monitor_particle_bodies_entering(bool p_monitor);
+	bool get_monitor_particle_bodies_entering() const { return monitor_particle_bodies_entering; }
+
+	void set_monitor_particles_entering(bool p_monitor);
+	bool get_monitor_particles_entering() const { return monitor_particles_entering; }
+
+	Vector<int> get_overlapping_particles(Object *p_particle_body);
+
+protected:
+	virtual void on_particle_contact(Object *p_particle_body_commands, Object *p_particle_body, int p_particle_index, Vector3 p_velocity, Vector3 p_normal);
 };
 
 #endif // PARTICLE_PRIMITIVE_BODY_H

@@ -706,10 +706,10 @@ void FlexSpace::dispatch_callback_contacts() {
 			const FlVector4 &raw_normal(contacts_buffers->normals[particle_buffer_index * MAX_PERPARTICLE_CONTACT_COUNT + c]);
 			Vector3 normal(vec3_from_flvec4(raw_normal));
 
-			if (particle_body->is_monitoring_primitives())
+			if (particle_body->is_monitoring_primitives_contacts())
 				particle_body->dispatch_primitive_contact(primitive_body, particle_index, velocity, normal);
 
-			if (primitive_body->is_monitoring_particles())
+			if (primitive_body->is_monitoring_particles_contacts())
 				primitive_body->dispatch_particle_contact(particle_body, particle_index, velocity, normal);
 		}
 	}
