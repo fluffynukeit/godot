@@ -347,6 +347,12 @@ void FlexParticlePhysicsServer::body_set_callback(RID p_body, ParticleBodyCallba
 	body->set_callback(p_callback_type, p_receiver, p_method);
 }
 
+void FlexParticlePhysicsServer::body_set_object_instance(RID p_body, Object *p_object) {
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND(!body);
+	body->set_object_instance(p_object);
+}
+
 void FlexParticlePhysicsServer::body_set_collision_group(RID p_body, uint32_t p_group) {
 	FlexParticleBody *body = body_owner.get(p_body);
 	ERR_FAIL_COND(!body);

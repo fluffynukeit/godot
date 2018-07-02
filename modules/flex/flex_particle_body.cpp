@@ -40,6 +40,7 @@
 FlexParticleBody::FlexParticleBody() :
 		RIDFlex(),
 		space(NULL),
+		object_instance(NULL),
 		particles_mchunk(NULL),
 		springs_mchunk(NULL),
 		triangles_mchunk(NULL),
@@ -55,6 +56,10 @@ FlexParticleBody::FlexParticleBody() :
 		constraint_scale(0),
 		_is_monitorable(false) {
 	sync_callback.receiver = NULL;
+}
+
+void FlexParticleBody::set_object_instance(Object *p_object) {
+	object_instance = p_object;
 }
 
 void FlexParticleBody::set_callback(ParticlePhysicsServer::ParticleBodyCallback p_callback_type, Object *p_receiver, const StringName &p_method) {
@@ -357,7 +362,7 @@ void FlexParticleBody::dispatch_primitive_contact(FlexPrimitiveBody *p_primitive
 	if (!primitive_contact_callback.receiver)
 		return;
 
-	const Variant prim(p_primitive->get_self());
+	const Variant prim(p_primitive->get_object_instance());
 	const Variant particle((int)p_particle_index);
 	const Variant velocity(p_velocity);
 	const Variant normal(p_normal);

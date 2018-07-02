@@ -92,6 +92,7 @@ class FlexParticleBody : public RIDFlex {
 	MemoryChunk *rigids_components_mchunk;
 
 	FlexSpace *space;
+	Object *object_instance;
 	uint32_t collision_group;
 	uint32_t collision_flags;
 	uint32_t collision_primitive_mask;
@@ -106,6 +107,9 @@ public:
 	FlexParticleBody();
 
 	_FORCE_INLINE_ FlexSpace *get_space() { return space; }
+
+	void set_object_instance(Object *p_object);
+	_FORCE_INLINE_ Object *get_object_instance() const { return object_instance; }
 
 	/// IMPORTANT Remember to remove it if Object will be destroyed
 	void set_callback(ParticlePhysicsServer::ParticleBodyCallback p_callback_type, Object *p_receiver, const StringName &p_method);

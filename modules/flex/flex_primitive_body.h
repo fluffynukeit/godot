@@ -59,6 +59,7 @@ class FlexPrimitiveBody : public RIDFlex {
 	MemoryChunk *geometry_mchunk;
 
 	FlexSpace *space;
+	Object *object_instance;
 	FlexPrimitiveShape *shape;
 
 	Transform transf;
@@ -76,6 +77,9 @@ public:
 
 	void set_space(FlexSpace *p_space);
 	FlexSpace *get_space() const;
+
+	void set_object_instance(Object *p_object);
+	_FORCE_INLINE_ Object *get_object_instance() const { return object_instance; }
 
 	void set_shape(FlexPrimitiveShape *p_shape);
 	FlexPrimitiveShape *get_shape() const;

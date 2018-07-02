@@ -79,7 +79,7 @@ void ParticleBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("resource_changed", "resource"), &ParticleBody::resource_changed);
 
 	ClassDB::bind_method(D_METHOD("commands_process_internal", "commands"), &ParticleBody::commands_process_internal);
-	ClassDB::bind_method(D_METHOD("on_primitive_contact", "other_primitive", "particle_index", "velocity", "normal"), &ParticleBody::on_primitive_contact);
+	ClassDB::bind_method(D_METHOD("on_primitive_contact", "primitive_object", "particle_index", "velocity", "normal"), &ParticleBody::on_primitive_contact);
 
 	ClassDB::bind_method(D_METHOD("_on_script_changed"), &ParticleBody::_on_script_changed);
 
@@ -102,7 +102,7 @@ void ParticleBody::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_primitive_mask", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collision_primitive_mask", "get_collision_primitive_mask");
 
 	ADD_SIGNAL(MethodInfo("resource_loaded"));
-	ADD_SIGNAL(MethodInfo("primitive_contact", PropertyInfo(Variant::INT, "particle_index"), PropertyInfo(Variant::VECTOR3, "velocity"), PropertyInfo(Variant::VECTOR3, "normal")));
+	ADD_SIGNAL(MethodInfo("primitive_contact", PropertyInfo(Variant::OBJECT, "primitive_body"), PropertyInfo(Variant::INT, "particle_index"), PropertyInfo(Variant::VECTOR3, "velocity"), PropertyInfo(Variant::VECTOR3, "normal")));
 }
 
 ParticleBody::ParticleBody() :
@@ -305,12 +305,11 @@ void ParticleBody::commands_process_internal(Object *p_cmds) {
 	}
 }
 
-void ParticleBody::on_primitive_contact(RID p_primitive_body, int p_particle_index, Vector3 p_velocity, Vector3 p_normal) {
+void ParticleBody::on_primitive_contact(Object *p_primitive_object, int p_particle_index, Vector3 p_velocity, Vector3 p_normal) {
 
-	//Object *obj = ObjectDB::get_instance(primitive_body_id);
-	//Node *node = Object::cast_to<Node>(obj);
+	Node *node = Object::cast_to<Node>(p_primitive_object);
 
-	emit_signal("primitive_contact", p_particle_index, p_velocity, p_normal);
+	emit_signal("primitive_contact", node, p_particle_index, p_velocity, p_normal);
 }
 
 void ParticleBody::_on_script_changed() {
