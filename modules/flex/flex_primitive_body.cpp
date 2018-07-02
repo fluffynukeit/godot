@@ -43,6 +43,7 @@ FlexPrimitiveBody::FlexPrimitiveBody() :
 		changed_parameters(0),
 		geometry_mchunk(NULL),
 		space(NULL),
+		object_instance(NULL),
 		shape(NULL),
 		_is_kinematic(false),
 		_is_area(false),
@@ -62,6 +63,10 @@ void FlexPrimitiveBody::set_space(FlexSpace *p_space) {
 
 FlexSpace *FlexPrimitiveBody::get_space() const {
 	return space;
+}
+
+void FlexPrimitiveBody::set_object_instance(Object *p_object) {
+	object_instance = p_object;
 }
 
 void FlexPrimitiveBody::set_shape(FlexPrimitiveShape *p_shape) {
@@ -117,7 +122,7 @@ void FlexPrimitiveBody::dispatch_particle_contact(FlexParticleBody *p_body, Part
 	if (!particles_contact_callback.receiver)
 		return;
 
-	const Variant body(p_body->get_self());
+	const Variant body(p_body->get_object_instance());
 	const Variant particle((int)p_particle_index);
 	const Variant velocity(p_velocity);
 	const Variant normal(p_normal);

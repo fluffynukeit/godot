@@ -108,7 +108,7 @@ protected:
 	void resource_changed(RES p_res);
 
 	void commands_process_internal(Object *p_cmds);
-	void on_primitive_contact(RID p_primitive_body, int p_particle_index, Vector3 p_velocity, Vector3 p_normal);
+	void on_primitive_contact(Object *p_primitive_object, int p_particle_index, Vector3 p_velocity, Vector3 p_normal);
 
 private:
 	void _on_script_changed();
