@@ -38,6 +38,8 @@
 #include "flex_space.h"
 #include "rid_flex.h"
 
+#include "servers/particle_physics_server.h"
+
 class FlexPrimitiveShape;
 
 enum ChangedPrimitiveBodyParameter {
@@ -80,6 +82,8 @@ public:
 
 	void set_object_instance(Object *p_object);
 	_FORCE_INLINE_ Object *get_object_instance() const { return object_instance; }
+
+	void set_callback(ParticlePhysicsServer::ParticlePrimitiveBodyCallback p_callback_type, Object *p_receiver, const StringName &p_method);
 
 	void set_shape(FlexPrimitiveShape *p_shape);
 	FlexPrimitiveShape *get_shape() const;

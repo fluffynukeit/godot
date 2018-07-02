@@ -75,6 +75,9 @@ public:
 	void set_monitoring_particles(bool p_monitoring);
 	bool is_monitoring_particles() const;
 
+protected:
+	virtual void on_particle_contact(Object *p_particle_body_commands, Object *p_particle_body, int p_particle_index, Vector3 p_velocity, Vector3 p_normal);
+
 private:
 	void _create_debug_shape();
 	void resource_changed(RES res);

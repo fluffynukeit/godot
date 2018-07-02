@@ -69,6 +69,20 @@ void FlexPrimitiveBody::set_object_instance(Object *p_object) {
 	object_instance = p_object;
 }
 
+void FlexPrimitiveBody::set_callback(ParticlePhysicsServer::ParticlePrimitiveBodyCallback p_callback_type, Object *p_receiver, const StringName &p_method) {
+
+	if (p_receiver) {
+		ERR_FAIL_COND(!p_receiver->has_method(p_method));
+	}
+
+	switch (p_callback_type) {
+		case ParticlePhysicsServer::PARTICLE_PRIMITIVE_BODY_CALLBACK_PARTICLECONTACT:
+			particles_contact_callback.receiver = p_receiver;
+			particles_contact_callback.method = p_method;
+			break;
+	}
+}
+
 void FlexPrimitiveBody::set_shape(FlexPrimitiveShape *p_shape) {
 	if (shape) {
 		shape->remove_owner(this);
@@ -122,13 +136,13 @@ void FlexPrimitiveBody::dispatch_particle_contact(FlexParticleBody *p_body, Part
 	if (!particles_contact_callback.receiver)
 		return;
 
-	const Variant body(p_body->get_object_instance());
+	const Variant particle_body_object_instance(p_body->get_object_instance());
 	const Variant particle((int)p_particle_index);
 	const Variant velocity(p_velocity);
 	const Variant normal(p_normal);
 
-	const Variant *p[4] = { &body, &particle, &velocity, &normal };
+	const Variant *p[5] = { FlexParticlePhysicsServer::singleton->get_particle_body_commands_variant(p_body), &particle_body_object_instance, &particle, &velocity, &normal };
 
 	static Variant::CallError error;
-	particles_contact_callback.receiver->call(particles_contact_callback.method, p, 4, error);
+	particles_contact_callback.receiver->call(particles_contact_callback.method, p, 5, error);
 }

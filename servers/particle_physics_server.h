@@ -54,6 +54,10 @@ public:
 		PARTICLE_BODY_CALLBACK_PRIMITIVECONTACT
 	};
 
+	enum ParticlePrimitiveBodyCallback {
+		PARTICLE_PRIMITIVE_BODY_CALLBACK_PARTICLECONTACT
+	};
+
 	enum ParticleCollisionFlag {
 		PARTICLE_COLLISION_FLAG_SELF_COLLIDE,
 		PARTICLE_COLLISION_FLAG_SELF_COLLIDE_FILTER,
@@ -99,6 +103,9 @@ public:
 	virtual RID primitive_body_create() = 0;
 	virtual void primitive_body_set_space(RID p_body, RID p_space) = 0;
 	virtual void primitive_body_set_shape(RID p_body, RID p_shape) = 0;
+
+	virtual void primitive_body_set_callback(RID p_body, ParticlePrimitiveBodyCallback p_callback_type, Object *p_receiver, const StringName &p_method) = 0;
+	virtual void primitive_body_set_object_instance(RID p_body, Object *p_object) = 0;
 
 	virtual void primitive_body_set_transform(RID p_body, const Transform &p_transf, bool p_teleport) = 0;
 
@@ -154,6 +161,7 @@ public:
 };
 
 VARIANT_ENUM_CAST(ParticlePhysicsServer::ParticleBodyCallback);
+VARIANT_ENUM_CAST(ParticlePhysicsServer::ParticlePrimitiveBodyCallback);
 VARIANT_ENUM_CAST(ParticlePhysicsServer::PrimitiveShapeType);
 VARIANT_ENUM_CAST(ParticlePhysicsServer::ParticleCollisionFlag);
 

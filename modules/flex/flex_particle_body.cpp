@@ -362,15 +362,15 @@ void FlexParticleBody::dispatch_primitive_contact(FlexPrimitiveBody *p_primitive
 	if (!primitive_contact_callback.receiver)
 		return;
 
-	const Variant prim(p_primitive->get_object_instance());
+	const Variant primitive_body_object_instance(p_primitive->get_object_instance());
 	const Variant particle((int)p_particle_index);
 	const Variant velocity(p_velocity);
 	const Variant normal(p_normal);
 
-	const Variant *p[4] = { &prim, &particle, &velocity, &normal };
+	const Variant *p[5] = { FlexParticlePhysicsServer::singleton->get_particle_body_commands_variant(this), &primitive_body_object_instance, &particle, &velocity, &normal };
 
 	static Variant::CallError error;
-	primitive_contact_callback.receiver->call(primitive_contact_callback.method, p, 4, error);
+	primitive_contact_callback.receiver->call(primitive_contact_callback.method, p, 5, error);
 }
 
 void FlexParticleBody::reload_inflatables() {

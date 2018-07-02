@@ -53,6 +53,8 @@ void ParticlePrimitiveBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_monitoring_particles", "monitoring"), &ParticlePrimitiveBody::set_monitoring_particles);
 	ClassDB::bind_method(D_METHOD("is_monitoring_particles"), &ParticlePrimitiveBody::is_monitoring_particles);
 
+	ClassDB::bind_method(D_METHOD("on_particle_contact", "particle_body_commands", "particle_body", "particle_index", "velocity", "normal"), &ParticlePrimitiveBody::on_particle_contact);
+
 	ClassDB::bind_method(D_METHOD("resource_changed", "resource"), &ParticlePrimitiveBody::resource_changed);
 
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "shape", PROPERTY_HINT_RESOURCE_TYPE, "Shape"), "set_shape", "get_shape");
@@ -62,6 +64,8 @@ void ParticlePrimitiveBody::_bind_methods() {
 
 	ADD_GROUP("Collision", "collision_");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_layer", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collision_layer", "get_collision_layer");
+
+	ADD_SIGNAL(MethodInfo("particle_contact", PropertyInfo(Variant::OBJECT, "particle_body_commands", PROPERTY_HINT_RESOURCE_TYPE, "ParticleBodyCommands"), PropertyInfo(Variant::OBJECT, "particle_body"), PropertyInfo(Variant::INT, "particle_index"), PropertyInfo(Variant::VECTOR3, "velocity"), PropertyInfo(Variant::VECTOR3, "normal")));
 }
 
 void ParticlePrimitiveBody::_notification(int p_what) {
@@ -88,11 +92,15 @@ ParticlePrimitiveBody::ParticlePrimitiveBody() :
 		collision_layer(1),
 		debug_shape(NULL) {
 
+	ParticlePhysicsServer::get_singleton()->primitive_body_set_object_instance(rid, this);
 	set_notify_transform(true);
+
+	ParticlePhysicsServer::get_singleton()->primitive_body_set_callback(rid, ParticlePhysicsServer::PARTICLE_PRIMITIVE_BODY_CALLBACK_PARTICLECONTACT, this, "on_particle_contact");
 }
 
 ParticlePrimitiveBody::~ParticlePrimitiveBody() {
 
+	ParticlePhysicsServer::get_singleton()->primitive_body_set_callback(rid, ParticlePhysicsServer::PARTICLE_PRIMITIVE_BODY_CALLBACK_PARTICLECONTACT, NULL, "");
 	debug_shape = NULL;
 }
 
@@ -165,6 +173,11 @@ void ParticlePrimitiveBody::set_monitoring_particles(bool p_monitoring) {
 
 bool ParticlePrimitiveBody::is_monitoring_particles() const {
 	return ParticlePhysicsServer::get_singleton()->primitive_body_is_monitoring_particles(rid);
+}
+
+void ParticlePrimitiveBody::on_particle_contact(Object *p_particle_body_commands, Object *p_particle_body, int p_particle_index, Vector3 p_velocity, Vector3 p_normal) {
+
+	emit_signal("particle_contact", p_particle_body_commands, p_particle_body, p_particle_index, p_velocity, p_normal);
 }
 
 void ParticlePrimitiveBody::_create_debug_shape() {
