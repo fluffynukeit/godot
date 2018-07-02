@@ -121,7 +121,7 @@ public:
 	bool get_param(const StringName &p_name, Variant &r_property) const;
 
 	// internals
-	void check_contacts();
+	void dispatch_callback_contacts();
 	void dispatch_callbacks();
 	void execute_delayed_commands();
 	void rebuild_rigids_offsets();

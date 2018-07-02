@@ -328,7 +328,7 @@ void FlexSpace::sync() {
 
 	///
 	/// Stepping phase
-	check_contacts();
+	dispatch_callback_contacts();
 	dispatch_callbacks();
 	execute_delayed_commands();
 	execute_geometries_commands();
@@ -680,11 +680,11 @@ bool FlexSpace::get_param(const StringName &p_name, Variant &r_property) const {
 	return true;
 }
 
-void FlexSpace::check_contacts() {
+void FlexSpace::dispatch_callback_contacts() {
 	const int active_count(active_particles_mchunk->get_size());
 	for (int i(0); i < active_count; ++i) {
 		const int particle_buffer_index(contacts_buffers->indices[i]);
-		const uint32_t particle_contact_count(contacts_buffers->counts[particle_buffer_index]);
+		const uint32_t particle_contact_count(contacts_buffers->counts[i]);
 
 		if (!particle_contact_count)
 			continue;

@@ -518,6 +518,21 @@ void FlexParticlePhysicsServer::primitive_body_set_shape(RID p_body, RID p_shape
 	}
 }
 
+void FlexParticlePhysicsServer::primitive_body_set_callback(RID p_body, ParticlePrimitiveBodyCallback p_callback_type, Object *p_receiver, const StringName &p_method) {
+	FlexPrimitiveBody *body = primitive_body_owner.get(p_body);
+	ERR_FAIL_COND(!body);
+
+	body->set_callback(p_callback_type, p_receiver, p_method);
+}
+
+void FlexParticlePhysicsServer::primitive_body_set_object_instance(RID p_body, Object *p_object) {
+
+	FlexPrimitiveBody *body = primitive_body_owner.get(p_body);
+	ERR_FAIL_COND(!body);
+
+	body->set_object_instance(p_object);
+}
+
 void FlexParticlePhysicsServer::primitive_body_set_transform(RID p_body, const Transform &p_transf, bool p_teleport) {
 
 	FlexPrimitiveBody *body = primitive_body_owner.get(p_body);

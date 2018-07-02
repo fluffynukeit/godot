@@ -111,7 +111,6 @@ public:
 	void set_object_instance(Object *p_object);
 	_FORCE_INLINE_ Object *get_object_instance() const { return object_instance; }
 
-	/// IMPORTANT Remember to remove it if Object will be destroyed
 	void set_callback(ParticlePhysicsServer::ParticleBodyCallback p_callback_type, Object *p_receiver, const StringName &p_method);
 
 	_FORCE_INLINE_ uint32_t get_changed_parameters() const { return changed_parameters; }

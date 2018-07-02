@@ -27,6 +27,7 @@ void ParticlePhysicsServer::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("body_set_space", "body", "space"), &ParticlePhysicsServer::body_set_space);
 	ClassDB::bind_method(D_METHOD("body_set_callback", "body", "callback_type", "receiver", "method"), &ParticlePhysicsServer::body_set_callback);
+	ClassDB::bind_method(D_METHOD("body_set_object_instance", "body", "object_instance"), &ParticlePhysicsServer::body_set_object_instance);
 
 	ClassDB::bind_method(D_METHOD("body_set_collision_group", "body", "group"), &ParticlePhysicsServer::body_set_collision_group);
 	ClassDB::bind_method(D_METHOD("body_get_collision_group", "body"), &ParticlePhysicsServer::body_get_collision_group);
@@ -60,6 +61,9 @@ void ParticlePhysicsServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("primitive_body_create"), &ParticlePhysicsServer::primitive_body_create);
 	ClassDB::bind_method(D_METHOD("primitive_body_set_space", "body", "space"), &ParticlePhysicsServer::primitive_body_set_space);
 	ClassDB::bind_method(D_METHOD("primitive_body_set_shape", "body", "shape"), &ParticlePhysicsServer::primitive_body_set_shape);
+
+	ClassDB::bind_method(D_METHOD("primitive_body_set_callback", "body", "callback_type", "receiver", "method"), &ParticlePhysicsServer::primitive_body_set_callback);
+	ClassDB::bind_method(D_METHOD("primitive_body_set_object_instance", "body", "object_instance"), &ParticlePhysicsServer::primitive_body_set_object_instance);
 
 	ClassDB::bind_method(D_METHOD("primitive_body_set_transform", "body", "transform", "is_teleport"), &ParticlePhysicsServer::primitive_body_set_transform);
 
