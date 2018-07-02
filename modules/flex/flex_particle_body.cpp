@@ -165,8 +165,8 @@ void FlexParticleBody::set_monitorable(bool p_monitorable) {
 	_is_monitorable = p_monitorable;
 }
 
-void FlexParticleBody::set_monitoring_primitives(bool p_monitoring) {
-	_is_monitoring_primitives = p_monitoring;
+void FlexParticleBody::set_monitoring_primitives_contacts(bool p_monitoring) {
+	_is_monitoring_primitives_contacts = p_monitoring;
 }
 
 void FlexParticleBody::remove_particle(ParticleIndex p_particle) {
