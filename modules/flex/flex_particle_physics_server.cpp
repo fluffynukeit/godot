@@ -312,7 +312,7 @@ void FlexParticlePhysicsServer::space_get_params_defaults(Map<String, Variant> *
 	(*r_defs)["collisionDistance"] = MAX(real_t((*r_defs)["solidRestDistance"]), real_t((*r_defs)["fluidRestDistance"])) * 0.8;
 	(*r_defs)["shapeCollisionMargin"] = 0.005;
 	(*r_defs)["particleCollisionMargin"] = 0.01;
-	(*r_defs)["relaxationMode"] = "global";
+	(*r_defs)["relaxationMode"] = "local";
 	(*r_defs)["relaxationFactor"] = 0.8;
 }
 
