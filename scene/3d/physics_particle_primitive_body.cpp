@@ -274,7 +274,12 @@ void ParticlePrimitiveArea::_notification(int p_what) {
 	for (int i(body_contacts.size() - 1); 0 <= i; --i) {
 		if (!body_contacts[i].particle_count) {
 
+			for (int p(body_contacts[i].particles.size() - 1); 0 <= p; --p) {
+				emit_signal("on_particle_exit", body_contacts[i].particle_body, body_contacts[i].particles[p].particle_index);
+			}
+
 			emit_signal("on_body_exit", body_contacts[i].particle_body);
+
 			body_contacts.remove(i);
 			continue;
 		}
