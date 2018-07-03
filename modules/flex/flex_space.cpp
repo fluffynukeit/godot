@@ -683,8 +683,9 @@ bool FlexSpace::get_param(const StringName &p_name, Variant &r_property) const {
 void FlexSpace::dispatch_callback_contacts() {
 	const int active_count(active_particles_mchunk->get_size());
 	for (int i(0); i < active_count; ++i) {
+
 		const int particle_buffer_index(contacts_buffers->indices[i]);
-		const uint32_t particle_contact_count(contacts_buffers->counts[i]);
+		const uint32_t particle_contact_count(contacts_buffers->counts[particle_buffer_index]);
 
 		if (!particle_contact_count)
 			continue;
@@ -696,15 +697,15 @@ void FlexSpace::dispatch_callback_contacts() {
 		const ParticleIndex particle_index(particle_body->particles_mchunk->get_chunk_index(particle_buffer_index));
 
 		for (uint32_t c(0); c < particle_contact_count; ++c) {
-			const FlVector4 &velocity_and_primitive(contacts_buffers->velocities_prim_indices[particle_buffer_index * MAX_PERPARTICLE_CONTACT_COUNT + c]);
-			const int primitive_body_index(velocity_and_primitive.w);
 
-			FlexPrimitiveBody *primitive_body = find_primitive_body(primitive_body_index);
+			const FlVector4 &velocity_and_primitive(contacts_buffers->velocities_prim_indices[particle_buffer_index * MAX_PERPARTICLE_CONTACT_COUNT + c]);
+			const FlVector4 &raw_normal(contacts_buffers->normals[particle_buffer_index * MAX_PERPARTICLE_CONTACT_COUNT + c]);
 
 			Vector3 velocity(vec3_from_flvec4(velocity_and_primitive));
-
-			const FlVector4 &raw_normal(contacts_buffers->normals[particle_buffer_index * MAX_PERPARTICLE_CONTACT_COUNT + c]);
 			Vector3 normal(vec3_from_flvec4(raw_normal));
+
+			const int primitive_body_index(velocity_and_primitive.w);
+			FlexPrimitiveBody *primitive_body = find_primitive_body(primitive_body_index);
 
 			if (particle_body->is_monitoring_primitives_contacts())
 				particle_body->dispatch_primitive_contact(primitive_body, particle_index, velocity, normal);
@@ -718,6 +719,9 @@ void FlexSpace::dispatch_callback_contacts() {
 void FlexSpace::dispatch_callbacks() {
 	for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
 		particle_bodies[i]->dispatch_sync_callback();
+	}
+	for (int i(primitive_bodies.size() - 1); 0 <= i; --i) {
+		primitive_bodies[i]->dispatch_sync_callback();
 	}
 }
 
@@ -1038,7 +1042,7 @@ void FlexSpace::commands_read_buffer() {
 		NvFlexGetVelocities(solver, particles_memory->velocities.buffer, &copy_desc);
 		NvFlexGetNormals(solver, particles_memory->normals.buffer, &copy_desc);
 
-		particle_bodies[i]->clear_commands();
+		particle_bodies[i]->clear_delayed_commands();
 	}
 
 	// Read rigids
@@ -1157,7 +1161,7 @@ void FlexSpace::rebuild_inflatables_indices() {
 
 FlexParticleBody *FlexSpace::find_particle_body(ParticleBufferIndex p_index) const {
 	for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
-		if (p_index >= particle_bodies[i]->particles_mchunk->get_begin_index() || p_index <= particle_bodies[i]->particles_mchunk->get_end_index()) {
+		if (p_index >= particle_bodies[i]->particles_mchunk->get_begin_index() && p_index <= particle_bodies[i]->particles_mchunk->get_end_index()) {
 			return particle_bodies[i];
 		}
 	}

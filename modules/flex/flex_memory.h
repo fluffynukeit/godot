@@ -378,6 +378,7 @@ class ActiveParticlesMemory : public FlexBufferMemory {
 	/// V
 
 	void set_active_particle(const MemoryChunk *p_chunk, ActiveParticleIndex p_active_particle_index, ParticleBufferIndex p_particle_buffer_index);
+	ParticleBufferIndex get_active_particle(const MemoryChunk *p_chunk, ActiveParticleIndex p_active_particle_index) const;
 };
 
 class SpringMemory : public FlexBufferMemory {

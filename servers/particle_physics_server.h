@@ -15,9 +15,10 @@ protected:
 public:
 	virtual void load_model(Ref<ParticleBodyModel> p_shape, const Transform &initial_transform) = 0;
 
-	virtual void reset_particle(int p_particle_index, const Vector3 &p_position, real_t p_mass) = 0;
+	virtual void set_particle_position_mass(int p_particle_index, const Vector3 &p_position, real_t p_mass) = 0;
 
 	virtual Vector3 get_particle_position(int p_particle_index) const = 0;
+	virtual float get_particle_mass(int p_particle_index) const = 0;
 
 	virtual const Vector3 &get_particle_velocity(int p_particle_index) const = 0;
 	virtual void set_particle_velocity(int p_particle_index, const Vector3 &p_velocity) = 0;
@@ -55,6 +56,7 @@ public:
 	};
 
 	enum ParticlePrimitiveBodyCallback {
+		PARTICLE_PRIMITIVE_BODY_CALLBACK_SYNC,
 		PARTICLE_PRIMITIVE_BODY_CALLBACK_PARTICLECONTACT
 	};
 
@@ -69,6 +71,10 @@ public:
 	virtual void body_set_space(RID p_body, RID p_space) = 0;
 	virtual void body_set_callback(RID p_body, ParticleBodyCallback p_callback_type, Object *p_receiver, const StringName &p_method) = 0;
 	virtual void body_set_object_instance(RID p_body, Object *p_object) = 0;
+
+	/// This MUST be called only during ParticlePhysicsServer callbacks
+	/// IMPORTANT: When called all previous get commands will be unusable
+	virtual ParticleBodyCommands *body_get_commands(RID p_body) = 0;
 
 	virtual void body_set_collision_group(RID p_body, uint32_t p_layer) = 0;
 	virtual uint32_t body_get_collision_group(RID p_body) const = 0;

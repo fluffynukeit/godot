@@ -76,6 +76,10 @@ void FlexPrimitiveBody::set_callback(ParticlePhysicsServer::ParticlePrimitiveBod
 	}
 
 	switch (p_callback_type) {
+		case ParticlePhysicsServer::PARTICLE_PRIMITIVE_BODY_CALLBACK_SYNC:
+			sync_callback.receiver = p_receiver;
+			sync_callback.method = p_method;
+			break;
 		case ParticlePhysicsServer::PARTICLE_PRIMITIVE_BODY_CALLBACK_PARTICLECONTACT:
 			particles_contact_callback.receiver = p_receiver;
 			particles_contact_callback.method = p_method;
@@ -141,8 +145,15 @@ void FlexPrimitiveBody::dispatch_particle_contact(FlexParticleBody *p_body, Part
 	const Variant velocity(p_velocity);
 	const Variant normal(p_normal);
 
-	const Variant *p[5] = { FlexParticlePhysicsServer::singleton->get_particle_body_commands_variant(p_body), &particle_body_object_instance, &particle, &velocity, &normal };
+	const Variant *p[4] = { &particle_body_object_instance, &particle, &velocity, &normal };
 
 	static Variant::CallError error;
-	particles_contact_callback.receiver->call(particles_contact_callback.method, p, 5, error);
+	particles_contact_callback.receiver->call(particles_contact_callback.method, p, 4, error);
+}
+
+void FlexPrimitiveBody::dispatch_sync_callback() {
+	if (!sync_callback.receiver)
+		return;
+	static Variant::CallError error;
+	sync_callback.receiver->call(sync_callback.method, NULL, 0, error);
 }

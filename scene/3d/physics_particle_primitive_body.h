@@ -49,6 +49,7 @@ class ParticlePrimitiveBody : public ParticleObject {
 
 	// DEBUG
 	Node *debug_shape;
+	bool _is_callback_sync_enabled;
 
 protected:
 	static void _bind_methods();
@@ -75,8 +76,12 @@ public:
 	void set_monitoring_particles_contacts(bool p_monitoring);
 	bool is_monitoring_particles_contacts() const;
 
+	void set_callback_sync(bool p_enabled);
+	bool is_callback_sync_enabled() const;
+
 protected:
-	virtual void on_particle_contact(Object *p_particle_body_commands, Object *p_particle_body, int p_particle_index, Vector3 p_velocity, Vector3 p_normal);
+	virtual void _on_particle_contact(Object *p_particle_body, int p_particle_index, Vector3 p_velocity, Vector3 p_normal);
+	void _on_sync();
 
 private:
 	void _create_debug_shape();
@@ -121,10 +126,13 @@ public:
 	void set_monitor_particles_entering(bool p_monitor);
 	bool get_monitor_particles_entering() const { return monitor_particles_entering; }
 
-	Vector<int> get_overlapping_particles(Object *p_particle_body);
+	int get_overlapping_body_count() const;
+	int find_overlapping_body_pos(Object *p_particle_body);
+	Object *get_overlapping_body(int id) const;
+	Vector<int> get_overlapping_particles(int id);
 
 protected:
-	virtual void on_particle_contact(Object *p_particle_body_commands, Object *p_particle_body, int p_particle_index, Vector3 p_velocity, Vector3 p_normal);
+	virtual void _on_particle_contact(Object *p_particle_body, int p_particle_index, Vector3 p_velocity, Vector3 p_normal);
 };
 
 #endif // PARTICLE_PRIMITIVE_BODY_H

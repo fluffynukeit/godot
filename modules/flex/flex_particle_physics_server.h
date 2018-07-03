@@ -67,9 +67,10 @@ public:
 	virtual void add_rigid_component(ParticleBufferIndex p_particle_index, const Vector3 &p_rest);
 	virtual void set_rigid_component(RigidComponentIndex p_index, ParticleBufferIndex p_particle_index, const Vector3 &p_rest);
 
-	virtual void reset_particle(int p_particle_index, const Vector3 &p_position, real_t p_mass);
+	virtual void set_particle_position_mass(int p_particle_index, const Vector3 &p_position, real_t p_mass);
 
 	virtual Vector3 get_particle_position(int p_particle_index) const;
+	virtual float get_particle_mass(int p_particle_index) const;
 
 	virtual const Vector3 &get_particle_velocity(int p_particle_index) const;
 	virtual void set_particle_velocity(int p_particle_index, const Vector3 &p_velocity);
@@ -125,6 +126,8 @@ public:
 	virtual void body_set_space(RID p_body, RID p_space);
 	virtual void body_set_callback(RID p_body, ParticleBodyCallback p_callback_type, Object *p_receiver, const StringName &p_method);
 	virtual void body_set_object_instance(RID p_body, Object *p_object);
+
+	virtual ParticleBodyCommands *body_get_commands(RID p_body);
 
 	virtual void body_set_collision_group(RID p_body, uint32_t p_group);
 	virtual uint32_t body_get_collision_group(RID p_body) const;

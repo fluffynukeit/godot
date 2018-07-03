@@ -215,7 +215,7 @@ int FlexParticleBody::get_rigid_count() const {
 	return rigids_mchunk ? rigids_mchunk->get_size() : 0;
 }
 
-void FlexParticleBody::reset_particle(ParticleIndex p_particle_index, const Vector3 &p_position, real_t p_mass) {
+void FlexParticleBody::set_particle_position_mass(ParticleIndex p_particle_index, const Vector3 &p_position, real_t p_mass) {
 	if (!particles_mchunk)
 		return;
 	space->get_particles_memory()->set_particle(particles_mchunk, p_particle_index, make_particle(p_position, p_mass));
@@ -236,6 +236,12 @@ Vector3 FlexParticleBody::get_particle_position(ParticleIndex p_particle_index) 
 		return return_err_vec3;
 	const FlVector4 &p(space->get_particles_memory()->get_particle(particles_mchunk, p_particle_index));
 	return extract_position(p);
+}
+
+float FlexParticleBody::get_particle_mass(ParticleIndex p_particle_index) const {
+	if (!particles_mchunk)
+		return 0;
+	return extract_mass(space->get_particles_memory()->get_particle(particles_mchunk, p_particle_index));
 }
 
 const Vector3 &FlexParticleBody::get_particle_velocity(ParticleIndex p_particle_index) const {
@@ -330,7 +336,7 @@ void FlexParticleBody::clear_changed_params() {
 	changed_parameters = 0;
 }
 
-void FlexParticleBody::clear_commands() {
+void FlexParticleBody::clear_delayed_commands() {
 	delayed_commands.particles_to_remove.clear();
 	delayed_commands.springs_to_remove.clear();
 	delayed_commands.triangles_to_remove.clear();

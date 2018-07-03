@@ -153,10 +153,11 @@ public:
 	int get_rigid_count() const;
 
 	// CMD
-	void reset_particle(ParticleIndex p_particle, const Vector3 &p_position, real_t p_mass);
+	void set_particle_position_mass(ParticleIndex p_particle, const Vector3 &p_position, real_t p_mass);
 	void reset_spring(SpringIndex p_spring, ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness);
 
 	Vector3 get_particle_position(ParticleIndex p_particle) const;
+	float get_particle_mass(ParticleIndex p_particle) const;
 
 	const Vector3 &get_particle_velocity(ParticleIndex p_particle) const;
 	void set_particle_velocity(ParticleIndex p_particle, const Vector3 &p_velocity);
@@ -176,7 +177,7 @@ public:
 
 	// Internals
 	void clear_changed_params();
-	void clear_commands();
+	void clear_delayed_commands();
 	void dispatch_sync_callback();
 	void particle_index_changed(ParticleIndex p_old_particle_index, ParticleIndex p_new_particle_index);
 	void spring_index_changed(SpringIndex p_old_spring_index, SpringIndex p_new_spring_index);
