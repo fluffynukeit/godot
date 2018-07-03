@@ -264,69 +264,23 @@ void ParticlePrimitiveArea::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("on_particle_exit", PropertyInfo(Variant::OBJECT, "particle_body"), PropertyInfo(Variant::INT, "particle_index")));
 }
 
-void ParticlePrimitiveArea::_notification(int p_what) {
-
-	ParticlePrimitiveBody::_notification(p_what);
-
-	if (NOTIFICATION_INTERNAL_PHYSICS_PROCESS != p_what)
-		return;
-
-	for (int i(body_contacts.size() - 1); 0 <= i; --i) {
-		if (!body_contacts[i].particle_count) {
-
-			for (int p(body_contacts[i].particles.size() - 1); 0 <= p; --p) {
-				emit_signal("on_particle_exit", body_contacts[i].particle_body, body_contacts[i].particles[p].particle_index);
-			}
-
-			emit_signal("on_body_exit", body_contacts[i].particle_body);
-
-			body_contacts.remove(i);
-			continue;
-		}
-
-		if (body_contacts[i].just_entered) {
-
-			body_contacts[i].just_entered = false;
-			emit_signal("on_body_enter", body_contacts[i].particle_body);
-		}
-
-		for (int p(body_contacts[i].particles.size() - 1); 0 <= p; --p) {
-			if (2 == body_contacts[i].particles[p].stage) {
-
-				emit_signal("on_particle_exit", body_contacts[i].particle_body, body_contacts[i].particles[p].particle_index);
-				body_contacts[i].particles.remove(p);
-				continue;
-
-			} else if (0 == body_contacts[i].particles[p].stage) {
-
-				emit_signal("on_particle_enter", body_contacts[i].particle_body, body_contacts[i].particles[p].particle_index);
-			}
-
-			body_contacts[i].particles[p].stage = 2;
-		}
-
-		// Reset
-		body_contacts[i].particle_count = 0;
-	}
-}
-
 ParticlePrimitiveArea::ParticlePrimitiveArea() :
 		ParticlePrimitiveBody() {
 	ParticlePhysicsServer::get_singleton()->primitive_body_set_as_area(rid, true);
 
-	set_physics_process_internal(false);
+	set_callback_sync(false);
 }
 
 void ParticlePrimitiveArea::set_monitor_particle_bodies_entering(bool p_monitor) {
 	monitor_particle_bodies_entering = p_monitor;
 	if (!Engine::get_singleton()->is_editor_hint())
-		set_physics_process_internal(monitor_particle_bodies_entering && monitor_particles_entering);
+		set_callback_sync(monitor_particle_bodies_entering || monitor_particles_entering);
 }
 
 void ParticlePrimitiveArea::set_monitor_particles_entering(bool p_monitor) {
 	monitor_particles_entering = p_monitor;
 	if (!Engine::get_singleton()->is_editor_hint())
-		set_physics_process_internal(monitor_particle_bodies_entering && monitor_particles_entering);
+		set_callback_sync(monitor_particle_bodies_entering || monitor_particles_entering);
 }
 
 int ParticlePrimitiveArea::get_overlapping_body_count() const {
@@ -372,4 +326,47 @@ void ParticlePrimitiveArea::_on_particle_contact(Object *p_particle_body, int p_
 	}
 
 	++(body_contacts[data_id].particle_count);
+}
+
+void ParticlePrimitiveArea::_on_sync() {
+
+	for (int i(body_contacts.size() - 1); 0 <= i; --i) {
+		if (!body_contacts[i].particle_count) {
+
+			for (int p(body_contacts[i].particles.size() - 1); 0 <= p; --p) {
+				emit_signal("on_particle_exit", body_contacts[i].particle_body, body_contacts[i].particles[p].particle_index);
+			}
+
+			emit_signal("on_body_exit", body_contacts[i].particle_body);
+
+			body_contacts.remove(i);
+			continue;
+		}
+
+		if (body_contacts[i].just_entered) {
+
+			body_contacts[i].just_entered = false;
+			emit_signal("on_body_enter", body_contacts[i].particle_body);
+		}
+
+		for (int p(body_contacts[i].particles.size() - 1); 0 <= p; --p) {
+			if (2 == body_contacts[i].particles[p].stage) {
+
+				emit_signal("on_particle_exit", body_contacts[i].particle_body, body_contacts[i].particles[p].particle_index);
+				body_contacts[i].particles.remove(p);
+				continue;
+
+			} else if (0 == body_contacts[i].particles[p].stage) {
+
+				emit_signal("on_particle_enter", body_contacts[i].particle_body, body_contacts[i].particles[p].particle_index);
+			}
+
+			body_contacts[i].particles[p].stage = 2;
+		}
+
+		// Reset
+		body_contacts[i].particle_count = 0;
+	}
+
+	ParticlePrimitiveBody::_on_sync();
 }
