@@ -9,7 +9,10 @@ void ParticleBodyCommands::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("set_particle_position_mass", "particle_index", "position", "mass"), &ParticleBodyCommands::set_particle_position_mass);
 
+	ClassDB::bind_method(D_METHOD("set_particle_position", "particle_index", "position"), &ParticleBodyCommands::set_particle_position);
 	ClassDB::bind_method(D_METHOD("get_particle_position", "particle_index"), &ParticleBodyCommands::get_particle_position);
+
+	ClassDB::bind_method(D_METHOD("set_particle_mass", "particle_index", "mass"), &ParticleBodyCommands::set_particle_mass);
 	ClassDB::bind_method(D_METHOD("get_particle_mass", "particle_index"), &ParticleBodyCommands::get_particle_mass);
 
 	ClassDB::bind_method(D_METHOD("get_particle_velocity", "particle_index"), &ParticleBodyCommands::get_particle_velocity);

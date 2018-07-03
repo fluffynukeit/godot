@@ -231,6 +231,10 @@ void ParticlePrimitiveBody::resource_changed(RES res) {
 	update_gizmo();
 }
 
+ParticlePrimitiveArea::ParticleContacts::ParticleContacts(int p_index) :
+		particle_index(p_index),
+		stage(0) {}
+
 ParticlePrimitiveArea::ParticleBodyContacts::ParticleBodyContacts(Object *p_particle_object) :
 		particle_body(p_particle_object),
 		just_entered(true),
@@ -247,13 +251,17 @@ void ParticlePrimitiveArea::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_overlapping_body_count"), &ParticlePrimitiveArea::get_overlapping_body_count);
 	ClassDB::bind_method(D_METHOD("find_overlapping_body_pos", "particle_body"), &ParticlePrimitiveArea::find_overlapping_body_pos);
 	ClassDB::bind_method(D_METHOD("get_overlapping_body", "id"), &ParticlePrimitiveArea::get_overlapping_body);
-	ClassDB::bind_method(D_METHOD("get_overlapping_particles", "id"), &ParticlePrimitiveArea::get_overlapping_particles);
+	ClassDB::bind_method(D_METHOD("get_overlapping_particles_count", "id"), &ParticlePrimitiveArea::get_overlapping_particles_count);
+	ClassDB::bind_method(D_METHOD("get_overlapping_particle_index", "body_id", "particle_id"), &ParticlePrimitiveArea::get_overlapping_particle_index);
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitor_particle_bodies_entering"), "set_monitor_particle_bodies_entering", "get_monitor_particle_bodies_entering");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitor_particles_entering"), "set_monitor_particles_entering", "get_monitor_particles_entering");
 
 	ADD_SIGNAL(MethodInfo("on_body_enter", PropertyInfo(Variant::OBJECT, "particle_body")));
 	ADD_SIGNAL(MethodInfo("on_body_exit", PropertyInfo(Variant::OBJECT, "particle_body")));
+
+	ADD_SIGNAL(MethodInfo("on_particle_enter", PropertyInfo(Variant::OBJECT, "particle_body"), PropertyInfo(Variant::INT, "particle_index")));
+	ADD_SIGNAL(MethodInfo("on_particle_exit", PropertyInfo(Variant::OBJECT, "particle_body"), PropertyInfo(Variant::INT, "particle_index")));
 }
 
 void ParticlePrimitiveArea::_notification(int p_what) {
@@ -275,6 +283,21 @@ void ParticlePrimitiveArea::_notification(int p_what) {
 
 			body_contacts[i].just_entered = false;
 			emit_signal("on_body_enter", body_contacts[i].particle_body);
+		}
+
+		for (int p(body_contacts[i].particles.size() - 1); 0 <= p; --p) {
+			if (2 == body_contacts[i].particles[p].stage) {
+
+				emit_signal("on_particle_exit", body_contacts[i].particle_body, body_contacts[i].particles[p].particle_index);
+				body_contacts[i].particles.remove(p);
+				continue;
+
+			} else if (0 == body_contacts[i].particles[p].stage) {
+
+				emit_signal("on_particle_enter", body_contacts[i].particle_body, body_contacts[i].particles[p].particle_index);
+			}
+
+			body_contacts[i].particles[p].stage = 2;
 		}
 
 		// Reset
@@ -313,8 +336,12 @@ Object *ParticlePrimitiveArea::get_overlapping_body(int id) const {
 	return body_contacts[id].particle_body;
 }
 
-Vector<int> ParticlePrimitiveArea::get_overlapping_particles(int id) {
-	return body_contacts[id].particles;
+int ParticlePrimitiveArea::get_overlapping_particles_count(int id) {
+	return body_contacts[id].particles.size();
+}
+
+int ParticlePrimitiveArea::get_overlapping_particle_index(int body_id, int particle_id) {
+	return body_contacts[body_id].particles[particle_id].particle_index;
 }
 
 void ParticlePrimitiveArea::_on_particle_contact(Object *p_particle_body, int p_particle_index, Vector3 p_velocity, Vector3 p_normal) {
@@ -331,11 +358,12 @@ void ParticlePrimitiveArea::_on_particle_contact(Object *p_particle_body, int p_
 	}
 
 	if (monitor_particles_entering) {
-		if (!body_contacts[data_id].particle_count) {
-			// When particle_count is 0 at this stage mean that is the first particle of body to be readed so is required to perform a cleaning of old particles contacts
-			body_contacts[data_id].particles.clear();
+		int p = body_contacts[data_id].particles.find(ParticleContacts(p_particle_index));
+		if (-1 == p) {
+			body_contacts[data_id].particles.push_back(ParticleContacts(p_particle_index));
+		} else {
+			body_contacts[data_id].particles[p].stage = 1;
 		}
-		body_contacts[data_id].particles.push_back(p_particle_index);
 	}
 
 	++(body_contacts[data_id].particle_count);

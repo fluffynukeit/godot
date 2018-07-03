@@ -224,8 +224,16 @@ void FlexParticleBodyCommands::set_particle_position_mass(int p_particle_index, 
 	body->set_particle_position_mass(p_particle_index, p_position, p_mass);
 }
 
+void FlexParticleBodyCommands::set_particle_position(int p_particle_index, const Vector3 &p_position) {
+	body->set_particle_position(p_particle_index, p_position);
+}
+
 Vector3 FlexParticleBodyCommands::get_particle_position(int p_particle_index) const {
 	return body->get_particle_position(p_particle_index);
+}
+
+void FlexParticleBodyCommands::set_particle_mass(int p_particle_index, real_t p_mass) {
+	body->set_particle_mass(p_particle_index, p_mass);
 }
 
 float FlexParticleBodyCommands::get_particle_mass(int p_particle_index) const {
