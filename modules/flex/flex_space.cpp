@@ -683,10 +683,10 @@ bool FlexSpace::get_param(const StringName &p_name, Variant &r_property) const {
 
 void FlexSpace::dispatch_callback_contacts() {
 	const int active_count(active_particles_mchunk->get_size());
-	for (int i(0); i < active_count; ++i) {
+	for (int contact(0); contact < active_count; ++contact) {
 
-		const int particle_buffer_index(contacts_buffers->indices[i]);
-		const uint32_t particle_contact_count(contacts_buffers->counts[particle_buffer_index]);
+		const int particle_buffer_index(contacts_buffers->indices[contact]);
+		const uint32_t particle_contact_count(contacts_buffers->counts[contact]);
 
 		if (!particle_contact_count)
 			continue;
@@ -699,8 +699,8 @@ void FlexSpace::dispatch_callback_contacts() {
 
 		for (uint32_t c(0); c < particle_contact_count; ++c) {
 
-			const FlVector4 &velocity_and_primitive(contacts_buffers->velocities_prim_indices[particle_buffer_index * MAX_PERPARTICLE_CONTACT_COUNT + c]);
-			const FlVector4 &raw_normal(contacts_buffers->normals[particle_buffer_index * MAX_PERPARTICLE_CONTACT_COUNT + c]);
+			const FlVector4 &velocity_and_primitive(contacts_buffers->velocities_prim_indices[contact * MAX_PERPARTICLE_CONTACT_COUNT + c]);
+			const FlVector4 &raw_normal(contacts_buffers->normals[contact * MAX_PERPARTICLE_CONTACT_COUNT + c]);
 
 			Vector3 velocity(vec3_from_flvec4(velocity_and_primitive));
 			Vector3 normal(vec3_from_flvec4(raw_normal));
