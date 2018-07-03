@@ -254,6 +254,8 @@ void ParticlePrimitiveArea::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_overlapping_particles_count", "id"), &ParticlePrimitiveArea::get_overlapping_particles_count);
 	ClassDB::bind_method(D_METHOD("get_overlapping_particle_index", "body_id", "particle_id"), &ParticlePrimitiveArea::get_overlapping_particle_index);
 
+	ClassDB::bind_method(D_METHOD("reset_inside_bodies"), &ParticlePrimitiveArea::reset_inside_bodies);
+
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitor_particle_bodies_entering"), "set_monitor_particle_bodies_entering", "get_monitor_particle_bodies_entering");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitor_particles_entering"), "set_monitor_particles_entering", "get_monitor_particles_entering");
 
@@ -301,6 +303,10 @@ int ParticlePrimitiveArea::get_overlapping_particles_count(int id) {
 
 int ParticlePrimitiveArea::get_overlapping_particle_index(int body_id, int particle_id) {
 	return body_contacts[body_id].particles[particle_id].particle_index;
+}
+
+void ParticlePrimitiveArea::reset_inside_bodies() {
+	body_contacts.clear();
 }
 
 void ParticlePrimitiveArea::_on_particle_contact(Object *p_particle_body, int p_particle_index, Vector3 p_velocity, Vector3 p_normal) {

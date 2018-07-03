@@ -47,6 +47,7 @@ class ParticlePrimitiveBody : public ParticleObject {
 
 	uint32_t collision_layer;
 
+protected:
 	// DEBUG
 	Node *debug_shape;
 	bool _is_callback_sync_enabled;
@@ -146,6 +147,8 @@ public:
 	Object *get_overlapping_body(int id) const;
 	int get_overlapping_particles_count(int id);
 	int get_overlapping_particle_index(int body_id, int particle_id);
+
+	void reset_inside_bodies();
 
 protected:
 	virtual void _on_particle_contact(Object *p_particle_body, int p_particle_index, Vector3 p_velocity, Vector3 p_normal);
