@@ -81,7 +81,7 @@ public:
 
 protected:
 	virtual void _on_particle_contact(Object *p_particle_body, int p_particle_index, Vector3 p_velocity, Vector3 p_normal);
-	void _on_sync();
+	virtual void _on_sync();
 
 private:
 	void _create_debug_shape();
@@ -131,7 +131,6 @@ class ParticlePrimitiveArea : public ParticlePrimitiveBody {
 
 protected:
 	static void _bind_methods();
-	virtual void _notification(int p_what);
 
 public:
 	ParticlePrimitiveArea();
@@ -150,6 +149,7 @@ public:
 
 protected:
 	virtual void _on_particle_contact(Object *p_particle_body, int p_particle_index, Vector3 p_velocity, Vector3 p_normal);
+	virtual void _on_sync();
 };
 
 #endif // PARTICLE_PRIMITIVE_BODY_H
