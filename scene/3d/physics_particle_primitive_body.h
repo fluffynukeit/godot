@@ -116,6 +116,7 @@ class ParticlePrimitiveArea : public ParticlePrimitiveBody {
 		Vector<ParticleContacts> particles;
 
 		ParticleBodyContacts() :
+				particle_body(NULL),
 				just_entered(true),
 				particle_count(0) {}
 

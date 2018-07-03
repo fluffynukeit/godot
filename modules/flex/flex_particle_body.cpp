@@ -223,8 +223,7 @@ void FlexParticleBody::reset_spring(SpringIndex p_spring, ParticleIndex p_partic
 
 void FlexParticleBody::set_particle_position_mass(ParticleIndex p_particle_index, const Vector3 &p_position, real_t p_mass) {
 	space->get_particles_memory()->set_particle(particles_mchunk, p_particle_index, make_particle(p_position, p_mass));
-	space->get_particles_memory()->set_velocity(particles_mchunk, p_particle_index, Vector3(0, 0, 0));
-	changed_parameters |= eChangedBodyParamPositionMass | eChangedBodyParamVelocity;
+	changed_parameters |= eChangedBodyParamPositionMass;
 }
 
 void FlexParticleBody::set_particle_position(ParticleIndex p_particle_index, const Vector3 &p_position) {
