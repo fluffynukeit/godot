@@ -55,6 +55,7 @@ class FlexPrimitiveBody : public RIDFlex {
 
 	friend class FlexSpace;
 
+	FlexCallBackData sync_callback;
 	FlexCallBackData particles_contact_callback;
 
 	uint32_t changed_parameters;
@@ -107,6 +108,7 @@ public:
 	// Internals
 	void set_clean();
 	void dispatch_particle_contact(FlexParticleBody *p_body, ParticleIndex p_particle_index, const Vector3 &p_velocity, const Vector3 &p_normal);
+	void dispatch_sync_callback();
 };
 
 #endif // FLEX_PRIMITIVE_BODY_H

@@ -220,12 +220,16 @@ void FlexParticleBodyCommands::set_rigid_component(RigidComponentIndex p_index, 
 	body->space->rigids_components_memory->set_rest(body->rigids_components_mchunk, p_index, p_rest);
 }
 
-void FlexParticleBodyCommands::reset_particle(int p_particle_index, const Vector3 &p_position, real_t p_mass) {
-	body->reset_particle(p_particle_index, p_position, p_mass);
+void FlexParticleBodyCommands::set_particle_position_mass(int p_particle_index, const Vector3 &p_position, real_t p_mass) {
+	body->set_particle_position_mass(p_particle_index, p_position, p_mass);
 }
 
 Vector3 FlexParticleBodyCommands::get_particle_position(int p_particle_index) const {
 	return body->get_particle_position(p_particle_index);
+}
+
+float FlexParticleBodyCommands::get_particle_mass(int p_particle_index) const {
+	return body->get_particle_mass(p_particle_index);
 }
 
 const Vector3 &FlexParticleBodyCommands::get_particle_velocity(int p_particle_index) const {
@@ -351,6 +355,12 @@ void FlexParticlePhysicsServer::body_set_object_instance(RID p_body, Object *p_o
 	FlexParticleBody *body = body_owner.get(p_body);
 	ERR_FAIL_COND(!body);
 	body->set_object_instance(p_object);
+}
+
+ParticleBodyCommands *FlexParticlePhysicsServer::body_get_commands(RID p_body) {
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND_V(!body, NULL);
+	return get_particle_body_commands(body);
 }
 
 void FlexParticlePhysicsServer::body_set_collision_group(RID p_body, uint32_t p_group) {
@@ -814,7 +824,7 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::make_model(NvFlexExtAsset *p_a
 
 	for (int i(0); i < p_assets->numParticles; ++i) {
 		FlVector4 particle(((FlVector4 *)p_assets->particles)[i]);
-		model->get_masses_ref().set(i, extract_mass(particle) == 0 ? 0.01 : 1 / extract_mass(particle));
+		model->get_masses_ref().set(i, extract_inverse_mass(particle) == 0 ? 0.01 : 1 / extract_inverse_mass(particle));
 		model->get_particles_ref().set(i, extract_position(particle));
 	}
 

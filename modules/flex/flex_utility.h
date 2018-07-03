@@ -195,17 +195,23 @@ typedef FlexBufferIndex GeometryBufferIndex; // Geometry global index, cavec3_fr
 
 typedef int FlexIndex;
 
+#define invert_mass(inverse_mass) \
+	inverse_mass ? 1 / inverse_mass : 0
+
 #define vec3_from_flvec4(vec4) \
 	Vector3(vec4.x, vec4.y, vec4.z)
 
 #define make_particle(position, mass) \
-	FlVector4(position.x, position.y, position.z, mass ? (1 / mass) : 0)
+	FlVector4(position.x, position.y, position.z, invert_mass(mass))
 
 #define extract_position(particle) \
 	vec3_from_flvec4(particle)
 
-#define extract_mass(particle) \
+#define extract_inverse_mass(particle) \
 	particle.w
+
+#define extract_mass(particle) \
+	invert_mass(extract_inverse_mass(particle))
 
 #define flvec4_from_vec3(vec3) \
 	FlVector4(vec3.x, vec3.y, vec3.z, 0)

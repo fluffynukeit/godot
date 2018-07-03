@@ -54,7 +54,11 @@ void ParticlePrimitiveBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_monitoring_particles_contacts", "monitoring"), &ParticlePrimitiveBody::set_monitoring_particles_contacts);
 	ClassDB::bind_method(D_METHOD("is_monitoring_particles_contacts"), &ParticlePrimitiveBody::is_monitoring_particles_contacts);
 
-	ClassDB::bind_method(D_METHOD("on_particle_contact", "particle_body_commands", "particle_body", "particle_index", "velocity", "normal"), &ParticlePrimitiveBody::on_particle_contact);
+	ClassDB::bind_method(D_METHOD("set_callback_sync", "enabled"), &ParticlePrimitiveBody::set_callback_sync);
+	ClassDB::bind_method(D_METHOD("is_callback_sync_enabled"), &ParticlePrimitiveBody::is_callback_sync_enabled);
+
+	ClassDB::bind_method(D_METHOD("on_particle_contact", "particle_body", "particle_index", "velocity", "normal"), &ParticlePrimitiveBody::_on_particle_contact);
+	ClassDB::bind_method(D_METHOD("_on_sync"), &ParticlePrimitiveBody::_on_sync);
 
 	ClassDB::bind_method(D_METHOD("resource_changed", "resource"), &ParticlePrimitiveBody::resource_changed);
 
@@ -67,11 +71,13 @@ void ParticlePrimitiveBody::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_layer", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collision_layer", "get_collision_layer");
 
 	ADD_SIGNAL(MethodInfo("particle_contact", PropertyInfo(Variant::OBJECT, "particle_body_commands", PROPERTY_HINT_RESOURCE_TYPE, "ParticleBodyCommands"), PropertyInfo(Variant::OBJECT, "particle_body"), PropertyInfo(Variant::INT, "particle_index"), PropertyInfo(Variant::VECTOR3, "velocity"), PropertyInfo(Variant::VECTOR3, "normal")));
+	ADD_SIGNAL(MethodInfo("on_sync"));
 }
 
 void ParticlePrimitiveBody::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_ENTER_WORLD: {
+			ParticlePhysicsServer::get_singleton()->primitive_body_set_transform(rid, get_global_transform(), true);
 			ParticlePhysicsServer::get_singleton()->primitive_body_set_space(rid, get_world()->get_particle_space());
 		} break;
 		case NOTIFICATION_TRANSFORM_CHANGED: {
@@ -102,6 +108,7 @@ ParticlePrimitiveBody::ParticlePrimitiveBody() :
 ParticlePrimitiveBody::~ParticlePrimitiveBody() {
 
 	ParticlePhysicsServer::get_singleton()->primitive_body_set_callback(rid, ParticlePhysicsServer::PARTICLE_PRIMITIVE_BODY_CALLBACK_PARTICLECONTACT, NULL, "");
+	ParticlePhysicsServer::get_singleton()->primitive_body_set_callback(rid, ParticlePhysicsServer::PARTICLE_PRIMITIVE_BODY_CALLBACK_SYNC, NULL, "");
 	debug_shape = NULL;
 }
 
@@ -176,9 +183,26 @@ bool ParticlePrimitiveBody::is_monitoring_particles_contacts() const {
 	return ParticlePhysicsServer::get_singleton()->primitive_body_is_monitoring_particles_contacts(rid);
 }
 
-void ParticlePrimitiveBody::on_particle_contact(Object *p_particle_body_commands, Object *p_particle_body, int p_particle_index, Vector3 p_velocity, Vector3 p_normal) {
+void ParticlePrimitiveBody::set_callback_sync(bool p_enabled) {
+	_is_callback_sync_enabled = p_enabled;
+	if (_is_callback_sync_enabled) {
+		ParticlePhysicsServer::get_singleton()->primitive_body_set_callback(rid, ParticlePhysicsServer::PARTICLE_PRIMITIVE_BODY_CALLBACK_SYNC, this, "_on_sync");
+	} else {
+		ParticlePhysicsServer::get_singleton()->primitive_body_set_callback(rid, ParticlePhysicsServer::PARTICLE_PRIMITIVE_BODY_CALLBACK_SYNC, NULL, "");
+	}
+}
 
-	emit_signal("particle_contact", p_particle_body_commands, p_particle_body, p_particle_index, p_velocity, p_normal);
+bool ParticlePrimitiveBody::is_callback_sync_enabled() const {
+	return _is_callback_sync_enabled;
+}
+
+void ParticlePrimitiveBody::_on_particle_contact(Object *p_particle_body, int p_particle_index, Vector3 p_velocity, Vector3 p_normal) {
+
+	emit_signal("particle_contact", p_particle_body, p_particle_index, p_velocity, p_normal);
+}
+
+void ParticlePrimitiveBody::_on_sync() {
+	emit_signal("on_sync", NULL, 0);
 }
 
 void ParticlePrimitiveBody::_create_debug_shape() {
@@ -220,7 +244,10 @@ void ParticlePrimitiveArea::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_monitor_particles_entering", "monitor"), &ParticlePrimitiveArea::set_monitor_particles_entering);
 	ClassDB::bind_method(D_METHOD("get_monitor_particles_entering"), &ParticlePrimitiveArea::get_monitor_particles_entering);
 
-	ClassDB::bind_method(D_METHOD("get_overlapping_particles", "body"), &ParticlePrimitiveArea::get_overlapping_particles);
+	ClassDB::bind_method(D_METHOD("get_overlapping_body_count"), &ParticlePrimitiveArea::get_overlapping_body_count);
+	ClassDB::bind_method(D_METHOD("find_overlapping_body_pos", "particle_body"), &ParticlePrimitiveArea::find_overlapping_body_pos);
+	ClassDB::bind_method(D_METHOD("get_overlapping_body", "id"), &ParticlePrimitiveArea::get_overlapping_body);
+	ClassDB::bind_method(D_METHOD("get_overlapping_particles", "id"), &ParticlePrimitiveArea::get_overlapping_particles);
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitor_particle_bodies_entering"), "set_monitor_particle_bodies_entering", "get_monitor_particle_bodies_entering");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitor_particles_entering"), "set_monitor_particles_entering", "get_monitor_particles_entering");
@@ -274,16 +301,25 @@ void ParticlePrimitiveArea::set_monitor_particles_entering(bool p_monitor) {
 		set_physics_process_internal(monitor_particle_bodies_entering && monitor_particles_entering);
 }
 
-Vector<int> ParticlePrimitiveArea::get_overlapping_particles(Object *p_particle_body) {
-	int i = body_contacts.find(ParticleBodyContacts(p_particle_body));
-	if (-1 != i)
-		return body_contacts[i].particles;
-	return Vector<int>();
+int ParticlePrimitiveArea::get_overlapping_body_count() const {
+	return body_contacts.size();
 }
 
-void ParticlePrimitiveArea::on_particle_contact(Object *p_particle_body_commands, Object *p_particle_body, int p_particle_index, Vector3 p_velocity, Vector3 p_normal) {
+int ParticlePrimitiveArea::find_overlapping_body_pos(Object *p_particle_body) {
+	return body_contacts.find(ParticleBodyContacts(p_particle_body));
+}
 
-	ParticlePrimitiveBody::on_particle_contact(p_particle_body_commands, p_particle_body, p_particle_index, p_velocity, p_normal);
+Object *ParticlePrimitiveArea::get_overlapping_body(int id) const {
+	return body_contacts[id].particle_body;
+}
+
+Vector<int> ParticlePrimitiveArea::get_overlapping_particles(int id) {
+	return body_contacts[id].particles;
+}
+
+void ParticlePrimitiveArea::_on_particle_contact(Object *p_particle_body, int p_particle_index, Vector3 p_velocity, Vector3 p_normal) {
+
+	ParticlePrimitiveBody::_on_particle_contact(p_particle_body, p_particle_index, p_velocity, p_normal);
 
 	if (!monitor_particle_bodies_entering && !monitor_particles_entering)
 		return;

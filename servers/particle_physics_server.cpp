@@ -7,9 +7,10 @@ void ParticleBodyCommands::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("load_model", "shape", "initial_transform"), &ParticleBodyCommands::load_model);
 
-	ClassDB::bind_method(D_METHOD("reset_particle", "particle_index", "position", "mass"), &ParticleBodyCommands::reset_particle);
+	ClassDB::bind_method(D_METHOD("set_particle_position_mass", "particle_index", "position", "mass"), &ParticleBodyCommands::set_particle_position_mass);
 
 	ClassDB::bind_method(D_METHOD("get_particle_position", "particle_index"), &ParticleBodyCommands::get_particle_position);
+	ClassDB::bind_method(D_METHOD("get_particle_mass", "particle_index"), &ParticleBodyCommands::get_particle_mass);
 
 	ClassDB::bind_method(D_METHOD("get_particle_velocity", "particle_index"), &ParticleBodyCommands::get_particle_velocity);
 	ClassDB::bind_method(D_METHOD("set_particle_velocity", "particle_index", "velocity"), &ParticleBodyCommands::set_particle_velocity);
@@ -28,6 +29,8 @@ void ParticlePhysicsServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("body_set_space", "body", "space"), &ParticlePhysicsServer::body_set_space);
 	ClassDB::bind_method(D_METHOD("body_set_callback", "body", "callback_type", "receiver", "method"), &ParticlePhysicsServer::body_set_callback);
 	ClassDB::bind_method(D_METHOD("body_set_object_instance", "body", "object_instance"), &ParticlePhysicsServer::body_set_object_instance);
+
+	ClassDB::bind_method(D_METHOD("body_get_commands", "body"), &ParticlePhysicsServer::body_get_commands);
 
 	ClassDB::bind_method(D_METHOD("body_set_collision_group", "body", "group"), &ParticlePhysicsServer::body_set_collision_group);
 	ClassDB::bind_method(D_METHOD("body_get_collision_group", "body"), &ParticlePhysicsServer::body_get_collision_group);
@@ -88,6 +91,9 @@ void ParticlePhysicsServer::_bind_methods() {
 	BIND_ENUM_CONSTANT(PARTICLE_BODY_CALLBACK_PARTICLEINDEXCHANGED);
 	BIND_ENUM_CONSTANT(PARTICLE_BODY_CALLBACK_SPRINGINDEXCHANGED);
 	BIND_ENUM_CONSTANT(PARTICLE_BODY_CALLBACK_PRIMITIVECONTACT);
+
+	BIND_ENUM_CONSTANT(PARTICLE_PRIMITIVE_BODY_CALLBACK_SYNC);
+	BIND_ENUM_CONSTANT(PARTICLE_PRIMITIVE_BODY_CALLBACK_PARTICLECONTACT);
 
 	BIND_ENUM_CONSTANT(PARTICLE_COLLISION_FLAG_SELF_COLLIDE);
 	BIND_ENUM_CONSTANT(PARTICLE_COLLISION_FLAG_SELF_COLLIDE_FILTER);

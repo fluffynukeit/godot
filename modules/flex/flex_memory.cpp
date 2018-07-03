@@ -99,6 +99,11 @@ void ActiveParticlesMemory::set_active_particle(const MemoryChunk *p_chunk, Acti
 	changed = true;
 }
 
+ParticleBufferIndex ActiveParticlesMemory::get_active_particle(const MemoryChunk *p_chunk, ActiveParticleIndex p_active_particle_index) const {
+	make_memory_index_V(p_chunk, p_active_particle_index, -1);
+	return active_particles[index];
+}
+
 void SpringMemory::set_spring(const MemoryChunk *p_chunk, SpringIndex p_spring_index, const Spring &p_spring) {
 	make_memory_index(p_chunk, p_spring_index);
 	springs[index] = p_spring;
