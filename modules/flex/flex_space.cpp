@@ -180,6 +180,7 @@ void FlexSpace::init() {
 	// *1: This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
 
 	NvFlexParams params;
+	// TODO use always the resource even for defaults
 	// Initialize solver parameter
 	NvFlexGetParams(solver, &params);
 	params.gravity[0] = 0.0;

@@ -301,8 +301,9 @@ void FlexParticlePhysicsServer::space_get_params_defaults(Map<String, Variant> *
 	(*r_defs)["maxSpeed"] = FLT_MAX;
 	(*r_defs)["maxAcceleration"] = Vector3((*r_defs)["gravity"]).length() * 10.0;
 	(*r_defs)["solidPressure"] = 1.0;
-	(*r_defs)["collisionDistance"] = MAX(real_t((*r_defs)["solidRestDistance"]), real_t((*r_defs)["fluidRestDistance"])) * 0.5;
-	(*r_defs)["shapeCollisionMargin"] = real_t((*r_defs)["collisionDistance"]) * 0.5;
+	(*r_defs)["collisionDistance"] = MAX(real_t((*r_defs)["solidRestDistance"]), real_t((*r_defs)["fluidRestDistance"])) * 0.8;
+	(*r_defs)["shapeCollisionMargin"] = 0.005;
+	(*r_defs)["particleCollisionMargin"] = 0.01;
 	(*r_defs)["relaxationMode"] = "global";
 	(*r_defs)["relaxationFactor"] = 0.8;
 }
