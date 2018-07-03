@@ -94,11 +94,26 @@ class ParticlePrimitiveArea : public ParticlePrimitiveBody {
 	bool monitor_particle_bodies_entering;
 	bool monitor_particles_entering;
 
+	struct ParticleContacts {
+		int particle_index;
+		int stage; // 0 in, 1 inside, 2 out
+
+		ParticleContacts() :
+				particle_index(0),
+				stage(0) {}
+
+		ParticleContacts(int p_index);
+
+		bool operator==(const ParticleContacts &p_other) const {
+			return p_other.particle_index == particle_index;
+		}
+	};
+
 	struct ParticleBodyContacts {
 		Object *particle_body;
 		bool just_entered;
 		int particle_count;
-		Vector<int> particles;
+		Vector<ParticleContacts> particles;
 
 		ParticleBodyContacts() :
 				just_entered(true),
@@ -129,7 +144,8 @@ public:
 	int get_overlapping_body_count() const;
 	int find_overlapping_body_pos(Object *p_particle_body);
 	Object *get_overlapping_body(int id) const;
-	Vector<int> get_overlapping_particles(int id);
+	int get_overlapping_particles_count(int id);
+	int get_overlapping_particle_index(int body_id, int particle_id);
 
 protected:
 	virtual void _on_particle_contact(Object *p_particle_body, int p_particle_index, Vector3 p_velocity, Vector3 p_normal);
