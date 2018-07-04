@@ -111,6 +111,8 @@ public:
 	_FORCE_INLINE_ RigidsMemory *get_rigids_memory() { return rigids_memory; }
 	_FORCE_INLINE_ RigidsComponentsMemory *get_rigids_components_memory() { return rigids_components_memory; }
 
+	bool can_commands_be_executed() const;
+
 	void add_particle_body(FlexParticleBody *p_body);
 	void remove_particle_body(FlexParticleBody *p_body);
 
