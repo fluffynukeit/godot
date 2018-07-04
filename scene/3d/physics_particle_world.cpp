@@ -68,10 +68,16 @@ bool PhysicsParticleWorld::_get(const StringName &p_name, Variant &r_property) c
 void PhysicsParticleWorld::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_ENTER_TREE:
+
 			particle_space = get_viewport()->find_world()->get_particle_space();
+			if (!ParticlePhysicsServer::get_singleton()->space_is_using_default_params(particle_space))
+				ERR_PRINT("Avoid to use more then 1 PhysicsParticleWorld!");
+
 			reload_data();
+
 			break;
 		case NOTIFICATION_EXIT_TREE:
+			ParticlePhysicsServer::get_singleton()->space_reset_params_to_default(particle_space);
 			particle_space = RID();
 			break;
 	}
