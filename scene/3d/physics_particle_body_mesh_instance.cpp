@@ -86,6 +86,7 @@ ParticleBodyMeshInstance::ParticleBodyMeshInstance() :
 		skeleton(NULL),
 		rendering_approach(RENDERING_UPDATE_APPROACH_NONE) {
 
+	set_skeleton_path(NodePath());
 	if (Engine::get_singleton()->is_editor_hint())
 		set_notify_local_transform(true);
 }
