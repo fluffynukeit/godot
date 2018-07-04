@@ -88,6 +88,47 @@ class FlexParticlePhysicsServer : public ParticlePhysicsServer {
 public:
 	static FlexParticlePhysicsServer *singleton;
 
+	const StringName solver_param_numIterations;
+	const StringName solver_param_gravity;
+	const StringName solver_param_radius;
+	const StringName solver_param_solidRestDistance;
+	const StringName solver_param_fluidRestDistance;
+	const StringName solver_param_dynamicFriction;
+	const StringName solver_param_staticFriction;
+	const StringName solver_param_particleFriction;
+	const StringName solver_param_restitution;
+	const StringName solver_param_adhesion;
+	const StringName solver_param_sleepThreshold;
+	const StringName solver_param_maxSpeed;
+	const StringName solver_param_maxAcceleration;
+	const StringName solver_param_shockPropagation;
+	const StringName solver_param_dissipation;
+	const StringName solver_param_damping;
+	const StringName solver_param_wind;
+	const StringName solver_param_drag;
+	const StringName solver_param_lift;
+	const StringName solver_param_cohesion;
+	const StringName solver_param_surfaceTension;
+	const StringName solver_param_viscosity;
+	const StringName solver_param_vorticityConfinement;
+	const StringName solver_param_anisotropyScale;
+	const StringName solver_param_anisotropyMin;
+	const StringName solver_param_anisotropyMax;
+	const StringName solver_param_smoothing;
+	const StringName solver_param_solidPressure;
+	const StringName solver_param_freeSurfaceDrag;
+	const StringName solver_param_buoyancy;
+	const StringName solver_param_diffuseThreshold;
+	const StringName solver_param_diffuseBuoyancy;
+	const StringName solver_param_diffuseDrag;
+	const StringName solver_param_diffuseBallistic;
+	const StringName solver_param_diffuseLifetime;
+	const StringName solver_param_collisionDistance;
+	const StringName solver_param_particleCollisionMargin;
+	const StringName solver_param_shapeCollisionMargin;
+	const StringName solver_param_relaxationMode;
+	const StringName solver_param_relaxationFactor;
+
 private:
 	mutable RID_Owner<FlexSpace> space_owner;
 	mutable RID_Owner<FlexParticleBody> body_owner;

@@ -260,6 +260,46 @@ FlexParticlePhysicsServer *FlexParticlePhysicsServer::singleton = NULL;
 
 FlexParticlePhysicsServer::FlexParticlePhysicsServer() :
 		ParticlePhysicsServer(),
+		solver_param_numIterations("numIterations"),
+		solver_param_gravity("gravity"),
+		solver_param_radius("radius"),
+		solver_param_solidRestDistance("solidRestDistance"),
+		solver_param_fluidRestDistance("fluidRestDistance"),
+		solver_param_dynamicFriction("dynamicFriction"),
+		solver_param_staticFriction("staticFriction"),
+		solver_param_particleFriction("particleFriction"),
+		solver_param_restitution("restitution"),
+		solver_param_adhesion("adhesion"),
+		solver_param_sleepThreshold("sleepThreshold"),
+		solver_param_maxSpeed("maxSpeed"),
+		solver_param_maxAcceleration("maxAcceleration"),
+		solver_param_shockPropagation("shockPropagation"),
+		solver_param_dissipation("dissipation"),
+		solver_param_damping("damping"),
+		solver_param_wind("wind"),
+		solver_param_drag("drag"),
+		solver_param_lift("lift"),
+		solver_param_cohesion("cohesion"),
+		solver_param_surfaceTension("surfaceTension"),
+		solver_param_viscosity("viscosity"),
+		solver_param_vorticityConfinement("vorticityConfinement"),
+		solver_param_anisotropyScale("anisotropyScale"),
+		solver_param_anisotropyMin("anisotropyMin"),
+		solver_param_anisotropyMax("anisotropyMax"),
+		solver_param_smoothing("smoothing"),
+		solver_param_solidPressure("solidPressure"),
+		solver_param_freeSurfaceDrag("freeSurfaceDrag"),
+		solver_param_buoyancy("buoyancy"),
+		solver_param_diffuseThreshold("diffuseThreshold"),
+		solver_param_diffuseBuoyancy("diffuseBuoyancy"),
+		solver_param_diffuseDrag("diffuseDrag"),
+		solver_param_diffuseBallistic("diffuseBallistic"),
+		solver_param_diffuseLifetime("diffuseLifetime"),
+		solver_param_collisionDistance("collisionDistance"),
+		solver_param_particleCollisionMargin("particleCollisionMargin"),
+		solver_param_shapeCollisionMargin("shapeCollisionMargin"),
+		solver_param_relaxationMode("relaxationMode"),
+		solver_param_relaxationFactor("relaxationFactor"),
 		is_active(true),
 		last_space_index(-1) {
 
@@ -298,46 +338,46 @@ bool FlexParticlePhysicsServer::space_is_active(RID p_space) const {
 }
 
 void FlexParticlePhysicsServer::space_get_params_defaults(Map<StringName, Variant> *r_defs) const {
-	(*r_defs)["numIterations"] = 3;
-	(*r_defs)["gravity"] = Vector3(0, -10, 0);
-	(*r_defs)["radius"] = 0.1f;
-	(*r_defs)["solidRestDistance"] = real_t((*r_defs)["radius"]) * 0.9;
-	(*r_defs)["fluidRestDistance"] = real_t((*r_defs)["radius"]) * 0.5;
-	(*r_defs)["dynamicFriction"] = 0.1;
-	(*r_defs)["staticFriction"] = 0.1;
-	(*r_defs)["particleFriction"] = 0.1;
-	(*r_defs)["restitution"] = 0.01;
-	(*r_defs)["adhesion"] = 0.0;
-	(*r_defs)["sleepThreshold"] = 0.0;
-	(*r_defs)["maxSpeed"] = FLT_MAX;
-	(*r_defs)["maxAcceleration"] = Vector3((*r_defs)["gravity"]).length() * 10.0;
-	(*r_defs)["shockPropagation"] = 0.0;
-	(*r_defs)["dissipation"] = 0.0;
-	(*r_defs)["damping"] = 0.0;
-	(*r_defs)["wind"] = Vector3();
-	(*r_defs)["drag"] = 0.0;
-	(*r_defs)["lift"] = 0.0;
-	(*r_defs)["cohesion"] = 0.0;
-	(*r_defs)["surfaceTension"] = 0.0;
-	(*r_defs)["viscosity"] = 0.0;
-	(*r_defs)["vorticityConfinement"] = 0.0;
-	(*r_defs)["anisotropyScale"] = 0.0;
-	(*r_defs)["anisotropyMin"] = 0.0;
-	(*r_defs)["anisotropyMax"] = 0.0;
-	(*r_defs)["smoothing"] = 0.0;
-	(*r_defs)["solidPressure"] = 1.0;
-	(*r_defs)["freeSurfaceDrag"] = 0.0;
-	(*r_defs)["buoyancy"] = 0.0;
-	(*r_defs)["diffuseThreshold"] = 0.0;
-	(*r_defs)["diffuseBuoyancy"] = 0.0;
-	(*r_defs)["diffuseDrag"] = 0.0;
-	(*r_defs)["diffuseBallistic"] = 0.0;
-	(*r_defs)["diffuseLifetime"] = 0.0;
-	(*r_defs)["collisionDistance"] = MAX(real_t((*r_defs)["solidRestDistance"]), real_t((*r_defs)["fluidRestDistance"])) * 0.8;
-	(*r_defs)["particleCollisionMargin"] = 0.01;
-	(*r_defs)["shapeCollisionMargin"] = 0.005;
-	(*r_defs)["relaxationMode"] = "local";
-	(*r_defs)["relaxationFactor"] = 0.8;
+	(*r_defs)[solver_param_numIterations] = 3;
+	(*r_defs)[solver_param_gravity] = Vector3(0, -10, 0);
+	(*r_defs)[solver_param_radius] = 0.1f;
+	(*r_defs)[solver_param_solidRestDistance] = real_t((*r_defs)[solver_param_radius]) * 0.9;
+	(*r_defs)[solver_param_fluidRestDistance] = real_t((*r_defs)[solver_param_radius]) * 0.5;
+	(*r_defs)[solver_param_dynamicFriction] = 0.1;
+	(*r_defs)[solver_param_staticFriction] = 0.1;
+	(*r_defs)[solver_param_particleFriction] = 0.1;
+	(*r_defs)[solver_param_restitution] = 0.01;
+	(*r_defs)[solver_param_adhesion] = 0.0;
+	(*r_defs)[solver_param_sleepThreshold] = 0.0;
+	(*r_defs)[solver_param_maxSpeed] = FLT_MAX;
+	(*r_defs)[solver_param_maxAcceleration] = Vector3((*r_defs)[solver_param_gravity]).length() * 10.0;
+	(*r_defs)[solver_param_shockPropagation] = 0.0;
+	(*r_defs)[solver_param_dissipation] = 0.0;
+	(*r_defs)[solver_param_damping] = 0.0;
+	(*r_defs)[solver_param_wind] = Vector3();
+	(*r_defs)[solver_param_drag] = 0.0;
+	(*r_defs)[solver_param_lift] = 0.0;
+	(*r_defs)[solver_param_cohesion] = 0.0;
+	(*r_defs)[solver_param_surfaceTension] = 0.0;
+	(*r_defs)[solver_param_viscosity] = 0.0;
+	(*r_defs)[solver_param_vorticityConfinement] = 0.0;
+	(*r_defs)[solver_param_anisotropyScale] = 0.0;
+	(*r_defs)[solver_param_anisotropyMin] = 0.0;
+	(*r_defs)[solver_param_anisotropyMax] = 0.0;
+	(*r_defs)[solver_param_smoothing] = 0.0;
+	(*r_defs)[solver_param_solidPressure] = 1.0;
+	(*r_defs)[solver_param_freeSurfaceDrag] = 0.0;
+	(*r_defs)[solver_param_buoyancy] = 0.0;
+	(*r_defs)[solver_param_diffuseThreshold] = 0.0;
+	(*r_defs)[solver_param_diffuseBuoyancy] = 0.0;
+	(*r_defs)[solver_param_diffuseDrag] = 0.0;
+	(*r_defs)[solver_param_diffuseBallistic] = 0.0;
+	(*r_defs)[solver_param_diffuseLifetime] = 0.0;
+	(*r_defs)[solver_param_collisionDistance] = MAX(real_t((*r_defs)[solver_param_solidRestDistance]), real_t((*r_defs)[solver_param_fluidRestDistance])) * 0.8;
+	(*r_defs)[solver_param_particleCollisionMargin] = 0.01;
+	(*r_defs)[solver_param_shapeCollisionMargin] = 0.005;
+	(*r_defs)[solver_param_relaxationMode] = "local";
+	(*r_defs)[solver_param_relaxationFactor] = 0.8;
 }
 
 bool FlexParticlePhysicsServer::space_set_param(RID p_space, const StringName &p_name, const Variant &p_property) {

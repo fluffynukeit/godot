@@ -408,124 +408,124 @@ bool FlexSpace::set_param(const StringName &p_name, const Variant &p_property) {
 	NvFlexParams params;
 	NvFlexGetParams(solver, &params);
 
-	if ("numIterations" == p_name) {
+	if (FlexParticlePhysicsServer::singleton->solver_param_numIterations == p_name) {
 
 		params.numIterations = p_property;
-	} else if ("gravity" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_gravity == p_name) {
 
 		(*((Vector3 *)params.gravity)) = ((Vector3)p_property);
-	} else if ("radius" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_radius == p_name) {
 
 		params.radius = p_property;
-	} else if ("solidRestDistance" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_solidRestDistance == p_name) {
 
 		params.solidRestDistance = p_property;
-	} else if ("fluidRestDistance" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_fluidRestDistance == p_name) {
 
 		params.fluidRestDistance = p_property;
-	} else if ("dynamicFriction" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_dynamicFriction == p_name) {
 
 		params.dynamicFriction = p_property;
-	} else if ("staticFriction" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_staticFriction == p_name) {
 
 		params.staticFriction = p_property;
-	} else if ("particleFriction" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_particleFriction == p_name) {
 
 		params.particleFriction = p_property;
-	} else if ("restitution" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_restitution == p_name) {
 
 		params.restitution = p_property;
-	} else if ("adhesion" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_adhesion == p_name) {
 
 		params.adhesion = p_property;
-	} else if ("sleepThreshold" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_sleepThreshold == p_name) {
 
 		params.sleepThreshold = p_property;
-	} else if ("maxSpeed" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_maxSpeed == p_name) {
 
 		params.maxSpeed = p_property;
-	} else if ("maxAcceleration" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_maxAcceleration == p_name) {
 
 		params.maxAcceleration = p_property;
-	} else if ("shockPropagation" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_shockPropagation == p_name) {
 
 		params.shockPropagation = p_property;
-	} else if ("dissipation" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_dissipation == p_name) {
 
 		params.dissipation = p_property;
-	} else if ("damping" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_damping == p_name) {
 
 		params.damping = p_property;
-	} else if ("wind" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_wind == p_name) {
 
 		(*((Vector3 *)params.wind)) = ((Vector3)p_property);
-	} else if ("drag" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_drag == p_name) {
 
 		params.drag = p_property;
-	} else if ("lift" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_lift == p_name) {
 
 		params.lift = p_property;
-	} else if ("cohesion" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_cohesion == p_name) {
 
 		params.cohesion = p_property;
-	} else if ("surfaceTension" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_surfaceTension == p_name) {
 
 		params.surfaceTension = p_property;
-	} else if ("viscosity" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_viscosity == p_name) {
 
 		params.viscosity = p_property;
-	} else if ("vorticityConfinement" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_vorticityConfinement == p_name) {
 
 		params.vorticityConfinement = p_property;
-	} else if ("anisotropyScale" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_anisotropyScale == p_name) {
 
 		params.anisotropyScale = p_property;
-	} else if ("anisotropyMin" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_anisotropyMin == p_name) {
 
 		params.anisotropyMin = p_property;
-	} else if ("anisotropyMax" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_anisotropyMax == p_name) {
 
 		params.anisotropyMax = p_property;
-	} else if ("smoothing" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_smoothing == p_name) {
 
 		params.smoothing = p_property;
-	} else if ("solidPressure" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_solidPressure == p_name) {
 
 		params.solidPressure = p_property;
-	} else if ("freeSurfaceDrag" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_freeSurfaceDrag == p_name) {
 
 		params.freeSurfaceDrag = p_property;
-	} else if ("buoyancy" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_buoyancy == p_name) {
 
 		params.buoyancy = p_property;
-	} else if ("diffuseThreshold" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_diffuseThreshold == p_name) {
 
 		params.diffuseThreshold = p_property;
-	} else if ("diffuseBuoyancy" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_diffuseBuoyancy == p_name) {
 
 		params.diffuseBuoyancy = p_property;
-	} else if ("diffuseDrag" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_diffuseDrag == p_name) {
 
 		params.diffuseDrag = p_property;
-	} else if ("diffuseBallistic" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_diffuseBallistic == p_name) {
 
 		params.diffuseBallistic = p_property;
-	} else if ("diffuseLifetime" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_diffuseLifetime == p_name) {
 
 		params.diffuseLifetime = p_property;
-	} else if ("collisionDistance" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_collisionDistance == p_name) {
 
 		params.collisionDistance = p_property;
-	} else if ("particleCollisionMargin" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_particleCollisionMargin == p_name) {
 
 		params.particleCollisionMargin = p_property;
-	} else if ("shapeCollisionMargin" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_shapeCollisionMargin == p_name) {
 
 		params.shapeCollisionMargin = p_property;
-	} else if ("relaxationMode" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_relaxationMode == p_name) {
 
 		params.relaxationMode = "global" == p_property ? eNvFlexRelaxationGlobal : eNvFlexRelaxationLocal;
-	} else if ("relaxationFactor" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_relaxationFactor == p_name) {
 
 		params.relaxationFactor = p_property;
 	} else {
@@ -541,121 +541,121 @@ bool FlexSpace::get_param(const StringName &p_name, Variant &r_property) const {
 	NvFlexParams params;
 	NvFlexGetParams(solver, &params);
 
-	if ("numIterations" == p_name) {
+	if (FlexParticlePhysicsServer::singleton->solver_param_numIterations == p_name) {
 
 		r_property = params.numIterations;
-	} else if ("gravity" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_gravity == p_name) {
 
 		r_property = (*((Vector3 *)params.gravity));
-	} else if ("solidRestDistance" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_solidRestDistance == p_name) {
 
 		r_property = params.solidRestDistance;
-	} else if ("fluidRestDistance" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_fluidRestDistance == p_name) {
 
 		r_property = params.fluidRestDistance;
-	} else if ("dynamicFriction" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_dynamicFriction == p_name) {
 
 		r_property = params.dynamicFriction;
-	} else if ("staticFriction" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_staticFriction == p_name) {
 
 		r_property = params.staticFriction;
-	} else if ("particleFriction" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_particleFriction == p_name) {
 
 		r_property = params.particleFriction;
-	} else if ("restitution" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_restitution == p_name) {
 
 		r_property = params.restitution;
-	} else if ("adhesion" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_adhesion == p_name) {
 
 		r_property = params.adhesion;
-	} else if ("sleepThreshold" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_sleepThreshold == p_name) {
 
 		r_property = params.sleepThreshold;
-	} else if ("maxSpeed" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_maxSpeed == p_name) {
 
 		r_property = params.maxSpeed;
-	} else if ("maxAcceleration" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_maxAcceleration == p_name) {
 
 		r_property = params.maxAcceleration;
-	} else if ("shockPropagation" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_shockPropagation == p_name) {
 
 		r_property = params.shockPropagation;
-	} else if ("dissipation" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_dissipation == p_name) {
 
 		r_property = params.dissipation;
-	} else if ("damping" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_damping == p_name) {
 
 		r_property = params.damping;
-	} else if ("wind" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_wind == p_name) {
 
 		r_property = (*((Vector3 *)params.wind));
-	} else if ("drag" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_drag == p_name) {
 
 		r_property = params.drag;
-	} else if ("lift" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_lift == p_name) {
 
 		r_property = params.lift;
-	} else if ("cohesion" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_cohesion == p_name) {
 
 		r_property = params.cohesion;
-	} else if ("surfaceTension" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_surfaceTension == p_name) {
 
 		r_property = params.surfaceTension;
-	} else if ("viscosity" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_viscosity == p_name) {
 
 		r_property = params.viscosity;
-	} else if ("vorticityConfinement" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_vorticityConfinement == p_name) {
 
 		r_property = params.vorticityConfinement;
-	} else if ("anisotropyScale" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_anisotropyScale == p_name) {
 
 		r_property = params.anisotropyScale;
-	} else if ("anisotropyMin" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_anisotropyMin == p_name) {
 
 		r_property = params.anisotropyMin;
-	} else if ("anisotropyMax" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_anisotropyMax == p_name) {
 
 		r_property = params.anisotropyMax;
-	} else if ("smoothing" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_smoothing == p_name) {
 
 		r_property = params.smoothing;
-	} else if ("solidPressure" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_solidPressure == p_name) {
 
 		r_property = params.solidPressure;
-	} else if ("freeSurfaceDrag" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_freeSurfaceDrag == p_name) {
 
 		r_property = params.freeSurfaceDrag;
-	} else if ("buoyancy" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_buoyancy == p_name) {
 
 		r_property = params.buoyancy;
-	} else if ("diffuseThreshold" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_diffuseThreshold == p_name) {
 
 		r_property = params.diffuseThreshold;
-	} else if ("diffuseBuoyancy" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_diffuseBuoyancy == p_name) {
 
 		r_property = params.diffuseBuoyancy;
-	} else if ("diffuseDrag" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_diffuseDrag == p_name) {
 
 		r_property = params.diffuseDrag;
-	} else if ("diffuseBallistic" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_diffuseBallistic == p_name) {
 
 		r_property = params.diffuseBallistic;
-	} else if ("diffuseLifetime" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_diffuseLifetime == p_name) {
 
 		r_property = params.diffuseLifetime;
-	} else if ("collisionDistance" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_collisionDistance == p_name) {
 
 		r_property = params.collisionDistance;
-	} else if ("particleCollisionMargin" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_particleCollisionMargin == p_name) {
 
 		r_property = params.particleCollisionMargin;
-	} else if ("shapeCollisionMargin" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_shapeCollisionMargin == p_name) {
 
 		r_property = params.shapeCollisionMargin;
-	} else if ("relaxationMode" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_relaxationMode == p_name) {
 
 		r_property = eNvFlexRelaxationGlobal == params.relaxationMode ? "global" : "local";
-	} else if ("relaxationFactor" == p_name) {
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_relaxationFactor == p_name) {
 
 		r_property = params.relaxationFactor;
 	} else {

@@ -56,6 +56,7 @@ class GeometryMemory;
 class ContactsBuffers;
 
 class FlexSpace : public RIDFlex {
+
 	friend class FlexBuffers;
 	friend class FlexParticleBodyCommands;
 
