@@ -213,7 +213,11 @@ void ParticleBodyMeshInstance::prepare_mesh_skeleton_deformation() {
 	new_mesh.instance();
 	new_mesh->add_surface_from_arrays(get_mesh()->surface_get_primitive_type(surface_id), array_mesh);
 
+	Ref<Material> material(get_surface_material(0));
+
 	set_mesh(new_mesh);
+
+	set_surface_material(0, material);
 
 	rendering_approach = RENDERING_UPDATE_APPROACH_SKELETON;
 }
