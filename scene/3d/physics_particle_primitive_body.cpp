@@ -259,11 +259,11 @@ void ParticlePrimitiveArea::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitor_particle_bodies_entering"), "set_monitor_particle_bodies_entering", "get_monitor_particle_bodies_entering");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitor_particles_entering"), "set_monitor_particles_entering", "get_monitor_particles_entering");
 
-	ADD_SIGNAL(MethodInfo("on_body_enter", PropertyInfo(Variant::OBJECT, "particle_body")));
-	ADD_SIGNAL(MethodInfo("on_body_exit", PropertyInfo(Variant::OBJECT, "particle_body")));
+	ADD_SIGNAL(MethodInfo("body_enter", PropertyInfo(Variant::OBJECT, "particle_body")));
+	ADD_SIGNAL(MethodInfo("body_exit", PropertyInfo(Variant::OBJECT, "particle_body")));
 
-	ADD_SIGNAL(MethodInfo("on_particle_enter", PropertyInfo(Variant::OBJECT, "particle_body"), PropertyInfo(Variant::INT, "particle_index")));
-	ADD_SIGNAL(MethodInfo("on_particle_exit", PropertyInfo(Variant::OBJECT, "particle_body"), PropertyInfo(Variant::INT, "particle_index")));
+	ADD_SIGNAL(MethodInfo("particle_enter", PropertyInfo(Variant::OBJECT, "particle_body"), PropertyInfo(Variant::INT, "particle_index")));
+	ADD_SIGNAL(MethodInfo("particle_exit", PropertyInfo(Variant::OBJECT, "particle_body"), PropertyInfo(Variant::INT, "particle_index")));
 }
 
 ParticlePrimitiveArea::ParticlePrimitiveArea() :
@@ -340,10 +340,10 @@ void ParticlePrimitiveArea::_on_sync() {
 		if (!body_contacts[i].particle_count) {
 
 			for (int p(body_contacts[i].particles.size() - 1); 0 <= p; --p) {
-				emit_signal("on_particle_exit", body_contacts[i].particle_body, body_contacts[i].particles[p].particle_index);
+				emit_signal("particle_exit", body_contacts[i].particle_body, body_contacts[i].particles[p].particle_index);
 			}
 
-			emit_signal("on_body_exit", body_contacts[i].particle_body);
+			emit_signal("body_exit", body_contacts[i].particle_body);
 
 			body_contacts.remove(i);
 			continue;
@@ -352,19 +352,19 @@ void ParticlePrimitiveArea::_on_sync() {
 		if (body_contacts[i].just_entered) {
 
 			body_contacts[i].just_entered = false;
-			emit_signal("on_body_enter", body_contacts[i].particle_body);
+			emit_signal("body_enter", body_contacts[i].particle_body);
 		}
 
 		for (int p(body_contacts[i].particles.size() - 1); 0 <= p; --p) {
 			if (2 == body_contacts[i].particles[p].stage) {
 
-				emit_signal("on_particle_exit", body_contacts[i].particle_body, body_contacts[i].particles[p].particle_index);
+				emit_signal("particle_exit", body_contacts[i].particle_body, body_contacts[i].particles[p].particle_index);
 				body_contacts[i].particles.remove(p);
 				continue;
 
 			} else if (0 == body_contacts[i].particles[p].stage) {
 
-				emit_signal("on_particle_enter", body_contacts[i].particle_body, body_contacts[i].particles[p].particle_index);
+				emit_signal("particle_enter", body_contacts[i].particle_body, body_contacts[i].particles[p].particle_index);
 			}
 
 			body_contacts[i].particles[p].stage = 2;
