@@ -222,61 +222,43 @@ void FlexParticleBody::reset_spring(SpringIndex p_spring, ParticleIndex p_partic
 }
 
 void FlexParticleBody::set_particle_position_mass(ParticleIndex p_particle_index, const Vector3 &p_position, real_t p_mass) {
-	if (!particles_mchunk)
-		return;
 	space->get_particles_memory()->set_particle(particles_mchunk, p_particle_index, make_particle(p_position, p_mass));
 	changed_parameters |= eChangedBodyParamPositionMass;
 }
 
 Vector3 FlexParticleBody::get_particle_position(ParticleIndex p_particle_index) const {
-	if (!particles_mchunk)
-		return return_err_vec3;
 	const FlVector4 &p(space->get_particles_memory()->get_particle(particles_mchunk, p_particle_index));
 	return extract_position(p);
 }
 
 void FlexParticleBody::set_particle_position(ParticleIndex p_particle_index, const Vector3 &p_position) {
-	if (!particles_mchunk)
-		return;
 	space->get_particles_memory()->set_particle(particles_mchunk, p_particle_index, make_particle(p_position, get_particle_mass(p_particle_index)));
 	changed_parameters |= eChangedBodyParamPositionMass;
 }
 
 void FlexParticleBody::set_particle_mass(ParticleIndex p_particle_index, real_t p_mass) {
-	if (!particles_mchunk)
-		return;
 	space->get_particles_memory()->set_particle(particles_mchunk, p_particle_index, make_particle(get_particle_position(p_particle_index), p_mass));
 	changed_parameters |= eChangedBodyParamPositionMass;
 }
 
 float FlexParticleBody::get_particle_mass(ParticleIndex p_particle_index) const {
-	if (!particles_mchunk)
-		return 0;
 	return extract_mass(space->get_particles_memory()->get_particle(particles_mchunk, p_particle_index));
 }
 
 const Vector3 &FlexParticleBody::get_particle_velocity(ParticleIndex p_particle_index) const {
-	if (!particles_mchunk)
-		return return_err_vec3;
 	return space->get_particles_memory()->get_velocity(particles_mchunk, p_particle_index);
 }
 
 void FlexParticleBody::set_particle_velocity(ParticleIndex p_particle_index, const Vector3 &p_velocity) {
-	if (!particles_mchunk)
-		return;
 	space->get_particles_memory()->set_velocity(particles_mchunk, p_particle_index, p_velocity);
 	changed_parameters |= eChangedBodyParamVelocity;
 }
 
 const Vector3 &FlexParticleBody::get_rigid_position(RigidIndex p_rigid_index) const {
-	if (!rigids_mchunk)
-		return return_err_vec3;
 	return space->get_rigids_memory()->get_position(rigids_mchunk, p_rigid_index);
 }
 
 const Quat &FlexParticleBody::get_rigid_rotation(RigidIndex p_rigid_index) const {
-	if (!rigids_mchunk)
-		return return_err_quat;
 	return space->get_rigids_memory()->get_rotation(rigids_mchunk, p_rigid_index);
 }
 
