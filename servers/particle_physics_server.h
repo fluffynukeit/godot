@@ -50,6 +50,8 @@ public:
 	virtual void space_get_params_defaults(Map<StringName, Variant> *r_defs) const = 0;
 	virtual bool space_set_param(RID p_space, const StringName &p_name, const Variant &p_property) = 0;
 	virtual bool space_get_param(RID p_space, const StringName &p_name, Variant &r_property) const = 0;
+	virtual void space_reset_params_to_default(RID p_space) = 0;
+	virtual bool space_is_using_default_params(RID p_space) const = 0;
 
 	enum ParticleBodyCallback {
 		PARTICLE_BODY_CALLBACK_SYNC,

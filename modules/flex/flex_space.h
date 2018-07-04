@@ -94,6 +94,8 @@ class FlexSpace : public RIDFlex {
 
 	Vector<MemoryChunk *> geometry_chunks_to_deallocate;
 
+	bool _is_using_default_params;
+
 public:
 	FlexSpace();
 	~FlexSpace();
@@ -121,6 +123,8 @@ public:
 
 	bool set_param(const StringName &p_name, const Variant &p_property);
 	bool get_param(const StringName &p_name, Variant &r_property) const;
+	void reset_params_to_defaults();
+	bool is_using_default_params() const;
 
 	// internals
 	void dispatch_callback_contacts();

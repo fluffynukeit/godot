@@ -330,6 +330,20 @@ bool FlexParticlePhysicsServer::space_get_param(RID p_space, const StringName &p
 	return space->get_param(p_name, r_property);
 }
 
+void FlexParticlePhysicsServer::space_reset_params_to_default(RID p_space) {
+	FlexSpace *space = space_owner.get(p_space);
+	ERR_FAIL_COND(!space);
+
+	space->reset_params_to_defaults();
+}
+
+bool FlexParticlePhysicsServer::space_is_using_default_params(RID p_space) const {
+	const FlexSpace *space = space_owner.get(p_space);
+	ERR_FAIL_COND_V(!space, false);
+
+	return space->is_using_default_params();
+}
+
 RID FlexParticlePhysicsServer::body_create() {
 	FlexParticleBody *particle_body = memnew(FlexParticleBody);
 	CreateThenReturnRID(body_owner, particle_body);

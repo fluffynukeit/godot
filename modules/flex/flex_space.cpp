@@ -179,28 +179,7 @@ void FlexSpace::init() {
 
 	// *1: This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
 
-	NvFlexParams params;
-	// TODO use always the resource even for defaults
-	// Initialize solver parameter
-	NvFlexGetParams(solver, &params);
-	params.gravity[0] = 0.0;
-	params.gravity[1] = -10.0;
-	params.gravity[2] = 0.0;
-	params.radius = 0.1;
-	params.solidRestDistance = params.radius * 0.9;
-	params.fluidRestDistance = params.radius * 0.5;
-	params.numIterations = 3;
-	params.maxSpeed = FLT_MAX;
-	params.maxAcceleration = Vector3(params.gravity[0], params.gravity[1], params.gravity[2]).length() * 10.0;
-	params.relaxationMode = eNvFlexRelaxationLocal;
-	params.relaxationFactor = 1.0;
-	params.solidPressure = 1.0;
-	params.collisionDistance = MAX(params.solidRestDistance, params.fluidRestDistance) * 0.5;
-	params.shapeCollisionMargin = params.collisionDistance * 0.5;
-	params.dynamicFriction = 0.1;
-	params.staticFriction = 0.1;
-	params.particleFriction = 0.1;
-	NvFlexSetParams(solver, &params);
+	reset_params_to_defaults();
 
 	CRASH_COND(has_error());
 }
@@ -553,6 +532,7 @@ bool FlexSpace::set_param(const StringName &p_name, const Variant &p_property) {
 		return false;
 	}
 
+	_is_using_default_params = false;
 	NvFlexSetParams(solver, &params);
 	return true;
 }
@@ -683,6 +663,19 @@ bool FlexSpace::get_param(const StringName &p_name, Variant &r_property) const {
 	}
 
 	return true;
+}
+
+void FlexSpace::reset_params_to_defaults() {
+	Map<StringName, Variant> defaults;
+	FlexParticlePhysicsServer::singleton->space_get_params_defaults(&defaults);
+	for (Map<StringName, Variant>::Element *e = defaults.front(); e; e = e->next()) {
+		set_param(e->key(), e->get());
+	}
+	_is_using_default_params = true;
+}
+
+bool FlexSpace::is_using_default_params() const {
+	return _is_using_default_params;
 }
 
 void FlexSpace::dispatch_callback_contacts() {
