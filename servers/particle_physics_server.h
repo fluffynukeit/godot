@@ -47,7 +47,7 @@ public:
 	virtual void space_set_active(RID p_space, bool p_active) = 0;
 	virtual bool space_is_active(RID p_space) const = 0;
 
-	virtual void space_get_params_defaults(Map<String, Variant> *r_defs) const = 0;
+	virtual void space_get_params_defaults(Map<StringName, Variant> *r_defs) const = 0;
 	virtual bool space_set_param(RID p_space, const StringName &p_name, const Variant &p_property) = 0;
 	virtual bool space_get_param(RID p_space, const StringName &p_name, Variant &r_property) const = 0;
 

@@ -38,7 +38,7 @@
 #include "servers/particle_physics_server.h"
 
 void PhysicsParticleWorld::_get_property_list(List<PropertyInfo> *p_list) const {
-	for (Map<String, Variant>::Element *e = data.front(); e; e = e->next()) {
+	for (Map<StringName, Variant>::Element *e = data.front(); e; e = e->next()) {
 		p_list->push_back(PropertyInfo(e->get().get_type(), e->key()));
 	}
 }
@@ -86,7 +86,7 @@ void PhysicsParticleWorld::reload_data() {
 	if (!particle_space.is_valid())
 		return;
 
-	for (Map<String, Variant>::Element *e = data.front(); e; e = e->next()) {
+	for (Map<StringName, Variant>::Element *e = data.front(); e; e = e->next()) {
 		ParticlePhysicsServer::get_singleton()->space_set_param(particle_space, e->key(), e->get());
 	}
 }
