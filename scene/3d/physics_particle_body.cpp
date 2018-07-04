@@ -150,7 +150,6 @@ String ParticleBody::get_configuration_warning() const {
 }
 
 void ParticleBody::set_particle_body_mesh(ParticleBodyMeshInstance *p_mesh) {
-	ERR_FAIL_COND(particle_body_mesh);
 	particle_body_mesh = p_mesh;
 	update_configuration_warning();
 }
