@@ -120,10 +120,11 @@ public:
 	virtual void space_set_active(RID p_space, bool p_active);
 	virtual bool space_is_active(RID p_space) const;
 
-	virtual void space_get_params_defaults(Map<String, Variant> *r_defs) const;
+	virtual void space_get_params_defaults(Map<StringName, Variant> *r_defs) const;
 	virtual bool space_set_param(RID p_space, const StringName &p_name, const Variant &p_property);
 	virtual bool space_get_param(RID p_space, const StringName &p_name, Variant &r_property) const;
 
+public:
 	/* BODY */
 	virtual RID body_create();
 	virtual void body_set_space(RID p_body, RID p_space);

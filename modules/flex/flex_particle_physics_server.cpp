@@ -297,7 +297,7 @@ bool FlexParticlePhysicsServer::space_is_active(RID p_space) const {
 	return active_spaces.find(space) != -1;
 }
 
-void FlexParticlePhysicsServer::space_get_params_defaults(Map<String, Variant> *r_defs) const {
+void FlexParticlePhysicsServer::space_get_params_defaults(Map<StringName, Variant> *r_defs) const {
 	(*r_defs)["numIterations"] = 3;
 	(*r_defs)["gravity"] = Vector3(0, -10, 0);
 	(*r_defs)["radius"] = 0.1f;
