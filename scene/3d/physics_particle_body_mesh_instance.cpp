@@ -160,6 +160,9 @@ void ParticleBodyMeshInstance::prepare_mesh_for_pvparticles() {
 
 void ParticleBodyMeshInstance::prepare_mesh_skeleton_deformation() {
 
+	if (Engine::get_singleton()->is_editor_hint())
+		return;
+
 	if (get_mesh().is_null())
 		return;
 
