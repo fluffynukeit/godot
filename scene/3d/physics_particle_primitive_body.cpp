@@ -107,6 +107,7 @@ ParticlePrimitiveBody::ParticlePrimitiveBody() :
 
 ParticlePrimitiveBody::~ParticlePrimitiveBody() {
 
+	set_shape(NULL);
 	ParticlePhysicsServer::get_singleton()->primitive_body_set_callback(rid, ParticlePhysicsServer::PARTICLE_PRIMITIVE_BODY_CALLBACK_PARTICLECONTACT, NULL, "");
 	ParticlePhysicsServer::get_singleton()->primitive_body_set_callback(rid, ParticlePhysicsServer::PARTICLE_PRIMITIVE_BODY_CALLBACK_SYNC, NULL, "");
 	debug_shape = NULL;
@@ -121,17 +122,17 @@ void ParticlePrimitiveBody::move(const Transform &p_transform) {
 
 void ParticlePrimitiveBody::set_shape(const Ref<Shape> &p_shape) {
 
-	if (!shape.is_null())
+	if (shape.is_valid())
 		shape->unregister_owner(this);
+
 	shape = p_shape;
-	if (!shape.is_null()) {
+	if (shape.is_valid()) {
 
 		shape->register_owner(this);
 		ParticlePhysicsServer::get_singleton()->primitive_body_set_shape(rid, shape->get_particle_rid());
-	} else {
 
+	} else
 		ParticlePhysicsServer::get_singleton()->primitive_body_set_shape(rid, RID());
-	}
 
 	update_gizmo();
 	update_configuration_warning();
