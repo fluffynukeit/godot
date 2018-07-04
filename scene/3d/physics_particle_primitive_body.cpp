@@ -71,7 +71,7 @@ void ParticlePrimitiveBody::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_layer", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collision_layer", "get_collision_layer");
 
 	ADD_SIGNAL(MethodInfo("particle_contact", PropertyInfo(Variant::OBJECT, "particle_body_commands", PROPERTY_HINT_RESOURCE_TYPE, "ParticleBodyCommands"), PropertyInfo(Variant::OBJECT, "particle_body"), PropertyInfo(Variant::INT, "particle_index"), PropertyInfo(Variant::VECTOR3, "velocity"), PropertyInfo(Variant::VECTOR3, "normal")));
-	ADD_SIGNAL(MethodInfo("on_sync"));
+	ADD_SIGNAL(MethodInfo("sync"));
 }
 
 void ParticlePrimitiveBody::_notification(int p_what) {
@@ -202,7 +202,7 @@ void ParticlePrimitiveBody::_on_particle_contact(Object *p_particle_body, int p_
 }
 
 void ParticlePrimitiveBody::_on_sync() {
-	emit_signal("on_sync", NULL, 0);
+	emit_signal("sync", NULL, 0);
 }
 
 void ParticlePrimitiveBody::_create_debug_shape() {
