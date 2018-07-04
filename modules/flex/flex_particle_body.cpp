@@ -228,18 +228,18 @@ void FlexParticleBody::set_particle_position_mass(ParticleIndex p_particle_index
 	changed_parameters |= eChangedBodyParamPositionMass;
 }
 
-void FlexParticleBody::set_particle_position(ParticleIndex p_particle_index, const Vector3 &p_position) {
-	if (!particles_mchunk)
-		return;
-	space->get_particles_memory()->set_particle(particles_mchunk, p_particle_index, make_particle(p_position, get_particle_mass(p_particle_index)));
-	changed_parameters |= eChangedBodyParamPositionMass;
-}
-
 Vector3 FlexParticleBody::get_particle_position(ParticleIndex p_particle_index) const {
 	if (!particles_mchunk)
 		return return_err_vec3;
 	const FlVector4 &p(space->get_particles_memory()->get_particle(particles_mchunk, p_particle_index));
 	return extract_position(p);
+}
+
+void FlexParticleBody::set_particle_position(ParticleIndex p_particle_index, const Vector3 &p_position) {
+	if (!particles_mchunk)
+		return;
+	space->get_particles_memory()->set_particle(particles_mchunk, p_particle_index, make_particle(p_position, get_particle_mass(p_particle_index)));
+	changed_parameters |= eChangedBodyParamPositionMass;
 }
 
 void FlexParticleBody::set_particle_mass(ParticleIndex p_particle_index, real_t p_mass) {

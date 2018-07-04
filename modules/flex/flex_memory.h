@@ -251,6 +251,42 @@ public:
 		_on_unmapped();
 	}
 
+	bool is_mapped() const {
+		if (buffers_int.size()) {
+			if (buffers_int[0]->mappedPtr)
+				return true;
+		}
+		if (buffers_float.size()) {
+			if (buffers_float[0]->mappedPtr)
+				return true;
+		}
+		if (buffers_quat.size()) {
+			if (buffers_quat[0]->mappedPtr)
+				return true;
+		}
+		if (buffers_vec3.size()) {
+			if (buffers_vec3[0]->mappedPtr)
+				return true;
+		}
+		if (buffers_spring.size()) {
+			if (buffers_spring[0]->mappedPtr)
+				return true;
+		}
+		if (buffers_dintriangles.size()) {
+			if (buffers_dintriangles[0]->mappedPtr)
+				return true;
+		}
+		if (buffers_flvec4.size()) {
+			if (buffers_flvec4[0]->mappedPtr)
+				return true;
+		}
+		if (buffers_colgeo.size()) {
+			if (buffers_colgeo[0]->mappedPtr)
+				return true;
+		}
+		return false;
+	}
+
 	void terminate() {
 		for (int i(buffers_int.size() - 1); 0 <= i; --i) {
 			buffers_int[i]->destroy();

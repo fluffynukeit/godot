@@ -375,6 +375,10 @@ void FlexSpace::step(real_t p_delta_time) {
 	commands_read_buffer();
 }
 
+bool FlexSpace::can_commands_be_executed() const {
+	return particles_memory->is_mapped();
+}
+
 void FlexSpace::add_particle_body(FlexParticleBody *p_body) {
 	ERR_FAIL_COND(p_body->space);
 	p_body->space = this;
