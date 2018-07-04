@@ -332,47 +332,49 @@ void ParticlePrimitiveArea::_on_particle_contact(Object *p_particle_body, int p_
 		}
 	}
 
-	++(body_contacts[data_id].particle_count);
+	++body_contacts[data_id].particle_count;
 }
 
 void ParticlePrimitiveArea::_on_sync() {
 
 	for (int i(body_contacts.size() - 1); 0 <= i; --i) {
-		if (!body_contacts[i].particle_count) {
+		ParticleBodyContacts &body_contact(body_contacts[i]);
+		if (!body_contact.particle_count) {
 
-			for (int p(body_contacts[i].particles.size() - 1); 0 <= p; --p) {
-				emit_signal("particle_exit", body_contacts[i].particle_body, body_contacts[i].particles[p].particle_index);
+			for (int p(body_contact.particles.size() - 1); 0 <= p; --p) {
+				emit_signal("particle_exit", body_contact.particle_body, body_contact.particles[p].particle_index);
 			}
 
-			emit_signal("body_exit", body_contacts[i].particle_body);
+			emit_signal("body_exit", body_contact.particle_body);
 
 			body_contacts.remove(i);
 			continue;
 		}
 
-		if (body_contacts[i].just_entered) {
+		if (body_contact.just_entered) {
 
-			body_contacts[i].just_entered = false;
-			emit_signal("body_enter", body_contacts[i].particle_body);
+			body_contact.just_entered = false;
+			emit_signal("body_enter", body_contact.particle_body);
 		}
 
-		for (int p(body_contacts[i].particles.size() - 1); 0 <= p; --p) {
-			if (2 == body_contacts[i].particles[p].stage) {
+		for (int p(body_contact.particles.size() - 1); 0 <= p; --p) {
+			ParticleContacts &particle_contact = body_contact.particles[p];
+			if (2 == particle_contact.stage) {
 
-				emit_signal("particle_exit", body_contacts[i].particle_body, body_contacts[i].particles[p].particle_index);
-				body_contacts[i].particles.remove(p);
+				emit_signal("particle_exit", body_contact.particle_body, particle_contact.particle_index);
+				body_contact.particles.remove(p);
 				continue;
 
-			} else if (0 == body_contacts[i].particles[p].stage) {
+			} else if (0 == particle_contact.stage) {
 
-				emit_signal("particle_enter", body_contacts[i].particle_body, body_contacts[i].particles[p].particle_index);
+				emit_signal("particle_enter", body_contact.particle_body, particle_contact.particle_index);
 			}
 
-			body_contacts[i].particles[p].stage = 2;
+			particle_contact.stage = 2;
 		}
 
 		// Reset
-		body_contacts[i].particle_count = 0;
+		body_contact.particle_count = 0;
 	}
 
 	ParticlePrimitiveBody::_on_sync();
