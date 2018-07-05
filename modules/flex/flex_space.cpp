@@ -347,7 +347,6 @@ void FlexSpace::step(real_t p_delta_time) {
 	const int substep = 1;
 	const bool enable_timer = false; // Used for profiling
 	NvFlexUpdateSolver(solver, p_delta_time, substep, enable_timer);
-	NvFlexGetContacts(solver, contacts_buffers->normals.buffer, contacts_buffers->velocities_prim_indices.buffer, contacts_buffers->indices.buffer, contacts_buffers->counts.buffer);
 
 	commands_read_buffer();
 }
@@ -1054,6 +1053,8 @@ void FlexSpace::commands_read_buffer() {
 			NULL,
 			rigids_memory->rotation.buffer,
 			rigids_memory->position.buffer);
+
+	NvFlexGetContacts(solver, contacts_buffers->normals.buffer, contacts_buffers->velocities_prim_indices.buffer, contacts_buffers->indices.buffer, contacts_buffers->counts.buffer);
 }
 
 void FlexSpace::on_particle_removed(FlexParticleBody *p_body, ParticleBufferIndex p_index) {
