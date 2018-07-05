@@ -55,6 +55,13 @@ class ParticleBody : public ParticleObject {
 	Vector<MeshInstance *> debug_particles_mesh;
 	Ref<SphereMesh> debug_particle_mesh;
 
+#ifdef TOOLS_ENABLED
+public:
+	bool draw_gizmo;
+
+private:
+#endif
+
 protected:
 	static void _bind_methods();
 
