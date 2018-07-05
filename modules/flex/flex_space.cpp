@@ -44,8 +44,6 @@
 
 // TODO make this customizable in settings
 #define MAXPARTICLES 5000
-// TODO this must be dynamic
-#define MAXGEOMETRIES 10
 
 #define DEVICE_ID 0
 
@@ -125,13 +123,13 @@ void FlexSpace::init() {
 	CRASH_COND(particles_memory);
 	CRASH_COND(particles_allocator);
 	particles_memory = memnew(ParticlesMemory(flex_lib));
-	particles_allocator = memnew(FlexMemoryAllocator(particles_memory, MAXPARTICLES)); // TODO must be dynamic
+	particles_allocator = memnew(FlexMemoryAllocator(particles_memory, MAXPARTICLES, -1, MAXPARTICLES)); // TODO must be dynamic
 	particles_memory->unmap(); // *1
 
 	CRASH_COND(active_particles_allocator);
 	CRASH_COND(active_particles_memory);
 	active_particles_memory = memnew(ActiveParticlesMemory(flex_lib));
-	active_particles_allocator = memnew(FlexMemoryAllocator(active_particles_memory, MAXPARTICLES)); // TODO must be dynamic
+	active_particles_allocator = memnew(FlexMemoryAllocator(active_particles_memory, MAXPARTICLES, -1, MAXPARTICLES)); // TODO must be dynamic
 	active_particles_memory->unmap(); // *1
 
 	active_particles_mchunk = active_particles_allocator->allocate_chunk(0);
@@ -139,37 +137,37 @@ void FlexSpace::init() {
 	CRASH_COND(springs_allocator);
 	CRASH_COND(springs_memory);
 	springs_memory = memnew(SpringMemory(flex_lib));
-	springs_allocator = memnew(FlexMemoryAllocator(springs_memory, ((FlexUnit)(MAXPARTICLES * 100)))); // TODO must be dynamic
+	springs_allocator = memnew(FlexMemoryAllocator(springs_memory, 2000, 500));
 	springs_memory->unmap(); // *1
 
 	CRASH_COND(triangles_allocator);
 	CRASH_COND(triangles_memory);
 	triangles_memory = memnew(DynamicTrianglesMemory(flex_lib));
-	triangles_allocator = memnew(FlexMemoryAllocator(triangles_memory, ((FlexUnit)(MAXPARTICLES * 100)))); // TODO must be dynamic
+	triangles_allocator = memnew(FlexMemoryAllocator(triangles_memory, 200, 100));
 	triangles_memory->unmap(); // *1
 
 	CRASH_COND(inflatables_allocator);
 	CRASH_COND(inflatables_memory);
 	inflatables_memory = memnew(InflatablesMemory(flex_lib));
-	inflatables_allocator = memnew(FlexMemoryAllocator(inflatables_memory, ((FlexUnit)(MAXPARTICLES)))); // TODO must be dynamic
+	inflatables_allocator = memnew(FlexMemoryAllocator(inflatables_memory, 5, 5));
 	inflatables_memory->unmap(); // *1
 
 	CRASH_COND(rigids_allocator);
 	CRASH_COND(rigids_memory);
 	rigids_memory = memnew(RigidsMemory(flex_lib));
-	rigids_allocator = memnew(FlexMemoryAllocator(rigids_memory, ((FlexUnit)(MAXPARTICLES * 100)))); // TODO must be dynamic
+	rigids_allocator = memnew(FlexMemoryAllocator(rigids_memory, 500, 200));
 	rigids_memory->unmap(); // *1
 
 	CRASH_COND(rigids_components_allocator);
 	CRASH_COND(rigids_components_memory);
 	rigids_components_memory = memnew(RigidsComponentsMemory(flex_lib));
-	rigids_components_allocator = memnew(FlexMemoryAllocator(rigids_components_memory, ((FlexUnit)(MAXPARTICLES * 100)))); // TODO must be dynamic
+	rigids_components_allocator = memnew(FlexMemoryAllocator(rigids_components_memory, 500, 300));
 	rigids_components_memory->unmap(); // *1
 
 	CRASH_COND(geometries_allocator);
 	CRASH_COND(geometries_memory);
 	geometries_memory = memnew(GeometryMemory(flex_lib));
-	geometries_allocator = memnew(FlexMemoryAllocator(geometries_memory, MAXGEOMETRIES)); // TODO must be dynamic
+	geometries_allocator = memnew(FlexMemoryAllocator(geometries_memory, 5, 5));
 	geometries_memory->unmap(); // *1
 
 	CRASH_COND(contacts_buffers);
