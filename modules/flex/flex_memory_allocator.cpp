@@ -43,9 +43,11 @@ void FlexMemory::copy(FlexBufferIndex p_to_begin_index, FlexUnit p_size, FlexBuf
 	}
 }
 
-FlexMemoryAllocator::FlexMemoryAllocator(FlexMemory *p_memory, FlexUnit p_size) :
+FlexMemoryAllocator::FlexMemoryAllocator(FlexMemory *p_memory, FlexUnit p_size, FlexUnit p_reallocation_extra_size, FlexUnit p_max_memory_size) :
 		memory(p_memory),
-		memory_size(0) {
+		memory_size(0),
+		reallocation_extra_size(p_reallocation_extra_size),
+		max_memory_size(p_max_memory_size) {
 
 	cache.occupied_memory = 0;
 	cache.biggest_free_chunk_size = 0;
@@ -63,13 +65,18 @@ bool FlexMemoryAllocator::resize_memory(FlexUnit p_size) {
 	if (memory_size == p_size)
 		return true;
 
+	if (max_memory_size > -1 && p_size > max_memory_size) {
+		ERR_PRINT("Memory limit reached");
+		return false;
+	}
+
 	if (memory_size > p_size) {
 
 		ERR_FAIL_COND_V(cache.occupied_memory > p_size, false);
 
 		if (!redux_memory(p_size)) { // Try to redux size without trim
 			sanitize(false);
-			ERR_FAIL_COND_V(redux_memory(p_size), false);
+			ERR_FAIL_COND_V(!redux_memory(p_size), false);
 		}
 	} else {
 		// just increase memory space
@@ -153,8 +160,12 @@ MemoryChunk *FlexMemoryAllocator::allocate_chunk(FlexUnit p_size) {
 	}
 
 	if (!space_available) {
-		print_error("No space available in this memory!");
-		return NULL;
+		if (reallocation_extra_size > -1 && resize_memory(memory_size + p_size + reallocation_extra_size)) {
+			return allocate_chunk(p_size);
+		} else {
+			ERR_PRINT("No space available in this memory!");
+			return NULL;
+		}
 	}
 
 	const FlexUnit size(memory_table.size());
@@ -172,7 +183,7 @@ MemoryChunk *FlexMemoryAllocator::allocate_chunk(FlexUnit p_size) {
 		return memory_table[i];
 	}
 
-	print_error("No space available in this memory!");
+	ERR_PRINT("No space available in this memory!");
 	return NULL;
 }
 

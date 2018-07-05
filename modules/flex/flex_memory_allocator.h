@@ -134,6 +134,9 @@ class FlexMemoryAllocator {
 
 	Vector<MemoryChunk *> memory_table;
 	FlexUnit memory_size;
+	FlexUnit reallocation_extra_size;
+	FlexUnit max_memory_size;
+
 	struct {
 		FlexUnit occupied_memory;
 		FlexUnit biggest_free_chunk_size;
@@ -142,7 +145,7 @@ class FlexMemoryAllocator {
 	FlexMemory *memory;
 
 public:
-	FlexMemoryAllocator(FlexMemory *p_memory, FlexUnit p_size);
+	FlexMemoryAllocator(FlexMemory *p_memory, FlexUnit p_size, FlexUnit p_reallocation_extra_size = -1, FlexUnit p_max_memory_size = -1);
 	~FlexMemoryAllocator();
 	bool resize_memory(FlexUnit p_size);
 	void sanitize(bool p_want_update_cache = true, bool p_trim = true);
