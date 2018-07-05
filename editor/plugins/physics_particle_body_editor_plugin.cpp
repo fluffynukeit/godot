@@ -123,6 +123,14 @@ void ParticleBodyEditor::_create_cloth() {
 	ur->commit_action();
 }
 
+void ParticleBodyEditor::_toggle_show_hide_gizmo() {
+	if (!node)
+		return;
+
+	node->draw_gizmo = show_gizmo_btn->is_pressed();
+	node->update_gizmo();
+}
+
 void ParticleBodyEditor::_node_removed(Node *p_node) {
 
 	if (p_node == node) {
@@ -137,6 +145,7 @@ void ParticleBodyEditor::_bind_methods() {
 	ClassDB::bind_method("_create_rigid_body", &ParticleBodyEditor::_create_rigid_body);
 	ClassDB::bind_method("_create_cloth", &ParticleBodyEditor::_create_cloth);
 	ClassDB::bind_method("_node_removed", &ParticleBodyEditor::_node_removed);
+	ClassDB::bind_method("_toggle_show_hide_gizmo", &ParticleBodyEditor::_toggle_show_hide_gizmo);
 }
 
 void make_spin_box(SpinBox *&p_spinbox, float p_min, float p_max, float p_step, float p_value, VBoxContainer *dialog_vbc, const String &p_label) {
@@ -229,11 +238,21 @@ ParticleBodyEditor::ParticleBodyEditor() {
 		add_child(cloth_dialog.dialog);
 		cloth_dialog.dialog->connect("confirmed", this, "_create_cloth");
 	}
+
+	show_gizmo_btn = memnew(Button);
+	SpatialEditor::get_singleton()->add_control_to_menu_panel(show_gizmo_btn);
+	show_gizmo_btn->set_text(TTR("Show gizmo"));
+	show_gizmo_btn->set_toggle_mode(true);
+	show_gizmo_btn->connect("pressed", this, "_toggle_show_hide_gizmo");
 }
 
 void ParticleBodyEditor::edit(ParticleBody *p_body) {
 
 	node = p_body;
+	if (!node)
+		return;
+
+	show_gizmo_btn->set_pressed(node->draw_gizmo);
 }
 
 void PhysicsParticleBodyEditorPlugin::edit(Object *p_object) {
@@ -249,10 +268,13 @@ bool PhysicsParticleBodyEditorPlugin::handles(Object *p_object) const {
 void PhysicsParticleBodyEditorPlugin::make_visible(bool p_visible) {
 
 	if (p_visible) {
+
 		particle_body_editor->options->show();
+		particle_body_editor->show_gizmo_btn->show();
 	} else {
 
 		particle_body_editor->options->hide();
+		particle_body_editor->show_gizmo_btn->hide();
 		particle_body_editor->edit(NULL);
 	}
 }
@@ -263,6 +285,7 @@ PhysicsParticleBodyEditorPlugin::PhysicsParticleBodyEditorPlugin(EditorNode *p_n
 		particle_body_editor(memnew(ParticleBodyEditor)) {
 	editor->get_viewport()->add_child(particle_body_editor);
 	particle_body_editor->options->hide();
+	particle_body_editor->show_gizmo_btn->hide();
 }
 
 PhysicsParticleBodyEditorPlugin::~PhysicsParticleBodyEditorPlugin() {

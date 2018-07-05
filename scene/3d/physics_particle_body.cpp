@@ -108,7 +108,8 @@ void ParticleBody::_bind_methods() {
 ParticleBody::ParticleBody() :
 		ParticleObject(ParticlePhysicsServer::get_singleton()->body_create()),
 		reload_particle_model(true),
-		particle_body_mesh(NULL) {
+		particle_body_mesh(NULL),
+		draw_gizmo(false) {
 
 	ParticlePhysicsServer::get_singleton()->body_set_object_instance(rid, this);
 
