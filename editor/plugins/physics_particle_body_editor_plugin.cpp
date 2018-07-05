@@ -192,8 +192,8 @@ ParticleBodyEditor::ParticleBodyEditor() {
 		make_check_box(soft_body_dialog.internal_sample_check, true, dialog_vbc, TTR("Internal sampling:"));
 		make_spin_box(soft_body_dialog.particle_spacing_input, 0.001, 10, 0.01, 1, dialog_vbc, TTR("Particle spacing:"));
 		make_spin_box(soft_body_dialog.sampling_input, 0.001, 1, 0.01, 1, dialog_vbc, TTR("Sampling:"));
-		make_spin_box(soft_body_dialog.clusterSpacing_input, 0.001, 1, 0.1, 1, dialog_vbc, TTR("Cluster spacing:"));
-		make_spin_box(soft_body_dialog.clusterRadius_input, 0.1, 10, 0.1, 2, dialog_vbc, TTR("Cluster radius:"));
+		make_spin_box(soft_body_dialog.clusterSpacing_input, 0.001, 100, 0.1, 1, dialog_vbc, TTR("Cluster spacing:"));
+		make_spin_box(soft_body_dialog.clusterRadius_input, 0.1, 100, 0.1, 2, dialog_vbc, TTR("Cluster radius:"));
 		make_spin_box(soft_body_dialog.clusterStiffness_input, 0.01, 1, 0.01, 0.2, dialog_vbc, TTR("Cluster stiffness:"));
 		make_spin_box(soft_body_dialog.linkRadius_input, 0.01, 50, 0.01, 0.5, dialog_vbc, TTR("Link radius:"));
 		make_spin_box(soft_body_dialog.linkStiffness_input, 0.01, 1, 0.01, 0.1, dialog_vbc, TTR("Link stiffness:"));
