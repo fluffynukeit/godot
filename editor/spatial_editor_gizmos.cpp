@@ -3476,7 +3476,7 @@ void ParticlePrimitiveShapeSpatialGizmo::redraw(EditorSpatialGizmo *p_gizmo) {
 
 /////
 
-ParticleBodySpatialGizmo::ParticleBodySpatialGizmo() {
+ParticleBodySpatialGizmoPlugin::ParticleBodySpatialGizmoPlugin() {
 
 	EDITOR_DEF("editors/3d_gizmos/gizmo_colors/instanced", Color(0.7, 0.7, 0.7, 0.5));
 
@@ -3490,7 +3490,7 @@ ParticleBodySpatialGizmo::ParticleBodySpatialGizmo() {
 
 #include "editor/plugins/physics_particle_body_editor_plugin.h"
 
-void ParticleBodySpatialGizmo::redraw(EditorSpatialGizmo *p_gizmo) {
+void ParticleBodySpatialGizmoPlugin::redraw(EditorSpatialGizmo *p_gizmo) {
 
 	ParticleBody *body = Object::cast_to<ParticleBody>(p_gizmo->get_spatial_node());
 
@@ -3500,18 +3500,28 @@ void ParticleBodySpatialGizmo::redraw(EditorSpatialGizmo *p_gizmo) {
 
 	clear();
 
-	if (!body)
+	if (!body) {
+		sphere_collision_positions.clear();
 		return;
+	}
 
-	if (!body->draw_gizmo)
+	if (!body->draw_gizmo) {
+		sphere_collision_positions.clear();
 		return;
+	}
 
-	if (body->get_particle_body_model().is_null())
+	if (body->get_particle_body_model().is_null()) {
+		sphere_collision_positions.clear();
 		return;
+	}
 
 	PoolVector<Vector3> particles = body->get_particle_body_model()->get_particles();
-	if (particles.size() <= 0)
+	if (particles.size() <= 0) {
+		sphere_collision_positions.clear();
 		return;
+	}
+
+	sphere_collision_positions.resize(particles.size());
 
 	Color gizmo_color = EDITOR_GET("editors/3d_gizmos/gizmo_colors/shape");
 	Ref<Material> material = create_material_pb("particle_body_particle_material", gizmo_color, false);
@@ -3532,7 +3542,7 @@ void ParticleBodySpatialGizmo::redraw(EditorSpatialGizmo *p_gizmo) {
 	}
 }
 
-bool ParticleBodySpatialGizmo::intersect_frustum(EditorSpatialGizmo *p_gizmo, const Camera *p_camera, const Vector<Plane> &p_frustum) {
+bool ParticleBodySpatialGizmoPlugin::intersect_frustum(EditorSpatialGizmo *p_gizmo, const Camera *p_camera, const Vector<Plane> &p_frustum) {
 
 	ParticleBody *body = Object::cast_to<ParticleBody>(p_gizmo->get_spatial_node());
 
@@ -3570,7 +3580,7 @@ bool ParticleBodySpatialGizmo::intersect_frustum(EditorSpatialGizmo *p_gizmo, co
 	return selected_particles.size();
 }
 
-bool ParticleBodySpatialGizmo::intersect_ray(EditorSpatialGizmo *p_gizmo, Camera *p_camera, const Point2 &p_point, Vector3 &r_pos, Vector3 &r_normal, int *r_gizmo_handle, bool p_sec_first) {
+bool ParticleBodySpatialGizmoPlugin::intersect_ray(EditorSpatialGizmo *p_gizmo, Camera *p_camera, const Point2 &p_point, Vector3 &r_pos, Vector3 &r_normal, int *r_gizmo_handle, bool p_sec_first) {
 
 	ParticleBody *body = Object::cast_to<ParticleBody>(p_gizmo->get_spatial_node());
 
@@ -3621,7 +3631,7 @@ bool ParticleBodySpatialGizmo::intersect_ray(EditorSpatialGizmo *p_gizmo, Camera
 	}
 }
 
-void ParticleBodySpatialGizmo::add_solid_sphere(EditorSpatialGizmo *p_gizmo, Ref<Material> &p_material, Vector3 p_position) {
+void ParticleBodySpatialGizmoPlugin::add_solid_sphere(EditorSpatialGizmo *p_gizmo, Ref<Material> &p_material, Vector3 p_position) {
 	ERR_FAIL_COND(!get_spatial_node());
 
 	Array arrays = spherem.surface_get_arrays(0);
@@ -3640,7 +3650,7 @@ void ParticleBodySpatialGizmo::add_solid_sphere(EditorSpatialGizmo *p_gizmo, Ref
 	p_gizmo->add_mesh(m);
 }
 
-Ref<SpatialMaterial> ParticleBodySpatialGizmo::create_material_pb(const String &p_name, const Color &p_color, bool p_selected) {
+Ref<SpatialMaterial> ParticleBodySpatialGizmoPlugin::create_material_pb(const String &p_name, const Color &p_color, bool p_selected) {
 
 	String name = p_name;
 
