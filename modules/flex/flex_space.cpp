@@ -42,9 +42,6 @@
 #include "flex_primitive_shapes.h"
 #include "print_string.h"
 
-// TODO make this customizable in settings
-#define MAXPARTICLES 5000
-
 #define DEVICE_ID 0
 
 // TODO use a class
@@ -61,6 +58,7 @@ FlexSpace::FlexSpace() :
 		RIDFlex(),
 		flex_lib(NULL),
 		solver(NULL),
+		solver_max_particles(0),
 		particles_allocator(NULL),
 		particles_memory(NULL),
 		active_particles_allocator(NULL),
@@ -104,35 +102,33 @@ void FlexSpace::init() {
 	CRASH_COND(!flex_lib);
 	CRASH_COND(has_error());
 
-	// Init solvert
-	CRASH_COND(solver);
+	init_buffers();
+	init_solver();
 
-	NvFlexSolverDesc solver_desc;
+	contacts_buffers->resize(solver_max_particles);
+	contacts_buffers->unmap();
 
-	NvFlexSetSolverDescDefaults(&solver_desc);
-	solver_desc.featureMode = eNvFlexFeatureModeDefault; // All modes enabled (Solid|Fluids) // TODO should be customizable
-	solver_desc.maxParticles = MAXPARTICLES; // TODO should be customizable
-	solver_desc.maxDiffuseParticles = MAXPARTICLES; // TODO should be customizable
-	solver_desc.maxNeighborsPerParticle = 32; // TODO should be customizable
-	solver_desc.maxContactsPerParticle = MAX_PERPARTICLE_CONTACT_COUNT;
-
-	solver = NvFlexCreateSolver(flex_lib, &solver_desc);
+	reset_params_to_defaults();
 	CRASH_COND(has_error());
+}
 
-	// Init buffers
+void FlexSpace::init_buffers() {
 	CRASH_COND(particles_memory);
 	CRASH_COND(particles_allocator);
 	particles_memory = memnew(ParticlesMemory(flex_lib));
-	particles_allocator = memnew(FlexMemoryAllocator(particles_memory, MAXPARTICLES, -1, MAXPARTICLES)); // TODO must be dynamic
+	particles_allocator = memnew(FlexMemoryAllocator(particles_memory, 2000, 1000, -1));
 	particles_memory->unmap(); // *1
 
 	CRASH_COND(active_particles_allocator);
 	CRASH_COND(active_particles_memory);
 	active_particles_memory = memnew(ActiveParticlesMemory(flex_lib));
-	active_particles_allocator = memnew(FlexMemoryAllocator(active_particles_memory, MAXPARTICLES, -1, MAXPARTICLES)); // TODO must be dynamic
+	active_particles_allocator = memnew(FlexMemoryAllocator(active_particles_memory, particles_allocator->get_memory_size(), 1000, -1));
 	active_particles_memory->unmap(); // *1
 
 	active_particles_mchunk = active_particles_allocator->allocate_chunk(0);
+
+	CRASH_COND(contacts_buffers);
+	contacts_buffers = memnew(ContactsBuffers(flex_lib)); // This is resized when the solver is initialized
 
 	CRASH_COND(springs_allocator);
 	CRASH_COND(springs_memory);
@@ -170,15 +166,23 @@ void FlexSpace::init() {
 	geometries_allocator = memnew(FlexMemoryAllocator(geometries_memory, 5, 5));
 	geometries_memory->unmap(); // *1
 
-	CRASH_COND(contacts_buffers);
-	contacts_buffers = memnew(ContactsBuffers(flex_lib));
-	contacts_buffers->resize(MAXPARTICLES); // TODO must be dynamic
-	contacts_buffers->unmap(); // *1
-
 	// *1: This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
+}
 
-	reset_params_to_defaults();
+void FlexSpace::init_solver() {
+	CRASH_COND(solver);
+	NvFlexSolverDesc solver_desc;
 
+	solver_max_particles = particles_allocator->get_memory_size();
+
+	NvFlexSetSolverDescDefaults(&solver_desc);
+	solver_desc.featureMode = eNvFlexFeatureModeDefault; // All modes enabled (Solid|Fluids) // TODO should be customizable
+	solver_desc.maxParticles = solver_max_particles;
+	solver_desc.maxDiffuseParticles = 0; // TODO should be customizable
+	solver_desc.maxNeighborsPerParticle = 32; // TODO should be customizable
+	solver_desc.maxContactsPerParticle = MAX_PERPARTICLE_CONTACT_COUNT;
+
+	solver = NvFlexCreateSolver(flex_lib, &solver_desc);
 	CRASH_COND(has_error());
 }
 
@@ -279,14 +283,18 @@ void FlexSpace::terminate() {
 		contacts_buffers = NULL;
 	}
 
-	if (solver) {
-		NvFlexDestroySolver(solver);
-		solver = NULL;
-	}
+	terminate_solver();
 
 	if (flex_lib) {
 		NvFlexShutdown(flex_lib);
 		flex_lib = NULL;
+	}
+}
+
+void FlexSpace::terminate_solver() {
+	if (solver) {
+		NvFlexDestroySolver(solver);
+		solver = NULL;
 	}
 }
 
@@ -332,9 +340,20 @@ void FlexSpace::sync() {
 		geometries_allocator->sanitize(); // *1
 	geometries_memory->unmap();
 
-	contacts_buffers->unmap();
-
 	// *1: The memory must be consecutive to correctly write it on GPU
+
+	if (particles_allocator->get_memory_size() != solver_max_particles) {
+
+		NvFlexParams params;
+		NvFlexGetParams(solver, &params);
+		terminate_solver();
+		init_solver();
+		NvFlexSetParams(solver, &params);
+
+		contacts_buffers->resize(solver_max_particles);
+	}
+
+	contacts_buffers->unmap();
 
 	///
 	/// Write phase

@@ -62,6 +62,7 @@ class FlexSpace : public RIDFlex {
 
 	NvFlexLibrary *flex_lib;
 	NvFlexSolver *solver;
+	int solver_max_particles;
 
 	FlexMemoryAllocator *particles_allocator;
 	ParticlesMemory *particles_memory;
@@ -69,6 +70,8 @@ class FlexSpace : public RIDFlex {
 	FlexMemoryAllocator *active_particles_allocator;
 	ActiveParticlesMemory *active_particles_memory;
 	MemoryChunk *active_particles_mchunk;
+
+	ContactsBuffers *contacts_buffers;
 
 	FlexMemoryAllocator *springs_allocator;
 	SpringMemory *springs_memory;
@@ -88,8 +91,6 @@ class FlexSpace : public RIDFlex {
 	FlexMemoryAllocator *geometries_allocator;
 	GeometryMemory *geometries_memory;
 
-	ContactsBuffers *contacts_buffers;
-
 	Vector<FlexParticleBody *> particle_bodies;
 	Vector<FlexPrimitiveBody *> primitive_bodies;
 
@@ -102,7 +103,18 @@ public:
 	~FlexSpace();
 
 	void init();
+
+private:
+	void init_buffers();
+	void init_solver();
+
+public:
 	void terminate();
+
+private:
+	void terminate_solver();
+
+public:
 	void sync();
 	void step(real_t p_delta_time);
 

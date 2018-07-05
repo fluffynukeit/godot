@@ -150,6 +150,7 @@ public:
 	bool resize_memory(FlexUnit p_size);
 	void sanitize(bool p_want_update_cache = true, bool p_trim = true);
 
+	FlexUnit get_memory_size() const { return memory_size; }
 	FlexMemory *get_memory() { return memory; }
 
 	/// Allocate memory, return null if no more space available
