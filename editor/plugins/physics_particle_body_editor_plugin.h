@@ -91,12 +91,16 @@ class ParticleBodyEditor : public Control {
 	MenuButton *options;
 	Button *show_gizmo_btn;
 
+	SpinBox *inspector_mass_inp;
+
 	void _menu_option(int p_option);
 	void _create_soft_body();
 	void _create_rigid_body();
 	void _create_cloth();
 
 	void _toggle_show_hide_gizmo();
+
+	void _mass_changed(real_t p_mass);
 
 protected:
 	void _node_removed(Node *p_node);

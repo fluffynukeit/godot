@@ -3500,31 +3500,22 @@ void ParticleBodySpatialGizmoPlugin::redraw(EditorSpatialGizmo *p_gizmo) {
 
 	clear();
 
-	if (!body) {
-		sphere_collision_positions.clear();
+	if (!body)
 		return;
-	}
 
-	if (!body->draw_gizmo) {
-		sphere_collision_positions.clear();
+	if (!body->draw_gizmo)
 		return;
-	}
 
-	if (body->get_particle_body_model().is_null()) {
-		sphere_collision_positions.clear();
+	if (body->get_particle_body_model().is_null())
 		return;
-	}
 
 	PoolVector<Vector3> particles = body->get_particle_body_model()->get_particles();
-	if (particles.size() <= 0) {
-		sphere_collision_positions.clear();
+	if (particles.size() <= 0)
 		return;
-	}
-
-	sphere_collision_positions.resize(particles.size());
 
 	Color gizmo_color = EDITOR_GET("editors/3d_gizmos/gizmo_colors/shape");
 	Ref<Material> material = create_material_pb("particle_body_particle_material", gizmo_color, false);
+
 	Ref<Material> material_selected = material;
 	Ref<Material> material_fixed = create_material_pb("particle_body_particle_material_fixed", Color(0.5, 1, 1), false);
 	Ref<Material> material_fixed_selected = material_fixed;
@@ -3625,6 +3616,15 @@ bool ParticleBodySpatialGizmoPlugin::intersect_ray(EditorSpatialGizmo *p_gizmo, 
 		r_pos = position;
 		selected_particles.push_back(particle_id);
 		redraw(p_gizmo);
+		return true;
+	} else {
+		return false;
+	}
+
+	if (particle_id > -1) {
+		r_pos = position;
+		selected_particles.push_back(particle_id);
+		redraw();
 		return true;
 	} else {
 		return false;
