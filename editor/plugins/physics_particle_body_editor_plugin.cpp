@@ -34,6 +34,7 @@
 
 #include "physics_particle_body_editor_plugin.h"
 
+#include "editor/spatial_editor_gizmos.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/check_box.h"
 #include "servers/particle_physics_server.h"
@@ -129,6 +130,31 @@ void ParticleBodyEditor::_toggle_show_hide_gizmo() {
 
 	node->draw_gizmo = show_gizmo_btn->is_pressed();
 	node->update_gizmo();
+	if (node->draw_gizmo)
+		show();
+	else
+		hide();
+}
+
+void ParticleBodyEditor::_mass_changed(real_t p_mass) {
+	if (!node)
+		return;
+
+	Ref<ParticleBodyModel> model = node->get_particle_body_model();
+	if (model.is_null())
+		return;
+
+	Ref<ParticleBodySpatialGizmo> gizmo = node->get_gizmo();
+	if (gizmo.is_null())
+		return;
+
+	PoolVector<real_t>::Write masses = model->get_masses_ref().write();
+	for (int i(0); i < gizmo->get_selected_particles().size(); ++i) {
+
+		masses[gizmo->get_selected_particles()[i]] = p_mass;
+	}
+
+	node->update_gizmo();
 }
 
 void ParticleBodyEditor::_node_removed(Node *p_node) {
@@ -140,27 +166,28 @@ void ParticleBodyEditor::_node_removed(Node *p_node) {
 }
 
 void ParticleBodyEditor::_bind_methods() {
-	ClassDB::bind_method("_menu_option", &ParticleBodyEditor::_menu_option);
-	ClassDB::bind_method("_create_soft_body", &ParticleBodyEditor::_create_soft_body);
-	ClassDB::bind_method("_create_rigid_body", &ParticleBodyEditor::_create_rigid_body);
-	ClassDB::bind_method("_create_cloth", &ParticleBodyEditor::_create_cloth);
-	ClassDB::bind_method("_node_removed", &ParticleBodyEditor::_node_removed);
-	ClassDB::bind_method("_toggle_show_hide_gizmo", &ParticleBodyEditor::_toggle_show_hide_gizmo);
+	ClassDB::bind_method(D_METHOD("_menu_option"), &ParticleBodyEditor::_menu_option);
+	ClassDB::bind_method(D_METHOD("_create_soft_body"), &ParticleBodyEditor::_create_soft_body);
+	ClassDB::bind_method(D_METHOD("_create_rigid_body"), &ParticleBodyEditor::_create_rigid_body);
+	ClassDB::bind_method(D_METHOD("_create_cloth"), &ParticleBodyEditor::_create_cloth);
+	ClassDB::bind_method(D_METHOD("_node_removed"), &ParticleBodyEditor::_node_removed);
+	ClassDB::bind_method(D_METHOD("_toggle_show_hide_gizmo"), &ParticleBodyEditor::_toggle_show_hide_gizmo);
+	ClassDB::bind_method(D_METHOD("_mass_changed", "mass"), &ParticleBodyEditor::_mass_changed);
 }
 
-void make_spin_box(SpinBox *&p_spinbox, float p_min, float p_max, float p_step, float p_value, VBoxContainer *dialog_vbc, const String &p_label) {
-	p_spinbox = memnew(SpinBox);
-	p_spinbox->set_min(p_min);
-	p_spinbox->set_max(p_max);
-	p_spinbox->set_step(p_step);
-	p_spinbox->set_value(p_value);
-	dialog_vbc->add_margin_child(p_label, p_spinbox);
+void make_spin_box(SpinBox *&r_spinbox, float p_min, float p_max, float p_step, float p_value, VBoxContainer *dialog_vbc, const String &p_label) {
+	r_spinbox = memnew(SpinBox);
+	r_spinbox->set_min(p_min);
+	r_spinbox->set_max(p_max);
+	r_spinbox->set_step(p_step);
+	r_spinbox->set_value(p_value);
+	dialog_vbc->add_margin_child(p_label, r_spinbox);
 }
 
-void make_check_box(CheckBox *&p_check, bool p_pressed, VBoxContainer *dialog_vbc, const String &p_label) {
-	p_check = memnew(CheckBox);
-	p_check->set_pressed(p_pressed);
-	dialog_vbc->add_margin_child(p_label, p_check);
+void make_check_box(CheckBox *&r_check, bool p_pressed, VBoxContainer *dialog_vbc, const String &p_label) {
+	r_check = memnew(CheckBox);
+	r_check->set_pressed(p_pressed);
+	dialog_vbc->add_margin_child(p_label, r_check);
 }
 
 ParticleBodyEditor::ParticleBodyEditor() {
@@ -239,11 +266,22 @@ ParticleBodyEditor::ParticleBodyEditor() {
 		cloth_dialog.dialog->connect("confirmed", this, "_create_cloth");
 	}
 
+	set_custom_minimum_size(Size2(200, 0) * EDSCALE);
 	show_gizmo_btn = memnew(Button);
 	SpatialEditor::get_singleton()->add_control_to_menu_panel(show_gizmo_btn);
 	show_gizmo_btn->set_text(TTR("Show gizmo"));
 	show_gizmo_btn->set_toggle_mode(true);
 	show_gizmo_btn->connect("pressed", this, "_toggle_show_hide_gizmo");
+
+	// Particle inspector
+	VBoxContainer *inspector_vb = memnew(VBoxContainer);
+	inspector_vb->set_h_size_flags(SIZE_EXPAND_FILL);
+	inspector_vb->set_custom_minimum_size(Size2(200, 0) * EDSCALE);
+	inspector_vb->set_anchors_preset(PRESET_WIDE);
+	add_child(inspector_vb);
+
+	make_spin_box(inspector_mass_inp, 0, 100, 0.01, 1, inspector_vb, TTR("Particle mass"));
+	inspector_mass_inp->connect("value_changed", this, "_mass_changed");
 }
 
 void ParticleBodyEditor::edit(ParticleBody *p_body) {
@@ -271,10 +309,13 @@ void PhysicsParticleBodyEditorPlugin::make_visible(bool p_visible) {
 
 		particle_body_editor->options->show();
 		particle_body_editor->show_gizmo_btn->show();
+		if (particle_body_editor->show_gizmo_btn->is_pressed())
+			particle_body_editor->show();
 	} else {
 
 		particle_body_editor->options->hide();
 		particle_body_editor->show_gizmo_btn->hide();
+		particle_body_editor->hide();
 		particle_body_editor->edit(NULL);
 	}
 }
@@ -283,9 +324,11 @@ PhysicsParticleBodyEditorPlugin::PhysicsParticleBodyEditorPlugin(EditorNode *p_n
 		EditorPlugin(),
 		editor(p_node),
 		particle_body_editor(memnew(ParticleBodyEditor)) {
-	editor->get_viewport()->add_child(particle_body_editor);
-	particle_body_editor->options->hide();
-	particle_body_editor->show_gizmo_btn->hide();
+
+	SpatialEditor::get_singleton()->get_palette_split()->add_child(particle_body_editor);
+	SpatialEditor::get_singleton()->get_palette_split()->move_child(particle_body_editor, 1);
+
+	make_visible(false);
 }
 
 PhysicsParticleBodyEditorPlugin::~PhysicsParticleBodyEditorPlugin() {

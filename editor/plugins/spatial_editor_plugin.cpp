@@ -1190,7 +1190,7 @@ void SpatialEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 		if (spatial_editor->get_selected()) {
 
 			Ref<EditorSpatialGizmo> seg = spatial_editor->get_selected()->get_gizmo();
-			if (seg.is_valid()) {
+			if (seg.is_valid() && !cast_to<ParticleBody>(seg->get_spatial_node())) {
 
 				int selected_handle = -1;
 
