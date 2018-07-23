@@ -92,6 +92,7 @@ class ParticleBodyEditor : public Control {
 	Button *show_gizmo_btn;
 
 	SpinBox *inspector_mass_inp;
+	RichTextLabel *inspector_particles_txt;
 
 	void _menu_option(int p_option);
 	void _create_soft_body();
@@ -109,6 +110,7 @@ protected:
 public:
 	ParticleBodyEditor();
 	void edit(ParticleBody *p_body);
+	void redraw();
 };
 
 class PhysicsParticleBodyEditorPlugin : public EditorPlugin {
@@ -124,6 +126,8 @@ public:
 	virtual void edit(Object *p_object);
 	virtual bool handles(Object *p_object) const;
 	virtual void make_visible(bool p_visible);
+
+	void redraw();
 
 	PhysicsParticleBodyEditorPlugin(EditorNode *p_node);
 	~PhysicsParticleBodyEditorPlugin();

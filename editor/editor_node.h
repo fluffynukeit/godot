@@ -615,6 +615,8 @@ protected:
 	static void _bind_methods();
 
 public:
+	class PhysicsParticleBodyEditorPlugin *particle_body_plugin;
+
 	bool call_build();
 
 	static void add_plugin_init_callback(EditorPluginInitializeCallback p_callback);

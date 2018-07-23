@@ -276,12 +276,25 @@ ParticleBodyEditor::ParticleBodyEditor() {
 	// Particle inspector
 	VBoxContainer *inspector_vb = memnew(VBoxContainer);
 	inspector_vb->set_h_size_flags(SIZE_EXPAND_FILL);
-	inspector_vb->set_custom_minimum_size(Size2(200, 0) * EDSCALE);
+	inspector_vb->set_custom_minimum_size(Size2(100, 0) * EDSCALE);
 	inspector_vb->set_anchors_preset(PRESET_WIDE);
 	add_child(inspector_vb);
 
+	Label *label = memnew(Label);
+	inspector_vb->add_child(label);
+	label->set_h_size_flags(SIZE_EXPAND_FILL);
+	label->set_text(TTR("Selected particles:"));
+
+	inspector_particles_txt = memnew(RichTextLabel);
+	inspector_vb->add_child(inspector_particles_txt);
+	inspector_particles_txt->set_h_size_flags(SIZE_EXPAND_FILL);
+	inspector_particles_txt->set_custom_minimum_size(Size2(0, 200));
+	inspector_particles_txt->set_text("");
+
 	make_spin_box(inspector_mass_inp, 0, 100, 0.01, 1, inspector_vb, TTR("Particle mass"));
 	inspector_mass_inp->connect("value_changed", this, "_mass_changed");
+
+	redraw();
 }
 
 void ParticleBodyEditor::edit(ParticleBody *p_body) {
@@ -291,6 +304,51 @@ void ParticleBodyEditor::edit(ParticleBody *p_body) {
 		return;
 
 	show_gizmo_btn->set_pressed(node->draw_gizmo);
+}
+
+void ParticleBodyEditor::redraw() {
+
+	if (!node)
+		return;
+
+	Ref<ParticleBodySpatialGizmo> gizmo = node->get_gizmo();
+
+	if (gizmo.is_null())
+		return;
+
+	if (node->get_particle_body_model().is_null())
+		return;
+
+	if (!node->get_particle_body_model()->get_particles().size())
+		return;
+
+	PoolVector<real_t>::Read masses_read = node->get_particle_body_model()->get_masses().read();
+
+	String particles = "";
+	real_t masses = -1;
+
+	for (int i = 0; i < gizmo->get_selected_particles().size(); ++i) {
+
+		int particle = gizmo->get_selected_particles()[i];
+
+		if (String() != particles)
+			particles += ", ";
+
+		particles += String::num(particle);
+
+		if (masses == -1) {
+			masses = masses_read[particle];
+		} else if (masses != masses_read[particle]) {
+			masses += masses_read[particle];
+			masses /= 2;
+		}
+	}
+
+	inspector_particles_txt->set_text(particles);
+
+	inspector_mass_inp->disconnect("value_changed", this, "_mass_changed");
+	inspector_mass_inp->set_value(masses);
+	inspector_mass_inp->connect("value_changed", this, "_mass_changed");
 }
 
 void PhysicsParticleBodyEditorPlugin::edit(Object *p_object) {
@@ -318,6 +376,10 @@ void PhysicsParticleBodyEditorPlugin::make_visible(bool p_visible) {
 		particle_body_editor->hide();
 		particle_body_editor->edit(NULL);
 	}
+}
+
+void PhysicsParticleBodyEditorPlugin::redraw() {
+	particle_body_editor->redraw();
 }
 
 PhysicsParticleBodyEditorPlugin::PhysicsParticleBodyEditorPlugin(EditorNode *p_node) :
