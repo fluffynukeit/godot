@@ -382,6 +382,10 @@ void PhysicsParticleBodyEditorPlugin::redraw() {
 	particle_body_editor->redraw();
 }
 
+bool PhysicsParticleBodyEditorPlugin::is_editing(Node *p_other) const {
+	return particle_body_editor->node == p_other;
+}
+
 PhysicsParticleBodyEditorPlugin::PhysicsParticleBodyEditorPlugin(EditorNode *p_node) :
 		EditorPlugin(),
 		editor(p_node),
