@@ -128,6 +128,7 @@ public:
 	virtual void make_visible(bool p_visible);
 
 	void redraw();
+        bool is_editing(Node *p_other) const;
 
 	PhysicsParticleBodyEditorPlugin(EditorNode *p_node);
 	~PhysicsParticleBodyEditorPlugin();
