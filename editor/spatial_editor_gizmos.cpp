@@ -3515,8 +3515,7 @@ void ParticleBodySpatialGizmoPlugin::redraw(EditorSpatialGizmo *p_gizmo) {
 
 	Color gizmo_color = EDITOR_GET("editors/3d_gizmos/gizmo_colors/shape");
 	Ref<Material> material = create_material_pb("particle_body_particle_material", gizmo_color, false);
-
-	Ref<Material> material_selected = material;
+	Ref<Material> material_selected = create_material_pb("particle_body_particle_material", Color(1, 0, 0), true);
 	Ref<Material> material_fixed = create_material_pb("particle_body_particle_material_fixed", Color(0.5, 1, 1), false);
 	Ref<Material> material_fixed_selected = material_fixed;
 
@@ -3533,9 +3532,16 @@ void ParticleBodySpatialGizmoPlugin::redraw(EditorSpatialGizmo *p_gizmo) {
 	}
 }
 
+<<<<<<< HEAD
 bool ParticleBodySpatialGizmoPlugin::intersect_frustum(EditorSpatialGizmo *p_gizmo, const Camera *p_camera, const Vector<Plane> &p_frustum) {
 
 	ParticleBody *body = Object::cast_to<ParticleBody>(p_gizmo->get_spatial_node());
+=======
+#include "editor/plugins/physics_particle_body_editor_plugin.h"
+
+		bool
+		ParticleBodySpatialGizmo::intersect_frustum(const Camera *p_camera, const Vector <Plane> &p_frustum) {
+>>>>>>> Finished implementation of advanced selection tool
 
 	selected_particles.clear();
 
@@ -3565,7 +3571,12 @@ bool ParticleBodySpatialGizmoPlugin::intersect_frustum(EditorSpatialGizmo *p_giz
 	}
 
 	if (selected_particles.size()) {
+<<<<<<< HEAD
 		redraw(p_gizmo);
+=======
+		redraw();
+		EditorNode::get_singleton()->particle_body_plugin->redraw();
+>>>>>>> Finished implementation of advanced selection tool
 	}
 
 	return selected_particles.size();
@@ -3573,8 +3584,11 @@ bool ParticleBodySpatialGizmoPlugin::intersect_frustum(EditorSpatialGizmo *p_giz
 
 bool ParticleBodySpatialGizmoPlugin::intersect_ray(EditorSpatialGizmo *p_gizmo, Camera *p_camera, const Point2 &p_point, Vector3 &r_pos, Vector3 &r_normal, int *r_gizmo_handle, bool p_sec_first) {
 
+<<<<<<< HEAD
 	ParticleBody *body = Object::cast_to<ParticleBody>(p_gizmo->get_spatial_node());
 
+=======
+>>>>>>> Finished implementation of advanced selection tool
 	selected_particles.clear();
 
 	if (body->get_particle_body_model().is_null())
@@ -3625,6 +3639,7 @@ bool ParticleBodySpatialGizmoPlugin::intersect_ray(EditorSpatialGizmo *p_gizmo, 
 		r_pos = position;
 		selected_particles.push_back(particle_id);
 		redraw();
+		EditorNode::get_singleton()->particle_body_plugin->redraw();
 		return true;
 	} else {
 		return false;
