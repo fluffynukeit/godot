@@ -123,6 +123,7 @@ public:
 	_FORCE_INLINE_ FlexMemoryAllocator *get_springs_allocator() { return springs_allocator; }
 	_FORCE_INLINE_ SpringMemory *get_springs_memory() { return springs_memory; }
 	_FORCE_INLINE_ InflatablesMemory *get_inflatables_memory() { return inflatables_memory; }
+	_FORCE_INLINE_ DynamicTrianglesMemory *get_triangles_memory() { return triangles_memory; }
 	_FORCE_INLINE_ RigidsMemory *get_rigids_memory() { return rigids_memory; }
 	_FORCE_INLINE_ RigidsComponentsMemory *get_rigids_components_memory() { return rigids_components_memory; }
 

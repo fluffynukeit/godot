@@ -61,6 +61,7 @@ private:
 	PoolVector<int> clusters_particle_indices; // Cluster index organized per offset
 
 	PoolVector<int> dynamic_triangles_indices; // pair of 3
+	PoolVector<int> mesh_vertices_to_particles;
 
 	bool want_inflatable;
 	float rest_volume;
@@ -112,6 +113,10 @@ public:
 	void set_dynamic_triangles_indices(const PoolVector<int> p_dynamic_triangles_indices);
 	PoolVector<int> get_dynamic_triangles_indices() { return dynamic_triangles_indices; }
 	PoolVector<int> &get_dynamic_triangles_indices_ref() { return dynamic_triangles_indices; }
+
+	void set_mesh_vertices_to_particles(const PoolVector<int> p_mesh_vertices_to_particles);
+	PoolVector<int> get_mesh_vertices_to_particles() { return mesh_vertices_to_particles; }
+	PoolVector<int> &get_mesh_vertices_to_particles_ref() { return mesh_vertices_to_particles; }
 
 	void set_want_inflatable(bool p_want);
 	bool get_want_inflatable() { return want_inflatable; }
