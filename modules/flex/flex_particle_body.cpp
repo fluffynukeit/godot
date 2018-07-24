@@ -273,7 +273,7 @@ void FlexParticleBody::reload_rigid_COM(RigidIndex p_rigid) {
 	// TODO This class calculates the new COM from current position of particle
 	// and this is not correct because I will set a deformed rest and not the correct one
 	// Improve this class by using the rest position already set in the buffer
-	print_error("reload_rigid_COM is used but must be improved!");
+	ERR_PRINT("reload_rigid_COM is used but must be improved!");
 
 	// calculate ne center of mass
 	const RigidComponentIndex start_offset = p_rigid == 0 ? RigidComponentIndex(0) : space->get_rigids_memory()->get_offset(rigids_mchunk, p_rigid - 1);
