@@ -41,6 +41,34 @@ class ParticleBody;
 class ParticleBodyCommands;
 class Skeleton;
 
+class ParticleClothVisualServerHandler {
+
+	friend class ParticleBodyMeshInstance;
+
+	RID mesh;
+	int surface;
+	PoolVector<uint8_t> buffer;
+	uint32_t stride;
+	uint32_t offset_vertices;
+	uint32_t offset_normal;
+
+	PoolVector<uint8_t>::Write write_buffer;
+
+private:
+	ParticleClothVisualServerHandler();
+	bool is_ready() { return mesh.is_valid(); }
+	void prepare(RID p_mesh_rid, int p_surface);
+	void clear();
+	void open();
+	void close();
+	void commit_changes();
+
+public:
+	void set_vertex(int p_vertex_id, const void *p_vector3);
+	void set_normal(int p_vertex_id, const void *p_vector3);
+	void set_aabb(const AABB &p_aabb);
+};
+
 class ParticleBodyMeshInstance : public MeshInstance {
 	GDCLASS(ParticleBodyMeshInstance, MeshInstance);
 
@@ -49,6 +77,8 @@ class ParticleBodyMeshInstance : public MeshInstance {
 		RENDERING_UPDATE_APPROACH_PVP,
 		RENDERING_UPDATE_APPROACH_SKELETON
 	};
+
+	ParticleClothVisualServerHandler visual_server_handler;
 
 	ParticleBody *particle_body;
 	Skeleton *skeleton;
@@ -65,12 +95,14 @@ public:
 	void update_mesh(ParticleBodyCommands *p_cmds);
 
 	void update_mesh_pvparticles(ParticleBodyCommands *p_cmds);
+	void _draw_mesh_pvparticles();
 	void update_mesh_skeleton(ParticleBodyCommands *p_cmds);
 
 private:
 	void prepare_mesh_for_rendering();
 	void prepare_mesh_for_pvparticles();
 	void prepare_mesh_skeleton_deformation();
+	void _clear_pvparticles_drawing();
 };
 
 #endif // PHYSICS_PARTICLE_BODY_MESH_INSTANCE_H

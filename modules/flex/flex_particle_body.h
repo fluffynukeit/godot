@@ -166,6 +166,8 @@ public:
 	const Vector3 &get_particle_velocity(ParticleIndex p_particle) const;
 	void set_particle_velocity(ParticleIndex p_particle, const Vector3 &p_velocity);
 
+	const DynamicTriangle &get_triangle(TriangleIndex p_triangle_index) const;
+
 	const Vector3 &get_rigid_position(RigidIndex p_rigid_index) const;
 	const Quat &get_rigid_rotation(RigidIndex p_rigid_index) const;
 
