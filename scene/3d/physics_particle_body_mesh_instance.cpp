@@ -181,6 +181,8 @@ void ParticleBodyMeshInstance::update_mesh_pvparticles(ParticleBodyCommands *p_c
 		visual_server_handler->set_normal(mesh_indices_r[i], reinterpret_cast<void *>(&v));
 	}
 
+	visual_server_handler->set_aabb(p_cmds->get_aabb());
+
 	visual_server_handler->close();
 }
 
