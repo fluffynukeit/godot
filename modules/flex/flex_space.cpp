@@ -802,15 +802,6 @@ void FlexSpace::execute_delayed_commands() {
 		if (body_changed_parameters != 0) {
 			for (int i(body->get_particle_count() - 1); 0 <= i; --i) {
 
-				//if (body_changed_parameters & eChangedBodyParamPositionMass) {
-				//	const FlVector4 &particle(particles_memory->get_particle(body->particles_mchunk, i));
-				//	particles_memory->set_particle(body->particles_mchunk, i, make_particle(particle, body->/*mass*/));
-				//}
-
-				//if (body_changed_parameters & eChangedBodyParamVelocity) {
-				//	particles_memory->set_velocity(body->particles_mchunk, i, /*velocity*/);
-				//}
-
 				if (body_changed_parameters & eChangedBodyParamPhase) {
 					particles_memory->set_phase(body->particles_mchunk, i, NvFlexMakePhaseWithChannels(body->collision_group, body->collision_flags, body->collision_primitive_mask));
 				}
@@ -998,12 +989,15 @@ void FlexSpace::commands_write_buffer() {
 			if (changed_params & eChangedBodyParamParticleJustAdded) {
 				NvFlexSetParticles(solver, particles_memory->particles.buffer, &copy_desc);
 				NvFlexSetVelocities(solver, particles_memory->velocities.buffer, &copy_desc);
+				NvFlexSetNormals(solver, particles_memory->normals.buffer, &copy_desc);
 				NvFlexSetPhases(solver, particles_memory->phases.buffer, &copy_desc);
 			} else {
 				if (changed_params & eChangedBodyParamPositionMass)
 					NvFlexSetParticles(solver, particles_memory->particles.buffer, &copy_desc);
 				if (changed_params & eChangedBodyParamVelocity)
 					NvFlexSetVelocities(solver, particles_memory->velocities.buffer, &copy_desc);
+				if (changed_params & eChangedBodyParamNormal)
+					NvFlexSetNormals(solver, particles_memory->normals.buffer, &copy_desc);
 				if (changed_params & eChangedBodyParamPhase)
 					NvFlexSetPhases(solver, particles_memory->phases.buffer, &copy_desc);
 			}

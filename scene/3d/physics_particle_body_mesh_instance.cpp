@@ -177,7 +177,7 @@ void ParticleBodyMeshInstance::update_mesh_pvparticles(ParticleBodyCommands *p_c
 
 		v = p_cmds->get_particle_position(pb_indices_r[i]);
 		visual_server_handler->set_vertex(mesh_indices_r[i], reinterpret_cast<void *>(&v));
-		v = p_cmds->get_particle_normal(pb_indices_r[i]);
+		v = p_cmds->get_particle_normal(pb_indices_r[i]) * -1;
 		visual_server_handler->set_normal(mesh_indices_r[i], reinterpret_cast<void *>(&v));
 	}
 

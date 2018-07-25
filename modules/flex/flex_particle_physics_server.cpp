@@ -55,7 +55,7 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 	PoolVector<Vector3>::Read particle_positions_r = p_model->get_particles().read();
 
 	{ // Particle
-		const int resource_p_count(p_model->get_particles_ref().size());
+		const int resource_p_count(p_model->get_particles().size());
 		body->space->particles_allocator->resize_chunk(body->particles_mchunk, resource_p_count);
 
 		PoolVector<real_t>::Read masses_r = p_model->get_masses().read();
@@ -256,6 +256,10 @@ void FlexParticleBodyCommands::set_particle_velocity(int p_particle_index, const
 
 Vector3 FlexParticleBodyCommands::get_particle_normal(int p_index) const {
 	return vec3_from_flvec4(body->get_particle_normal(p_index));
+}
+
+void FlexParticleBodyCommands::set_particle_normal(int p_index, const Vector3 &p_normal) {
+	body->set_particle_normal(p_index, p_normal);
 }
 
 const Vector3 &FlexParticleBodyCommands::get_rigid_position(int p_index) const {

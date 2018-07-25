@@ -49,6 +49,7 @@ enum ChangedBodyParameter {
 	eChangedBodyParamParticleJustAdded = 1 << 0,
 	eChangedBodyParamPositionMass = 1 << 1,
 	eChangedBodyParamVelocity = 1 << 2,
+	eChangedBodyParamNormal = 1 << 2,
 	eChangedBodyParamPhase = 1 << 3,
 	eChangedBodyParamInflatable = 1 << 4,
 
@@ -167,6 +168,7 @@ public:
 	void set_particle_velocity(ParticleIndex p_particle, const Vector3 &p_velocity);
 
 	const FlVector4 &get_particle_normal(ParticleIndex p_particle) const;
+	void set_particle_normal(ParticleIndex p_particle_index, const Vector3 &p_normal);
 
 	const DynamicTriangle &get_triangle(TriangleIndex p_triangle_index) const;
 
