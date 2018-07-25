@@ -52,12 +52,14 @@ class ParticleClothVisualServerHandler {
 	uint32_t offset_vertices;
 	uint32_t offset_normal;
 
+	PoolVector<int> mesh_indices;
+
 	PoolVector<uint8_t>::Write write_buffer;
 
 private:
 	ParticleClothVisualServerHandler();
 	bool is_ready() { return mesh.is_valid(); }
-	void prepare(RID p_mesh_rid, int p_surface);
+	void prepare(RID p_mesh_rid, int p_surface, const Array &p_mesh_arrays);
 	void clear();
 	void open();
 	void close();
@@ -67,6 +69,8 @@ public:
 	void set_vertex(int p_vertex_id, const void *p_vector3);
 	void set_normal(int p_vertex_id, const void *p_vector3);
 	void set_aabb(const AABB &p_aabb);
+
+	PoolVector<int> get_mesh_indices() const { return mesh_indices; }
 };
 
 class ParticleBodyMeshInstance : public MeshInstance {
@@ -78,7 +82,7 @@ class ParticleBodyMeshInstance : public MeshInstance {
 		RENDERING_UPDATE_APPROACH_SKELETON
 	};
 
-	ParticleClothVisualServerHandler visual_server_handler;
+	ParticleClothVisualServerHandler *visual_server_handler;
 
 	ParticleBody *particle_body;
 	Skeleton *skeleton;
@@ -90,6 +94,7 @@ class ParticleBodyMeshInstance : public MeshInstance {
 
 public:
 	ParticleBodyMeshInstance();
+	virtual ~ParticleBodyMeshInstance();
 
 	_FORCE_INLINE_ Skeleton *get_skeleton() { return skeleton; }
 	void update_mesh(ParticleBodyCommands *p_cmds);

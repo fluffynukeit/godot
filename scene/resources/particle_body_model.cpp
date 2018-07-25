@@ -68,9 +68,6 @@ void ParticleBodyModel::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_dynamic_triangles_indices", "dynamic_triangles_indices"), &ParticleBodyModel::set_dynamic_triangles_indices);
 	ClassDB::bind_method(D_METHOD("get_dynamic_triangles_indices"), &ParticleBodyModel::get_dynamic_triangles_indices);
 
-	ClassDB::bind_method(D_METHOD("set_mesh_vertices_to_particles", "mesh_vertices_to_particles"), &ParticleBodyModel::set_mesh_vertices_to_particles);
-	ClassDB::bind_method(D_METHOD("get_mesh_vertices_to_particles"), &ParticleBodyModel::get_mesh_vertices_to_particles);
-
 	ClassDB::bind_method(D_METHOD("set_want_inflatable", "want_inflatable"), &ParticleBodyModel::set_want_inflatable);
 	ClassDB::bind_method(D_METHOD("get_want_inflatable"), &ParticleBodyModel::get_want_inflatable);
 
@@ -93,7 +90,6 @@ void ParticleBodyModel::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_INT_ARRAY, "clusters_particle_indices"), "set_clusters_particle_indices", "get_clusters_particle_indices");
 
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_INT_ARRAY, "dynamic_triangles_indices"), "set_dynamic_triangles_indices", "get_dynamic_triangles_indices");
-	ADD_PROPERTY(PropertyInfo(Variant::POOL_INT_ARRAY, "mesh_vertices_to_particles"), "set_mesh_vertices_to_particles", "get_mesh_vertices_to_particles");
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "want_inflatable"), "set_want_inflatable", "get_want_inflatable");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "rest_volume"), "set_rest_volume", "get_rest_volume");
@@ -155,11 +151,6 @@ void ParticleBodyModel::set_clusters_particle_indices(const PoolVector<int> p_cl
 
 void ParticleBodyModel::set_dynamic_triangles_indices(const PoolVector<int> p_dynamic_triangles_indices) {
 	dynamic_triangles_indices = p_dynamic_triangles_indices;
-	notify_change_to_owners();
-}
-
-void ParticleBodyModel::set_mesh_vertices_to_particles(const PoolVector<int> p_mesh_vertices_to_particles) {
-	mesh_vertices_to_particles = p_mesh_vertices_to_particles;
 	notify_change_to_owners();
 }
 

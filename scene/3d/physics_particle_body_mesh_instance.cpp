@@ -40,7 +40,7 @@
 
 ParticleClothVisualServerHandler::ParticleClothVisualServerHandler() {}
 
-void ParticleClothVisualServerHandler::prepare(RID p_mesh, int p_surface) {
+void ParticleClothVisualServerHandler::prepare(RID p_mesh, int p_surface, const Array &p_mesh_arrays) {
 	clear();
 
 	ERR_FAIL_COND(!p_mesh.is_valid());
@@ -57,6 +57,8 @@ void ParticleClothVisualServerHandler::prepare(RID p_mesh, int p_surface) {
 	stride = VS::get_singleton()->mesh_surface_make_offsets_from_format(surface_format, surface_vertex_len, surface_index_len, surface_offsets);
 	offset_vertices = surface_offsets[VS::ARRAY_VERTEX];
 	offset_normal = surface_offsets[VS::ARRAY_NORMAL];
+
+	mesh_indices = p_mesh_arrays[VS::ARRAY_INDEX];
 }
 
 void ParticleClothVisualServerHandler::clear() {
@@ -80,12 +82,12 @@ void ParticleClothVisualServerHandler::commit_changes() {
 	VS::get_singleton()->mesh_surface_update_region(mesh, surface, 0, buffer);
 }
 
-void ParticleClothVisualServerHandler::set_vertex(int p_vertex_id, const void *p_vector3) {
-	copymem(&write_buffer[p_vertex_id * stride + offset_vertices], p_vector3, sizeof(float) * 3);
+void ParticleClothVisualServerHandler::set_vertex(int p_vertex, const void *p_vector3) {
+	copymem(&write_buffer[p_vertex * stride + offset_vertices], p_vector3, sizeof(float) * 3);
 }
 
-void ParticleClothVisualServerHandler::set_normal(int p_vertex_id, const void *p_vector3) {
-	copymem(&write_buffer[p_vertex_id * stride + offset_normal], p_vector3, sizeof(float) * 3);
+void ParticleClothVisualServerHandler::set_normal(int p_vertex, const void *p_vector3) {
+	copymem(&write_buffer[p_vertex * stride + offset_normal], p_vector3, sizeof(float) * 3);
 }
 
 void ParticleClothVisualServerHandler::set_aabb(const AABB &p_aabb) {
@@ -141,11 +143,16 @@ ParticleBodyMeshInstance::ParticleBodyMeshInstance() :
 		MeshInstance(),
 		particle_body(NULL),
 		skeleton(NULL),
-		rendering_approach(RENDERING_UPDATE_APPROACH_NONE) {
+		rendering_approach(RENDERING_UPDATE_APPROACH_NONE),
+		visual_server_handler(NULL) {
 
 	set_skeleton_path(NodePath());
 	if (Engine::get_singleton()->is_editor_hint())
 		set_notify_local_transform(true);
+}
+
+ParticleBodyMeshInstance::~ParticleBodyMeshInstance() {
+	_clear_pvparticles_drawing();
 }
 
 void ParticleBodyMeshInstance::update_mesh(ParticleBodyCommands *p_cmds) {
@@ -161,40 +168,23 @@ void ParticleBodyMeshInstance::update_mesh(ParticleBodyCommands *p_cmds) {
 
 void ParticleBodyMeshInstance::update_mesh_pvparticles(ParticleBodyCommands *p_cmds) {
 
-	Ref<ParticleBodyModel> model = particle_body->get_particle_body_model();
-	PoolVector<int>::Read r = model->get_mesh_vertices_to_particles().read();
+	PoolVector<int>::Read pb_indices_r = particle_body->get_particle_body_model()->get_dynamic_triangles_indices().read();
+	visual_server_handler->open();
 
-	visual_server_handler.open();
+	PoolVector<int>::Read mesh_indices_r = visual_server_handler->get_mesh_indices().read();
+	for (int i(visual_server_handler->get_mesh_indices().size() - 1); 0 <= i; --i) {
 
-	//for (int i(model->get_mesh_vertices_to_particles().size() - 1); 0 <= i; --i) {
-	//	if (i != 1)
-	//		continue;
-	//	Vector3 v(p_cmds->get_particle_position(r[i]));
-	//	int a(r[i]); // TODO remove it
-	//	visual_server_handler.set_vertex(i, (void *)(&v));
-	//}
+		Vector3 v(p_cmds->get_particle_position(pb_indices_r[i]));
+		visual_server_handler->set_vertex(mesh_indices_r[i], (void *)(&v));
+	}
 
-	Vector3 v;
-	v = Vector3(0, -10, 0);
-	visual_server_handler.set_vertex(1, reinterpret_cast<void *>(&v));
-
-	//Vector3 v;
-	//v = Vector3(1, 0, 1);
-	//visual_server_handler.set_vertex(0, reinterpret_cast<void *>(&v));
-	//v = Vector3(-1, 0, 1);
-	//visual_server_handler.set_vertex(1, reinterpret_cast<void *>(&v));
-	//v = Vector3(1, 0, -1);
-	//visual_server_handler.set_vertex(2, reinterpret_cast<void *>(&v));
-	//v = Vector3(-1, 0, -1);
-	//visual_server_handler.set_vertex(3, reinterpret_cast<void *>(&v));
-
-	visual_server_handler.close();
+	visual_server_handler->close();
 }
 
 void ParticleBodyMeshInstance::_draw_mesh_pvparticles() {
 
 	// The buffer is updated in the update_mesh_pvparticles
-	visual_server_handler.commit_changes();
+	visual_server_handler->commit_changes();
 }
 
 void ParticleBodyMeshInstance::update_mesh_skeleton(ParticleBodyCommands *p_cmds) {
@@ -240,7 +230,7 @@ void ParticleBodyMeshInstance::prepare_mesh_for_pvparticles() {
 	Array surface_blend_arrays = get_mesh()->surface_get_blend_shape_arrays(0);
 	uint32_t surface_format = get_mesh()->surface_get_format(0);
 
-	//surface_format &= ~(Mesh::ARRAY_COMPRESS_VERTEX | Mesh::ARRAY_COMPRESS_NORMAL);
+	surface_format &= ~(Mesh::ARRAY_COMPRESS_VERTEX | Mesh::ARRAY_COMPRESS_NORMAL);
 	surface_format |= Mesh::ARRAY_FLAG_USE_DYNAMIC_UPDATE;
 
 	Ref<ArrayMesh> soft_mesh;
@@ -250,7 +240,9 @@ void ParticleBodyMeshInstance::prepare_mesh_for_pvparticles() {
 	set_mesh(soft_mesh);
 	rendering_approach = RENDERING_UPDATE_APPROACH_PVP;
 
-	visual_server_handler.prepare(get_mesh()->get_rid(), 0);
+	ERR_FAIL_COND(visual_server_handler);
+	visual_server_handler = memnew(ParticleClothVisualServerHandler);
+	visual_server_handler->prepare(get_mesh()->get_rid(), 0, surface_arrays);
 
 	/// Necessary in order to render the mesh correctly (Soft body nodes are in global space)
 	call_deferred("set_as_toplevel", true);
@@ -325,9 +317,14 @@ void ParticleBodyMeshInstance::prepare_mesh_skeleton_deformation() {
 }
 
 void ParticleBodyMeshInstance::_clear_pvparticles_drawing() {
-	if (!VS::get_singleton()->is_connected("frame_pre_draw", this, "_draw_mesh_pvparticles"))
+
+	if (VS::get_singleton()->is_connected("frame_pre_draw", this, "_draw_mesh_pvparticles"))
+		VS::get_singleton()->disconnect("frame_pre_draw", this, "_draw_mesh_pvparticles");
+
+	if (!visual_server_handler)
 		return;
 
-	VS::get_singleton()->disconnect("frame_pre_draw", this, "_draw_mesh_pvparticles");
-	visual_server_handler.clear();
+	visual_server_handler->clear();
+	memdelete(visual_server_handler);
+	visual_server_handler = NULL;
 }

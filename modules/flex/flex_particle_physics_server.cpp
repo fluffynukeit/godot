@@ -802,7 +802,6 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_cloth_particle_body_mod
 
 	PoolVector<FlVector4> welded_particles_positions;
 	PoolVector<int> welded_particles_indices;
-	PoolVector<int> mesh_vertices_to_particles;
 
 	{ // Merge all overlapping vertices
 		PoolVector<Vector3>::Read mesh_vertices_read = p_mesh->get_vertices().read();
@@ -840,13 +839,11 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_cloth_particle_body_mod
 
 		welded_particles_positions.resize(unique_vertices);
 		welded_particles_indices.resize(mesh_index_count);
-		mesh_vertices_to_particles.resize(mesh_vertex_count);
 
 		{ // Populate vertices and indices
 
 			PoolVector<FlVector4>::Write welded_particles_w = welded_particles_positions.write();
 			PoolVector<int>::Write welded_particles_indices_w = welded_particles_indices.write();
-			PoolVector<int>::Write mesh_vertices_to_particles_w = mesh_vertices_to_particles.write();
 
 			for (int i(0); i < unique_vertices; ++i) {
 				Vector3 pos(mesh_vertices_read[welded_vertex_indices_r[original_to_unique_r[i]]]);
@@ -856,10 +853,6 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_cloth_particle_body_mod
 			for (int i(0); i < mesh_index_count; ++i) {
 				// int vertex = mesh_indices_r[i];
 				welded_particles_indices_w[i] = welded_vertex_indices_r[original_to_unique_r[mesh_indices_r[i]]];
-			}
-
-			for (int i(0); i < mesh_vertex_count; ++i) {
-				mesh_vertices_to_particles_w[i] = welded_vertex_indices_r[original_to_unique_r[i]];
 			}
 		}
 	}
@@ -884,8 +877,6 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_cloth_particle_body_mod
 
 	NvFlexExtDestroyAsset(generated_assets);
 	generated_assets = NULL;
-
-	model->set_mesh_vertices_to_particles(mesh_vertices_to_particles);
 
 	return model;
 }
