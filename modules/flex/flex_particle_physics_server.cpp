@@ -254,6 +254,10 @@ void FlexParticleBodyCommands::set_particle_velocity(int p_particle_index, const
 	body->set_particle_velocity(p_particle_index, p_velocity);
 }
 
+Vector3 FlexParticleBodyCommands::get_particle_normal(int p_index) const {
+	return vec3_from_flvec4(body->get_particle_normal(p_index));
+}
+
 const Vector3 &FlexParticleBodyCommands::get_rigid_position(int p_index) const {
 	return body->get_rigid_position(p_index);
 }

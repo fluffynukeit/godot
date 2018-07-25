@@ -28,6 +28,8 @@ public:
 	virtual const Vector3 &get_particle_velocity(int p_particle_index) const = 0;
 	virtual void set_particle_velocity(int p_particle_index, const Vector3 &p_velocity) = 0;
 
+	virtual Vector3 get_particle_normal(int p_index) const = 0;
+
 	virtual const Vector3 &get_rigid_position(int p_index) const = 0;
 	virtual const Quat &get_rigid_rotation(int p_index) const = 0;
 };

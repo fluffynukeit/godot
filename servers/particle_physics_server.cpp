@@ -19,6 +19,8 @@ void ParticleBodyCommands::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("get_particle_velocity", "particle_index"), &ParticleBodyCommands::get_particle_velocity);
 	ClassDB::bind_method(D_METHOD("set_particle_velocity", "particle_index", "velocity"), &ParticleBodyCommands::set_particle_velocity);
+
+	ClassDB::bind_method(D_METHOD("get_particle_normal", "particle_index"), &ParticleBodyCommands::get_particle_normal);
 }
 
 ParticlePhysicsServer *ParticlePhysicsServer::singleton = NULL;
