@@ -85,6 +85,8 @@ public:
 
 	virtual const Vector3 &get_rigid_position(int p_index) const;
 	virtual const Quat &get_rigid_rotation(int p_index) const;
+
+	virtual AABB get_aabb() const;
 };
 
 class FlexParticlePhysicsServer : public ParticlePhysicsServer {

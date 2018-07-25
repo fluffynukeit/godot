@@ -270,6 +270,20 @@ const Quat &FlexParticleBodyCommands::get_rigid_rotation(int p_index) const {
 	return body->get_rigid_rotation(p_index);
 }
 
+AABB FlexParticleBodyCommands::get_aabb() const {
+	AABB aabb;
+
+	const int s(body->get_particle_count());
+	if (s) {
+		aabb.set_position(body->get_particle_position(0));
+		for (int i(1); i < s; ++i) {
+			aabb.expand_to(body->get_particle_position(i));
+		}
+	}
+
+	return aabb;
+}
+
 FlexParticlePhysicsServer *FlexParticlePhysicsServer::singleton = NULL;
 
 FlexParticlePhysicsServer::FlexParticlePhysicsServer() :
