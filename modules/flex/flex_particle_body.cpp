@@ -254,6 +254,10 @@ void FlexParticleBody::set_particle_velocity(ParticleIndex p_particle_index, con
 	changed_parameters |= eChangedBodyParamVelocity;
 }
 
+const FlVector4 &FlexParticleBody::get_particle_normal(ParticleIndex p_particle_index) const {
+	return space->get_particles_memory()->get_normal(particles_mchunk, p_particle_index);
+}
+
 const DynamicTriangle &FlexParticleBody::get_triangle(TriangleIndex p_triangle_index) const {
 	return space->get_triangles_memory()->get_triangle(triangles_mchunk, p_triangle_index);
 }

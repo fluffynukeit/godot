@@ -172,10 +172,13 @@ void ParticleBodyMeshInstance::update_mesh_pvparticles(ParticleBodyCommands *p_c
 	visual_server_handler->open();
 
 	PoolVector<int>::Read mesh_indices_r = visual_server_handler->get_mesh_indices().read();
+	Vector3 v;
 	for (int i(visual_server_handler->get_mesh_indices().size() - 1); 0 <= i; --i) {
 
-		Vector3 v(p_cmds->get_particle_position(pb_indices_r[i]));
-		visual_server_handler->set_vertex(mesh_indices_r[i], (void *)(&v));
+		v = p_cmds->get_particle_position(pb_indices_r[i]);
+		visual_server_handler->set_vertex(mesh_indices_r[i], reinterpret_cast<void *>(&v));
+		v = p_cmds->get_particle_normal(pb_indices_r[i]);
+		visual_server_handler->set_normal(mesh_indices_r[i], reinterpret_cast<void *>(&v));
 	}
 
 	visual_server_handler->close();
