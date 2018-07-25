@@ -399,6 +399,7 @@ class ParticlesMemory : public FlexBufferMemory {
 	void set_phase(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, int p_phase);
 	int get_phase(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const;
 
+	void set_normal(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, const FlVector4 &p_normal);
 	const FlVector4 &get_normal(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const;
 };
 

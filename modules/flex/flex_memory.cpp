@@ -86,6 +86,11 @@ int ParticlesMemory::get_phase(const MemoryChunk *p_chunk, ParticleIndex p_parti
 	return phases[index];
 }
 
+void ParticlesMemory::set_normal(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, const FlVector4 &p_normal) {
+	make_memory_index(p_chunk, p_particle_index);
+	normals[index] = p_normal;
+}
+
 const FlVector4 &ParticlesMemory::get_normal(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const {
 	make_memory_index_V(p_chunk, p_particle_index, return_err_flvec4);
 	return normals[index];

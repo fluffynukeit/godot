@@ -38,12 +38,14 @@ class TriangleMesh : public Reference {
 
 	GDCLASS(TriangleMesh, Reference);
 
+public:
 	struct Triangle {
 
 		Vector3 normal;
 		int indices[3];
 	};
 
+private:
 	PoolVector<Triangle> triangles;
 	PoolVector<Vector3> vertices;
 
