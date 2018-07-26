@@ -81,7 +81,7 @@ class PhysicsParticleGlue : public Spatial {
 public:
 	PhysicsParticleGlue();
 
-	int get_particle_count(Object *p_particle_body) const;
+	int get_particle_count() const;
 	int find_particle(int p_particle_index, Object *p_particle_body);
 
 	void add_particle(int p_particle_index, Object *p_particle_body);

@@ -103,7 +103,7 @@ void PhysicsParticleGlue::_get_property_list(List<PropertyInfo> *p_list) const {
 
 void PhysicsParticleGlue::_bind_methods() {
 
-	ClassDB::bind_method(D_METHOD("get_particle_count", "particle_body"), &PhysicsParticleGlue::get_particle_count);
+	ClassDB::bind_method(D_METHOD("get_particle_count"), &PhysicsParticleGlue::get_particle_count);
 	ClassDB::bind_method(D_METHOD("find_particle", "particle_index", "particle_body"), &PhysicsParticleGlue::find_particle);
 	ClassDB::bind_method(D_METHOD("add_particle", "particle_index", "particle_body"), &PhysicsParticleGlue::add_particle);
 	ClassDB::bind_method(D_METHOD("remove_particle", "position"), &PhysicsParticleGlue::remove_particle);
@@ -130,7 +130,7 @@ PhysicsParticleGlue::PhysicsParticleGlue() {
 	set_notify_transform(true);
 }
 
-int PhysicsParticleGlue::get_particle_count(Object *p_particle_body) const {
+int PhysicsParticleGlue::get_particle_count() const {
 	return glued_particles.size();
 }
 
@@ -155,6 +155,7 @@ int PhysicsParticleGlue::get_particle_index(int p_position) {
 }
 
 void PhysicsParticleGlue::particle_physics_sync(RID p_space) {
+
 	if (get_world()->get_particle_space() != p_space)
 		return;
 
@@ -173,7 +174,7 @@ void PhysicsParticleGlue::particle_physics_sync(RID p_space) {
 
 			cmds = ParticlePhysicsServer::get_singleton()->body_get_commands(glued_particles[i].particle_body->get_rid());
 			cmds->set_particle_mass(gp.particle_index, gp.previous_mass);
-			glued_particles[i] = glued_particles[size--];
+			glued_particles[i] = glued_particles[--size];
 			continue;
 
 		} else if (gp.state == GluedParticle::GLUED_PARTICLE_STATE_IN) {
