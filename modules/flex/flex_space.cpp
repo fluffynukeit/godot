@@ -321,10 +321,7 @@ void FlexSpace::sync() {
 
 	///
 	/// Emit server sync
-	static Error e;
-	static Variant v[1];
-	v[0] = this;
-	ParticlePhysicsServer::get_singleton()->emit_signal("sync_end", &v, 1, e);
+	ParticlePhysicsServer::get_singleton()->emit_signal("sync_end", get_self());
 
 	///
 	/// Unmap phase
