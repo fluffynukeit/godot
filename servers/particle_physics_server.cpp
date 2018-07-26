@@ -110,7 +110,7 @@ void ParticlePhysicsServer::_bind_methods() {
 	BIND_ENUM_CONSTANT(PARTICLE_PRIMITIVE_SHAPE_TYPE_CAPSULE);
 	BIND_ENUM_CONSTANT(PARTICLE_PRIMITIVE_SHAPE_TYPE_SPHERE);
 
-	ADD_SIGNAL(MethodInfo("sync", PropertyInfo(Variant::OBJECT, "space")));
+	ADD_SIGNAL(MethodInfo("sync_end", PropertyInfo(Variant::_RID, "space")));
 }
 
 ParticlePhysicsServer *ParticlePhysicsServer::get_singleton() {
