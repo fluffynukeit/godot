@@ -103,6 +103,9 @@ void PhysicsParticleGlue::_get_property_list(List<PropertyInfo> *p_list) const {
 
 void PhysicsParticleGlue::_bind_methods() {
 
+	ClassDB::bind_method(D_METHOD("set_allow_particles_with_zero_mass", "allow"), &PhysicsParticleGlue::set_allow_particles_with_zero_mass);
+	ClassDB::bind_method(D_METHOD("get_allow_particles_with_zero_mass"), &PhysicsParticleGlue::get_allow_particles_with_zero_mass);
+
 	ClassDB::bind_method(D_METHOD("get_particle_count"), &PhysicsParticleGlue::get_particle_count);
 	ClassDB::bind_method(D_METHOD("find_particle", "particle_index", "particle_body"), &PhysicsParticleGlue::find_particle);
 	ClassDB::bind_method(D_METHOD("add_particle", "particle_index", "particle_body"), &PhysicsParticleGlue::add_particle);
@@ -110,6 +113,8 @@ void PhysicsParticleGlue::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_particle_index", "position"), &PhysicsParticleGlue::get_particle_index);
 
 	ClassDB::bind_method(D_METHOD("particle_physics_sync", "space"), &PhysicsParticleGlue::particle_physics_sync);
+
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "allow_particles_with_zero_mass"), "set_allow_particles_with_zero_mass", "get_allow_particles_with_zero_mass");
 }
 
 void PhysicsParticleGlue::_notification(int p_what) {
@@ -126,8 +131,17 @@ void PhysicsParticleGlue::_notification(int p_what) {
 	}
 }
 
-PhysicsParticleGlue::PhysicsParticleGlue() {
+PhysicsParticleGlue::PhysicsParticleGlue() :
+		allow_particles_with_zero_mass(false) {
 	set_notify_transform(true);
+}
+
+void PhysicsParticleGlue::set_allow_particles_with_zero_mass(bool p_allow) {
+	allow_particles_with_zero_mass = p_allow;
+}
+
+bool PhysicsParticleGlue::get_allow_particles_with_zero_mass() const {
+	return allow_particles_with_zero_mass;
 }
 
 int PhysicsParticleGlue::get_particle_count() const {
@@ -187,9 +201,13 @@ void PhysicsParticleGlue::particle_physics_sync(RID p_space) {
 			cmds = ParticlePhysicsServer::get_singleton()->body_get_commands(glued_particles[i].particle_body->get_rid());
 			gp.state = GluedParticle::GLUED_PARTICLE_STATE_IDLE;
 			gp.previous_mass = cmds->get_particle_mass(gp.particle_index);
-			gp.offset = cmds->get_particle_position(gp.particle_index) - get_global_transform().origin;
+			if (!allow_particles_with_zero_mass && !gp.previous_mass) {
+				glued_particles[i] = glued_particles[--size];
+				continue;
+			}
+			gp.offset = get_global_transform().xform_inv(cmds->get_particle_position(gp.particle_index));
 
-			cmds->set_particle_position_mass(gp.particle_index, get_global_transform().xform(gp.offset), 0);
+			cmds->set_particle_position_mass(gp.particle_index, get_global_transform().xform(gp.offset), .0);
 		} else {
 
 			cmds = ParticlePhysicsServer::get_singleton()->body_get_commands(glued_particles[i].particle_body->get_rid());
