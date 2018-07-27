@@ -35,6 +35,7 @@
 
 #include "core/math/triangle_mesh.h"
 #include "flex_particle_body.h"
+#include "flex_particle_body_constraint.h"
 #include "flex_primitive_body.h"
 #include "flex_primitive_shapes.h"
 #include "flex_space.h"
@@ -89,6 +90,17 @@ public:
 	virtual AABB get_aabb() const;
 };
 
+class FlexParticleBodyConstraintCommands : public ParticleBodyConstraintCommands {
+	GDCLASS(FlexParticleBodyConstraintCommands, ParticleBodyConstraintCommands);
+
+public:
+	FlexParticleBodyConstraint *constraint;
+
+	virtual int get_spring_count() const;
+	virtual void add_spring(int p_body0_particle, int p_body1_particle, float p_length, float p_stiffness);
+	virtual void set_spring(int p_index, int p_body0_particle, int p_body1_particle, float p_length, float p_stiffness);
+};
+
 class FlexParticlePhysicsServer : public ParticlePhysicsServer {
 	GDCLASS(FlexParticlePhysicsServer, ParticlePhysicsServer);
 
@@ -139,6 +151,7 @@ public:
 private:
 	mutable RID_Owner<FlexSpace> space_owner;
 	mutable RID_Owner<FlexParticleBody> body_owner;
+	mutable RID_Owner<FlexParticleBodyConstraint> body_constraint_owner;
 	mutable RID_Owner<FlexPrimitiveBody> primitive_body_owner;
 	mutable RID_Owner<FlexPrimitiveShape> primitive_shape_owner;
 
@@ -148,6 +161,9 @@ private:
 	bool is_active;
 	FlexParticleBodyCommands *particle_body_commands;
 	Variant particle_body_commands_variant;
+
+	FlexParticleBodyConstraintCommands *particle_body_constraint_commands;
+	Variant particle_body_constraint_commands_variant;
 
 public:
 	FlexParticlePhysicsServer();
@@ -161,6 +177,16 @@ public:
 	_FORCE_INLINE_ Variant *get_particle_body_commands_variant(FlexParticleBody *body) {
 		particle_body_commands->body = body;
 		return &particle_body_commands_variant;
+	}
+
+	_FORCE_INLINE_ FlexParticleBodyConstraintCommands *get_particle_body_constraint_commands(FlexParticleBodyConstraint *p_constraint) {
+		particle_body_constraint_commands->constraint = p_constraint;
+		return particle_body_constraint_commands;
+	}
+
+	_FORCE_INLINE_ Variant *get_particle_body_constraint_commands_variant(FlexParticleBodyConstraint *p_constraint) {
+		particle_body_constraint_commands->constraint = p_constraint;
+		return &particle_body_constraint_commands_variant;
 	}
 
 	/* SPACE */
@@ -211,6 +237,12 @@ public:
 
 	virtual void body_set_monitoring_primitives_contacts(RID p_body, bool p_monitoring);
 	virtual bool body_is_monitoring_primitives_contacts(RID p_body) const;
+
+	/* BODY CONSTRAINT */
+	virtual RID constraint_create(RID p_body0, RID p_body1);
+
+	virtual void constraint_set_callback(RID p_constraint, Object *p_receiver, const StringName &p_method);
+	virtual void constraint_set_space(RID p_constraint, RID p_space);
 
 	/* PRIMITIVE BODY */
 	virtual RID primitive_body_create();

@@ -43,6 +43,7 @@
 class NvFlexLibrary;
 class NvFlexSolver;
 class FlexParticleBody;
+class FlexParticleBodyConstraint;
 class FlexPrimitiveBody;
 class FlexMemoryAllocator;
 class ParticlesMemory;
@@ -59,6 +60,7 @@ class FlexSpace : public RIDFlex {
 
 	friend class FlexBuffers;
 	friend class FlexParticleBodyCommands;
+	friend class FlexParticleBodyConstraintCommands;
 
 	NvFlexLibrary *flex_lib;
 	NvFlexSolver *solver;
@@ -92,6 +94,7 @@ class FlexSpace : public RIDFlex {
 	GeometryMemory *geometries_memory;
 
 	Vector<FlexParticleBody *> particle_bodies;
+	Vector<FlexParticleBodyConstraint *> constraints;
 	Vector<FlexPrimitiveBody *> primitive_bodies;
 
 	Vector<MemoryChunk *> geometry_chunks_to_deallocate;
@@ -131,6 +134,9 @@ public:
 
 	void add_particle_body(FlexParticleBody *p_body);
 	void remove_particle_body(FlexParticleBody *p_body);
+
+	void add_particle_body_constraint(FlexParticleBodyConstraint *p_constraint);
+	void remove_particle_body_constraint(FlexParticleBodyConstraint *p_constraint);
 
 	void add_primitive_body(FlexPrimitiveBody *p_body);
 	void remove_primitive_body(FlexPrimitiveBody *p_body);

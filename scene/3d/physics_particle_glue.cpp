@@ -132,6 +132,7 @@ void PhysicsParticleGlue::_notification(int p_what) {
 }
 
 PhysicsParticleGlue::PhysicsParticleGlue() :
+		Spatial(),
 		allow_particles_with_zero_mass(false) {
 	set_notify_transform(true);
 }

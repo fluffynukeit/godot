@@ -68,6 +68,7 @@ class FlexParticleBody : public RIDFlex {
 
 	friend class FlexSpace;
 	friend class FlexParticleBodyCommands;
+	friend class FlexParticleBodyConstraintCommands;
 
 	FlexCallBackData sync_callback;
 	FlexCallBackData particle_index_changed_callback;

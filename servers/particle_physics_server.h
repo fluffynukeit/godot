@@ -36,6 +36,18 @@ public:
 	virtual AABB get_aabb() const = 0;
 };
 
+class ParticleBodyConstraintCommands : public Object {
+	GDCLASS(ParticleBodyConstraintCommands, Object);
+
+protected:
+	static void _bind_methods();
+
+public:
+	virtual int get_spring_count() const = 0;
+	virtual void add_spring(int p_body0_particle, int p_body1_particle, float p_length, float p_stiffness) = 0;
+	virtual void set_spring(int p_index, int p_body0_particle, int p_body1_particle, float p_length, float p_stiffness) = 0;
+};
+
 class ParticlePhysicsServer : public Object {
 	GDCLASS(ParticlePhysicsServer, Object);
 
@@ -115,6 +127,12 @@ public:
 
 	virtual void body_set_monitoring_primitives_contacts(RID p_body, bool p_monitoring) = 0;
 	virtual bool body_is_monitoring_primitives_contacts(RID p_body) const = 0;
+
+	/* BODY CONSTRAINT */
+	virtual RID constraint_create(RID p_body0, RID p_body1) = 0;
+
+	virtual void constraint_set_callback(RID p_constraint, Object *p_receiver, const StringName &p_method) = 0;
+	virtual void constraint_set_space(RID p_constraint, RID p_space) = 0;
 
 	/* PRIMITIVE BODY */
 	virtual RID primitive_body_create() = 0;

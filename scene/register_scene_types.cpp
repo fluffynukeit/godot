@@ -195,6 +195,7 @@
 #include "scene/3d/physics_body.h"
 #include "scene/3d/physics_joint.h"
 #include "scene/3d/physics_particle_body.h"
+#include "scene/3d/physics_particle_body_constraint.h"
 #include "scene/3d/physics_particle_body_mesh_instance.h"
 #include "scene/3d/physics_particle_glue.h"
 #include "scene/3d/physics_particle_object.h"
@@ -454,6 +455,7 @@ void register_scene_types() {
 	ClassDB::register_class<ParticlePrimitiveBody>();
 	ClassDB::register_class<ParticlePrimitiveArea>();
 	ClassDB::register_class<PhysicsParticleGlue>();
+	ClassDB::register_class<ParticleBodyConstraint>();
 
 	ClassDB::register_class<VehicleBody>();
 	ClassDB::register_class<VehicleWheel>();
