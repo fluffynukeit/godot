@@ -62,12 +62,21 @@ class PhysicsParticleGlue : public Spatial {
 				particle_index(p_particle_index),
 				state(GLUED_PARTICLE_STATE_IN) {}
 
+		GluedParticle(const GluedParticle &p_other) :
+				particle_body_path(p_other.particle_body_path),
+				particle_body(p_other.particle_body),
+				particle_index(p_other.particle_index),
+				state(p_other.particle_index),
+				offset(p_other.offset),
+				previous_mass(p_other.previous_mass) {}
+
 		bool operator==(const GluedParticle &p_other) const {
 			return p_other.particle_body == particle_body && p_other.particle_index == particle_index;
 		}
 	};
 
 	Vector<GluedParticle> glued_particles;
+	bool allow_particles_with_zero_mass;
 	bool _are_particles_dirty;
 
 	bool _set(const StringName &p_name, const Variant &p_property);
@@ -80,6 +89,9 @@ class PhysicsParticleGlue : public Spatial {
 
 public:
 	PhysicsParticleGlue();
+
+	void set_allow_particles_with_zero_mass(bool p_allow);
+	bool get_allow_particles_with_zero_mass() const;
 
 	int get_particle_count() const;
 	int find_particle(int p_particle_index, Object *p_particle_body);
