@@ -23,6 +23,9 @@ void ParticleBodyCommands::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_particle_normal", "particle_index"), &ParticleBodyCommands::get_particle_normal);
 }
 
+void ParticleBodyConstraintCommands::_bind_methods() {
+}
+
 ParticlePhysicsServer *ParticlePhysicsServer::singleton = NULL;
 
 void ParticlePhysicsServer::_bind_methods() {
@@ -67,6 +70,10 @@ void ParticlePhysicsServer::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("body_set_monitoring_primitives", "body", "monitoring"), &ParticlePhysicsServer::body_set_monitoring_primitives_contacts);
 	ClassDB::bind_method(D_METHOD("body_is_monitoring_primitives", "body"), &ParticlePhysicsServer::body_is_monitoring_primitives_contacts);
+
+	ClassDB::bind_method(D_METHOD("constraint_create", "body0", "body1"), &ParticlePhysicsServer::constraint_create);
+	ClassDB::bind_method(D_METHOD("constraint_set_callback", "receiver", "method"), &ParticlePhysicsServer::constraint_set_callback);
+	ClassDB::bind_method(D_METHOD("constraint_set_space", "constraint", "space"), &ParticlePhysicsServer::constraint_set_space);
 
 	ClassDB::bind_method(D_METHOD("primitive_body_create"), &ParticlePhysicsServer::primitive_body_create);
 	ClassDB::bind_method(D_METHOD("primitive_body_set_space", "body", "space"), &ParticlePhysicsServer::primitive_body_set_space);

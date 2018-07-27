@@ -38,6 +38,7 @@
 
 #include "flex_memory.h"
 #include "flex_particle_body.h"
+#include "flex_particle_body_constraint.h"
 #include "flex_primitive_body.h"
 #include "flex_primitive_shapes.h"
 #include "print_string.h"
@@ -404,6 +405,22 @@ void FlexSpace::remove_particle_body(FlexParticleBody *p_body) {
 
 	p_body->space = NULL;
 	particle_bodies.erase(p_body);
+
+	// TODO Show a warning and remove body constraint associated to this body
+}
+
+void FlexSpace::add_particle_body_constraint(FlexParticleBodyConstraint *p_constraint) {
+	ERR_FAIL_COND(!p_constraint);
+	p_constraint->space = this;
+	constraints.push_back(p_constraint);
+
+	p_constraint->springs_mchunk = springs_allocator->allocate_chunk(0);
+}
+
+void FlexSpace::remove_particle_body_constraint(FlexParticleBodyConstraint *p_constraint) {
+	springs_allocator->deallocate_chunk(p_constraint->springs_mchunk);
+
+	constraints.erase(p_constraint);
 }
 
 void FlexSpace::add_primitive_body(FlexPrimitiveBody *p_body) {
@@ -740,6 +757,9 @@ void FlexSpace::dispatch_callback_contacts() {
 void FlexSpace::dispatch_callbacks() {
 	for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
 		particle_bodies[i]->dispatch_sync_callback();
+	}
+	for (int i(constraints.size() - 1); 0 <= i; --i) {
+		constraints[i]->dispatch_sync_callback();
 	}
 	for (int i(primitive_bodies.size() - 1); 0 <= i; --i) {
 		primitive_bodies[i]->dispatch_sync_callback();

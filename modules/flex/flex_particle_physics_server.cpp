@@ -284,6 +284,25 @@ AABB FlexParticleBodyCommands::get_aabb() const {
 	return aabb;
 }
 
+int FlexParticleBodyConstraintCommands::get_spring_count() const {
+	return constraint->get_spring_count();
+}
+
+void FlexParticleBodyConstraintCommands::add_spring(int p_body0_particle, int p_body1_particle, float p_length, float p_stiffness) {
+	const int previous_size = constraint->get_spring_count();
+	constraint->space->springs_allocator->resize_chunk(constraint->springs_mchunk, previous_size + 1);
+	set_spring(previous_size, p_body0_particle, p_body1_particle, p_length, p_stiffness);
+}
+
+void FlexParticleBodyConstraintCommands::set_spring(int p_index, int p_body0_particle, int p_body1_particle, float p_length, float p_stiffness) {
+
+	ERR_FAIL_COND(!constraint->is_owner_of_spring(p_index));
+
+	constraint->space->get_springs_memory()->set_spring(constraint->springs_mchunk, p_index, Spring(constraint->body0->particles_mchunk->get_buffer_index(p_body0_particle), constraint->body1->particles_mchunk->get_buffer_index(p_body1_particle)));
+	constraint->space->get_springs_memory()->set_length(constraint->springs_mchunk, p_index, p_length);
+	constraint->space->get_springs_memory()->set_stiffness(constraint->springs_mchunk, p_index, p_stiffness);
+}
+
 FlexParticlePhysicsServer *FlexParticlePhysicsServer::singleton = NULL;
 
 FlexParticlePhysicsServer::FlexParticlePhysicsServer() :
@@ -608,6 +627,42 @@ bool FlexParticlePhysicsServer::body_is_monitoring_primitives_contacts(RID p_bod
 	return body->is_monitoring_primitives_contacts();
 }
 
+RID FlexParticlePhysicsServer::constraint_create(RID p_body0, RID p_body1) {
+	FlexParticleBody *body0 = body_owner.get(p_body0);
+	ERR_FAIL_COND_V(!body0, RID());
+
+	FlexParticleBody *body1 = body_owner.get(p_body1);
+	ERR_FAIL_COND_V(!body1, RID());
+
+	FlexParticleBodyConstraint *constraint = memnew(FlexParticleBodyConstraint(body0, body1));
+	CreateThenReturnRID(body_constraint_owner, constraint);
+}
+
+void FlexParticlePhysicsServer::constraint_set_callback(RID p_constraint, Object *p_receiver, const StringName &p_method) {
+	FlexParticleBodyConstraint *constraint = body_constraint_owner.get(p_constraint);
+	ERR_FAIL_COND(!constraint);
+
+	constraint->set_callback(p_receiver, p_method);
+}
+
+void FlexParticlePhysicsServer::constraint_set_space(RID p_constraint, RID p_space) {
+
+	FlexParticleBodyConstraint *constraint = body_constraint_owner.get(p_constraint);
+	ERR_FAIL_COND(!constraint);
+
+	if (p_space == RID()) {
+
+		if (constraint->get_space())
+			constraint->get_space()->remove_particle_body_constraint(constraint);
+
+	} else {
+		FlexSpace *space = space_owner.get(p_space);
+		ERR_FAIL_COND(!space);
+
+		space->add_particle_body_constraint(constraint);
+	}
+}
+
 RID FlexParticlePhysicsServer::primitive_body_create() {
 	FlexPrimitiveBody *primitive = memnew(FlexPrimitiveBody);
 	CreateThenReturnRID(primitive_body_owner, primitive);
@@ -761,21 +816,35 @@ Variant FlexParticlePhysicsServer::primitive_shape_get_data(RID p_shape) const {
 
 void FlexParticlePhysicsServer::free(RID p_rid) {
 	if (space_owner.owns(p_rid)) {
+
 		FlexSpace *space = space_owner.get(p_rid);
 		space_owner.free(p_rid);
 		memdelete(space);
+
 	} else if (body_owner.owns(p_rid)) {
+
 		FlexParticleBody *body = body_owner.get(p_rid);
 		body_owner.free(p_rid);
 		memdelete(body);
+
+	} else if (body_constraint_owner.owns(p_rid)) {
+
+		FlexParticleBodyConstraint *constraint = body_constraint_owner.get(p_rid);
+		body_constraint_owner.free(p_rid);
+		memdelete(constraint);
+
 	} else if (primitive_body_owner.owns(p_rid)) {
+
 		FlexPrimitiveBody *primitive = primitive_body_owner.get(p_rid);
 		primitive_body_owner.free(p_rid);
 		memdelete(primitive);
+
 	} else if (primitive_shape_owner.owns(p_rid)) {
+
 		FlexPrimitiveShape *primitive_shape = primitive_shape_owner.get(p_rid);
 		primitive_shape_owner.free(p_rid);
 		memdelete(primitive_shape);
+
 	} else {
 		ERR_EXPLAIN("Can't delete RID, owner not found");
 		ERR_FAIL();
@@ -1018,12 +1087,20 @@ void FlexParticlePhysicsServer::create_skeleton(const Vector3 *bones_poses, int 
 void FlexParticlePhysicsServer::init() {
 	particle_body_commands = memnew(FlexParticleBodyCommands);
 	particle_body_commands_variant = particle_body_commands;
+
+	particle_body_constraint_commands = memnew(FlexParticleBodyConstraintCommands);
+	particle_body_constraint_commands_variant = particle_body_constraint_commands;
 }
 
 void FlexParticlePhysicsServer::terminate() {
+
 	memdelete(particle_body_commands);
 	particle_body_commands = NULL;
 	particle_body_commands_variant = Variant();
+
+	memdelete(particle_body_constraint_commands);
+	particle_body_constraint_commands = NULL;
+	particle_body_constraint_commands_variant = Variant();
 }
 
 void FlexParticlePhysicsServer::set_active(bool p_active) {
