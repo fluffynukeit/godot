@@ -72,8 +72,11 @@ void ParticlePhysicsServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("body_is_monitoring_primitives", "body"), &ParticlePhysicsServer::body_is_monitoring_primitives_contacts);
 
 	ClassDB::bind_method(D_METHOD("constraint_create", "body0", "body1"), &ParticlePhysicsServer::constraint_create);
+
 	ClassDB::bind_method(D_METHOD("constraint_set_callback", "receiver", "method"), &ParticlePhysicsServer::constraint_set_callback);
 	ClassDB::bind_method(D_METHOD("constraint_set_space", "constraint", "space"), &ParticlePhysicsServer::constraint_set_space);
+
+	ClassDB::bind_method(D_METHOD("constraint_remove_spring", "constraint", "spring_index"), &ParticlePhysicsServer::constraint_remove_spring);
 
 	ClassDB::bind_method(D_METHOD("primitive_body_create"), &ParticlePhysicsServer::primitive_body_create);
 	ClassDB::bind_method(D_METHOD("primitive_body_set_space", "body", "space"), &ParticlePhysicsServer::primitive_body_set_space);

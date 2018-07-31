@@ -664,6 +664,13 @@ void FlexParticlePhysicsServer::constraint_set_space(RID p_constraint, RID p_spa
 	}
 }
 
+void FlexParticlePhysicsServer::constraint_remove_spring(RID p_constraint, int p_spring_index) {
+	FlexParticleBodyConstraint *constraint = body_constraint_owner.get(p_constraint);
+	ERR_FAIL_COND(!constraint);
+
+	constraint->remove_spring(p_spring_index);
+}
+
 RID FlexParticlePhysicsServer::primitive_body_create() {
 	FlexPrimitiveBody *primitive = memnew(FlexPrimitiveBody);
 	CreateThenReturnRID(primitive_body_owner, primitive);

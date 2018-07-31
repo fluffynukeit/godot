@@ -64,10 +64,20 @@ bool FlexParticleBodyConstraint::is_owner_of_spring(SpringIndex p_spring) const 
 	return springs_mchunk->get_buffer_index(p_spring) <= springs_mchunk->get_end_index();
 }
 
+void FlexParticleBodyConstraint::remove_spring(SpringIndex p_spring_index) {
+	ERR_FAIL_COND(!is_owner_of_spring(p_spring_index));
+	if (-1 == delayed_commands.springs_to_remove.find(p_spring_index))
+		delayed_commands.springs_to_remove.push_back(p_spring_index);
+}
+
 void FlexParticleBodyConstraint::dispatch_sync_callback() {
 	if (!sync_callback.receiver)
 		return;
 	static Variant::CallError error;
 	const Variant *p = FlexParticlePhysicsServer::singleton->get_particle_body_constraint_commands_variant(this);
 	sync_callback.receiver->call(sync_callback.method, &p, 1, error);
+}
+
+void FlexParticleBodyConstraint::clear_delayed_commands() {
+	//delayed_commands.springs_to_remove.clear();
 }

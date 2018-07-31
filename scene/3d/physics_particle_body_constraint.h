@@ -90,6 +90,9 @@ public:
 
 	ParticleBody *get_particle_body1() const;
 
+	void remove_constraint(int p_body0_particle_index, int p_body1_particle_index);
+	void remove_constraint_by_index(int p_index);
+
 private:
 	void _reload();
 	void _create();

@@ -221,7 +221,12 @@ void FlexMemoryAllocator::resize_chunk(MemoryChunk *&r_chunk, FlexUnit p_size) {
 		ERR_FAIL_COND(r_chunk->owner_memory_allocator != this);
 #endif
 
-	if (r_chunk->size > p_size) {
+	if (0 >= p_size) {
+
+		deallocate_chunk(r_chunk);
+		r_chunk = &zero_memory_chunk;
+
+	} else if (r_chunk->size > p_size) {
 
 		/// Redux memory, don't need reallocation
 		// 1. Split chunk
