@@ -326,23 +326,12 @@ void FlexSpace::sync() {
 
 	///
 	/// Force changes
-	if (springs_memory->is_force_sanitization())
-		springs_memory->notify_change();
-
-	if (rigids_memory->is_force_sanitization())
-		rigids_memory->notify_change();
-
-	if (rigids_components_memory->is_force_sanitization())
-		rigids_components_memory->notify_change();
-
-	if (triangles_memory->is_force_sanitization())
-		triangles_memory->notify_change();
-
-	if (inflatables_memory->is_force_sanitization())
-		inflatables_memory->notify_change();
-
-	if (geometries_memory->is_force_sanitization())
-		geometries_memory->notify_change();
+	springs_memory->flush_force_sanitization();
+	rigids_memory->flush_force_sanitization();
+	rigids_components_memory->flush_force_sanitization();
+	triangles_memory->flush_force_sanitization();
+	inflatables_memory->flush_force_sanitization();
+	geometries_memory->flush_force_sanitization();
 
 	///
 	/// Unmap phase
@@ -883,7 +872,7 @@ void FlexSpace::execute_delayed_commands() {
 
 			FlexMemorySweeperFast sweeper(springs_allocator, constraint->springs_mchunk, constraint->delayed_commands.springs_to_remove);
 			sweeper.exec();
-			springs_memory->require_force_sanitization();
+			springs_memory->require_force_sanitization(); // TODO remove this
 		}
 	}
 

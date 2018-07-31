@@ -321,10 +321,15 @@ public:
 	void notify_change() { changed = true; }
 
 	void require_force_sanitization() { force_sanitization = true; }
+	void flush_force_sanitization() {
+		if (force_sanitization)
+			changed = true;
+		force_sanitization = false;
+	}
 	bool is_force_sanitization() const { return force_sanitization; }
 
 	virtual void _on_mapped() { changed = false; }
-	virtual void _on_unmapped() { force_sanitization = false; }
+	virtual void _on_unmapped() {}
 	virtual void _on_resized(FlexUnit p_size) { changed = true; }
 	virtual void _on_copied_unit(FlexUnit p_to, FlexUnit p_from) { changed = true; }
 
