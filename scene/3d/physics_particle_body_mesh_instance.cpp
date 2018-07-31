@@ -230,6 +230,8 @@ void ParticleBodyMeshInstance::prepare_mesh_for_pvparticles() {
 
 	ERR_FAIL_COND(!get_mesh()->get_surface_count());
 
+	Ref<Material> material(get_surface_material(0));
+
 	// Get current mesh array and create new mesh array with necessary flag for softbody
 	Array surface_arrays = get_mesh()->surface_get_arrays(0);
 	Array surface_blend_arrays = get_mesh()->surface_get_blend_shape_arrays(0);
@@ -241,8 +243,12 @@ void ParticleBodyMeshInstance::prepare_mesh_for_pvparticles() {
 	Ref<ArrayMesh> soft_mesh;
 	soft_mesh.instance();
 	soft_mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, surface_arrays, surface_blend_arrays, surface_format);
+	soft_mesh->surface_set_material(0, get_mesh()->surface_get_material(0));
 
 	set_mesh(soft_mesh);
+
+	set_surface_material(0, material);
+
 	rendering_approach = RENDERING_UPDATE_APPROACH_PVP;
 
 	ERR_FAIL_COND(visual_server_handler);
@@ -270,6 +276,8 @@ void ParticleBodyMeshInstance::prepare_mesh_skeleton_deformation() {
 
 	ERR_FAIL_COND(!model->get_clusters_positions().size());
 	ERR_FAIL_COND(get_mesh()->get_surface_count() != 1);
+
+	Ref<Material> material(get_surface_material(0));
 
 	const int surface_id = 0;
 
@@ -309,8 +317,7 @@ void ParticleBodyMeshInstance::prepare_mesh_skeleton_deformation() {
 	Ref<ArrayMesh> new_mesh;
 	new_mesh.instance();
 	new_mesh->add_surface_from_arrays(get_mesh()->surface_get_primitive_type(surface_id), array_mesh);
-
-	Ref<Material> material(get_surface_material(0));
+	new_mesh->surface_set_material(0, mesh->surface_get_material(0));
 
 	set_mesh(new_mesh);
 
