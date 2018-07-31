@@ -59,6 +59,10 @@ void ParticleBodyConstraint::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("get_particle_body1"), &ParticleBodyConstraint::get_particle_body1);
 
+	ClassDB::bind_method(D_METHOD("get_constraint_count"), &ParticleBodyConstraint::get_constraint_count);
+
+	ClassDB::bind_method(D_METHOD("add_constraint", "body0_particle_index", "body1_particle_index", "length", "stiffness"), &ParticleBodyConstraint::add_constraint);
+
 	ClassDB::bind_method(D_METHOD("remove_constraint", "body0_particle_index", "body1_particle_index"), &ParticleBodyConstraint::remove_constraint);
 	ClassDB::bind_method(D_METHOD("remove_constraint_by_index", "constraint_index"), &ParticleBodyConstraint::remove_constraint_by_index);
 
@@ -194,6 +198,21 @@ NodePath ParticleBodyConstraint::get_particle_body1_path() const {
 
 ParticleBody *ParticleBodyConstraint::get_particle_body1() const {
 	return particle_body0;
+}
+
+int ParticleBodyConstraint::get_constraint_count() const {
+	return constraints.size();
+}
+
+void ParticleBodyConstraint::add_constraint(int p_body0_particle_index, int p_body1_particle_index, real_t p_length, real_t p_stiffness) {
+
+	Constraint c;
+	c.body0_particle_index = p_body0_particle_index;
+	c.body1_particle_index = p_body1_particle_index;
+	c.length = p_length;
+	c.stiffness = p_stiffness;
+
+	constraints.push_back(c);
 }
 
 void ParticleBodyConstraint::remove_constraint(int p_body0_particle_index, int p_body1_particle_index) {

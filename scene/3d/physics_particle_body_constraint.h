@@ -82,13 +82,15 @@ public:
 
 	void set_particle_body0_path(NodePath p_path);
 	NodePath get_particle_body0_path() const;
-
 	ParticleBody *get_particle_body0() const;
 
 	void set_particle_body1_path(NodePath p_path);
 	NodePath get_particle_body1_path() const;
-
 	ParticleBody *get_particle_body1() const;
+
+	int get_constraint_count() const;
+
+	void add_constraint(int p_body0_particle_index, int p_body1_particle_index, real_t p_length, real_t p_stiffness);
 
 	void remove_constraint(int p_body0_particle_index, int p_body1_particle_index);
 	void remove_constraint_by_index(int p_index);
