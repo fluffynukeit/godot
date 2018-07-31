@@ -63,8 +63,15 @@ void ParticleBodyConstraint::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("add_constraint", "body0_particle_index", "body1_particle_index", "length", "stiffness"), &ParticleBodyConstraint::add_constraint);
 
-	ClassDB::bind_method(D_METHOD("remove_constraint", "body0_particle_index", "body1_particle_index"), &ParticleBodyConstraint::remove_constraint);
-	ClassDB::bind_method(D_METHOD("remove_constraint_by_index", "constraint_index"), &ParticleBodyConstraint::remove_constraint_by_index);
+	ClassDB::bind_method(D_METHOD("find_constraint", "body0_particle_index", "body1_particle_index"), &ParticleBodyConstraint::find_constraint);
+
+	ClassDB::bind_method(D_METHOD("remove_constraint", "constraint_index"), &ParticleBodyConstraint::remove_constraint);
+
+	ClassDB::bind_method(D_METHOD("set_constraint_length", "constraint_index", "length"), &ParticleBodyConstraint::set_constraint_length);
+	ClassDB::bind_method(D_METHOD("get_constraint_length", "constraint_index"), &ParticleBodyConstraint::get_constraint_length);
+
+	ClassDB::bind_method(D_METHOD("set_constraint_stiffness", "constraint_index", "stiffness"), &ParticleBodyConstraint::set_constraint_stiffness);
+	ClassDB::bind_method(D_METHOD("get_constraint_stiffness", "constraint_index"), &ParticleBodyConstraint::get_constraint_stiffness);
 
 	ClassDB::bind_method(D_METHOD("on_sync", "cmds"), &ParticleBodyConstraint::on_sync);
 
@@ -219,7 +226,7 @@ void ParticleBodyConstraint::add_constraint(int p_body0_particle_index, int p_bo
 	ParticlePhysicsServer::get_singleton()->constraint_set_callback(rid, this, "on_sync");
 }
 
-void ParticleBodyConstraint::remove_constraint(int p_body0_particle_index, int p_body1_particle_index) {
+int ParticleBodyConstraint::find_constraint(int p_body0_particle_index, int p_body1_particle_index) {
 
 	for (int i(constraints.size() - 1); 0 <= i; --i) {
 		if (p_body0_particle_index != constraints[i].body0_particle_index)
@@ -228,17 +235,41 @@ void ParticleBodyConstraint::remove_constraint(int p_body0_particle_index, int p
 		if (p_body1_particle_index != constraints[i].body1_particle_index)
 			continue;
 
-		remove_constraint_by_index(i);
-		return;
+		return i;
 	}
+	return -1;
 }
 
-void ParticleBodyConstraint::remove_constraint_by_index(int p_index) {
+void ParticleBodyConstraint::remove_constraint(int p_index) {
 	ERR_FAIL_INDEX(p_index, constraints.size());
 
 	constraints[p_index].state = CONSTRAINT_STATE_OUT;
 
 	ParticlePhysicsServer::get_singleton()->constraint_set_callback(rid, this, "on_sync");
+}
+
+void ParticleBodyConstraint::set_constraint_length(int p_index, real_t p_length) {
+	ERR_FAIL_INDEX(p_index, constraints.size());
+	constraints[p_index].length = p_length;
+	constraints[p_index].state = CONSTRAINT_STATE_CHANGED;
+	ParticlePhysicsServer::get_singleton()->constraint_set_callback(rid, this, "on_sync");
+}
+
+real_t ParticleBodyConstraint::get_constraint_length(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, constraints.size(), 0.0);
+	return constraints[p_index].length = p_length;
+}
+
+void ParticleBodyConstraint::set_constraint_stiffness(int p_index, real_t p_stiffness) {
+	ERR_FAIL_INDEX(p_index, constraints.size());
+	constraints[p_index].stiffness = p_stiffness;
+	constraints[p_index].state = CONSTRAINT_STATE_CHANGED;
+	ParticlePhysicsServer::get_singleton()->constraint_set_callback(rid, this, "on_sync");
+}
+
+real_t ParticleBodyConstraint::get_constraint_stiffness(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, constraints.size(), 0.0);
+	return constraints[p_index].stiffness;
 }
 
 void ParticleBodyConstraint::_reload() {
