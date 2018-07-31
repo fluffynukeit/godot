@@ -325,15 +325,6 @@ void FlexSpace::sync() {
 	ParticlePhysicsServer::get_singleton()->emit_signal("sync_end", get_self());
 
 	///
-	/// Force changes
-	springs_memory->flush_force_sanitization();
-	rigids_memory->flush_force_sanitization();
-	rigids_components_memory->flush_force_sanitization();
-	triangles_memory->flush_force_sanitization();
-	inflatables_memory->flush_force_sanitization();
-	geometries_memory->flush_force_sanitization();
-
-	///
 	/// Unmap phase
 	particles_memory->unmap();
 
@@ -419,11 +410,11 @@ void FlexSpace::remove_particle_body(FlexParticleBody *p_body) {
 	springs_allocator->deallocate_chunk(p_body->springs_mchunk);
 	particles_allocator->deallocate_chunk(p_body->particles_mchunk);
 
-	rigids_components_memory->require_force_sanitization();
-	rigids_memory->require_force_sanitization();
-	triangles_memory->require_force_sanitization();
-	inflatables_memory->require_force_sanitization();
-	springs_memory->require_force_sanitization();
+	rigids_components_memory->notify_change();
+	rigids_memory->notify_change();
+	triangles_memory->notify_change();
+	inflatables_memory->notify_change();
+	springs_memory->notify_change();
 
 	p_body->space = NULL;
 	particle_bodies.erase(p_body);
@@ -441,7 +432,7 @@ void FlexSpace::add_particle_body_constraint(FlexParticleBodyConstraint *p_const
 
 void FlexSpace::remove_particle_body_constraint(FlexParticleBodyConstraint *p_constraint) {
 	springs_allocator->deallocate_chunk(p_constraint->springs_mchunk);
-	springs_memory->require_force_sanitization();
+	springs_memory->notify_change();
 
 	p_constraint->space = NULL;
 
@@ -459,7 +450,7 @@ void FlexSpace::remove_primitive_body(FlexPrimitiveBody *p_body) {
 	ERR_FAIL_COND(p_body->space != this);
 
 	geometries_allocator->deallocate_chunk(p_body->geometry_mchunk);
-	geometries_memory->require_force_sanitization();
+	geometries_memory->notify_change();
 
 	p_body->space = NULL;
 	primitive_bodies.erase(p_body);
@@ -872,7 +863,7 @@ void FlexSpace::execute_delayed_commands() {
 
 			FlexMemorySweeperFast sweeper(springs_allocator, constraint->springs_mchunk, constraint->delayed_commands.springs_to_remove);
 			sweeper.exec();
-			springs_memory->require_force_sanitization(); // TODO remove this
+			springs_memory->notify_change();
 		}
 	}
 
@@ -970,7 +961,7 @@ void FlexSpace::execute_geometries_commands() {
 			// Remove geometry if has memory chunk
 			if (body->geometry_mchunk) {
 				geometries_allocator->deallocate_chunk(body->geometry_mchunk);
-				geometries_memory->require_force_sanitization();
+				geometries_memory->notify_change();
 			}
 			continue;
 		}
@@ -1089,6 +1080,14 @@ void FlexSpace::commands_write_buffer() {
 
 	if (geometries_memory->was_changed())
 		NvFlexSetShapes(solver, geometries_memory->collision_shapes.buffer, geometries_memory->positions.buffer, geometries_memory->rotations.buffer, geometries_memory->positions_prev.buffer, geometries_memory->rotations_prev.buffer, geometries_memory->flags.buffer, geometries_allocator->get_last_used_index() + 1);
+
+	active_particles_memory->changes_synced();
+	springs_memory->changes_synced();
+	inflatables_memory->changes_synced();
+	triangles_memory->changes_synced();
+	rigids_memory->changes_synced();
+	rigids_components_memory->changes_synced();
+	geometries_memory->changes_synced();
 }
 
 void FlexSpace::commands_read_buffer() {
