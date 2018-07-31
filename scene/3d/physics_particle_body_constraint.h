@@ -92,8 +92,15 @@ public:
 
 	void add_constraint(int p_body0_particle_index, int p_body1_particle_index, real_t p_length, real_t p_stiffness);
 
-	void remove_constraint(int p_body0_particle_index, int p_body1_particle_index);
-	void remove_constraint_by_index(int p_index);
+	int find_constraint(int p_body0_particle_index, int p_body1_particle_index);
+
+	void remove_constraint(int p_index);
+
+	void set_constraint_length(int p_index, real_t p_length);
+	real_t get_constraint_length(int p_index) const;
+
+	void set_constraint_stiffness(int p_index, real_t p_stiffness);
+	real_t get_constraint_stiffness(int p_index) const;
 
 private:
 	void _reload();
