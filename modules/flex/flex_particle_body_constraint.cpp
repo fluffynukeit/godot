@@ -45,7 +45,10 @@ FlexParticleBodyConstraint::FlexParticleBodyConstraint(FlexParticleBody *p_body0
 }
 
 FlexParticleBodyConstraint::~FlexParticleBodyConstraint() {
-	int a = 0;
+	if (!space)
+		return;
+
+	space->remove_particle_body_constraint(this);
 }
 
 void FlexParticleBodyConstraint::set_callback(Object *p_receiver, const StringName &p_method) {
