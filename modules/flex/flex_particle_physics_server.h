@@ -97,7 +97,7 @@ public:
 	FlexParticleBodyConstraint *constraint;
 
 	virtual int get_spring_count() const;
-	virtual void add_spring(int p_body0_particle, int p_body1_particle, float p_length, float p_stiffness);
+	virtual int add_spring(int p_body0_particle, int p_body1_particle, float p_length, float p_stiffness);
 	virtual void set_spring(int p_index, int p_body0_particle, int p_body1_particle, float p_length, float p_stiffness);
 };
 

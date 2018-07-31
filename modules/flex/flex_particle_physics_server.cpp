@@ -288,10 +288,11 @@ int FlexParticleBodyConstraintCommands::get_spring_count() const {
 	return constraint->get_spring_count();
 }
 
-void FlexParticleBodyConstraintCommands::add_spring(int p_body0_particle, int p_body1_particle, float p_length, float p_stiffness) {
+int FlexParticleBodyConstraintCommands::add_spring(int p_body0_particle, int p_body1_particle, float p_length, float p_stiffness) {
 	const int previous_size = constraint->get_spring_count();
 	constraint->space->springs_allocator->resize_chunk(constraint->springs_mchunk, previous_size + 1);
 	set_spring(previous_size, p_body0_particle, p_body1_particle, p_length, p_stiffness);
+	return previous_size;
 }
 
 void FlexParticleBodyConstraintCommands::set_spring(int p_index, int p_body0_particle, int p_body1_particle, float p_length, float p_stiffness) {

@@ -57,6 +57,7 @@ class FlexParticleBodyConstraint : public RIDFlex {
 
 public:
 	FlexParticleBodyConstraint(FlexParticleBody *p_body0, FlexParticleBody *p_body1);
+	virtual ~FlexParticleBodyConstraint();
 
 	void set_callback(Object *p_receiver, const StringName &p_method);
 	_FORCE_INLINE_ FlexSpace *get_space() {

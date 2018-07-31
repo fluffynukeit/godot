@@ -39,6 +39,14 @@
 #include "scene/main/viewport.h"
 #include "servers/particle_physics_server.h"
 
+ParticleBodyConstraint::Constraint::Constraint() :
+		body0_particle_index(-1),
+		body1_particle_index(-1),
+		length(1),
+		stiffness(0.5),
+		index(-1),
+		state(ConstraintState::CONSTRAINT_STATE_IN) {}
+
 void ParticleBodyConstraint::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("set_particle_body0_path", "path"), &ParticleBodyConstraint::set_particle_body0_path);
@@ -67,8 +75,13 @@ bool ParticleBodyConstraint::_set(const StringName &p_name, const Variant &p_pro
 	String pos_s = name.get_slicec('/', 1);
 	int pos = pos_s.to_int();
 
-	if (constraints.size() <= pos)
-		return false;
+	bool just_created = false;
+	if (constraints.size() <= pos) {
+		constraints.push_back(Constraint());
+		just_created = true;
+	}
+
+	ERR_FAIL_INDEX_V(pos, constraints.size(), false);
 
 	String what = name.get_slicec('/', 2);
 	if ("body0_particle_index" == what) {
@@ -79,12 +92,16 @@ bool ParticleBodyConstraint::_set(const StringName &p_name, const Variant &p_pro
 		constraints[pos].body1_particle_index = p_property;
 	} else if ("constraint_length" == what) {
 
-		constraints[pos].constraint_length = p_property;
+		constraints[pos].length = p_property;
 	} else if ("constraint_stiffness" == what) {
 
-		constraints[pos].constraint_stiffness = p_property;
+		constraints[pos].stiffness = p_property;
 	} else {
 		return false;
+	}
+
+	if (!just_created && CONSTRAINT_STATE_IN != constraints[pos].state) {
+		constraints[pos].state = CONSTRAINT_STATE_CHANGED;
 	}
 
 	return true;
@@ -100,8 +117,7 @@ bool ParticleBodyConstraint::_get(const StringName &p_name, Variant &r_property)
 	String pos_s = name.get_slicec('/', 1);
 	int pos = pos_s.to_int();
 
-	if (constraints.size() <= pos)
-		return false;
+	ERR_FAIL_INDEX_V(pos, constraints.size(), false);
 
 	String what = name.get_slicec('/', 2);
 	if ("body0_particle_index" == what) {
@@ -112,10 +128,10 @@ bool ParticleBodyConstraint::_get(const StringName &p_name, Variant &r_property)
 		r_property = constraints[pos].body1_particle_index;
 	} else if ("constraint_length" == what) {
 
-		r_property = constraints[pos].constraint_length;
+		r_property = constraints[pos].length;
 	} else if ("constraint_stiffness" == what) {
 
-		r_property = constraints[pos].constraint_stiffness;
+		r_property = constraints[pos].stiffness;
 	} else {
 		return false;
 	}
@@ -236,6 +252,31 @@ void ParticleBodyConstraint::_destroy() {
 void ParticleBodyConstraint::on_sync(Object *p_cmds) {
 	ParticleBodyConstraintCommands *cmds(static_cast<ParticleBodyConstraintCommands *>(p_cmds));
 
-	print_line("execution");
-	//cmds->
+	for (int i(0); i < constraints.size(); ++i) {
+
+		Constraint &constraint(constraints[i]);
+
+		if (-1 == constraint.body0_particle_index || -1 == constraint.body1_particle_index)
+			continue;
+
+		switch (constraint.state) {
+			case CONSTRAINT_STATE_IN:
+			case CONSTRAINT_STATE_CHANGED: {
+
+				if (constraint.index == -1) {
+					constraint.index = cmds->add_spring(constraint.body0_particle_index, constraint.body1_particle_index, constraint.length, constraint.stiffness);
+				} else {
+					cmds->set_spring(constraint.index, constraint.body0_particle_index, constraint.body1_particle_index, constraint.length, constraint.stiffness);
+				}
+				constraint.state = CONSTRAINT_STATE_IDLE;
+
+			} break;
+			case CONSTRAINT_STATE_IDLE: {
+				// Nothing
+			} break;
+			case CONSTRAINT_STATE_OUT: {
+				// TODO Create remove algorithm
+			} break;
+		}
+	}
 }
