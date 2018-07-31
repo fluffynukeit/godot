@@ -318,9 +318,10 @@ public:
 	}
 
 	bool was_changed() const { return changed; }
+	void notify_change() { changed = true; }
 
-	void require_sanitization() { force_sanitization = true; }
-	bool is_required_sanitization() const { return force_sanitization; }
+	void require_force_sanitization() { force_sanitization = true; }
+	bool is_force_sanitization() const { return force_sanitization; }
 
 	virtual void _on_mapped() { changed = false; }
 	virtual void _on_unmapped() { force_sanitization = false; }
