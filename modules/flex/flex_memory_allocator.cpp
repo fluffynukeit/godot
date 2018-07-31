@@ -189,7 +189,7 @@ MemoryChunk *FlexMemoryAllocator::allocate_chunk(FlexUnit p_size) {
 
 void FlexMemoryAllocator::deallocate_chunk(MemoryChunk *&r_chunk) {
 
-	if (r_chunk == (&zero_memory_chunk))
+	if (!r_chunk || r_chunk == (&zero_memory_chunk))
 		return;
 
 #ifdef DEBUG_ENABLED
