@@ -59,6 +59,9 @@ void ParticleBodyConstraint::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("get_particle_body1"), &ParticleBodyConstraint::get_particle_body1);
 
+	ClassDB::bind_method(D_METHOD("remove_constraint", "body0_particle_index", "body1_particle_index"), &ParticleBodyConstraint::remove_constraint);
+	ClassDB::bind_method(D_METHOD("remove_constraint_by_index", "constraint_index"), &ParticleBodyConstraint::remove_constraint_by_index);
+
 	ClassDB::bind_method(D_METHOD("on_sync", "cmds"), &ParticleBodyConstraint::on_sync);
 
 	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "particle_body0_path"), "set_particle_body0_path", "get_particle_body0_path");
@@ -193,6 +196,26 @@ ParticleBody *ParticleBodyConstraint::get_particle_body1() const {
 	return particle_body0;
 }
 
+void ParticleBodyConstraint::remove_constraint(int p_body0_particle_index, int p_body1_particle_index) {
+
+	for (int i(constraints.size() - 1); 0 <= i; --i) {
+		if (p_body0_particle_index != constraints[i].body0_particle_index)
+			continue;
+
+		if (p_body1_particle_index != constraints[i].body1_particle_index)
+			continue;
+
+		remove_constraint_by_index(i);
+		return;
+	}
+}
+
+void ParticleBodyConstraint::remove_constraint_by_index(int p_index) {
+	ERR_FAIL_INDEX(p_index, constraints.size());
+
+	constraints[p_index].state = CONSTRAINT_STATE_OUT;
+}
+
 void ParticleBodyConstraint::_reload() {
 
 	if (Engine::get_singleton()->is_editor_hint())
@@ -252,7 +275,8 @@ void ParticleBodyConstraint::_destroy() {
 void ParticleBodyConstraint::on_sync(Object *p_cmds) {
 	ParticleBodyConstraintCommands *cmds(static_cast<ParticleBodyConstraintCommands *>(p_cmds));
 
-	for (int i(0); i < constraints.size(); ++i) {
+	int size(constraints.size());
+	for (int i(size - 1); 0 <= i; --i) {
 
 		Constraint &constraint(constraints[i]);
 
@@ -275,8 +299,11 @@ void ParticleBodyConstraint::on_sync(Object *p_cmds) {
 				// Nothing
 			} break;
 			case CONSTRAINT_STATE_OUT: {
-				// TODO Create remove algorithm
+				ParticlePhysicsServer::get_singleton()->constraint_remove_spring(rid, i);
+				constraints[i] = constraints[--size]; // This is the same way on how the server remove springs
 			} break;
 		}
 	}
+
+	constraints.resize(size);
 }

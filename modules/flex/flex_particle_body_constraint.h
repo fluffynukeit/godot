@@ -47,6 +47,10 @@ class FlexParticleBodyConstraint : public RIDFlex {
 	friend class FlexSpace;
 	friend class FlexParticleBodyConstraintCommands;
 
+	struct {
+		Vector<SpringIndex> springs_to_remove;
+	} delayed_commands;
+
 	FlexCallBackData sync_callback;
 	FlexSpace *space;
 
@@ -67,8 +71,11 @@ public:
 	int get_spring_count() const;
 	bool is_owner_of_spring(SpringIndex p_spring) const;
 
+	void remove_spring(SpringIndex p_spring_index);
+
 private:
 	void dispatch_sync_callback();
+	void clear_delayed_commands();
 };
 
 #endif // FLEX_PARTICLE_BODY_CONSTRAINT_H

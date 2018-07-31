@@ -393,6 +393,13 @@ void FlexSpace::step(real_t p_delta_time) {
 	NvFlexUpdateSolver(solver, p_delta_time, substep, enable_timer);
 
 	commands_read_buffer();
+
+	// Clear commands
+	for (int i(particle_bodies.size() - 1); 0 <= i; --i)
+		particle_bodies[i]->clear_delayed_commands();
+
+	for (int i(constraints.size() - 1); 0 <= i; --i)
+		constraints[i]->clear_delayed_commands();
 }
 
 bool FlexSpace::can_commands_be_executed() const {
@@ -868,6 +875,18 @@ void FlexSpace::execute_delayed_commands() {
 		particles_count += body->particles_mchunk ? body->particles_mchunk->get_size() : 0;
 	}
 
+	for (int constraint_index(constraints.size() - 1); 0 <= constraint_index; --constraint_index) {
+
+		FlexParticleBodyConstraint *constraint = constraints[constraint_index];
+
+		if (constraint->delayed_commands.springs_to_remove.size()) {
+
+			FlexMemorySweeperFast sweeper(springs_allocator, constraint->springs_mchunk, constraint->delayed_commands.springs_to_remove);
+			sweeper.exec();
+			springs_memory->require_force_sanitization();
+		}
+	}
+
 	if (active_particles_mchunk->get_size() != particles_count) {
 
 		active_particles_allocator->resize_chunk(active_particles_mchunk, particles_count);
@@ -1099,8 +1118,6 @@ void FlexSpace::commands_read_buffer() {
 		NvFlexGetParticles(solver, particles_memory->particles.buffer, &copy_desc);
 		NvFlexGetVelocities(solver, particles_memory->velocities.buffer, &copy_desc);
 		NvFlexGetNormals(solver, particles_memory->normals.buffer, &copy_desc);
-
-		particle_bodies[i]->clear_delayed_commands();
 	}
 
 	// Read rigids

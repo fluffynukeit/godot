@@ -244,6 +244,8 @@ public:
 	virtual void constraint_set_callback(RID p_constraint, Object *p_receiver, const StringName &p_method);
 	virtual void constraint_set_space(RID p_constraint, RID p_space);
 
+	virtual void constraint_remove_spring(RID p_constraint, int p_spring_index);
+
 	/* PRIMITIVE BODY */
 	virtual RID primitive_body_create();
 	virtual void primitive_body_set_space(RID p_body, RID p_space);
