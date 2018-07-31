@@ -325,11 +325,27 @@ void FlexSpace::sync() {
 	ParticlePhysicsServer::get_singleton()->emit_signal("sync_end", get_self());
 
 	///
-	/// Unmap phase
-
+	/// Force changes
 	if (springs_memory->is_force_sanitization())
 		springs_memory->notify_change();
 
+	if (rigids_memory->is_force_sanitization())
+		rigids_memory->notify_change();
+
+	if (rigids_components_memory->is_force_sanitization())
+		rigids_components_memory->notify_change();
+
+	if (triangles_memory->is_force_sanitization())
+		triangles_memory->notify_change();
+
+	if (inflatables_memory->is_force_sanitization())
+		inflatables_memory->notify_change();
+
+	if (geometries_memory->is_force_sanitization())
+		geometries_memory->notify_change();
+
+	///
+	/// Unmap phase
 	particles_memory->unmap();
 
 	active_particles_memory->unmap();
@@ -406,6 +422,12 @@ void FlexSpace::remove_particle_body(FlexParticleBody *p_body) {
 	inflatables_allocator->deallocate_chunk(p_body->inflatable_mchunk);
 	springs_allocator->deallocate_chunk(p_body->springs_mchunk);
 	particles_allocator->deallocate_chunk(p_body->particles_mchunk);
+
+	rigids_components_memory->require_force_sanitization();
+	rigids_memory->require_force_sanitization();
+	triangles_memory->require_force_sanitization();
+	inflatables_memory->require_force_sanitization();
+	springs_memory->require_force_sanitization();
 
 	p_body->space = NULL;
 	particle_bodies.erase(p_body);
@@ -992,6 +1014,7 @@ void FlexSpace::execute_geometries_commands() {
 
 	for (int i(geometry_chunks_to_deallocate.size() - 1); 0 <= i; --i) {
 		geometries_allocator->deallocate_chunk(geometry_chunks_to_deallocate[i]);
+		geometries_memory->require_force_sanitization();
 	}
 	geometry_chunks_to_deallocate.clear();
 }
