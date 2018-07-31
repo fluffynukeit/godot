@@ -97,8 +97,6 @@ class FlexSpace : public RIDFlex {
 	Vector<FlexParticleBodyConstraint *> constraints;
 	Vector<FlexPrimitiveBody *> primitive_bodies;
 
-	Vector<MemoryChunk *> geometry_chunks_to_deallocate;
-
 	bool _is_using_default_params;
 
 public:

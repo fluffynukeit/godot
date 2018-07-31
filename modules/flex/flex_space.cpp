@@ -462,11 +462,10 @@ void FlexSpace::add_primitive_body(FlexPrimitiveBody *p_body) {
 void FlexSpace::remove_primitive_body(FlexPrimitiveBody *p_body) {
 	ERR_FAIL_COND(p_body->space != this);
 
-	if (p_body->geometry_mchunk)
-		geometry_chunks_to_deallocate.push_back(p_body->geometry_mchunk);
+	geometries_allocator->deallocate_chunk(p_body->geometry_mchunk);
+	geometries_memory->require_force_sanitization();
 
 	p_body->space = NULL;
-	p_body->geometry_mchunk = NULL;
 	primitive_bodies.erase(p_body);
 }
 
@@ -962,8 +961,8 @@ void FlexSpace::execute_geometries_commands() {
 		if (!body->get_shape()) {
 			// Remove geometry if has memory chunk
 			if (body->geometry_mchunk) {
-				geometry_chunks_to_deallocate.push_back(body->geometry_mchunk);
-				body->geometry_mchunk = NULL;
+				geometries_allocator->deallocate_chunk(body->geometry_mchunk);
+				geometries_memory->require_force_sanitization();
 			}
 			continue;
 		}
@@ -1011,12 +1010,6 @@ void FlexSpace::execute_geometries_commands() {
 
 		body->set_clean();
 	}
-
-	for (int i(geometry_chunks_to_deallocate.size() - 1); 0 <= i; --i) {
-		geometries_allocator->deallocate_chunk(geometry_chunks_to_deallocate[i]);
-		geometries_memory->require_force_sanitization();
-	}
-	geometry_chunks_to_deallocate.clear();
 }
 
 void FlexSpace::commands_write_buffer() {
