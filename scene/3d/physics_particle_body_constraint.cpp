@@ -86,6 +86,8 @@ bool ParticleBodyConstraint::_set(const StringName &p_name, const Variant &p_pro
 	if (constraints.size() <= pos) {
 		constraints.push_back(Constraint());
 		just_created = true;
+		if (Engine::get_singleton()->is_editor_hint())
+			ParticlePhysicsServer::get_singleton()->constraint_set_callback(rid, this, "on_sync");
 	}
 
 	ERR_FAIL_INDEX_V(pos, constraints.size(), false);
@@ -213,6 +215,8 @@ void ParticleBodyConstraint::add_constraint(int p_body0_particle_index, int p_bo
 	c.stiffness = p_stiffness;
 
 	constraints.push_back(c);
+
+	ParticlePhysicsServer::get_singleton()->constraint_set_callback(rid, this, "on_sync");
 }
 
 void ParticleBodyConstraint::remove_constraint(int p_body0_particle_index, int p_body1_particle_index) {
@@ -233,6 +237,8 @@ void ParticleBodyConstraint::remove_constraint_by_index(int p_index) {
 	ERR_FAIL_INDEX(p_index, constraints.size());
 
 	constraints[p_index].state = CONSTRAINT_STATE_OUT;
+
+	ParticlePhysicsServer::get_singleton()->constraint_set_callback(rid, this, "on_sync");
 }
 
 void ParticleBodyConstraint::_reload() {
@@ -325,4 +331,6 @@ void ParticleBodyConstraint::on_sync(Object *p_cmds) {
 	}
 
 	constraints.resize(size);
+
+	ParticlePhysicsServer::get_singleton()->constraint_set_callback(rid, NULL, "");
 }
