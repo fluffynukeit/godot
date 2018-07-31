@@ -99,6 +99,7 @@ private:
 	void _reload();
 	void _create();
 	void _destroy();
+	void addition();
 	void on_sync(Object *p_cmds);
 };
 
