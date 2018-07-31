@@ -44,7 +44,8 @@ protected:
 
 public:
 	virtual int get_spring_count() const = 0;
-	virtual void add_spring(int p_body0_particle, int p_body1_particle, float p_length, float p_stiffness) = 0;
+	/// Returns the ID of spring
+	virtual int add_spring(int p_body0_particle, int p_body1_particle, float p_length, float p_stiffness) = 0;
 	virtual void set_spring(int p_index, int p_body0_particle, int p_body1_particle, float p_length, float p_stiffness) = 0;
 };
 

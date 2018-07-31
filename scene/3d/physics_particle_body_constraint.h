@@ -42,11 +42,23 @@ class ParticleBody;
 class ParticleBodyConstraint : public Node {
 	GDCLASS(ParticleBodyConstraint, Node);
 
+	enum ConstraintState {
+		CONSTRAINT_STATE_IN,
+		CONSTRAINT_STATE_IDLE,
+		CONSTRAINT_STATE_OUT,
+		CONSTRAINT_STATE_CHANGED
+	};
+
 	struct Constraint {
+
+		Constraint();
+
 		int body0_particle_index;
 		int body1_particle_index;
-		real_t constraint_length;
-		real_t constraint_stiffness;
+		real_t length;
+		real_t stiffness;
+		int index;
+		ConstraintState state;
 	};
 
 	RID rid;

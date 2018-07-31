@@ -165,6 +165,7 @@ class FlexBufferMemory : public FlexMemory {
 
 protected:
 	bool changed;
+	bool force_sanitization;
 
 protected:
 	void __add_buffer(NvFlexVector<int> *buffer) {
@@ -193,7 +194,9 @@ protected:
 	}
 
 public:
-	FlexBufferMemory() {}
+	FlexBufferMemory() :
+			force_sanitization(false),
+			changed(false) {}
 
 	void map() {
 		for (int i(buffers_int.size() - 1); 0 <= i; --i) {
@@ -314,10 +317,13 @@ public:
 		}
 	}
 
-	bool was_changed() { return changed; }
+	bool was_changed() const { return changed; }
+
+	void require_sanitization() { force_sanitization = true; }
+	bool is_required_sanitization() const { return force_sanitization; }
 
 	virtual void _on_mapped() { changed = false; }
-	virtual void _on_unmapped() {}
+	virtual void _on_unmapped() { force_sanitization = false; }
 	virtual void _on_resized(FlexUnit p_size) { changed = true; }
 	virtual void _on_copied_unit(FlexUnit p_to, FlexUnit p_from) { changed = true; }
 

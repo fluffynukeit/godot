@@ -330,8 +330,8 @@ void FlexSpace::sync() {
 
 	active_particles_memory->unmap();
 
-	if (springs_memory->was_changed())
-		springs_allocator->sanitize(); // *1
+	//if (springs_memory->was_changed() || springs_memory->is_required_sanitization())
+	springs_allocator->sanitize(); // *1
 	springs_memory->unmap();
 
 	rebuild_inflatables_indices();
@@ -419,6 +419,9 @@ void FlexSpace::add_particle_body_constraint(FlexParticleBodyConstraint *p_const
 
 void FlexSpace::remove_particle_body_constraint(FlexParticleBodyConstraint *p_constraint) {
 	springs_allocator->deallocate_chunk(p_constraint->springs_mchunk);
+	springs_memory->require_sanitization();
+
+	p_constraint->space = NULL;
 
 	constraints.erase(p_constraint);
 }

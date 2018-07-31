@@ -44,6 +44,10 @@ FlexParticleBodyConstraint::FlexParticleBodyConstraint(FlexParticleBody *p_body0
 	sync_callback.receiver = NULL;
 }
 
+FlexParticleBodyConstraint::~FlexParticleBodyConstraint() {
+	int a = 0;
+}
+
 void FlexParticleBodyConstraint::set_callback(Object *p_receiver, const StringName &p_method) {
 	sync_callback.receiver = p_receiver;
 	sync_callback.method = p_method;
