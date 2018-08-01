@@ -57,7 +57,7 @@ class ParticleBodyConstraint : public Node {
 		int body1_particle_index;
 		real_t length;
 		real_t stiffness;
-		int index;
+		bool created;
 		ConstraintState state;
 	};
 
