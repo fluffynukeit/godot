@@ -310,7 +310,7 @@ FlexParticlePhysicsServer::FlexParticlePhysicsServer() :
 		ParticlePhysicsServer(),
 		solver_param_numIterations("numIterations"),
 		solver_param_gravity("gravity"),
-		solver_param_radius("radius"),
+		solver_param_radius("detection_radius"),
 		solver_param_solidRestDistance("solidRestDistance"),
 		solver_param_fluidRestDistance("fluidRestDistance"),
 		solver_param_dynamicFriction("dynamicFriction"),
@@ -386,11 +386,14 @@ bool FlexParticlePhysicsServer::space_is_active(RID p_space) const {
 }
 
 void FlexParticlePhysicsServer::space_get_params_defaults(Map<StringName, Variant> *r_defs) const {
+
+	real_t def_radius = 0.1;
+
 	(*r_defs)[solver_param_numIterations] = 3;
 	(*r_defs)[solver_param_gravity] = Vector3(0, -10, 0);
-	(*r_defs)[solver_param_radius] = 0.1f;
-	(*r_defs)[solver_param_solidRestDistance] = real_t((*r_defs)[solver_param_radius]) * 0.9;
-	(*r_defs)[solver_param_fluidRestDistance] = real_t((*r_defs)[solver_param_radius]) * 0.5;
+	(*r_defs)[solver_param_radius] = def_radius * 1.5;
+	(*r_defs)[solver_param_solidRestDistance] = def_radius;
+	(*r_defs)[solver_param_fluidRestDistance] = def_radius;
 	(*r_defs)[solver_param_dynamicFriction] = 0.1;
 	(*r_defs)[solver_param_staticFriction] = 0.1;
 	(*r_defs)[solver_param_particleFriction] = 0.1;
@@ -421,7 +424,7 @@ void FlexParticlePhysicsServer::space_get_params_defaults(Map<StringName, Varian
 	(*r_defs)[solver_param_diffuseDrag] = 0.0;
 	(*r_defs)[solver_param_diffuseBallistic] = 0.0;
 	(*r_defs)[solver_param_diffuseLifetime] = 0.0;
-	(*r_defs)[solver_param_collisionDistance] = MAX(real_t((*r_defs)[solver_param_solidRestDistance]), real_t((*r_defs)[solver_param_fluidRestDistance])) * 0.8;
+	(*r_defs)[solver_param_collisionDistance] = def_radius;
 	(*r_defs)[solver_param_particleCollisionMargin] = 0.01;
 	(*r_defs)[solver_param_shapeCollisionMargin] = 0.005;
 	(*r_defs)[solver_param_relaxationMode] = "local";

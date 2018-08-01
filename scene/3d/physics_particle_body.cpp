@@ -332,8 +332,8 @@ void ParticleBody::debug_initialize_resource() {
 		return;
 
 	debug_particle_mesh.instance();
-	debug_particle_mesh->set_radius(0.05);
-	debug_particle_mesh->set_height(0.1);
+	debug_particle_mesh->set_radius(0.1);
+	debug_particle_mesh->set_height(0.2);
 	debug_particle_mesh->set_radial_segments(8);
 	debug_particle_mesh->set_rings(8);
 
