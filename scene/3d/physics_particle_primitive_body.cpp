@@ -295,14 +295,18 @@ int ParticlePrimitiveArea::find_overlapping_body_pos(Object *p_particle_body) {
 }
 
 Object *ParticlePrimitiveArea::get_overlapping_body(int id) const {
+	ERR_FAIL_INDEX_V(id, body_contacts.size(), NULL);
 	return body_contacts[id].particle_body;
 }
 
 int ParticlePrimitiveArea::get_overlapping_particles_count(int id) {
+	ERR_FAIL_INDEX_V(id, body_contacts.size(), -1);
 	return body_contacts[id].particles.size();
 }
 
 int ParticlePrimitiveArea::get_overlapping_particle_index(int body_id, int particle_id) {
+	ERR_FAIL_INDEX_V(body_id, body_contacts.size(), -1);
+	ERR_FAIL_INDEX_V(particle_id, body_contacts[body_id].particles.size(), -1);
 	return body_contacts[body_id].particles[particle_id].particle_index;
 }
 
