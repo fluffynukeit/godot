@@ -52,7 +52,8 @@ class ParticleBodyEditor : public Control {
 
 		MENU_OPTION_CREATE_PARTICLE_SOFT_BODY,
 		MENU_OPTION_CREATE_PARTICLE_RIGID_BODY,
-		MENU_OPTION_CREATE_PARTICLE_CLOTH
+		MENU_OPTION_CREATE_PARTICLE_CLOTH,
+		MENU_OPTION_CREATE_PARTICLE_THREAD
 	};
 
 	struct {
@@ -86,6 +87,13 @@ class ParticleBodyEditor : public Control {
 		SpinBox *pressure_input;
 	} cloth_dialog;
 
+	struct {
+		ConfirmationDialog *dialog;
+		SpinBox *particle_radius_input;
+		SpinBox *extent_input;
+		SpinBox *spacing_input;
+	} thread_dialog;
+
 	ParticleBody *node;
 
 	MenuButton *options;
@@ -98,6 +106,7 @@ class ParticleBodyEditor : public Control {
 	void _create_soft_body();
 	void _create_rigid_body();
 	void _create_cloth();
+	void _create_thread();
 
 	void _toggle_show_hide_gizmo();
 
@@ -128,7 +137,7 @@ public:
 	virtual void make_visible(bool p_visible);
 
 	void redraw();
-        bool is_editing(Node *p_other) const;
+	bool is_editing(Node *p_other) const;
 
 	PhysicsParticleBodyEditorPlugin(EditorNode *p_node);
 	~PhysicsParticleBodyEditorPlugin();

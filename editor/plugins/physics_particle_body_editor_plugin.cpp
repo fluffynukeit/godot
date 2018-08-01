@@ -51,6 +51,9 @@ void ParticleBodyEditor::_menu_option(int p_option) {
 		case MENU_OPTION_CREATE_PARTICLE_CLOTH:
 			cloth_dialog.dialog->popup_centered(Vector2(200, 300));
 			break;
+		case MENU_OPTION_CREATE_PARTICLE_THREAD:
+			thread_dialog.dialog->popup_centered(Vector2(200, 300));
+			break;
 	}
 }
 
@@ -124,6 +127,25 @@ void ParticleBodyEditor::_create_cloth() {
 	ur->commit_action();
 }
 
+void ParticleBodyEditor::_create_thread() {
+
+	ERR_FAIL_COND(!node);
+	ERR_FAIL_COND(!node->get_particle_body_mesh());
+	ERR_FAIL_COND(node->get_particle_body_mesh()->get_mesh().is_null());
+
+	Ref<ParticleBodyModel> model = ParticlePhysicsServer::get_singleton()->create_thread_particle_body_model(
+			thread_dialog.particle_radius_input->get_value(),
+			thread_dialog.extent_input->get_value(),
+			thread_dialog.spacing_input->get_value());
+
+	UndoRedo *ur = EditorNode::get_singleton()->get_undo_redo();
+
+	ur->create_action(TTR("Create cloth"));
+	ur->add_do_method(node, "set_particle_body_model", model);
+	ur->add_undo_method(node, "set_particle_body_model", node->get_particle_body_model());
+	ur->commit_action();
+}
+
 void ParticleBodyEditor::_toggle_show_hide_gizmo() {
 	if (!node)
 		return;
@@ -170,6 +192,7 @@ void ParticleBodyEditor::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_create_soft_body"), &ParticleBodyEditor::_create_soft_body);
 	ClassDB::bind_method(D_METHOD("_create_rigid_body"), &ParticleBodyEditor::_create_rigid_body);
 	ClassDB::bind_method(D_METHOD("_create_cloth"), &ParticleBodyEditor::_create_cloth);
+	ClassDB::bind_method(D_METHOD("_create_thread"), &ParticleBodyEditor::_create_thread);
 	ClassDB::bind_method(D_METHOD("_node_removed"), &ParticleBodyEditor::_node_removed);
 	ClassDB::bind_method(D_METHOD("_toggle_show_hide_gizmo"), &ParticleBodyEditor::_toggle_show_hide_gizmo);
 	ClassDB::bind_method(D_METHOD("_mass_changed", "mass"), &ParticleBodyEditor::_mass_changed);
@@ -201,6 +224,7 @@ ParticleBodyEditor::ParticleBodyEditor() {
 	options->get_popup()->add_item(TTR("Create particle Soft body"), MENU_OPTION_CREATE_PARTICLE_SOFT_BODY);
 	options->get_popup()->add_item(TTR("Create particle Rigid body"), MENU_OPTION_CREATE_PARTICLE_RIGID_BODY);
 	options->get_popup()->add_item(TTR("Create particle Cloth"), MENU_OPTION_CREATE_PARTICLE_CLOTH);
+	options->get_popup()->add_item(TTR("Create particle Thread"), MENU_OPTION_CREATE_PARTICLE_THREAD);
 
 	options->get_popup()->connect("id_pressed", this, "_menu_option");
 
@@ -264,6 +288,23 @@ ParticleBodyEditor::ParticleBodyEditor() {
 
 		add_child(cloth_dialog.dialog);
 		cloth_dialog.dialog->connect("confirmed", this, "_create_cloth");
+	}
+
+	// Thread body creation dialog
+	{
+		thread_dialog.dialog = memnew(ConfirmationDialog);
+		thread_dialog.dialog->set_title(TTR("Create particle Cloth"));
+		thread_dialog.dialog->get_ok()->set_text(TTR("Create"));
+
+		VBoxContainer *dialog_vbc = memnew(VBoxContainer);
+		thread_dialog.dialog->add_child(dialog_vbc);
+
+		make_spin_box(thread_dialog.particle_radius_input, 0.01, 10, 0.01, 0.1, dialog_vbc, TTR("Particle radius: "));
+		make_spin_box(thread_dialog.extent_input, 0.01, 10000, 0.01, 1, dialog_vbc, TTR("Extent: "));
+		make_spin_box(thread_dialog.spacing_input, 0.01, 10, 0.01, 1, dialog_vbc, TTR("Spacing: "));
+
+		add_child(thread_dialog.dialog);
+		thread_dialog.dialog->connect("confirmed", this, "_create_thread");
 	}
 
 	set_custom_minimum_size(Size2(200, 0) * EDSCALE);
