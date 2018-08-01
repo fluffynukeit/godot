@@ -1011,7 +1011,7 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_rigid_particle_body_mod
 	return model;
 }
 
-Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_thread_particle_body_model(real_t p_particle_radius, real_t p_extent, real_t p_spacing, int p_cluster_size, real_t p_cluster_stiffness) {
+Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_thread_particle_body_model(real_t p_particle_radius, real_t p_extent, real_t p_spacing, real_t p_link_stiffness, int p_cluster_size, real_t p_cluster_stiffness) {
 
 	ERR_FAIL_COND_V(p_cluster_size < 2, NULL);
 
@@ -1060,7 +1060,7 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_thread_particle_body_mo
 		for (int i(0); i < springs_count; ++i) {
 			springs_indices_w[i * 2 + 0] = i;
 			springs_indices_w[i * 2 + 1] = i + 1;
-			springs_info_w[i] = Vector2(particle_radius * 2, 0.5);
+			springs_info_w[i] = Vector2(particle_radius * 2, p_link_stiffness);
 		}
 	}
 

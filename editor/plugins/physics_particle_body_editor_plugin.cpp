@@ -137,8 +137,9 @@ void ParticleBodyEditor::_create_thread() {
 			thread_dialog.particle_radius_input->get_value(),
 			thread_dialog.extent_input->get_value(),
 			thread_dialog.spacing_input->get_value(),
-			thread_dialog.cluster_size->get_value(),
-			thread_dialog.cluster_stiffness->get_value());
+			thread_dialog.link_stiffness_input->get_value(),
+			thread_dialog.cluster_size_input->get_value(),
+			thread_dialog.cluster_stiffness_input->get_value());
 
 	UndoRedo *ur = EditorNode::get_singleton()->get_undo_redo();
 
@@ -304,8 +305,9 @@ ParticleBodyEditor::ParticleBodyEditor() {
 		make_spin_box(thread_dialog.particle_radius_input, 0.01, 10, 0.01, 0.1, dialog_vbc, TTR("Particle radius: "));
 		make_spin_box(thread_dialog.extent_input, 0.01, 10000, 0.01, 1, dialog_vbc, TTR("Extent: "));
 		make_spin_box(thread_dialog.spacing_input, 0.01, 10, 0.01, 1, dialog_vbc, TTR("Spacing: "));
-		make_spin_box(thread_dialog.cluster_size, 2, 100, 1, 2, dialog_vbc, TTR("Cluster size: "));
-		make_spin_box(thread_dialog.cluster_stiffness, 0, 1, 0.01, 0.5, dialog_vbc, TTR("Cluster stiffness: "));
+		make_spin_box(thread_dialog.link_stiffness_input, 0, 1, 0.01, 0.5, dialog_vbc, TTR("Link stiffness: "));
+		make_spin_box(thread_dialog.cluster_size_input, 2, 100, 1, 2, dialog_vbc, TTR("Cluster size: "));
+		make_spin_box(thread_dialog.cluster_stiffness_input, 0, 1, 0.01, 0.5, dialog_vbc, TTR("Cluster stiffness: "));
 
 		add_child(thread_dialog.dialog);
 		thread_dialog.dialog->connect("confirmed", this, "_create_thread");
