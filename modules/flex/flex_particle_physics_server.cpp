@@ -1011,7 +1011,9 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_rigid_particle_body_mod
 	return model;
 }
 
-Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_thread_particle_body_model(real_t p_particle_radius, real_t p_extent, real_t p_spacing) {
+Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_thread_particle_body_model(real_t p_particle_radius, real_t p_extent, real_t p_spacing, int p_cluster_size, real_t p_cluster_stiffness) {
+
+	ERR_FAIL_COND_V(p_cluster_size < 2, NULL);
 
 	real_t particle_radius = p_particle_radius * p_spacing;
 	real_t size = p_extent * 2.f;
@@ -1019,7 +1021,7 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_thread_particle_body_mo
 	Ref<ParticleBodyModel> model;
 	model.instance();
 
-	int particle_count = (size / (particle_radius)) + 1;
+	int particle_count = (size / (particle_radius * 2)) + 1;
 
 	/// Create particles
 	PoolVector<Vector3> particles;
@@ -1033,7 +1035,7 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_thread_particle_body_mo
 		PoolVector<real_t>::Write masses_w = masses.write();
 
 		for (int i(0); i < particle_count; ++i) {
-			particles_w[i] = Vector3(0, (particle_radius * i) - p_extent, 0);
+			particles_w[i] = Vector3(0, (particle_radius * i * 2) - p_extent, 0);
 			masses_w[i] = 1.f;
 		}
 	}
@@ -1058,12 +1060,65 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_thread_particle_body_mo
 		for (int i(0); i < springs_count; ++i) {
 			springs_indices_w[i * 2 + 0] = i;
 			springs_indices_w[i * 2 + 1] = i + 1;
-			springs_info_w[i] = Vector2(particle_radius, 0.5);
+			springs_info_w[i] = Vector2(particle_radius * 2, 0.5);
 		}
 	}
 
 	model->set_constraints_indexes(springs_indices);
 	model->set_constraints_info(springs_info);
+
+	/// Create clusters
+	int cluster_count = particle_count / p_cluster_size;
+
+	PoolVector<Vector3> clusters_positions;
+	PoolVector<real_t> cluster_stiffness;
+	PoolVector<real_t> cluster_plastic_thresold;
+	PoolVector<real_t> cluster_plastic_creep;
+	PoolVector<int> cluster_offsets;
+	PoolVector<int> cluster_indices;
+
+	clusters_positions.resize(cluster_count);
+	cluster_stiffness.resize(cluster_count);
+	cluster_plastic_thresold.resize(cluster_count);
+	cluster_plastic_creep.resize(cluster_count);
+	cluster_offsets.resize(cluster_count);
+	cluster_indices.resize(cluster_count * p_cluster_size);
+
+	{
+		PoolVector<Vector3>::Read particles_r = particles.read();
+
+		PoolVector<Vector3>::Write clusters_positions_w = clusters_positions.write();
+		PoolVector<real_t>::Write cluster_stiffness_w = cluster_stiffness.write();
+		PoolVector<real_t>::Write cluster_plastic_thresold_w = cluster_plastic_thresold.write();
+		PoolVector<real_t>::Write cluster_plastic_creep_w = cluster_plastic_creep.write();
+		PoolVector<int>::Write cluster_offsets_w = cluster_offsets.write();
+		PoolVector<int>::Write cluster_indices_w = cluster_indices.write();
+
+		for (int i(0); i < cluster_count; ++i) {
+
+			AABB aabb(particles_r[i * p_cluster_size], Vector3());
+			for (int p(1); p < p_cluster_size; ++p) {
+				aabb.expand_to(particles_r[i * p_cluster_size + p]);
+			}
+
+			clusters_positions_w[i] = aabb.get_position() + (aabb.get_size() * 0.5);
+			cluster_stiffness_w[i] = p_cluster_stiffness;
+			cluster_plastic_thresold_w[i] = 0;
+			cluster_plastic_creep_w[i] = 0;
+			cluster_offsets_w[i] = i * p_cluster_size + p_cluster_size;
+
+			for (int p(0); p < p_cluster_size; ++p) {
+				cluster_indices_w[i * p_cluster_size + p] = i * p_cluster_size + p;
+			}
+		}
+	}
+
+	model->set_clusters_positions(clusters_positions);
+	model->set_clusters_stiffness(cluster_stiffness);
+	model->set_clusters_plastic_threshold(cluster_plastic_thresold);
+	model->set_clusters_plastic_creep(cluster_plastic_creep);
+	model->set_clusters_offsets(cluster_offsets);
+	model->set_clusters_particle_indices(cluster_indices);
 
 	return model;
 }

@@ -92,6 +92,8 @@ class ParticleBodyEditor : public Control {
 		SpinBox *particle_radius_input;
 		SpinBox *extent_input;
 		SpinBox *spacing_input;
+		SpinBox *cluster_size;
+		SpinBox *cluster_stiffness;
 	} thread_dialog;
 
 	ParticleBody *node;
