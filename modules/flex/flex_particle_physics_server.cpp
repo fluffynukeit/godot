@@ -1008,6 +1008,63 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_rigid_particle_body_mod
 	return model;
 }
 
+Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_thread_particle_body_model(real_t p_particle_radius, real_t p_extent, real_t p_spacing) {
+
+	real_t particle_radius = p_particle_radius * p_spacing;
+	real_t size = p_extent * 2.f;
+
+	Ref<ParticleBodyModel> model;
+	model.instance();
+
+	int particle_count = (size / (particle_radius)) + 1;
+
+	/// Create particles
+	PoolVector<Vector3> particles;
+	particles.resize(particle_count);
+
+	PoolVector<real_t> masses;
+	masses.resize(particle_count);
+
+	{
+		PoolVector<Vector3>::Write particles_w = particles.write();
+		PoolVector<real_t>::Write masses_w = masses.write();
+
+		for (int i(0); i < particle_count; ++i) {
+			particles_w[i] = Vector3(0, (particle_radius * i) - p_extent, 0);
+			masses_w[i] = 1.f;
+		}
+	}
+
+	model->set_particles(particles);
+	model->set_masses(masses);
+
+	/// Craete springs
+
+	int springs_count = particle_count - 1;
+
+	PoolVector<int> springs_indices;
+	springs_indices.resize(springs_count * 2);
+
+	PoolVector<Vector2> springs_info;
+	springs_info.resize(springs_count);
+
+	{
+		PoolVector<int>::Write springs_indices_w = springs_indices.write();
+		PoolVector<Vector2>::Write springs_info_w = springs_info.write();
+
+		for (int i(0); i < springs_count; ++i) {
+			springs_indices_w[i * 2 + 0] = i;
+			springs_indices_w[i * 2 + 1] = i + 1;
+			springs_info_w[i] = Vector2(particle_radius, 0.5);
+		}
+	}
+
+	model->set_constraints_indexes(springs_indices);
+	model->set_constraints_info(springs_info);
+
+	return model;
+}
+
 Ref<ParticleBodyModel> FlexParticlePhysicsServer::make_model(NvFlexExtAsset *p_assets) {
 	ERR_FAIL_COND_V(!p_assets, Ref<ParticleBodyModel>());
 
