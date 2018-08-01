@@ -274,14 +274,31 @@ ParticlePrimitiveArea::ParticlePrimitiveArea() :
 	set_callback_sync(false);
 }
 
+String ParticlePrimitiveArea::get_configuration_warning() const {
+	String warning = ParticlePrimitiveBody::get_configuration_warning();
+
+	if (monitor_particle_bodies_entering || monitor_particles_entering) {
+		if (!is_monitoring_particles_contacts()) {
+			if (warning != String()) {
+				warning += "\n\n";
+			}
+			warning += TTR("The Area can't monitor body or particles untill you set monitoring_particles_contacts to TRUE.");
+		}
+	}
+
+	return warning;
+}
+
 void ParticlePrimitiveArea::set_monitor_particle_bodies_entering(bool p_monitor) {
 	monitor_particle_bodies_entering = p_monitor;
+
 	if (!Engine::get_singleton()->is_editor_hint())
 		set_callback_sync(monitor_particle_bodies_entering || monitor_particles_entering);
 }
 
 void ParticlePrimitiveArea::set_monitor_particles_entering(bool p_monitor) {
 	monitor_particles_entering = p_monitor;
+
 	if (!Engine::get_singleton()->is_editor_hint())
 		set_callback_sync(monitor_particle_bodies_entering || monitor_particles_entering);
 }

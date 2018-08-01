@@ -136,6 +136,8 @@ protected:
 public:
 	ParticlePrimitiveArea();
 
+	virtual String get_configuration_warning() const;
+
 	void set_monitor_particle_bodies_entering(bool p_monitor);
 	bool get_monitor_particle_bodies_entering() const { return monitor_particle_bodies_entering; }
 
