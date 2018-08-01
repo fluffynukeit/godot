@@ -257,7 +257,7 @@ void ParticleBodyConstraint::set_constraint_length(int p_index, real_t p_length)
 
 real_t ParticleBodyConstraint::get_constraint_length(int p_index) const {
 	ERR_FAIL_INDEX_V(p_index, constraints.size(), 0.0);
-	return constraints[p_index].length = p_length;
+	return constraints[p_index].length;
 }
 
 void ParticleBodyConstraint::set_constraint_stiffness(int p_index, real_t p_stiffness) {
