@@ -44,7 +44,7 @@ ParticleBodyConstraint::Constraint::Constraint() :
 		body1_particle_index(-1),
 		length(1),
 		stiffness(0.5),
-		index(-1),
+		created(false),
 		state(ConstraintState::CONSTRAINT_STATE_IN) {}
 
 void ParticleBodyConstraint::_bind_methods() {
@@ -343,10 +343,11 @@ void ParticleBodyConstraint::on_sync(Object *p_cmds) {
 			case CONSTRAINT_STATE_IN:
 			case CONSTRAINT_STATE_CHANGED: {
 
-				if (constraint.index == -1) {
-					constraint.index = cmds->add_spring(constraint.body0_particle_index, constraint.body1_particle_index, constraint.length, constraint.stiffness);
+				if (!constraint.created) {
+					cmds->add_spring(constraint.body0_particle_index, constraint.body1_particle_index, constraint.length, constraint.stiffness);
+					constraint.created = true;
 				} else {
-					cmds->set_spring(constraint.index, constraint.body0_particle_index, constraint.body1_particle_index, constraint.length, constraint.stiffness);
+					cmds->set_spring(constraint.created, constraint.body0_particle_index, constraint.body1_particle_index, constraint.length, constraint.stiffness);
 				}
 				constraint.state = CONSTRAINT_STATE_IDLE;
 
