@@ -35,6 +35,7 @@
 #include "physics_particle_body_editor_plugin.h"
 
 #include "editor/spatial_editor_gizmos.h"
+#include "scene/3d/physics_particle_body_constraint.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/check_box.h"
 #include "servers/particle_physics_server.h"
@@ -182,6 +183,60 @@ void ParticleBodyEditor::_mass_changed(real_t p_mass) {
 	node->update_gizmo();
 }
 
+void ParticleBodyEditor::_on_add_constraint_btn_pressed() {
+	scene_tree->popup_centered_ratio();
+}
+
+void ParticleBodyEditor::_on_constraint_selected(NodePath p_path) {
+
+	ParticleBodyConstraint *constraint = cast_to<ParticleBodyConstraint>(get_node(p_path));
+	if (!constraint) {
+		EditorNode::get_singleton()->show_warning(TTR("Selected node is not a ParticleBodyConstraint!"));
+		return;
+	}
+
+	if (constraint->get_particle_body0_path().is_empty()) {
+		constraint->set_particle_body0_path(node->get_path());
+	} else {
+		if (constraint->get_particle_body1_path().is_empty()) {
+			constraint->set_particle_body1_path(node->get_path());
+		}
+	}
+
+	int body_index = -1;
+	ParticleBody *pb = cast_to<ParticleBody>(get_node(constraint->get_particle_body0_path()));
+	if (pb == node) {
+		body_index = 0;
+	} else {
+		pb = cast_to<ParticleBody>(get_node(constraint->get_particle_body1_path()));
+		if (pb == node) {
+			body_index = 1;
+		}
+	}
+
+	ERR_FAIL_COND(-1 == body_index);
+	ERR_FAIL_COND(pb->get_particle_body_model().is_null());
+
+	Ref<ParticleBodySpatialGizmo> gizmo = node->get_gizmo();
+	if (gizmo.is_null())
+		return;
+
+	PoolVector<Vector3>::Read particles = pb->get_particle_body_model()->get_particles().read();
+
+	if (!body_index) {
+
+		for (int i(0); i < gizmo->get_selected_particles().size(); ++i) {
+
+			constraint->add_constraint(gizmo->get_selected_particles()[i], -1, particles[gizmo->get_selected_particles()[i]].length(), 1);
+		}
+	} else {
+		for (int i(0); i < gizmo->get_selected_particles().size(); ++i) {
+
+			constraint->add_constraint(-1, gizmo->get_selected_particles()[i], particles[gizmo->get_selected_particles()[i]].length(), 1);
+		}
+	}
+}
+
 void ParticleBodyEditor::_node_removed(Node *p_node) {
 
 	if (p_node == node) {
@@ -199,6 +254,9 @@ void ParticleBodyEditor::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_node_removed"), &ParticleBodyEditor::_node_removed);
 	ClassDB::bind_method(D_METHOD("_toggle_show_hide_gizmo"), &ParticleBodyEditor::_toggle_show_hide_gizmo);
 	ClassDB::bind_method(D_METHOD("_mass_changed", "mass"), &ParticleBodyEditor::_mass_changed);
+
+	ClassDB::bind_method(D_METHOD("_on_add_constraint_btn_pressed"), &ParticleBodyEditor::_on_add_constraint_btn_pressed);
+	ClassDB::bind_method(D_METHOD("_on_constraint_selected", "node_path"), &ParticleBodyEditor::_on_constraint_selected);
 }
 
 void make_spin_box(SpinBox *&r_spinbox, float p_min, float p_max, float p_step, float p_value, VBoxContainer *dialog_vbc, const String &p_label) {
@@ -305,9 +363,9 @@ ParticleBodyEditor::ParticleBodyEditor() {
 		make_spin_box(thread_dialog.particle_radius_input, 0.01, 10, 0.01, 0.1, dialog_vbc, TTR("Particle radius: "));
 		make_spin_box(thread_dialog.extent_input, 0.01, 10000, 0.01, 1, dialog_vbc, TTR("Extent: "));
 		make_spin_box(thread_dialog.spacing_input, 0.01, 10, 0.01, 1, dialog_vbc, TTR("Spacing: "));
-		make_spin_box(thread_dialog.link_stiffness_input, 0, 1, 0.01, 0.5, dialog_vbc, TTR("Link stiffness: "));
+		make_spin_box(thread_dialog.link_stiffness_input, 0, 10, 0.01, 0.5, dialog_vbc, TTR("Link stiffness: "));
 		make_spin_box(thread_dialog.cluster_size_input, 2, 100, 1, 2, dialog_vbc, TTR("Cluster size: "));
-		make_spin_box(thread_dialog.cluster_stiffness_input, 0, 1, 0.01, 0.5, dialog_vbc, TTR("Cluster stiffness: "));
+		make_spin_box(thread_dialog.cluster_stiffness_input, 0, 10, 0.01, 0.5, dialog_vbc, TTR("Cluster stiffness: "));
 
 		add_child(thread_dialog.dialog);
 		thread_dialog.dialog->connect("confirmed", this, "_create_thread");
@@ -340,6 +398,21 @@ ParticleBodyEditor::ParticleBodyEditor() {
 
 	make_spin_box(inspector_mass_inp, 0, 100, 0.01, 1, inspector_vb, TTR("Particle mass"));
 	inspector_mass_inp->connect("value_changed", this, "_mass_changed");
+
+	inspector_vb->add_child(memnew(HSeparator));
+
+	add_constraint_btn = memnew(Button);
+	add_constraint_btn->set_text(TTR("Add constraint"));
+	inspector_vb->add_child(add_constraint_btn);
+	add_constraint_btn->connect("pressed", this, "_on_add_constraint_btn_pressed");
+
+	Vector<StringName> valid_types;
+	valid_types.push_back("ParticleBodyConstraint");
+	scene_tree = memnew(SceneTreeDialog);
+	scene_tree->get_scene_tree()->set_show_enabled_subscene(true);
+	scene_tree->get_scene_tree()->set_valid_types(valid_types);
+	add_child(scene_tree);
+	scene_tree->connect("selected", this, "_on_constraint_selected");
 
 	redraw();
 }
@@ -416,6 +489,7 @@ void PhysicsParticleBodyEditorPlugin::make_visible(bool p_visible) {
 		particle_body_editor->show_gizmo_btn->show();
 		if (particle_body_editor->show_gizmo_btn->is_pressed())
 			particle_body_editor->show();
+
 	} else {
 
 		particle_body_editor->options->hide();
