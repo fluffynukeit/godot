@@ -105,6 +105,9 @@ class ParticleBodyEditor : public Control {
 	SpinBox *inspector_mass_inp;
 	RichTextLabel *inspector_particles_txt;
 
+	Button *add_constraint_btn;
+	SceneTreeDialog *scene_tree;
+
 	void _menu_option(int p_option);
 	void _create_soft_body();
 	void _create_rigid_body();
@@ -114,6 +117,9 @@ class ParticleBodyEditor : public Control {
 	void _toggle_show_hide_gizmo();
 
 	void _mass_changed(real_t p_mass);
+
+	void _on_add_constraint_btn_pressed();
+	void _on_constraint_selected(NodePath p_path);
 
 protected:
 	void _node_removed(Node *p_node);
