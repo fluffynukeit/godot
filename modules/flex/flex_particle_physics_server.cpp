@@ -1043,32 +1043,13 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_thread_particle_body_mo
 	model->set_particles(particles);
 	model->set_masses(masses);
 
-	/// Craete springs
-
-	int springs_count = particle_count - 1;
-
-	PoolVector<int> springs_indices;
-	springs_indices.resize(springs_count * 2);
-
-	PoolVector<Vector2> springs_info;
-	springs_info.resize(springs_count);
-
-	{
-		PoolVector<int>::Write springs_indices_w = springs_indices.write();
-		PoolVector<Vector2>::Write springs_info_w = springs_info.write();
-
-		for (int i(0); i < springs_count; ++i) {
-			springs_indices_w[i * 2 + 0] = i;
-			springs_indices_w[i * 2 + 1] = i + 1;
-			springs_info_w[i] = Vector2(particle_radius * 2, p_link_stiffness);
-		}
-	}
-
-	model->set_constraints_indexes(springs_indices);
-	model->set_constraints_info(springs_info);
-
 	/// Create clusters
 	int cluster_count = particle_count / p_cluster_size;
+	const int spare_particles = particle_count % p_cluster_size;
+
+	if (1 < spare_particles) {
+		++cluster_count;
+	}
 
 	PoolVector<Vector3> clusters_positions;
 	PoolVector<real_t> cluster_stiffness;
@@ -1119,6 +1100,34 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_thread_particle_body_mo
 	model->set_clusters_plastic_creep(cluster_plastic_creep);
 	model->set_clusters_offsets(cluster_offsets);
 	model->set_clusters_particle_indices(cluster_indices);
+
+	/// Craete springs
+
+	int springs_count = cluster_count - 1;
+
+	if (1 == spare_particles) {
+		++springs_count;
+	}
+
+	PoolVector<int> springs_indices;
+	springs_indices.resize(springs_count * 2);
+
+	PoolVector<Vector2> springs_info;
+	springs_info.resize(springs_count);
+
+	{
+		PoolVector<int>::Write springs_indices_w = springs_indices.write();
+		PoolVector<Vector2>::Write springs_info_w = springs_info.write();
+
+		for (int i(0); i < springs_count; ++i) {
+			springs_indices_w[i * 2 + 0] = i * p_cluster_size + p_cluster_size - 1;
+			springs_indices_w[i * 2 + 1] = i * p_cluster_size + p_cluster_size;
+			springs_info_w[i] = Vector2(particle_radius * 2, p_link_stiffness);
+		}
+	}
+
+	model->set_constraints_indexes(springs_indices);
+	model->set_constraints_info(springs_info);
 
 	return model;
 }
