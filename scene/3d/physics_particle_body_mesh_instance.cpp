@@ -202,6 +202,8 @@ void ParticleBodyMeshInstance::update_mesh_skeleton(ParticleBodyCommands *p_cmds
 		t.translate(rigids_local_pos_r[i] * -1);
 		skeleton->set_bone_pose(i, t);
 	}
+
+	VS::get_singleton()->mesh_set_custom_aabb(mesh->get_rid(), p_cmds->get_aabb());
 }
 
 void ParticleBodyMeshInstance::prepare_mesh_for_rendering() {
