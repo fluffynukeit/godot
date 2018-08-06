@@ -1200,7 +1200,7 @@ void FlexSpace::on_particle_index_changed(FlexParticleBody *p_body, ParticleBuff
 
 	const int pos = p_body->delayed_commands.particles_to_remove.find(chunk_index_old);
 	if (0 <= pos)
-		p_body->delayed_commands.particles_to_remove[pos] = chunk_index_new;
+		p_body->delayed_commands.particles_to_remove.write[pos] = chunk_index_new;
 }
 
 void FlexSpace::rebuild_inflatables_indices() {
@@ -1268,7 +1268,7 @@ void FlexMemorySweeperFast::exec() {
 		if ((i + 1) < rem_indices_count)
 			for (int b(i + 1); b < rem_indices_count; ++b) {
 				if (old_chunk_index == indices_to_remove[b]) {
-					indices_to_remove[b] = index_to_remove;
+					indices_to_remove.write[b] = index_to_remove;
 				}
 			}
 
@@ -1337,7 +1337,7 @@ void FlexMemorySweeperSlow::exec() {
 		if ((i + 1) < rem_indices_count)
 			for (int b(i + 1); b < rem_indices_count; ++b) {
 				if (index_to_remove <= indices_to_remove[b]) {
-					indices_to_remove[b] -= 1;
+					indices_to_remove.write[b] -= 1;
 				}
 			}
 

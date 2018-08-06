@@ -355,7 +355,7 @@ void ParticleBody::debug_resize_particle_visual_instance(int new_size) {
 
 			const int p = debug_particles_mesh.size() - i - 1;
 			debug_particles_mesh[p]->queue_delete();
-			debug_particles_mesh[p] = NULL;
+			debug_particles_mesh.write[p] = NULL;
 		}
 		debug_particles_mesh.resize(new_size);
 	} else {
@@ -369,7 +369,7 @@ void ParticleBody::debug_resize_particle_visual_instance(int new_size) {
 		for (int i = 0; i < dif; ++i) {
 
 			const int p = new_size - i - 1;
-			debug_particles_mesh[p] = memnew(MeshInstance);
+			debug_particles_mesh.write[p] = memnew(MeshInstance);
 			debug_particles_mesh[p]->set_as_toplevel(true);
 			debug_particles_mesh[p]->set_material_override(get_tree()->get_debug_collision_material());
 			debug_particles_mesh[p]->set_mesh(debug_particle_mesh);

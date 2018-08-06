@@ -343,13 +343,13 @@ void RigidsMemory::_on_resized(FlexUnit p_size) {
 
 void RigidsMemory::_on_copied_unit(FlexUnit p_to, FlexUnit p_from) {
 	RawRigidsMemory::_on_copied_unit(p_to, p_from);
-	offsets[p_to] = offsets[p_from];
+	offsets.write[p_to] = offsets[p_from];
 	buffer_offsets[p_to + 1] = buffer_offsets[p_from + 1];
 }
 
 void RigidsMemory::set_offset(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, RigidComponentIndex p_offset) {
 	make_memory_index(p_chunk, p_rigid_index);
-	offsets[index] = p_offset;
+	offsets.write[index] = p_offset;
 	changed = true;
 }
 
