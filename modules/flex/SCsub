@@ -15,6 +15,10 @@ cuda_lib = "/usr/local/cuda-9.2/lib64"
 # TODO change according to realease and debug version of godot
 FLEX_LIBS = ["NvFlexDebugCUDA_x64", "NvFlexDeviceDebug_x64", "NvFlexExtDebugCUDA_x64"]
 
+ # TODO This is necessary in order to compile after PR #20380
+ # Make sure to remove it and compile it correctly
+env["LIBSUFFIXES"] = ""
+
 # TODO make platform agnostic
 env.Prepend(LIBS=["cudart"])
 env.Prepend(LIBS=["-l:" + file_name + ".a" for file_name in FLEX_LIBS])
