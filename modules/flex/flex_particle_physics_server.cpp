@@ -379,7 +379,7 @@ void FlexParticlePhysicsServer::space_set_active(RID p_space, bool p_active) {
 }
 
 bool FlexParticlePhysicsServer::space_is_active(RID p_space) const {
-	const FlexSpace *space = space_owner.get(p_space);
+	FlexSpace *space = space_owner.get(p_space);
 	ERR_FAIL_COND_V(!space, false);
 
 	return active_spaces.find(space) != -1;

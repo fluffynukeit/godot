@@ -130,8 +130,8 @@ void FlexMemoryAllocator::sanitize(bool p_want_update_cache, bool p_trim) {
 			memory_table[i]->set(memory_table[next_i]->end_index + 1, next_i_chunk_cpy.end_index, true);
 
 			MemoryChunk *i_chunk = memory_table[i];
-			memory_table[i] = memory_table[next_i];
-			memory_table[next_i] = i_chunk;
+			memory_table.write[i] = memory_table[next_i];
+			memory_table.write[next_i] = i_chunk;
 
 			// Shift back data, even if the chunks collides it will work because the copy is performed incrementally (in the opposite way of the swap [free space] <- [data])
 			memory->copy(memory_table[i]->begin_index, next_i_chunk_cpy.size, next_i_chunk_cpy.begin_index);

@@ -102,22 +102,22 @@ bool ParticleBodyConstraint::_set(const StringName &p_name, const Variant &p_pro
 	String what = name.get_slicec('/', 2);
 	if ("body0_particle_index" == what) {
 
-		constraints[pos].body0_particle_index = p_property;
+		constraints.write[pos].body0_particle_index = p_property;
 	} else if ("body1_particle_index" == what) {
 
-		constraints[pos].body1_particle_index = p_property;
+		constraints.write[pos].body1_particle_index = p_property;
 	} else if ("constraint_length" == what) {
 
-		constraints[pos].length = p_property;
+		constraints.write[pos].length = p_property;
 	} else if ("constraint_stiffness" == what) {
 
-		constraints[pos].stiffness = p_property;
+		constraints.write[pos].stiffness = p_property;
 	} else {
 		return false;
 	}
 
 	if (!just_created && CONSTRAINT_STATE_IN != constraints[pos].state) {
-		constraints[pos].state = CONSTRAINT_STATE_CHANGED;
+		constraints.write[pos].state = CONSTRAINT_STATE_CHANGED;
 	}
 
 	return true;
@@ -243,15 +243,15 @@ int ParticleBodyConstraint::find_constraint(int p_body0_particle_index, int p_bo
 void ParticleBodyConstraint::remove_constraint(int p_index) {
 	ERR_FAIL_INDEX(p_index, constraints.size());
 
-	constraints[p_index].state = CONSTRAINT_STATE_OUT;
+	constraints.write[p_index].state = CONSTRAINT_STATE_OUT;
 
 	ParticlePhysicsServer::get_singleton()->constraint_set_callback(rid, this, "on_sync");
 }
 
 void ParticleBodyConstraint::set_constraint_length(int p_index, real_t p_length) {
 	ERR_FAIL_INDEX(p_index, constraints.size());
-	constraints[p_index].length = p_length;
-	constraints[p_index].state = CONSTRAINT_STATE_CHANGED;
+	constraints.write[p_index].length = p_length;
+	constraints.write[p_index].state = CONSTRAINT_STATE_CHANGED;
 	ParticlePhysicsServer::get_singleton()->constraint_set_callback(rid, this, "on_sync");
 }
 
@@ -262,8 +262,8 @@ real_t ParticleBodyConstraint::get_constraint_length(int p_index) const {
 
 void ParticleBodyConstraint::set_constraint_stiffness(int p_index, real_t p_stiffness) {
 	ERR_FAIL_INDEX(p_index, constraints.size());
-	constraints[p_index].stiffness = p_stiffness;
-	constraints[p_index].state = CONSTRAINT_STATE_CHANGED;
+	constraints.write[p_index].stiffness = p_stiffness;
+	constraints.write[p_index].state = CONSTRAINT_STATE_CHANGED;
 	ParticlePhysicsServer::get_singleton()->constraint_set_callback(rid, this, "on_sync");
 }
 
@@ -334,7 +334,7 @@ void ParticleBodyConstraint::on_sync(Object *p_cmds) {
 	int size(constraints.size());
 	for (int i(size - 1); 0 <= i; --i) {
 
-		Constraint &constraint(constraints[i]);
+		Constraint &constraint(constraints.write[i]);
 
 		if (-1 == constraint.body0_particle_index || -1 == constraint.body1_particle_index)
 			continue;
@@ -357,7 +357,7 @@ void ParticleBodyConstraint::on_sync(Object *p_cmds) {
 			} break;
 			case CONSTRAINT_STATE_OUT: {
 				ParticlePhysicsServer::get_singleton()->constraint_remove_spring(rid, i);
-				constraints[i] = constraints[--size]; // This is the same way on how the server remove springs
+				constraints.write[i] = constraints[--size]; // This is the same way on how the server remove springs
 			} break;
 		}
 	}

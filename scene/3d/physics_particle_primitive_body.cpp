@@ -347,19 +347,19 @@ void ParticlePrimitiveArea::_on_particle_contact(Object *p_particle_body, int p_
 	if (monitor_particles_entering) {
 		int p = body_contacts[data_id].particles.find(ParticleContacts(p_particle_index));
 		if (-1 == p) {
-			body_contacts[data_id].particles.push_back(ParticleContacts(p_particle_index));
+			body_contacts.write[data_id].particles.push_back(ParticleContacts(p_particle_index));
 		} else {
-			body_contacts[data_id].particles[p].stage = 1;
+			body_contacts.write[data_id].particles.write[p].stage = 1;
 		}
 	}
 
-	++body_contacts[data_id].particle_count;
+	++body_contacts.write[data_id].particle_count;
 }
 
 void ParticlePrimitiveArea::_on_sync() {
 
 	for (int i(body_contacts.size() - 1); 0 <= i; --i) {
-		ParticleBodyContacts &body_contact(body_contacts[i]);
+		ParticleBodyContacts &body_contact(body_contacts.write[i]);
 		if (!body_contact.particle_count) {
 
 			for (int p(body_contact.particles.size() - 1); 0 <= p; --p) {
@@ -379,7 +379,7 @@ void ParticlePrimitiveArea::_on_sync() {
 		}
 
 		for (int p(body_contact.particles.size() - 1); 0 <= p; --p) {
-			ParticleContacts &particle_contact = body_contact.particles[p];
+			ParticleContacts &particle_contact = body_contact.particles.write[p];
 			if (2 == particle_contact.stage) {
 
 				emit_signal("particle_exit", body_contact.particle_body, particle_contact.particle_index);

@@ -53,10 +53,10 @@ bool PhysicsParticleGlue::_set(const StringName &p_name, const Variant &p_proper
 	String what = name.get_slicec('/', 2);
 	if ("body_path" == what) {
 
-		glued_particles[pos].particle_body_path = p_property;
+		glued_particles.write[pos].particle_body_path = p_property;
 	} else if ("particle" == what) {
 
-		glued_particles[pos].particle_index = p_property;
+		glued_particles.write[pos].particle_index = p_property;
 	} else {
 		return false;
 	}
@@ -161,7 +161,7 @@ void PhysicsParticleGlue::add_particle(int p_particle_index, Object *p_particle_
 }
 
 void PhysicsParticleGlue::remove_particle(int p_position) {
-	glued_particles[p_position].state = GluedParticle::GLUED_PARTICLE_STATE_OUT;
+	glued_particles.write[p_position].state = GluedParticle::GLUED_PARTICLE_STATE_OUT;
 	_are_particles_dirty = true;
 }
 
@@ -183,13 +183,13 @@ void PhysicsParticleGlue::particle_physics_sync(RID p_space) {
 	int size(glued_particles.size());
 	for (int i(size - 1); 0 <= i; --i) {
 
-		GluedParticle &gp = glued_particles[i];
+		GluedParticle &gp = glued_particles.write[i];
 
 		if (gp.state == GluedParticle::GLUED_PARTICLE_STATE_OUT) {
 
 			cmds = ParticlePhysicsServer::get_singleton()->body_get_commands(glued_particles[i].particle_body->get_rid());
 			cmds->set_particle_mass(gp.particle_index, gp.previous_mass);
-			glued_particles[i] = glued_particles[--size];
+			glued_particles.write[i] = glued_particles[--size];
 			continue;
 
 		} else if (gp.state == GluedParticle::GLUED_PARTICLE_STATE_IN) {
@@ -203,7 +203,7 @@ void PhysicsParticleGlue::particle_physics_sync(RID p_space) {
 			gp.state = GluedParticle::GLUED_PARTICLE_STATE_IDLE;
 			gp.previous_mass = cmds->get_particle_mass(gp.particle_index);
 			if (!allow_particles_with_zero_mass && !gp.previous_mass) {
-				glued_particles[i] = glued_particles[--size];
+				glued_particles.write[i] = glued_particles[--size];
 				continue;
 			}
 			gp.offset = get_global_transform().xform_inv(cmds->get_particle_position(gp.particle_index));
