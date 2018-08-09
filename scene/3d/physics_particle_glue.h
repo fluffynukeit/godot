@@ -77,6 +77,7 @@ class PhysicsParticleGlue : public Spatial {
 
 	Vector<GluedParticle> glued_particles;
 	bool allow_particles_with_zero_mass;
+	real_t pull_force;
 	bool _are_particles_dirty;
 
 	bool _set(const StringName &p_name, const Variant &p_property);
@@ -93,6 +94,9 @@ public:
 	void set_allow_particles_with_zero_mass(bool p_allow);
 	bool get_allow_particles_with_zero_mass() const;
 
+	void set_pull_force(real_t p_force);
+	real_t get_pull_force() const;
+
 	int get_particle_count() const;
 	int find_particle(int p_particle_index, Object *p_particle_body);
 
@@ -102,6 +106,7 @@ public:
 
 private:
 	void particle_physics_sync(RID p_space);
+	void pull(const GluedParticle &p_glued_particle, ParticleBodyCommands *p_cmds);
 };
 
 #endif // PHYSICS_PARTICLE_GLUE_H

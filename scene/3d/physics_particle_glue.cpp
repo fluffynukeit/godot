@@ -106,6 +106,9 @@ void PhysicsParticleGlue::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_allow_particles_with_zero_mass", "allow"), &PhysicsParticleGlue::set_allow_particles_with_zero_mass);
 	ClassDB::bind_method(D_METHOD("get_allow_particles_with_zero_mass"), &PhysicsParticleGlue::get_allow_particles_with_zero_mass);
 
+	ClassDB::bind_method(D_METHOD("set_pull_force", "force"), &PhysicsParticleGlue::set_pull_force);
+	ClassDB::bind_method(D_METHOD("get_pull_force"), &PhysicsParticleGlue::get_pull_force);
+
 	ClassDB::bind_method(D_METHOD("get_particle_count"), &PhysicsParticleGlue::get_particle_count);
 	ClassDB::bind_method(D_METHOD("find_particle", "particle_index", "particle_body"), &PhysicsParticleGlue::find_particle);
 	ClassDB::bind_method(D_METHOD("add_particle", "particle_index", "particle_body"), &PhysicsParticleGlue::add_particle);
@@ -115,6 +118,7 @@ void PhysicsParticleGlue::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("particle_physics_sync", "space"), &PhysicsParticleGlue::particle_physics_sync);
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "allow_particles_with_zero_mass"), "set_allow_particles_with_zero_mass", "get_allow_particles_with_zero_mass");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "pull_force"), "set_pull_force", "get_pull_force");
 }
 
 void PhysicsParticleGlue::_notification(int p_what) {
@@ -133,7 +137,8 @@ void PhysicsParticleGlue::_notification(int p_what) {
 
 PhysicsParticleGlue::PhysicsParticleGlue() :
 		Spatial(),
-		allow_particles_with_zero_mass(false) {
+		allow_particles_with_zero_mass(false),
+		pull_force(-1) {
 	set_notify_transform(true);
 }
 
@@ -143,6 +148,14 @@ void PhysicsParticleGlue::set_allow_particles_with_zero_mass(bool p_allow) {
 
 bool PhysicsParticleGlue::get_allow_particles_with_zero_mass() const {
 	return allow_particles_with_zero_mass;
+}
+
+void PhysicsParticleGlue::set_pull_force(real_t p_force) {
+	pull_force = p_force;
+}
+
+real_t PhysicsParticleGlue::get_pull_force() const {
+	return pull_force;
 }
 
 int PhysicsParticleGlue::get_particle_count() const {
@@ -187,7 +200,7 @@ void PhysicsParticleGlue::particle_physics_sync(RID p_space) {
 
 		if (gp.state == GluedParticle::GLUED_PARTICLE_STATE_OUT) {
 
-			cmds = ParticlePhysicsServer::get_singleton()->body_get_commands(glued_particles[i].particle_body->get_rid());
+			cmds = ParticlePhysicsServer::get_singleton()->body_get_commands(gp.particle_body->get_rid());
 			cmds->set_particle_mass(gp.particle_index, gp.previous_mass);
 			glued_particles.write[i] = glued_particles[--size];
 			continue;
@@ -199,7 +212,7 @@ void PhysicsParticleGlue::particle_physics_sync(RID p_space) {
 			}
 			ERR_FAIL_COND(!gp.particle_body);
 
-			cmds = ParticlePhysicsServer::get_singleton()->body_get_commands(glued_particles[i].particle_body->get_rid());
+			cmds = ParticlePhysicsServer::get_singleton()->body_get_commands(gp.particle_body->get_rid());
 			gp.state = GluedParticle::GLUED_PARTICLE_STATE_IDLE;
 			gp.previous_mass = cmds->get_particle_mass(gp.particle_index);
 			if (!allow_particles_with_zero_mass && !gp.previous_mass) {
@@ -208,12 +221,27 @@ void PhysicsParticleGlue::particle_physics_sync(RID p_space) {
 			}
 			gp.offset = get_global_transform().xform_inv(cmds->get_particle_position(gp.particle_index));
 
-			cmds->set_particle_position_mass(gp.particle_index, get_global_transform().xform(gp.offset), .0);
+			pull(gp, cmds);
 		} else {
 
-			cmds = ParticlePhysicsServer::get_singleton()->body_get_commands(glued_particles[i].particle_body->get_rid());
-			cmds->set_particle_position(gp.particle_index, get_global_transform().xform(gp.offset));
+			cmds = ParticlePhysicsServer::get_singleton()->body_get_commands(gp.particle_body->get_rid());
+			pull(gp, cmds);
 		}
 	}
 	glued_particles.resize(size);
+}
+
+void PhysicsParticleGlue::pull(const GluedParticle &p_glued_particle, ParticleBodyCommands *p_cmds) {
+
+	if (0 > pull_force) {
+		p_cmds->set_particle_position_mass(p_glued_particle.particle_index, get_global_transform().xform(p_glued_particle.offset), .0);
+	} else {
+
+		Vector3 target_position = get_global_transform().xform(p_glued_particle.offset);
+		Vector3 particle_pos(p_cmds->get_particle_position(p_glued_particle.particle_index));
+
+		Vector3 delta(target_position - particle_pos);
+
+		p_cmds->set_particle_velocity(p_glued_particle.particle_index, delta * pull_force);
+	}
 }
