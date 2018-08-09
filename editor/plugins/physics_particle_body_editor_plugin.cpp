@@ -36,6 +36,7 @@
 
 #include "editor/spatial_editor_gizmos.h"
 #include "scene/3d/physics_particle_body_constraint.h"
+#include "scene/3d/physics_particle_glue.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/check_box.h"
 #include "servers/particle_physics_server.h"
@@ -184,7 +185,7 @@ void ParticleBodyEditor::_mass_changed(real_t p_mass) {
 }
 
 void ParticleBodyEditor::_on_add_constraint_btn_pressed() {
-	scene_tree->popup_centered_ratio();
+	add_constraint_scene_tree->popup_centered_ratio();
 }
 
 void ParticleBodyEditor::_on_constraint_selected(NodePath p_path) {
@@ -237,6 +238,28 @@ void ParticleBodyEditor::_on_constraint_selected(NodePath p_path) {
 	}
 }
 
+void ParticleBodyEditor::_on_add_glue_btn_pressed() {
+	add_glue_scene_tree->popup_centered_ratio();
+}
+
+void ParticleBodyEditor::_on_glue_selected(NodePath p_path) {
+
+	PhysicsParticleGlue *glue = cast_to<PhysicsParticleGlue>(get_node(p_path));
+	if (!glue) {
+		EditorNode::get_singleton()->show_warning(TTR("Selected node is not a PhysicsParticleGlue!"));
+		return;
+	}
+
+	Ref<ParticleBodySpatialGizmo> gizmo = node->get_gizmo();
+	if (gizmo.is_null())
+		return;
+
+	for (int i(0); i < gizmo->get_selected_particles().size(); ++i) {
+
+		glue->add_particle(gizmo->get_selected_particles()[i]);
+	}
+}
+
 void ParticleBodyEditor::_node_removed(Node *p_node) {
 
 	if (p_node == node) {
@@ -257,6 +280,9 @@ void ParticleBodyEditor::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("_on_add_constraint_btn_pressed"), &ParticleBodyEditor::_on_add_constraint_btn_pressed);
 	ClassDB::bind_method(D_METHOD("_on_constraint_selected", "node_path"), &ParticleBodyEditor::_on_constraint_selected);
+
+	ClassDB::bind_method(D_METHOD("_on_add_glue_btn_pressed"), &ParticleBodyEditor::_on_add_glue_btn_pressed);
+	ClassDB::bind_method(D_METHOD("_on_glue_selected", "node_path"), &ParticleBodyEditor::_on_glue_selected);
 }
 
 void make_spin_box(SpinBox *&r_spinbox, float p_min, float p_max, float p_step, float p_value, VBoxContainer *dialog_vbc, const String &p_label) {
@@ -406,13 +432,30 @@ ParticleBodyEditor::ParticleBodyEditor() {
 	inspector_vb->add_child(add_constraint_btn);
 	add_constraint_btn->connect("pressed", this, "_on_add_constraint_btn_pressed");
 
-	Vector<StringName> valid_types;
-	valid_types.push_back("ParticleBodyConstraint");
-	scene_tree = memnew(SceneTreeDialog);
-	scene_tree->get_scene_tree()->set_show_enabled_subscene(true);
-	scene_tree->get_scene_tree()->set_valid_types(valid_types);
-	add_child(scene_tree);
-	scene_tree->connect("selected", this, "_on_constraint_selected");
+	{
+		Vector<StringName> valid_types;
+		valid_types.push_back("ParticleBodyConstraint");
+		add_constraint_scene_tree = memnew(SceneTreeDialog);
+		add_constraint_scene_tree->get_scene_tree()->set_show_enabled_subscene(true);
+		add_constraint_scene_tree->get_scene_tree()->set_valid_types(valid_types);
+		add_child(add_constraint_scene_tree);
+		add_constraint_scene_tree->connect("selected", this, "_on_constraint_selected");
+	}
+
+	add_glue_btn = memnew(Button);
+	add_glue_btn->set_text(TTR("Add to glue"));
+	inspector_vb->add_child(add_glue_btn);
+	add_glue_btn->connect("pressed", this, "_on_add_glue_btn_pressed");
+
+	{
+		Vector<StringName> valid_types;
+		valid_types.push_back("PhysicsParticleGlue");
+		add_glue_scene_tree = memnew(SceneTreeDialog);
+		add_glue_scene_tree->get_scene_tree()->set_show_enabled_subscene(true);
+		add_glue_scene_tree->get_scene_tree()->set_valid_types(valid_types);
+		add_child(add_glue_scene_tree);
+		add_glue_scene_tree->connect("selected", this, "_on_glue_selected");
+	}
 
 	redraw();
 }

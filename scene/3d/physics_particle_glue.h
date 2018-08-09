@@ -42,7 +42,7 @@
 class PhysicsParticleGlue : public Spatial {
 	GDCLASS(PhysicsParticleGlue, Spatial);
 
-	struct GluedParticle {
+	struct GluedParticleData {
 
 		enum GluedParticleState {
 			GLUED_PARTICLE_STATE_IN,
@@ -50,39 +50,27 @@ class PhysicsParticleGlue : public Spatial {
 			GLUED_PARTICLE_STATE_IDLE
 		};
 
-		NodePath particle_body_path;
-		ParticleBody *particle_body;
-		int particle_index;
 		int state;
 		Vector3 offset;
 		real_t previous_mass;
 
-		GluedParticle(ParticleBody *p_particle_body = NULL, int p_particle_index = -1) :
-				particle_body(p_particle_body),
-				particle_index(p_particle_index),
+		GluedParticleData() :
 				state(GLUED_PARTICLE_STATE_IN) {}
 
-		GluedParticle(const GluedParticle &p_other) :
-				particle_body_path(p_other.particle_body_path),
-				particle_body(p_other.particle_body),
-				particle_index(p_other.particle_index),
-				state(p_other.particle_index),
+		GluedParticleData(const GluedParticleData &p_other) :
+				state(p_other.state),
 				offset(p_other.offset),
 				previous_mass(p_other.previous_mass) {}
-
-		bool operator==(const GluedParticle &p_other) const {
-			return p_other.particle_body == particle_body && p_other.particle_index == particle_index;
-		}
 	};
 
-	Vector<GluedParticle> glued_particles;
+	NodePath particle_body_path;
+	ParticleBody *particle_body;
+
+	Vector<int> glued_particles;
+	Vector<GluedParticleData> glued_particles_data;
 	bool allow_particles_with_zero_mass;
 	real_t pull_force;
 	bool _are_particles_dirty;
-
-	bool _set(const StringName &p_name, const Variant &p_property);
-	bool _get(const StringName &p_name, Variant &r_property) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
 
 	static void _bind_methods();
 
@@ -91,6 +79,12 @@ class PhysicsParticleGlue : public Spatial {
 public:
 	PhysicsParticleGlue();
 
+	void set_body_path(const NodePath &p_path);
+	NodePath get_body_path() const;
+
+	void set_glued_particles(Vector<int> p_particles);
+	Vector<int> get_glued_particles() const;
+
 	void set_allow_particles_with_zero_mass(bool p_allow);
 	bool get_allow_particles_with_zero_mass() const;
 
@@ -98,15 +92,15 @@ public:
 	real_t get_pull_force() const;
 
 	int get_particle_count() const;
-	int find_particle(int p_particle_index, Object *p_particle_body);
+	int find_particle(int p_particle_index);
 
-	void add_particle(int p_particle_index, Object *p_particle_body);
+	void add_particle(int p_particle_index);
 	void remove_particle(int p_position);
 	int get_particle_index(int p_position);
 
 private:
 	void particle_physics_sync(RID p_space);
-	void pull(const GluedParticle &p_glued_particle, ParticleBodyCommands *p_cmds);
+	void pull(int p_particle, const GluedParticleData &p_glued_particle, ParticleBodyCommands *p_cmds);
 };
 
 #endif // PHYSICS_PARTICLE_GLUE_H

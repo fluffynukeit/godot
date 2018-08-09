@@ -106,7 +106,10 @@ class ParticleBodyEditor : public Control {
 	RichTextLabel *inspector_particles_txt;
 
 	Button *add_constraint_btn;
-	SceneTreeDialog *scene_tree;
+	SceneTreeDialog *add_constraint_scene_tree;
+
+	Button *add_glue_btn;
+	SceneTreeDialog *add_glue_scene_tree;
 
 	void _menu_option(int p_option);
 	void _create_soft_body();
@@ -120,6 +123,9 @@ class ParticleBodyEditor : public Control {
 
 	void _on_add_constraint_btn_pressed();
 	void _on_constraint_selected(NodePath p_path);
+
+	void _on_add_glue_btn_pressed();
+	void _on_glue_selected(NodePath p_path);
 
 protected:
 	void _node_removed(Node *p_node);
