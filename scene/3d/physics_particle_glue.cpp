@@ -37,71 +37,13 @@
 #include "scene/main/viewport.h"
 #include "servers/particle_physics_server.h"
 
-bool PhysicsParticleGlue::_set(const StringName &p_name, const Variant &p_property) {
-	if (p_name == "particle_count") {
-		glued_particles.resize(p_property);
-		return true;
-	}
-
-	String name = p_name;
-	String pos_s = name.get_slicec('/', 1);
-	int pos = pos_s.to_int();
-
-	if (glued_particles.size() <= pos)
-		return false;
-
-	String what = name.get_slicec('/', 2);
-	if ("body_path" == what) {
-
-		glued_particles.write[pos].particle_body_path = p_property;
-	} else if ("particle" == what) {
-
-		glued_particles.write[pos].particle_index = p_property;
-	} else {
-		return false;
-	}
-
-	_are_particles_dirty = true;
-	return true;
-}
-
-bool PhysicsParticleGlue::_get(const StringName &p_name, Variant &r_property) const {
-	if (p_name == "particle_count") {
-		r_property = glued_particles.size();
-		return true;
-	}
-
-	String name = p_name;
-	String pos_s = name.get_slicec('/', 1);
-	int pos = pos_s.to_int();
-
-	if (glued_particles.size() <= pos)
-		return false;
-
-	String what = name.get_slicec('/', 2);
-	if ("body_path" == what) {
-
-		r_property = glued_particles[pos].particle_body_path;
-	} else if ("particle" == what) {
-
-		r_property = glued_particles[pos].particle_index;
-	} else {
-		return false;
-	}
-
-	return true;
-}
-
-void PhysicsParticleGlue::_get_property_list(List<PropertyInfo> *p_list) const {
-	p_list->push_back(PropertyInfo(Variant::INT, "particle_count"));
-
-	for (int p(0); p < glued_particles.size(); ++p) {
-		p_list->push_back(PropertyInfo(Variant::NODE_PATH, "glued/" + itos(p) + "/body_path"));
-		p_list->push_back(PropertyInfo(Variant::INT, "glued/" + itos(p) + "/particle"));
-	}
-}
-
 void PhysicsParticleGlue::_bind_methods() {
+
+	ClassDB::bind_method(D_METHOD("set_body_path", "path"), &PhysicsParticleGlue::set_body_path);
+	ClassDB::bind_method(D_METHOD("get_body_path"), &PhysicsParticleGlue::get_body_path);
+
+	ClassDB::bind_method(D_METHOD("set_glued_particles", "glued_particles"), &PhysicsParticleGlue::set_glued_particles);
+	ClassDB::bind_method(D_METHOD("get_glued_particles"), &PhysicsParticleGlue::get_glued_particles);
 
 	ClassDB::bind_method(D_METHOD("set_allow_particles_with_zero_mass", "allow"), &PhysicsParticleGlue::set_allow_particles_with_zero_mass);
 	ClassDB::bind_method(D_METHOD("get_allow_particles_with_zero_mass"), &PhysicsParticleGlue::get_allow_particles_with_zero_mass);
@@ -117,6 +59,8 @@ void PhysicsParticleGlue::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("particle_physics_sync", "space"), &PhysicsParticleGlue::particle_physics_sync);
 
+	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "body_path"), "set_body_path", "get_body_path");
+	ADD_PROPERTY(PropertyInfo(Variant::POOL_INT_ARRAY, "glued_particles"), "set_glued_particles", "get_glued_particles");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "allow_particles_with_zero_mass"), "set_allow_particles_with_zero_mass", "get_allow_particles_with_zero_mass");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "pull_force"), "set_pull_force", "get_pull_force");
 }
@@ -137,9 +81,27 @@ void PhysicsParticleGlue::_notification(int p_what) {
 
 PhysicsParticleGlue::PhysicsParticleGlue() :
 		Spatial(),
+		particle_body(NULL),
 		allow_particles_with_zero_mass(false),
 		pull_force(-1) {
 	set_notify_transform(true);
+}
+
+void PhysicsParticleGlue::set_body_path(const NodePath &p_path) {
+	particle_body_path = p_path;
+}
+
+NodePath PhysicsParticleGlue::get_body_path() const {
+	return particle_body_path;
+}
+
+void PhysicsParticleGlue::set_glued_particles(Vector<int> p_particles) {
+	glued_particles = p_particles;
+	glued_particles_data.resize(glued_particles.size());
+}
+
+Vector<int> PhysicsParticleGlue::get_glued_particles() const {
+	return glued_particles;
 }
 
 void PhysicsParticleGlue::set_allow_particles_with_zero_mass(bool p_allow) {
@@ -162,24 +124,26 @@ int PhysicsParticleGlue::get_particle_count() const {
 	return glued_particles.size();
 }
 
-int PhysicsParticleGlue::find_particle(int p_particle_index, Object *p_particle_body) {
-	return glued_particles.find(GluedParticle(cast_to<ParticleBody>(p_particle_body), p_particle_index));
+int PhysicsParticleGlue::find_particle(int p_particle_index) {
+	return glued_particles.find(p_particle_index);
 }
 
-void PhysicsParticleGlue::add_particle(int p_particle_index, Object *p_particle_body) {
-	int i = find_particle(p_particle_index, p_particle_body);
-	if (i < 0)
-		glued_particles.push_back(GluedParticle(cast_to<ParticleBody>(p_particle_body), p_particle_index));
+void PhysicsParticleGlue::add_particle(int p_particle_index) {
+	int i = find_particle(p_particle_index);
+	if (i < 0) {
+		glued_particles.push_back(p_particle_index);
+		glued_particles_data.resize(glued_particles_data.size() + 1);
+	}
 	_are_particles_dirty = true;
 }
 
 void PhysicsParticleGlue::remove_particle(int p_position) {
-	glued_particles.write[p_position].state = GluedParticle::GLUED_PARTICLE_STATE_OUT;
+	glued_particles_data.write[p_position].state = GluedParticleData::GLUED_PARTICLE_STATE_OUT;
 	_are_particles_dirty = true;
 }
 
 int PhysicsParticleGlue::get_particle_index(int p_position) {
-	return glued_particles[p_position].particle_index;
+	return glued_particles[p_position];
 }
 
 void PhysicsParticleGlue::particle_physics_sync(RID p_space) {
@@ -190,58 +154,62 @@ void PhysicsParticleGlue::particle_physics_sync(RID p_space) {
 	if (!_are_particles_dirty)
 		return;
 
-	_are_particles_dirty = false;
+	if (0 > pull_force)
+		_are_particles_dirty = false;
 
-	ParticleBodyCommands *cmds;
+	if (!particle_body && !particle_body_path.is_empty())
+		particle_body = cast_to<ParticleBody>(get_node(particle_body_path));
+
+	ERR_FAIL_COND(!particle_body);
+
+	ParticleBodyCommands *cmds = ParticlePhysicsServer::get_singleton()->body_get_commands(particle_body->get_rid());
+
 	int size(glued_particles.size());
+	glued_particles_data.resize(size); // Avoid differences
 	for (int i(size - 1); 0 <= i; --i) {
 
-		GluedParticle &gp = glued_particles.write[i];
+		GluedParticleData &gp = glued_particles_data.write[i];
 
-		if (gp.state == GluedParticle::GLUED_PARTICLE_STATE_OUT) {
+		if (gp.state == GluedParticleData::GLUED_PARTICLE_STATE_OUT) {
 
-			cmds = ParticlePhysicsServer::get_singleton()->body_get_commands(gp.particle_body->get_rid());
-			cmds->set_particle_mass(gp.particle_index, gp.previous_mass);
-			glued_particles.write[i] = glued_particles[--size];
+			cmds->set_particle_mass(glued_particles[i], gp.previous_mass);
+			glued_particles.write[i] = glued_particles[size - 1];
+			glued_particles_data.write[i] = glued_particles_data[--size];
 			continue;
 
-		} else if (gp.state == GluedParticle::GLUED_PARTICLE_STATE_IN) {
+		} else if (gp.state == GluedParticleData::GLUED_PARTICLE_STATE_IN) {
 
-			if (!gp.particle_body) {
-				gp.particle_body = cast_to<ParticleBody>(get_node(gp.particle_body_path));
-			}
-			ERR_FAIL_COND(!gp.particle_body);
-
-			cmds = ParticlePhysicsServer::get_singleton()->body_get_commands(gp.particle_body->get_rid());
-			gp.state = GluedParticle::GLUED_PARTICLE_STATE_IDLE;
-			gp.previous_mass = cmds->get_particle_mass(gp.particle_index);
+			gp.state = GluedParticleData::GLUED_PARTICLE_STATE_IDLE;
+			gp.previous_mass = cmds->get_particle_mass(glued_particles[i]);
 			if (!allow_particles_with_zero_mass && !gp.previous_mass) {
-				glued_particles.write[i] = glued_particles[--size];
+				glued_particles.write[i] = glued_particles[size - 1];
+				glued_particles_data.write[i] = glued_particles_data[--size];
 				continue;
 			}
-			gp.offset = get_global_transform().xform_inv(cmds->get_particle_position(gp.particle_index));
+			gp.offset = get_global_transform().xform_inv(cmds->get_particle_position(glued_particles[i]));
 
-			pull(gp, cmds);
+			pull(glued_particles[i], gp, cmds);
 		} else {
 
-			cmds = ParticlePhysicsServer::get_singleton()->body_get_commands(gp.particle_body->get_rid());
-			pull(gp, cmds);
+			pull(glued_particles[i], gp, cmds);
 		}
 	}
 	glued_particles.resize(size);
+	glued_particles_data.resize(size);
 }
 
-void PhysicsParticleGlue::pull(const GluedParticle &p_glued_particle, ParticleBodyCommands *p_cmds) {
+void PhysicsParticleGlue::pull(int p_particle, const GluedParticleData &p_glued_particle, ParticleBodyCommands *p_cmds) {
 
 	if (0 > pull_force) {
-		p_cmds->set_particle_position_mass(p_glued_particle.particle_index, get_global_transform().xform(p_glued_particle.offset), .0);
+
+		p_cmds->set_particle_position_mass(p_particle, get_global_transform().xform(p_glued_particle.offset), .0);
 	} else {
 
 		Vector3 target_position = get_global_transform().xform(p_glued_particle.offset);
-		Vector3 particle_pos(p_cmds->get_particle_position(p_glued_particle.particle_index));
+		Vector3 particle_pos(p_cmds->get_particle_position(p_particle));
 
 		Vector3 delta(target_position - particle_pos);
 
-		p_cmds->set_particle_velocity(p_glued_particle.particle_index, delta * pull_force);
+		p_cmds->set_particle_velocity(p_particle, delta * pull_force);
 	}
 }
