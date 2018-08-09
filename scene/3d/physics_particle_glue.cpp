@@ -45,6 +45,9 @@ void PhysicsParticleGlue::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_glued_particles", "glued_particles"), &PhysicsParticleGlue::set_glued_particles);
 	ClassDB::bind_method(D_METHOD("get_glued_particles"), &PhysicsParticleGlue::get_glued_particles);
 
+	ClassDB::bind_method(D_METHOD("set_glued_particles_offsets", "offsets"), &PhysicsParticleGlue::set_glued_particles_offsets);
+	ClassDB::bind_method(D_METHOD("get_glued_particles_offsets"), &PhysicsParticleGlue::get_glued_particles_offsets);
+
 	ClassDB::bind_method(D_METHOD("set_allow_particles_with_zero_mass", "allow"), &PhysicsParticleGlue::set_allow_particles_with_zero_mass);
 	ClassDB::bind_method(D_METHOD("get_allow_particles_with_zero_mass"), &PhysicsParticleGlue::get_allow_particles_with_zero_mass);
 
@@ -97,11 +100,20 @@ NodePath PhysicsParticleGlue::get_body_path() const {
 
 void PhysicsParticleGlue::set_glued_particles(Vector<int> p_particles) {
 	glued_particles = p_particles;
+	glued_particles_offsets.resize(glued_particles.size());
 	glued_particles_data.resize(glued_particles.size());
 }
 
 Vector<int> PhysicsParticleGlue::get_glued_particles() const {
 	return glued_particles;
+}
+
+void PhysicsParticleGlue::set_glued_particles_offsets(Vector<Vector3> p_particles) {
+	glued_particles_offsets = p_particles;
+}
+
+Vector<Vector3> PhysicsParticleGlue::get_glued_particles_offsets() const {
+	return glued_particles_offsets;
 }
 
 void PhysicsParticleGlue::set_allow_particles_with_zero_mass(bool p_allow) {

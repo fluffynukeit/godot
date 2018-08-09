@@ -51,7 +51,6 @@ class PhysicsParticleGlue : public Spatial {
 		};
 
 		int state;
-		Vector3 offset;
 		real_t previous_mass;
 
 		GluedParticleData() :
@@ -67,6 +66,7 @@ class PhysicsParticleGlue : public Spatial {
 	ParticleBody *particle_body;
 
 	Vector<int> glued_particles;
+	Vector<Vector3> glued_particles_offsets;
 	Vector<GluedParticleData> glued_particles_data;
 	bool allow_particles_with_zero_mass;
 	real_t pull_force;
@@ -84,6 +84,9 @@ public:
 
 	void set_glued_particles(Vector<int> p_particles);
 	Vector<int> get_glued_particles() const;
+
+	void set_glued_particles_offsets(Vector<Vector3> p_particles);
+	Vector<Vector3> get_glued_particles_offsets() const;
 
 	void set_allow_particles_with_zero_mass(bool p_allow);
 	bool get_allow_particles_with_zero_mass() const;
