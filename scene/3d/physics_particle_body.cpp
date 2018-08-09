@@ -48,6 +48,9 @@ void ParticleBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_pressure", "pressure"), &ParticleBody::set_pressure);
 	ClassDB::bind_method(D_METHOD("get_pressure"), &ParticleBody::get_pressure);
 
+	ClassDB::bind_method(D_METHOD("set_update_spatial_transform", "update"), &ParticleBody::set_update_spatial_transform);
+	ClassDB::bind_method(D_METHOD("get_update_spatial_transform"), &ParticleBody::get_update_spatial_transform);
+
 	ClassDB::bind_method(D_METHOD("remove_particle", "particle_index"), &ParticleBody::remove_particle);
 	ClassDB::bind_method(D_METHOD("remove_rigid", "rigid_index"), &ParticleBody::remove_rigid);
 
@@ -91,6 +94,7 @@ void ParticleBody::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "particle_body_model", PROPERTY_HINT_RESOURCE_TYPE, "ParticleBodyModel"), "set_particle_body_model", "get_particle_body_model");
 
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "pressure"), "set_pressure", "get_pressure");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "update_spatial_transform"), "set_update_spatial_transform", "get_update_spatial_transform");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitorable"), "set_monitorable", "is_monitorable");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitoring_primitives_contacts"), "set_monitoring_primitives_contacts", "is_monitoring_primitives_contacts");
 
@@ -107,6 +111,7 @@ void ParticleBody::_bind_methods() {
 
 ParticleBody::ParticleBody() :
 		ParticleObject(ParticlePhysicsServer::get_singleton()->body_create()),
+		update_spatial_transform(false),
 		reload_particle_model(true),
 		particle_body_mesh(NULL),
 		draw_gizmo(false) {
@@ -146,6 +151,30 @@ String ParticleBody::get_configuration_warning() const {
 		}
 		warning += TTR("The body will be ignored until you set a ParticleBodyModel.\nTo craete one is possible to use the ParticleBody menu in the top bar.");
 	}
+
+	if (!update_spatial_transform)
+		if (get_child_count()) {
+			if (get_child_count() != 1 || !particle_body_mesh) {
+				bool has_spatial = false;
+
+				for (int i(0); i < get_child_count(); ++i) {
+
+					Spatial *s = cast_to<Spatial>(get_child(i));
+					if (s && s != particle_body_mesh) {
+						has_spatial = true;
+						break;
+					}
+				}
+
+				if (has_spatial) {
+
+					if (warning != String()) {
+						warning += "\n\n";
+					}
+					warning += TTR("The child spatial node will not follow this ParticleBody untill you set \"update_spatial_transform\" to TRUE.");
+				}
+			}
+		}
 
 	return warning;
 }
@@ -246,6 +275,14 @@ real_t ParticleBody::get_pressure() const {
 	return ParticlePhysicsServer::get_singleton()->body_get_pressure(rid);
 }
 
+void ParticleBody::set_update_spatial_transform(bool p_update) {
+	update_spatial_transform = p_update;
+}
+
+bool ParticleBody::get_update_spatial_transform() const {
+	return update_spatial_transform;
+}
+
 int ParticleBody::get_particle_count() const {
 	return ParticlePhysicsServer::get_singleton()->body_get_particle_count(rid);
 }
@@ -298,6 +335,8 @@ void ParticleBody::commands_process_internal(Object *p_cmds) {
 		emit_signal("resource_loaded");
 	}
 
+	update_transform(cmds);
+
 	if (particle_body_mesh)
 		particle_body_mesh->update_mesh(cmds);
 	debug_update(cmds);
@@ -305,6 +344,26 @@ void ParticleBody::commands_process_internal(Object *p_cmds) {
 	if (!get_script().is_null() && has_method("_commands_process")) {
 		call("_commands_process", p_cmds);
 	}
+}
+
+void ParticleBody::update_transform(ParticleBodyCommands *p_cmds) {
+
+	if (!update_spatial_transform)
+		return;
+
+	const int rigids_count = ParticlePhysicsServer::get_singleton()->body_get_rigid_count(get_rid());
+
+	if (!rigids_count)
+		return;
+
+	Transform average_transform(Basis(p_cmds->get_rigid_rotation(0)), p_cmds->get_rigid_position(0));
+
+	for (int i = 1; i < rigids_count; ++i) {
+
+		average_transform = average_transform.interpolate_with(Transform(Basis(p_cmds->get_rigid_rotation(i)), p_cmds->get_rigid_position(i)), 0.5);
+	}
+
+	set_global_transform(average_transform);
 }
 
 void ParticleBody::on_primitive_contact(Object *p_cmds, Object *p_primitive_object, int p_particle_index, Vector3 p_velocity, Vector3 p_normal) {

@@ -46,11 +46,11 @@ class ParticleBodyMeshInstance;
 class ParticleBody : public ParticleObject {
 	GDCLASS(ParticleBody, ParticleObject);
 
+	bool update_spatial_transform;
+
 	bool reload_particle_model;
 	ParticleBodyMeshInstance *particle_body_mesh;
 	Ref<ParticleBodyModel> particle_body_model;
-
-	Vector3 COM_global_position;
 
 	Vector<MeshInstance *> debug_particles_mesh;
 	Ref<SphereMesh> debug_particle_mesh;
@@ -79,6 +79,9 @@ public:
 
 	void set_pressure(real_t p_pressure);
 	real_t get_pressure() const;
+
+	void set_update_spatial_transform(bool p_update);
+	bool get_update_spatial_transform() const;
 
 	void remove_particle(int p_particle_index);
 	void remove_rigid(int p_rigid_index);
@@ -115,6 +118,7 @@ protected:
 	void resource_changed(RES p_res);
 
 	void commands_process_internal(Object *p_cmds);
+	void update_transform(ParticleBodyCommands *p_cmds);
 	void on_primitive_contact(Object *p_cmds, Object *p_primitive_object, int p_particle_index, Vector3 p_velocity, Vector3 p_normal);
 
 private:
