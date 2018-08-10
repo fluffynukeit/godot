@@ -46,11 +46,12 @@ class PhysicsParticleGlue : public Spatial {
 
 		enum GluedParticleState {
 			GLUED_PARTICLE_STATE_IN,
+			GLUED_PARTICLE_STATE_IN_RUNTIME,
 			GLUED_PARTICLE_STATE_OUT,
 			GLUED_PARTICLE_STATE_IDLE
 		};
 
-		int state;
+		GluedParticleState state;
 		real_t previous_mass;
 
 		GluedParticleData() :
