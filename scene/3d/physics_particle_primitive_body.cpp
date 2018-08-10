@@ -34,6 +34,7 @@
 
 #include "physics_particle_primitive_body.h"
 #include "engine.h"
+#include "physics_particle_body.h"
 #include "scene/3d/mesh_instance.h"
 
 void ParticlePrimitiveBody::_bind_methods() {
@@ -199,7 +200,7 @@ bool ParticlePrimitiveBody::is_callback_sync_enabled() const {
 
 void ParticlePrimitiveBody::_on_particle_contact(Object *p_particle_body, int p_particle_index, Vector3 p_velocity, Vector3 p_normal) {
 
-	emit_signal("particle_contact", p_particle_body, p_particle_index, p_velocity, p_normal);
+	emit_signal("particle_contact", ParticlePhysicsServer::get_singleton()->body_get_commands(cast_to<ParticleBody>(p_particle_body)->get_rid()), p_particle_body, p_particle_index, p_velocity, p_normal);
 }
 
 void ParticlePrimitiveBody::_on_sync() {
