@@ -58,7 +58,6 @@ class PhysicsParticleGlue : public Spatial {
 
 		GluedParticleData(const GluedParticleData &p_other) :
 				state(p_other.state),
-				offset(p_other.offset),
 				previous_mass(p_other.previous_mass) {}
 	};
 
@@ -68,8 +67,10 @@ class PhysicsParticleGlue : public Spatial {
 	Vector<int> glued_particles;
 	Vector<Vector3> glued_particles_offsets;
 	Vector<GluedParticleData> glued_particles_data;
+
 	bool allow_particles_with_zero_mass;
 	real_t pull_force;
+
 	bool _are_particles_dirty;
 
 	static void _bind_methods();
@@ -103,7 +104,12 @@ public:
 
 private:
 	void particle_physics_sync(RID p_space);
-	void pull(int p_particle, const GluedParticleData &p_glued_particle, ParticleBodyCommands *p_cmds);
+	void pull(int p_particle, const Vector3 &p_offset, const GluedParticleData &p_glued_particle, ParticleBodyCommands *p_cmds);
+
+	void _changed_callback(Object *p_changed, const char *p_prop);
+
+	void _resolve_particle_body();
+	void _compute_offsets();
 };
 
 #endif // PHYSICS_PARTICLE_GLUE_H
