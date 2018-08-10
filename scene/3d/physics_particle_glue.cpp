@@ -152,10 +152,14 @@ int PhysicsParticleGlue::find_particle(int p_particle_index) {
 void PhysicsParticleGlue::add_particle(int p_particle_index) {
 	int i = find_particle(p_particle_index);
 	if (i < 0) {
+		i = glued_particles.size();
 		glued_particles.push_back(p_particle_index);
-		glued_particles_offsets.resize(glued_particles_offsets.size() + 1);
-		glued_particles_data.resize(glued_particles_data.size() + 1);
+		glued_particles_offsets.resize(i + 1);
+		glued_particles_data.resize(i + 1);
 	}
+
+	glued_particles_data.write[i].state = GluedParticleData::GLUED_PARTICLE_STATE_IN_RUNTIME;
+
 	_are_particles_dirty = true;
 	_compute_offsets();
 }
@@ -180,7 +184,6 @@ void PhysicsParticleGlue::particle_physics_sync(RID p_space) {
 	if (0 > pull_force)
 		_are_particles_dirty = false;
 
-	_resolve_particle_body();
 	ERR_FAIL_COND(!particle_body);
 
 	ParticleBodyCommands *cmds = ParticlePhysicsServer::get_singleton()->body_get_commands(particle_body->get_rid());
@@ -192,17 +195,19 @@ void PhysicsParticleGlue::particle_physics_sync(RID p_space) {
 
 		GluedParticleData &gp = glued_particles_data.write[i];
 
-		if (gp.state == GluedParticleData::GLUED_PARTICLE_STATE_OUT) {
+		if (gp.state == GluedParticleData::GLUED_PARTICLE_STATE_IDLE) {
+
+			pull(glued_particles[i], glued_particles_offsets[i], gp, cmds);
+
+		} else if (gp.state == GluedParticleData::GLUED_PARTICLE_STATE_OUT) {
 
 			cmds->set_particle_mass(glued_particles[i], gp.previous_mass);
 			glued_particles.write[i] = glued_particles[size - 1];
 			glued_particles_offsets.write[i] = glued_particles_offsets[size - 1];
 			glued_particles_data.write[i] = glued_particles_data[--size];
-			continue;
 
-		} else if (gp.state == GluedParticleData::GLUED_PARTICLE_STATE_IN) {
+		} else {
 
-			gp.state = GluedParticleData::GLUED_PARTICLE_STATE_IDLE;
 			gp.previous_mass = cmds->get_particle_mass(glued_particles[i]);
 			if (!allow_particles_with_zero_mass && !gp.previous_mass) {
 				glued_particles.write[i] = glued_particles[size - 1];
@@ -211,8 +216,11 @@ void PhysicsParticleGlue::particle_physics_sync(RID p_space) {
 				continue;
 			}
 
-			pull(glued_particles[i], glued_particles_offsets[i], gp, cmds);
-		} else {
+			if (gp.state == GluedParticleData::GLUED_PARTICLE_STATE_IN_RUNTIME) {
+				glued_particles_offsets.write[i] = get_global_transform().xform_inv(cmds->get_particle_position(glued_particles[i]));
+			}
+
+			gp.state = GluedParticleData::GLUED_PARTICLE_STATE_IDLE;
 
 			pull(glued_particles[i], glued_particles_offsets[i], gp, cmds);
 		}
