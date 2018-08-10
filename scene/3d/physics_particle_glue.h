@@ -42,6 +42,7 @@
 class PhysicsParticleGlue : public Spatial {
 	GDCLASS(PhysicsParticleGlue, Spatial);
 
+public:
 	struct GluedParticleData {
 
 		enum GluedParticleState {
@@ -62,6 +63,7 @@ class PhysicsParticleGlue : public Spatial {
 				previous_mass(p_other.previous_mass) {}
 	};
 
+private:
 	NodePath particle_body_path;
 	ParticleBody *particle_body;
 
@@ -80,6 +82,7 @@ class PhysicsParticleGlue : public Spatial {
 
 public:
 	PhysicsParticleGlue();
+	virtual ~PhysicsParticleGlue();
 
 	void set_body_path(const NodePath &p_path);
 	NodePath get_body_path() const;
@@ -105,12 +108,31 @@ public:
 
 private:
 	void particle_physics_sync(RID p_space);
-	void pull(int p_particle, const Vector3 &p_offset, const GluedParticleData &p_glued_particle, ParticleBodyCommands *p_cmds);
+	void pull(int p_particle, const Vector3 &p_offset, ParticleBodyCommands *p_cmds);
 
 	void _changed_callback(Object *p_changed, const char *p_prop);
 
 	void _resolve_particle_body();
 	void _compute_offsets();
+	void _remove_glued_particles();
+};
+
+class PhysicsParticleGlueRemoval : public Object {
+	GDCLASS(PhysicsParticleGlueRemoval, Object);
+
+public:
+	Vector<int> glued_particles;
+	Vector<Vector3> glued_particles_offsets;
+	Vector<PhysicsParticleGlue::GluedParticleData> glued_particles_data;
+
+	RID space;
+	ParticleBody *particle_body;
+
+	PhysicsParticleGlueRemoval();
+
+	static void _bind_methods();
+
+	void on_sync(RID p_space);
 };
 
 #endif // PHYSICS_PARTICLE_GLUE_H
