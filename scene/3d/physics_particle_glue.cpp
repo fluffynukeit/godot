@@ -34,6 +34,8 @@
 
 #include "physics_particle_glue.h"
 
+#include "core/core_string_names.h"
+#include "core/engine.h"
 #include "scene/main/viewport.h"
 #include "servers/particle_physics_server.h"
 
@@ -64,6 +66,7 @@ void PhysicsParticleGlue::_bind_methods() {
 
 	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "body_path"), "set_body_path", "get_body_path");
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_INT_ARRAY, "glued_particles"), "set_glued_particles", "get_glued_particles");
+	ADD_PROPERTY(PropertyInfo(Variant::POOL_INT_ARRAY, "glued_particles_offsets"), "set_glued_particles_offsets", "get_glued_particles_offsets");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "allow_particles_with_zero_mass"), "set_allow_particles_with_zero_mass", "get_allow_particles_with_zero_mass");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "pull_force"), "set_pull_force", "get_pull_force");
 }
@@ -72,12 +75,14 @@ void PhysicsParticleGlue::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_ENTER_TREE:
 			ParticlePhysicsServer::get_singleton()->connect("sync_end", this, "particle_physics_sync");
+			_resolve_particle_body();
 			break;
 		case NOTIFICATION_EXIT_TREE:
 			ParticlePhysicsServer::get_singleton()->disconnect("sync_end", this, "particle_physics_sync");
 			break;
 		case NOTIFICATION_TRANSFORM_CHANGED:
 			_are_particles_dirty = true;
+			_compute_offsets();
 			break;
 	}
 }
@@ -92,6 +97,9 @@ PhysicsParticleGlue::PhysicsParticleGlue() :
 
 void PhysicsParticleGlue::set_body_path(const NodePath &p_path) {
 	particle_body_path = p_path;
+
+	_resolve_particle_body();
+	_compute_offsets();
 }
 
 NodePath PhysicsParticleGlue::get_body_path() const {
@@ -102,6 +110,7 @@ void PhysicsParticleGlue::set_glued_particles(Vector<int> p_particles) {
 	glued_particles = p_particles;
 	glued_particles_offsets.resize(glued_particles.size());
 	glued_particles_data.resize(glued_particles.size());
+	_compute_offsets();
 }
 
 Vector<int> PhysicsParticleGlue::get_glued_particles() const {
@@ -144,9 +153,11 @@ void PhysicsParticleGlue::add_particle(int p_particle_index) {
 	int i = find_particle(p_particle_index);
 	if (i < 0) {
 		glued_particles.push_back(p_particle_index);
+		glued_particles_offsets.resize(glued_particles_offsets.size() + 1);
 		glued_particles_data.resize(glued_particles_data.size() + 1);
 	}
 	_are_particles_dirty = true;
+	_compute_offsets();
 }
 
 void PhysicsParticleGlue::remove_particle(int p_position) {
@@ -169,14 +180,13 @@ void PhysicsParticleGlue::particle_physics_sync(RID p_space) {
 	if (0 > pull_force)
 		_are_particles_dirty = false;
 
-	if (!particle_body && !particle_body_path.is_empty())
-		particle_body = cast_to<ParticleBody>(get_node(particle_body_path));
-
+	_resolve_particle_body();
 	ERR_FAIL_COND(!particle_body);
 
 	ParticleBodyCommands *cmds = ParticlePhysicsServer::get_singleton()->body_get_commands(particle_body->get_rid());
 
 	int size(glued_particles.size());
+	glued_particles_offsets.resize(size); // Avoid differences
 	glued_particles_data.resize(size); // Avoid differences
 	for (int i(size - 1); 0 <= i; --i) {
 
@@ -186,6 +196,7 @@ void PhysicsParticleGlue::particle_physics_sync(RID p_space) {
 
 			cmds->set_particle_mass(glued_particles[i], gp.previous_mass);
 			glued_particles.write[i] = glued_particles[size - 1];
+			glued_particles_offsets.write[i] = glued_particles_offsets[size - 1];
 			glued_particles_data.write[i] = glued_particles_data[--size];
 			continue;
 
@@ -195,33 +206,75 @@ void PhysicsParticleGlue::particle_physics_sync(RID p_space) {
 			gp.previous_mass = cmds->get_particle_mass(glued_particles[i]);
 			if (!allow_particles_with_zero_mass && !gp.previous_mass) {
 				glued_particles.write[i] = glued_particles[size - 1];
+				glued_particles_offsets.write[i] = glued_particles_offsets[size - 1];
 				glued_particles_data.write[i] = glued_particles_data[--size];
 				continue;
 			}
-			gp.offset = get_global_transform().xform_inv(cmds->get_particle_position(glued_particles[i]));
 
-			pull(glued_particles[i], gp, cmds);
+			pull(glued_particles[i], glued_particles_offsets[i], gp, cmds);
 		} else {
 
-			pull(glued_particles[i], gp, cmds);
+			pull(glued_particles[i], glued_particles_offsets[i], gp, cmds);
 		}
 	}
 	glued_particles.resize(size);
+	glued_particles_offsets.resize(size);
 	glued_particles_data.resize(size);
 }
 
-void PhysicsParticleGlue::pull(int p_particle, const GluedParticleData &p_glued_particle, ParticleBodyCommands *p_cmds) {
+void PhysicsParticleGlue::pull(int p_particle, const Vector3 &p_offset, const GluedParticleData &p_glued_particle, ParticleBodyCommands *p_cmds) {
 
 	if (0 > pull_force) {
 
-		p_cmds->set_particle_position_mass(p_particle, get_global_transform().xform(p_glued_particle.offset), .0);
+		p_cmds->set_particle_position_mass(p_particle, get_global_transform().xform(p_offset), .0);
 	} else {
 
-		Vector3 target_position = get_global_transform().xform(p_glued_particle.offset);
+		Vector3 target_position = get_global_transform().xform(p_offset);
 		Vector3 particle_pos(p_cmds->get_particle_position(p_particle));
 
 		Vector3 delta(target_position - particle_pos);
 
 		p_cmds->set_particle_velocity(p_particle, delta * pull_force);
+	}
+}
+
+void PhysicsParticleGlue::_changed_callback(Object *p_changed, const char *p_prop) {
+	if (p_changed == particle_body)
+		_compute_offsets();
+}
+
+void PhysicsParticleGlue::_resolve_particle_body() {
+
+	if (Engine::get_singleton()->is_editor_hint()) {
+
+		if (particle_body)
+			particle_body->remove_change_receptor(this);
+
+		if (!particle_body_path.is_empty() && is_inside_tree())
+			particle_body = cast_to<ParticleBody>(get_node(particle_body_path));
+		else
+			particle_body = NULL;
+
+		if (particle_body)
+			particle_body->add_change_receptor(this);
+
+	} else {
+		particle_body = cast_to<ParticleBody>(get_node(particle_body_path));
+	}
+}
+
+void PhysicsParticleGlue::_compute_offsets() {
+
+	if (!Engine::get_singleton()->is_editor_hint())
+		return;
+
+	if (!particle_body)
+		return;
+
+	PoolVector<Vector3>::Read particles_r = particle_body->get_particle_body_model()->get_particles().read();
+
+	for (int i(glued_particles.size() - 1); 0 <= i; --i) {
+
+		glued_particles_offsets.write[i] = get_global_transform().xform_inv(particle_body->get_global_transform().xform(particles_r[glued_particles[i]]));
 	}
 }
