@@ -319,7 +319,7 @@ public:
 	void notify_change() { changed = true; }
 	void changes_synced() { changed = false; }
 
-	virtual void _on_mapped() { changed = false; }
+	virtual void _on_mapped() {}
 	virtual void _on_unmapped() {}
 	virtual void _on_resized(FlexUnit p_size) { changed = true; }
 	virtual void _on_copied_unit(FlexUnit p_to, FlexUnit p_from) { changed = true; }
