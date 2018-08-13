@@ -79,6 +79,7 @@ class ParticleBodyConstraint : public Node {
 
 public:
 	ParticleBodyConstraint();
+	~ParticleBodyConstraint();
 
 	void set_particle_body0_path(NodePath p_path);
 	NodePath get_particle_body0_path() const;

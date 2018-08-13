@@ -183,6 +183,10 @@ ParticleBodyConstraint::ParticleBodyConstraint() :
 		particle_body1(NULL) {
 }
 
+ParticleBodyConstraint::~ParticleBodyConstraint() {
+	_destroy();
+}
+
 void ParticleBodyConstraint::set_particle_body0_path(NodePath p_path) {
 	particle_body0_path = p_path;
 	_reload();
