@@ -3575,8 +3575,12 @@ void ParticleBodySpatialGizmoPlugin::redraw(EditorSpatialGizmo *p_gizmo) {
 		material_fixed_selected = get_material("particle_body_particle_material_selected_fixed");
 	}
 
+	if (body->get_particle_body_model()->get_masses().size() != particles.size())
+		return;
+
 	PoolVector<Vector3>::Read r = particles.read();
 	PoolVector<real_t>::Read masses_r = body->get_particle_body_model()->get_masses().read();
+
 	for (int i(particles.size() - 1); 0 <= i; --i) {
 
 		add_solid_sphere(p_gizmo, masses_r[i] == 0 ? (body->selected_particles.find(i) != -1 ? material_fixed_selected : material_fixed) : (body->selected_particles.find(i) != -1 ? material_selected : material), r[i]);
