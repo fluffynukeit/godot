@@ -343,6 +343,10 @@ void ParticleBodyConstraint::on_sync(Object *p_cmds) {
 			case CONSTRAINT_STATE_IN:
 			case CONSTRAINT_STATE_CHANGED: {
 
+				if (0 > constraint.length) {
+					constraint.length = cmds->get_distance(constraint.body0_particle_index, constraint.body1_particle_index);
+				}
+
 				if (!constraint.created) {
 					cmds->add_spring(constraint.body0_particle_index, constraint.body1_particle_index, constraint.length, constraint.stiffness);
 					constraint.created = true;

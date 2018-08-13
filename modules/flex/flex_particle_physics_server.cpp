@@ -304,6 +304,10 @@ void FlexParticleBodyConstraintCommands::set_spring(int p_index, int p_body0_par
 	constraint->space->get_springs_memory()->set_stiffness(constraint->springs_mchunk, p_index, p_stiffness);
 }
 
+real_t FlexParticleBodyConstraintCommands::get_distance(int p_body0_particle, int p_body1_particle) {
+	return (constraint->body0->get_particle_position(p_body0_particle) - constraint->body1->get_particle_position(p_body1_particle)).length();
+}
+
 FlexParticlePhysicsServer *FlexParticlePhysicsServer::singleton = NULL;
 
 FlexParticlePhysicsServer::FlexParticlePhysicsServer() :
