@@ -98,6 +98,9 @@ public:
 
 	void remove_constraint(int p_index);
 
+	int get_constraint_body0_particle_index(int p_index) const;
+	int get_constraint_body1_particle_index(int p_index) const;
+
 	void set_constraint_length(int p_index, real_t p_length);
 	real_t get_constraint_length(int p_index) const;
 

@@ -67,6 +67,9 @@ void ParticleBodyConstraint::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("remove_constraint", "constraint_index"), &ParticleBodyConstraint::remove_constraint);
 
+	ClassDB::bind_method(D_METHOD("get_constraint_body0_particle_index", "constraint_index"), &ParticleBodyConstraint::get_constraint_body0_particle_index);
+	ClassDB::bind_method(D_METHOD("get_constraint_body1_particle_index", "constraint_index"), &ParticleBodyConstraint::get_constraint_body1_particle_index);
+
 	ClassDB::bind_method(D_METHOD("set_constraint_length", "constraint_index", "length"), &ParticleBodyConstraint::set_constraint_length);
 	ClassDB::bind_method(D_METHOD("get_constraint_length", "constraint_index"), &ParticleBodyConstraint::get_constraint_length);
 
@@ -74,6 +77,8 @@ void ParticleBodyConstraint::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_constraint_stiffness", "constraint_index"), &ParticleBodyConstraint::get_constraint_stiffness);
 
 	ClassDB::bind_method(D_METHOD("on_sync", "cmds"), &ParticleBodyConstraint::on_sync);
+
+	BIND_VMETHOD(MethodInfo("_commands_process", PropertyInfo(Variant::OBJECT, "commands", PROPERTY_HINT_RESOURCE_TYPE, "ParticleBodyConstraintCommands")));
 
 	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "particle_body0_path"), "set_particle_body0_path", "get_particle_body0_path");
 	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "particle_body1_path"), "set_particle_body1_path", "get_particle_body1_path");
@@ -252,6 +257,16 @@ void ParticleBodyConstraint::remove_constraint(int p_index) {
 	ParticlePhysicsServer::get_singleton()->constraint_set_callback(rid, this, "on_sync");
 }
 
+int ParticleBodyConstraint::get_constraint_body0_particle_index(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, constraints.size(), -1);
+	return constraints[p_index].body0_particle_index;
+}
+
+int ParticleBodyConstraint::get_constraint_body1_particle_index(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, constraints.size(), -1);
+	return constraints[p_index].body1_particle_index;
+}
+
 void ParticleBodyConstraint::set_constraint_length(int p_index, real_t p_length) {
 	ERR_FAIL_INDEX(p_index, constraints.size());
 	constraints.write[p_index].length = p_length;
@@ -372,5 +387,9 @@ void ParticleBodyConstraint::on_sync(Object *p_cmds) {
 
 	constraints.resize(size);
 
-	ParticlePhysicsServer::get_singleton()->constraint_set_callback(rid, NULL, "");
+	if (!get_script().is_null() && has_method("_commands_process")) {
+		call("_commands_process", p_cmds);
+	} else {
+		ParticlePhysicsServer::get_singleton()->constraint_set_callback(rid, NULL, "");
+	}
 }

@@ -99,7 +99,7 @@ public:
 	virtual int get_spring_count() const;
 	virtual int add_spring(int p_body0_particle, int p_body1_particle, float p_length, float p_stiffness);
 	virtual void set_spring(int p_index, int p_body0_particle, int p_body1_particle, float p_length, float p_stiffness);
-	virtual real_t get_distance(int p_body0_particle, int p_body1_particle);
+	virtual real_t get_distance(int p_body0_particle, int p_body1_particle) const;
 };
 
 class FlexParticlePhysicsServer : public ParticlePhysicsServer {

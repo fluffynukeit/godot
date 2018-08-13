@@ -24,6 +24,8 @@ void ParticleBodyCommands::_bind_methods() {
 }
 
 void ParticleBodyConstraintCommands::_bind_methods() {
+
+	ClassDB::bind_method(D_METHOD("get_distance", "p_body0_particle", "p_body1_particle"), &ParticleBodyConstraintCommands::get_distance);
 }
 
 ParticlePhysicsServer *ParticlePhysicsServer::singleton = NULL;
