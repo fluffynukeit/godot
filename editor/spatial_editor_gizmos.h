@@ -328,6 +328,8 @@ class ParticlePrimitiveShapeSpatialGizmoPlugin : public EditorSpatialGizmoPlugin
 public:
 	ParticlePrimitiveShapeSpatialGizmoPlugin();
 
+	virtual bool has_gizmo(Spatial *p_spatial);
+	virtual String get_name() const;
 	virtual String get_handle_name(const EditorSpatialGizmo *p_gizmo, int p_idx) const;
 	virtual Variant get_handle_value(EditorSpatialGizmo *p_gizmo, int p_idx) const;
 	virtual void set_handle(EditorSpatialGizmo *p_gizmo, int p_idx, Camera *p_camera, const Point2 &p_point);
@@ -340,20 +342,20 @@ class ParticleBodySpatialGizmoPlugin : public EditorSpatialGizmoPlugin {
 
 	SphereMesh spherem;
 	real_t radius;
-	Vector<int> selected_particles;
 
 public:
 	ParticleBodySpatialGizmoPlugin();
 
+	virtual bool has_gizmo(Spatial *p_spatial);
+	virtual String get_name() const;
 	virtual void redraw(EditorSpatialGizmo *p_gizmo);
 	virtual bool intersect_frustum(EditorSpatialGizmo *p_gizmo, const Camera *p_camera, const Vector<Plane> &p_frustum);
 	virtual bool intersect_ray(EditorSpatialGizmo *p_gizmo, Camera *p_camera, const Point2 &p_point, Vector3 &r_pos, Vector3 &r_normal, int *r_gizmo_handle = NULL, bool p_sec_first = false);
 
-	const Vector<int> &get_selected_particles() const { return selected_particles; }
+	Ref<SpatialMaterial> create_material_pb(const Color &p_color);
 
 protected:
 	void add_solid_sphere(EditorSpatialGizmo *p_gizmo, Ref<Material> &p_material, Vector3 p_position);
-	Ref<SpatialMaterial> create_material_pb(const String &p_name, const Color &p_color, bool p_selected);
 };
 
 class CollisionShapeSpatialGizmoPlugin : public EditorSpatialGizmoPlugin {

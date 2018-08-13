@@ -171,14 +171,10 @@ void ParticleBodyEditor::_mass_changed(real_t p_mass) {
 	if (model.is_null())
 		return;
 
-	Ref<ParticleBodySpatialGizmo> gizmo = node->get_gizmo();
-	if (gizmo.is_null())
-		return;
-
 	PoolVector<real_t>::Write masses = model->get_masses_ref().write();
-	for (int i(0); i < gizmo->get_selected_particles().size(); ++i) {
+        for (int i(0); i < node->selected_particles.size(); ++i) {
 
-		masses[gizmo->get_selected_particles()[i]] = p_mass;
+                masses[node->selected_particles[i]] = p_mass;
 	}
 
 	node->update_gizmo();
@@ -218,22 +214,18 @@ void ParticleBodyEditor::_on_constraint_selected(NodePath p_path) {
 	ERR_FAIL_COND(-1 == body_index);
 	ERR_FAIL_COND(pb->get_particle_body_model().is_null());
 
-	Ref<ParticleBodySpatialGizmo> gizmo = node->get_gizmo();
-	if (gizmo.is_null())
-		return;
-
 	PoolVector<Vector3>::Read particles = pb->get_particle_body_model()->get_particles().read();
 
 	if (!body_index) {
 
-		for (int i(0); i < gizmo->get_selected_particles().size(); ++i) {
+                for (int i(0); i < node->selected_particles.size(); ++i) {
 
-			constraint->add_constraint(gizmo->get_selected_particles()[i], -1, particles[gizmo->get_selected_particles()[i]].length(), 1);
+                        constraint->add_constraint(node->selected_particles[i], -1, particles[node->selected_particles[i]].length(), 1);
 		}
 	} else {
-		for (int i(0); i < gizmo->get_selected_particles().size(); ++i) {
+                for (int i(0); i < node->selected_particles.size(); ++i) {
 
-			constraint->add_constraint(-1, gizmo->get_selected_particles()[i], particles[gizmo->get_selected_particles()[i]].length(), 1);
+                        constraint->add_constraint(-1, node->selected_particles[i], particles[node->selected_particles[i]].length(), 1);
 		}
 	}
 }
@@ -250,13 +242,9 @@ void ParticleBodyEditor::_on_glue_selected(NodePath p_path) {
 		return;
 	}
 
-	Ref<ParticleBodySpatialGizmo> gizmo = node->get_gizmo();
-	if (gizmo.is_null())
-		return;
+        for (int i(0); i < node->selected_particles.size(); ++i) {
 
-	for (int i(0); i < gizmo->get_selected_particles().size(); ++i) {
-
-		glue->add_particle(gizmo->get_selected_particles()[i]);
+                glue->add_particle(node->selected_particles[i]);
 	}
 }
 
@@ -474,11 +462,6 @@ void ParticleBodyEditor::redraw() {
 	if (!node)
 		return;
 
-	Ref<ParticleBodySpatialGizmo> gizmo = node->get_gizmo();
-
-	if (gizmo.is_null())
-		return;
-
 	if (node->get_particle_body_model().is_null())
 		return;
 
@@ -490,9 +473,9 @@ void ParticleBodyEditor::redraw() {
 	String particles = "";
 	real_t masses = -1;
 
-	for (int i = 0; i < gizmo->get_selected_particles().size(); ++i) {
+        for (int i = 0; i < node->selected_particles.size(); ++i) {
 
-		int particle = gizmo->get_selected_particles()[i];
+                int particle = node->selected_particles[i];
 
 		if (String() != particles)
 			particles += ", ";

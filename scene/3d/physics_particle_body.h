@@ -58,6 +58,7 @@ class ParticleBody : public ParticleObject {
 #ifdef TOOLS_ENABLED
 public:
 	bool draw_gizmo;
+        Vector<int> selected_particles;
 
 private:
 #endif
