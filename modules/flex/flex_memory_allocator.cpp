@@ -144,6 +144,9 @@ void FlexMemoryAllocator::sanitize(bool p_want_update_cache, bool p_trim) {
 
 MemoryChunk *FlexMemoryAllocator::allocate_chunk(FlexUnit p_size) {
 
+	if (p_size == 898)
+		int a = 0;
+
 	if (0 >= p_size)
 		return &zero_memory_chunk;
 
@@ -197,16 +200,16 @@ void FlexMemoryAllocator::deallocate_chunk(MemoryChunk *&r_chunk) {
 #endif
 
 	r_chunk->is_free = true;
-
-	sanitize(false, false); // Merge only, no cache update, no trim
-
 	cache.occupied_memory -= r_chunk->size;
+
 	// update cache
 	if (cache.biggest_free_chunk_size < r_chunk->size) {
 		cache.biggest_free_chunk_size = r_chunk->size;
 	}
 
 	r_chunk = NULL;
+
+	sanitize(false, false); // Merge only, no cache update, no trim
 }
 
 void FlexMemoryAllocator::resize_chunk(MemoryChunk *&r_chunk, FlexUnit p_size) {
