@@ -302,6 +302,16 @@ void ParticleBody::_notification(int p_what) {
 			ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SYNC, this, "commands_process_internal");
 			resource_changed(particle_body_model);
 
+			if (!particle_body_mesh) {
+				for (int i = 0; i < get_child_count(); ++i) {
+					ParticleBodyMeshInstance *m = cast_to<ParticleBodyMeshInstance>(get_child(i));
+					if (m) {
+						set_particle_body_mesh(m);
+						break;
+					}
+				}
+			}
+
 		} break;
 		case NOTIFICATION_TRANSFORM_CHANGED: {
 
