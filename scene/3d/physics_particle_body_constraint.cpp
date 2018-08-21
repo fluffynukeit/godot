@@ -174,7 +174,7 @@ void ParticleBodyConstraint::_get_property_list(List<PropertyInfo> *p_list) cons
 
 void ParticleBodyConstraint::_notification(int p_what) {
 	switch (p_what) {
-		case NOTIFICATION_ENTER_TREE:
+		case NOTIFICATION_READY:
 			_reload();
 			break;
 		case NOTIFICATION_EXIT_TREE:
@@ -313,19 +313,20 @@ void ParticleBodyConstraint::_reload() {
 
 	if (is_inside_tree() && !particle_body0_path.is_empty()) {
 		ParticleBody *pb = cast_to<ParticleBody>(get_node(particle_body0_path));
-		if (pb != particle_body0) {
-			particle_body0 = pb;
-			body_changed = true;
-		}
+		ERR_EXPLAIN(particle_body0_path);
+		ERR_FAIL_COND(!pb);
+		particle_body0 = pb;
+		body_changed = true;
+
 	} else
 		particle_body0 = NULL;
 
 	if (is_inside_tree() && !particle_body1_path.is_empty()) {
 		ParticleBody *pb = cast_to<ParticleBody>(get_node(particle_body1_path));
-		if (pb != particle_body1) {
-			particle_body1 = pb;
-			body_changed = true;
-		}
+		ERR_EXPLAIN(particle_body1_path);
+		ERR_FAIL_COND(!pb);
+		particle_body1 = pb;
+		body_changed = true;
 	} else
 		particle_body1 = NULL;
 
