@@ -172,9 +172,9 @@ void ParticleBodyEditor::_mass_changed(real_t p_mass) {
 		return;
 
 	PoolVector<real_t>::Write masses = model->get_masses_ref().write();
-        for (int i(0); i < node->selected_particles.size(); ++i) {
+	for (int i(0); i < node->selected_particles.size(); ++i) {
 
-                masses[node->selected_particles[i]] = p_mass;
+		masses[node->selected_particles[i]] = p_mass;
 	}
 
 	node->update_gizmo();
@@ -194,38 +194,34 @@ void ParticleBodyEditor::_on_constraint_selected(NodePath p_path) {
 
 	if (constraint->get_particle_body0_path().is_empty()) {
 		constraint->set_particle_body0_path(node->get_path());
-	} else {
-		if (constraint->get_particle_body1_path().is_empty()) {
-			constraint->set_particle_body1_path(node->get_path());
+
+		for (int i(0); i < node->selected_particles.size(); ++i) {
+
+			constraint->add_constraint(node->selected_particles[i], -1, -1, 1);
 		}
-	}
 
-	int body_index = -1;
-	ParticleBody *pb = cast_to<ParticleBody>(get_node(constraint->get_particle_body0_path()));
-	if (pb == node) {
-		body_index = 0;
 	} else {
-		pb = cast_to<ParticleBody>(get_node(constraint->get_particle_body1_path()));
-		if (pb == node) {
-			body_index = 1;
-		}
-	}
 
-	ERR_FAIL_COND(-1 == body_index);
-	ERR_FAIL_COND(pb->get_particle_body_model().is_null());
+		constraint->set_particle_body1_path(node->get_path());
 
-	PoolVector<Vector3>::Read particles = pb->get_particle_body_model()->get_particles().read();
+		ParticleBody *pb_0 = cast_to<ParticleBody>(get_node(constraint->get_particle_body0_path()));
+		ERR_FAIL_COND(!pb_0);
 
-	if (!body_index) {
+		ERR_FAIL_COND(pb_0->get_particle_body_model().is_null());
+		ERR_FAIL_COND(node->get_particle_body_model().is_null());
 
-                for (int i(0); i < node->selected_particles.size(); ++i) {
+		PoolVector<Vector3>::Read particles_0 = pb_0->get_particle_body_model()->get_particles().read();
+		PoolVector<Vector3>::Read particles_1 = node->get_particle_body_model()->get_particles().read();
 
-                        constraint->add_constraint(node->selected_particles[i], -1, particles[node->selected_particles[i]].length(), 1);
-		}
-	} else {
-                for (int i(0); i < node->selected_particles.size(); ++i) {
+		const int size = MIN(node->selected_particles.size(), constraint->get_constraint_count());
+		for (int i(0); i < size; ++i) {
 
-                        constraint->add_constraint(-1, node->selected_particles[i], particles[node->selected_particles[i]].length(), 1);
+			const int b0_particle = constraint->get_constraint_body0_particle_index(i);
+			const int b1_particle = node->selected_particles[i];
+
+			real_t length = (pb_0->get_global_transform().xform(particles_0[b0_particle]) - node->get_global_transform().xform(particles_1[b1_particle])).length();
+
+			constraint->set_constraint(i, b0_particle, b1_particle, length, 1);
 		}
 	}
 }
@@ -242,9 +238,9 @@ void ParticleBodyEditor::_on_glue_selected(NodePath p_path) {
 		return;
 	}
 
-        for (int i(0); i < node->selected_particles.size(); ++i) {
+	for (int i(0); i < node->selected_particles.size(); ++i) {
 
-                glue->add_particle(node->selected_particles[i]);
+		glue->add_particle(node->selected_particles[i]);
 	}
 }
 
@@ -473,9 +469,9 @@ void ParticleBodyEditor::redraw() {
 	String particles = "";
 	real_t masses = -1;
 
-        for (int i = 0; i < node->selected_particles.size(); ++i) {
+	for (int i = 0; i < node->selected_particles.size(); ++i) {
 
-                int particle = node->selected_particles[i];
+		int particle = node->selected_particles[i];
 
 		if (String() != particles)
 			particles += ", ";

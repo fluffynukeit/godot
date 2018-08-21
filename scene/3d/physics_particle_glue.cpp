@@ -79,7 +79,7 @@ void PhysicsParticleGlue::_notification(int p_what) {
 			break;
 		case NOTIFICATION_EXIT_TREE:
 			ParticlePhysicsServer::get_singleton()->disconnect("sync_end", this, "particle_physics_sync");
-			_remove_glued_particles();
+			_remove_glued_particles_physics_server();
 			break;
 		case NOTIFICATION_TRANSFORM_CHANGED:
 			_are_particles_dirty = true;
@@ -101,7 +101,7 @@ PhysicsParticleGlue::~PhysicsParticleGlue() {
 	if (!particle_body)
 		return;
 
-	_remove_glued_particles();
+	_remove_glued_particles_physics_server();
 }
 
 void PhysicsParticleGlue::set_body_path(const NodePath &p_path) {
@@ -294,7 +294,7 @@ void PhysicsParticleGlue::_compute_offsets() {
 	}
 }
 
-void PhysicsParticleGlue::_remove_glued_particles() {
+void PhysicsParticleGlue::_remove_glued_particles_physics_server() {
 
 	PhysicsParticleGlueRemoval *r = memnew(PhysicsParticleGlueRemoval);
 	r->space = SceneTree::get_singleton()->get_root()->get_world()->get_particle_space();
@@ -303,9 +303,15 @@ void PhysicsParticleGlue::_remove_glued_particles() {
 	r->glued_particles_offsets = glued_particles_offsets;
 	r->glued_particles_data = glued_particles_data;
 
-	glued_particles = Vector<int>();
-	glued_particles_offsets = Vector<Vector3>();
-	glued_particles_data = Vector<GluedParticleData>();
+	int size(glued_particles.size());
+	for (int i(size - 1); 0 <= i; --i) {
+
+		GluedParticleData &gp(glued_particles_data.write[i]);
+		if (Engine::get_singleton()->is_editor_hint())
+			gp.state == GluedParticleData::GLUED_PARTICLE_STATE_IN;
+		else
+			gp.state == GluedParticleData::GLUED_PARTICLE_STATE_IN_RUNTIME;
+	}
 }
 
 PhysicsParticleGlueRemoval::PhysicsParticleGlueRemoval() {
