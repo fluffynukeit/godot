@@ -61,6 +61,7 @@ void ParticleBodyConstraint::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("get_constraint_count"), &ParticleBodyConstraint::get_constraint_count);
 
+	ClassDB::bind_method(D_METHOD("set_constraint", "index", "body0_particle_index", "body1_particle_index", "length", "stiffness"), &ParticleBodyConstraint::set_constraint);
 	ClassDB::bind_method(D_METHOD("add_constraint", "body0_particle_index", "body1_particle_index", "length", "stiffness"), &ParticleBodyConstraint::add_constraint);
 
 	ClassDB::bind_method(D_METHOD("find_constraint", "body0_particle_index", "body1_particle_index"), &ParticleBodyConstraint::find_constraint);
@@ -220,6 +221,18 @@ ParticleBody *ParticleBodyConstraint::get_particle_body1() const {
 
 int ParticleBodyConstraint::get_constraint_count() const {
 	return constraints.size();
+}
+
+void ParticleBodyConstraint::set_constraint(int p_index, int p_body0_particle_index, int p_body1_particle_index, real_t p_length, real_t p_stiffness) {
+	Constraint c;
+	c.body0_particle_index = p_body0_particle_index;
+	c.body1_particle_index = p_body1_particle_index;
+	c.length = p_length;
+	c.stiffness = p_stiffness;
+
+	constraints.write[p_index] = c;
+
+	ParticlePhysicsServer::get_singleton()->constraint_set_callback(rid, this, "on_sync");
 }
 
 void ParticleBodyConstraint::add_constraint(int p_body0_particle_index, int p_body1_particle_index, real_t p_length, real_t p_stiffness) {

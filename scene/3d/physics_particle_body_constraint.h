@@ -91,7 +91,8 @@ public:
 
 	int get_constraint_count() const;
 
-	// When length is negative it's calculated according the distance between particles
+	/// When length is negative it's calculated according the distance between particles
+	void set_constraint(int p_index, int p_body0_particle_index, int p_body1_particle_index, real_t p_length, real_t p_stiffness);
 	void add_constraint(int p_body0_particle_index, int p_body1_particle_index, real_t p_length, real_t p_stiffness);
 
 	int find_constraint(int p_body0_particle_index, int p_body1_particle_index);

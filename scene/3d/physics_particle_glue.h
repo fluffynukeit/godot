@@ -114,7 +114,7 @@ private:
 
 	void _resolve_particle_body();
 	void _compute_offsets();
-	void _remove_glued_particles();
+	void _remove_glued_particles_physics_server();
 };
 
 class PhysicsParticleGlueRemoval : public Object {
