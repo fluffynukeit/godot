@@ -78,11 +78,13 @@ void PhysicsParticleGlue::_bind_methods() {
 void PhysicsParticleGlue::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_READY:
-			ParticlePhysicsServer::get_singleton()->connect("sync_end", this, "particle_physics_sync");
+			if (!Engine::get_singleton()->is_editor_hint())
+				ParticlePhysicsServer::get_singleton()->connect("sync_end", this, "particle_physics_sync");
 			_resolve_particle_body();
 			break;
 		case NOTIFICATION_EXIT_TREE:
-			ParticlePhysicsServer::get_singleton()->disconnect("sync_end", this, "particle_physics_sync");
+			if (!Engine::get_singleton()->is_editor_hint())
+				ParticlePhysicsServer::get_singleton()->disconnect("sync_end", this, "particle_physics_sync");
 			_deferred_remove_glued_particles_physics_server();
 			break;
 		case NOTIFICATION_TRANSFORM_CHANGED:
