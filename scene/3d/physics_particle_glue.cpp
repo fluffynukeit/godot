@@ -199,13 +199,14 @@ void PhysicsParticleGlue::particle_physics_sync(RID p_space) {
 	if (get_world()->get_particle_space() != p_space)
 		return;
 
+	if (!particle_body)
+		return;
+
 	if (!_are_particles_dirty && !_is_body_new)
 		return;
 
 	if (0 > pull_force)
 		_are_particles_dirty = false;
-
-	ERR_FAIL_COND(!particle_body);
 
 	ParticleBodyCommands *cmds = ParticlePhysicsServer::get_singleton()->body_get_commands(particle_body->get_rid());
 	if (!cmds)
