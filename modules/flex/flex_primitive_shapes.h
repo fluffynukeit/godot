@@ -109,4 +109,15 @@ public:
 	virtual void set_data(const Variant &p_data);
 	virtual Variant get_data() const;
 };
+
+class FlexPrimitiveTriangleShape : public FlexPrimitiveShape {
+
+public:
+	FlexPrimitiveTriangleShape();
+
+	virtual NvFlexCollisionShapeType get_type() { return eNvFlexShapeTriangleMesh; }
+	virtual void get_shape(NvFlexCollisionGeometry *r_shape) const;
+	virtual void set_data(const Variant &p_data);
+	virtual Variant get_data() const;
+};
 #endif // FLEX_PRIMITIVE_SHAPES_H

@@ -127,3 +127,19 @@ void FlexPrimitiveSphereShape::set_data(const Variant &p_data) {
 Variant FlexPrimitiveSphereShape::get_data() const {
 	return radius;
 }
+
+FlexPrimitiveTriangleShape::FlexPrimitiveTriangleShape() {}
+
+void FlexPrimitiveTriangleShape::get_shape(NvFlexCollisionGeometry *r_shape) const {
+	r_shape->triMesh.scale[0] = 1;
+	r_shape->triMesh.scale[1] = 1;
+	r_shape->triMesh.scale[2] = 1;
+	//r_shape->triMesh.mesh = ;
+}
+
+void FlexPrimitiveTriangleShape::set_data(const Variant &p_data) {
+}
+
+Variant FlexPrimitiveTriangleShape::get_data() const {
+	return Variant();
+}
