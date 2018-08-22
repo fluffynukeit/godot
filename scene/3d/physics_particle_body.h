@@ -58,7 +58,7 @@ class ParticleBody : public ParticleObject {
 #ifdef TOOLS_ENABLED
 public:
 	bool draw_gizmo;
-        Vector<int> selected_particles;
+	Vector<int> selected_particles;
 
 private:
 #endif
@@ -101,6 +101,9 @@ public:
 
 	void set_collision_primitive_mask(uint32_t p_mask);
 	uint32_t get_collision_primitive_mask() const;
+
+	void set_collision_primitive_mask_bit(int p_bit, bool p_value);
+	bool get_collision_primitive_mask_bit(int p_bit) const;
 
 	void set_monitorable(bool p_monitorable);
 	bool is_monitorable() const;
