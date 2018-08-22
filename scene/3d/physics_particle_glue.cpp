@@ -194,6 +194,8 @@ void PhysicsParticleGlue::particle_physics_sync(RID p_space) {
 	ERR_FAIL_COND(!particle_body);
 
 	ParticleBodyCommands *cmds = ParticlePhysicsServer::get_singleton()->body_get_commands(particle_body->get_rid());
+	if (!cmds)
+		return; // Not yet ready to execute commands
 
 	int size(glued_particles.size());
 	glued_particles_offsets.resize(size); // Avoid differences
@@ -329,10 +331,12 @@ void PhysicsParticleGlueRemoval::on_sync(RID p_space) {
 
 	ParticleBodyCommands *cmds = ParticlePhysicsServer::get_singleton()->body_get_commands(particle_body->get_rid());
 
-	int size(glued_particles.size());
-	for (int i(size - 1); 0 <= i; --i) {
+	if (cmds) {
+		int size(glued_particles.size());
+		for (int i(size - 1); 0 <= i; --i) {
 
-		cmds->set_particle_mass(glued_particles[i], glued_particles_data.write[i].previous_mass);
+			cmds->set_particle_mass(glued_particles[i], glued_particles_data.write[i].previous_mass);
+		}
 	}
 
 	ParticlePhysicsServer::get_singleton()->disconnect("sync_end", this, "on_sync");
