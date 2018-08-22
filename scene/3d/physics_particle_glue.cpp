@@ -98,6 +98,7 @@ PhysicsParticleGlue::PhysicsParticleGlue() :
 		Spatial(),
 		particle_body(NULL),
 		allow_particles_with_zero_mass(false),
+		automatic_full_body_glue(false),
 		pull_force(-1) {
 	set_notify_transform(true);
 }
