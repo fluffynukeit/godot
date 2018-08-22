@@ -269,7 +269,9 @@ void ParticlePrimitiveArea::_bind_methods() {
 }
 
 ParticlePrimitiveArea::ParticlePrimitiveArea() :
-		ParticlePrimitiveBody() {
+		ParticlePrimitiveBody(),
+		monitor_particle_bodies_entering(false),
+		monitor_particles_entering(false) {
 	ParticlePhysicsServer::get_singleton()->primitive_body_set_as_area(rid, true);
 
 	set_callback_sync(false);
