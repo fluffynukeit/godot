@@ -502,6 +502,7 @@ void FlexParticlePhysicsServer::body_set_object_instance(RID p_body, Object *p_o
 ParticleBodyCommands *FlexParticlePhysicsServer::body_get_commands(RID p_body) {
 	FlexParticleBody *body = body_owner.get(p_body);
 	ERR_FAIL_COND_V(!body, NULL);
+	ERR_FAIL_COND_V(!body->get_space(), NULL);
 	ERR_FAIL_COND_V(!body->get_space()->can_commands_be_executed(), NULL);
 	return get_particle_body_commands(body);
 }
