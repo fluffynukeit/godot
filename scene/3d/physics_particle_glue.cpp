@@ -73,7 +73,7 @@ void PhysicsParticleGlue::_bind_methods() {
 
 void PhysicsParticleGlue::_notification(int p_what) {
 	switch (p_what) {
-		case NOTIFICATION_ENTER_TREE:
+		case NOTIFICATION_READY:
 			ParticlePhysicsServer::get_singleton()->connect("sync_end", this, "particle_physics_sync");
 			_resolve_particle_body();
 			break;
@@ -326,7 +326,7 @@ void PhysicsParticleGlueRemoval::_bind_methods() {
 }
 
 void PhysicsParticleGlueRemoval::on_sync(RID p_space) {
-	if (space != p_space)
+	if (space != p_space && !particle_body)
 		return;
 
 	ParticleBodyCommands *cmds = ParticlePhysicsServer::get_singleton()->body_get_commands(particle_body->get_rid());
