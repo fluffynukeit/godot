@@ -72,8 +72,10 @@ private:
 	Vector<GluedParticleData> glued_particles_data;
 
 	bool allow_particles_with_zero_mass;
+	bool automatic_full_body_glue;
 	real_t pull_force;
 
+	bool _is_body_new;
 	bool _are_particles_dirty;
 
 	static void _bind_methods();
@@ -96,6 +98,9 @@ public:
 	void set_allow_particles_with_zero_mass(bool p_allow);
 	bool get_allow_particles_with_zero_mass() const;
 
+	void set_automatic_full_body_glue(bool p_enable);
+	bool get_automatic_full_body_glue() const;
+
 	void set_pull_force(real_t p_force);
 	real_t get_pull_force() const;
 
@@ -108,13 +113,13 @@ public:
 
 private:
 	void particle_physics_sync(RID p_space);
-	void pull(int p_particle, const Vector3 &p_offset, ParticleBodyCommands *p_cmds);
+	void apply_force(int p_particle, const Vector3 &p_offset, ParticleBodyCommands *p_cmds);
 
 	void _changed_callback(Object *p_changed, const char *p_prop);
 
 	void _resolve_particle_body();
 	void _compute_offsets();
-	void _remove_glued_particles_physics_server();
+	void _deferred_remove_glued_particles_physics_server();
 };
 
 class PhysicsParticleGlueRemoval : public Object {
