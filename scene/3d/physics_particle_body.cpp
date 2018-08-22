@@ -69,6 +69,9 @@ void ParticleBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_collision_primitive_mask", "mask"), &ParticleBody::set_collision_primitive_mask);
 	ClassDB::bind_method(D_METHOD("get_collision_primitive_mask"), &ParticleBody::get_collision_primitive_mask);
 
+	ClassDB::bind_method(D_METHOD("set_collision_primitive_mask_bit", "bit", "val"), &ParticleBody::set_collision_primitive_mask_bit);
+	ClassDB::bind_method(D_METHOD("get_collision_primitive_mask_bit", "bit"), &ParticleBody::get_collision_primitive_mask_bit);
+
 	ClassDB::bind_method(D_METHOD("set_monitorable", "monitorable"), &ParticleBody::set_monitorable);
 	ClassDB::bind_method(D_METHOD("is_monitorable"), &ParticleBody::is_monitorable);
 
@@ -249,6 +252,21 @@ void ParticleBody::set_collision_primitive_mask(uint32_t p_mask) {
 
 uint32_t ParticleBody::get_collision_primitive_mask() const {
 	return ParticlePhysicsServer::get_singleton()->body_get_collision_primitive_mask(rid);
+}
+
+void ParticleBody::set_collision_primitive_mask_bit(int p_bit, bool p_value) {
+
+	uint32_t mask = get_collision_primitive_mask();
+	if (p_value)
+		mask |= 1 << p_bit;
+	else
+		mask &= ~(1 << p_bit);
+	set_collision_primitive_mask(mask);
+}
+
+bool ParticleBody::get_collision_primitive_mask_bit(int p_bit) const {
+
+	return get_collision_primitive_mask() & (1 << p_bit);
 }
 
 void ParticleBody::set_monitorable(bool p_monitorable) {
