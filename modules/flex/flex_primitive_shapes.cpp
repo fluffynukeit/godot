@@ -199,10 +199,10 @@ void FlexPrimitiveTriangleShape::update_space_mesh(FlexSpace *p_space) {
 	md.vertices_buffer->unmap();
 	md.indices_buffer->unmap();
 
-	Vector3 half_size_aabb = aabb.get_size() * 0.5;
-	Vector3 inverse_half_size_aabb = half_size_aabb * -1;
+	const Vector3 lower_bound = aabb.get_position() * 2;
+	const Vector3 upper_bound = (aabb.get_size() * 0.5) * 2;
 
-	NvFlexUpdateTriangleMesh(p_space->get_flex_library(), md.mesh_id, md.vertices_buffer->buffer, md.indices_buffer->buffer, md.vertices_buffer->size(), md.indices_buffer->size() / 3, (float *)(&inverse_half_size_aabb), (float *)(&half_size_aabb));
+	NvFlexUpdateTriangleMesh(p_space->get_flex_library(), md.mesh_id, md.vertices_buffer->buffer, md.indices_buffer->buffer, md.vertices_buffer->size(), md.indices_buffer->size() / 3, (float *)(&lower_bound), (float *)(&upper_bound));
 
 	cache[p_space] = md;
 }
