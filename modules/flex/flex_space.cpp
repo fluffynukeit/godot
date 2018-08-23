@@ -759,6 +759,9 @@ void FlexSpace::dispatch_callback_contacts() {
 				const int primitive_body_index(velocity_and_primitive.w);
 				FlexPrimitiveBody *primitive_body = find_primitive_body(primitive_body_index);
 
+				if (!primitive_body)
+					continue;
+
 				if (particle_body->is_monitoring_primitives_contacts())
 					particle_body->dispatch_primitive_contact(primitive_body, particle_index, velocity, normal);
 
