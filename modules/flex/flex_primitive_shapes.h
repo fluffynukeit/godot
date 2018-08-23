@@ -35,12 +35,14 @@
 #ifndef FLEX_PRIMITIVE_SHAPES_H
 #define FLEX_PRIMITIVE_SHAPES_H
 
+#include "core/map.h"
 #include "core/variant.h"
 #include "flex_utility.h"
 #include "rid_flex.h"
 #include "thirdparty/flex/include/NvFlexExt.h"
 
 class FlexPrimitiveBody;
+class FlexSpace;
 
 class FlexPrimitiveShape : public RIDFlex {
 
@@ -56,7 +58,7 @@ public:
 	void notify_change();
 
 	virtual NvFlexCollisionShapeType get_type() = 0;
-	virtual void get_shape(NvFlexCollisionGeometry *r_shape) const = 0;
+	virtual void get_shape(FlexSpace *p_space, NvFlexCollisionGeometry *r_shape) = 0;
 	virtual void set_data(const Variant &p_data) = 0;
 	virtual Variant get_data() const = 0;
 	virtual bool need_alignment() const { return false; }
@@ -71,7 +73,7 @@ public:
 	FlexPrimitiveBoxShape();
 
 	virtual NvFlexCollisionShapeType get_type() { return eNvFlexShapeBox; }
-	virtual void get_shape(NvFlexCollisionGeometry *r_shape) const;
+	virtual void get_shape(FlexSpace *p_space, NvFlexCollisionGeometry *r_shape);
 	virtual void set_data(const Variant &p_data);
 	virtual Variant get_data() const;
 
@@ -90,7 +92,7 @@ public:
 	FlexPrimitiveCapsuleShape();
 
 	virtual NvFlexCollisionShapeType get_type() { return eNvFlexShapeCapsule; }
-	virtual void get_shape(NvFlexCollisionGeometry *r_shape) const;
+	virtual void get_shape(FlexSpace *p_space, NvFlexCollisionGeometry *r_shape);
 	virtual void set_data(const Variant &p_data);
 	virtual Variant get_data() const;
 	virtual bool need_alignment() const { return true; }
@@ -105,19 +107,43 @@ public:
 	FlexPrimitiveSphereShape();
 
 	virtual NvFlexCollisionShapeType get_type() { return eNvFlexShapeSphere; }
-	virtual void get_shape(NvFlexCollisionGeometry *r_shape) const;
+	virtual void get_shape(FlexSpace *p_space, NvFlexCollisionGeometry *r_shape);
 	virtual void set_data(const Variant &p_data);
 	virtual Variant get_data() const;
 };
 
 class FlexPrimitiveTriangleShape : public FlexPrimitiveShape {
 
+	struct MeshData {
+		MeshData() :
+				mesh_id(0),
+				vertices_buffer(NULL),
+				indices_buffer(NULL) {}
+
+		MeshData(const MeshData &p_other) :
+				mesh_id(p_other.mesh_id),
+				vertices_buffer(p_other.vertices_buffer),
+				indices_buffer(p_other.indices_buffer) {}
+
+		NvFlexTriangleMeshId mesh_id;
+		NvFlexVector<FlVector4> *vertices_buffer;
+		NvFlexVector<int> *indices_buffer;
+	};
+
+	PoolVector<Vector3> faces;
+	Map<FlexSpace *, MeshData> cache;
+
 public:
 	FlexPrimitiveTriangleShape();
+	~FlexPrimitiveTriangleShape();
 
 	virtual NvFlexCollisionShapeType get_type() { return eNvFlexShapeTriangleMesh; }
-	virtual void get_shape(NvFlexCollisionGeometry *r_shape) const;
+	virtual void get_shape(FlexSpace *p_space, NvFlexCollisionGeometry *r_shape);
 	virtual void set_data(const Variant &p_data);
 	virtual Variant get_data() const;
+
+private:
+	void setup(PoolVector<Vector3> p_faces);
+	void update_space_mesh(FlexSpace *p_space);
 };
 #endif // FLEX_PRIMITIVE_SHAPES_H

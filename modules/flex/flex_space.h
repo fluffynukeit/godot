@@ -104,6 +104,7 @@ public:
 	~FlexSpace();
 
 	void init();
+	NvFlexLibrary *get_flex_library();
 
 private:
 	void init_buffers();
