@@ -63,7 +63,7 @@ void FlexPrimitiveShape::notify_change() {
 	}
 }
 
-void FlexPrimitiveBoxShape::get_shape(NvFlexCollisionGeometry *r_shape) const {
+void FlexPrimitiveBoxShape::get_shape(FlexSpace *p_space, NvFlexCollisionGeometry *r_shape) {
 	r_shape->box.halfExtents[0] = extends.x;
 	r_shape->box.halfExtents[1] = extends.y;
 	r_shape->box.halfExtents[2] = extends.z;
@@ -89,7 +89,7 @@ FlexPrimitiveCapsuleShape::FlexPrimitiveCapsuleShape() :
 		radius(1) {
 }
 
-void FlexPrimitiveCapsuleShape::get_shape(NvFlexCollisionGeometry *r_shape) const {
+void FlexPrimitiveCapsuleShape::get_shape(FlexSpace *p_space, NvFlexCollisionGeometry *r_shape) {
 	r_shape->capsule.halfHeight = half_height;
 	r_shape->capsule.radius = radius;
 }
@@ -116,7 +116,7 @@ const Basis &FlexPrimitiveCapsuleShape::get_alignment_basis() const {
 FlexPrimitiveSphereShape::FlexPrimitiveSphereShape() :
 		radius(1) {}
 
-void FlexPrimitiveSphereShape::get_shape(NvFlexCollisionGeometry *r_shape) const {
+void FlexPrimitiveSphereShape::get_shape(FlexSpace *p_space, NvFlexCollisionGeometry *r_shape) {
 	r_shape->sphere.radius = radius;
 }
 
@@ -130,16 +130,79 @@ Variant FlexPrimitiveSphereShape::get_data() const {
 
 FlexPrimitiveTriangleShape::FlexPrimitiveTriangleShape() {}
 
-void FlexPrimitiveTriangleShape::get_shape(NvFlexCollisionGeometry *r_shape) const {
+FlexPrimitiveTriangleShape::~FlexPrimitiveTriangleShape() {
+
+	for (Map<FlexSpace *, MeshData>::Element *e = cache.front(); e; e = e->next()) {
+		NvFlexDestroyTriangleMesh(e->get().vertices_buffer->lib, e->get().mesh_id);
+		e->get().vertices_buffer->destroy();
+		e->get().indices_buffer->destroy();
+		delete e->get().vertices_buffer;
+		delete e->get().indices_buffer;
+		cache.erase(e);
+	}
+}
+
+void FlexPrimitiveTriangleShape::get_shape(FlexSpace *p_space, NvFlexCollisionGeometry *r_shape) {
+
+	if (!cache.has(p_space)) {
+		update_space_mesh(p_space);
+	}
+
 	r_shape->triMesh.scale[0] = 1;
 	r_shape->triMesh.scale[1] = 1;
 	r_shape->triMesh.scale[2] = 1;
-	//r_shape->triMesh.mesh = ;
+	r_shape->triMesh.mesh = cache[p_space].mesh_id;
 }
 
 void FlexPrimitiveTriangleShape::set_data(const Variant &p_data) {
+	setup(p_data);
 }
 
 Variant FlexPrimitiveTriangleShape::get_data() const {
-	return Variant();
+	return faces;
+}
+
+void FlexPrimitiveTriangleShape::setup(PoolVector<Vector3> p_faces) {
+	faces = p_faces;
+
+	for (Map<FlexSpace *, MeshData>::Element *e = cache.front(); e; e = e->next()) {
+		update_space_mesh(e->key());
+	}
+}
+
+void FlexPrimitiveTriangleShape::update_space_mesh(FlexSpace *p_space) {
+
+	MeshData md;
+	if (cache.has(p_space)) {
+		md = cache[p_space];
+		md.vertices_buffer->map();
+		md.indices_buffer->map();
+	} else {
+		md.mesh_id = NvFlexCreateTriangleMesh(p_space->get_flex_library());
+		md.vertices_buffer = new NvFlexVector<FlVector4>(p_space->get_flex_library());
+		md.indices_buffer = new NvFlexVector<int>(p_space->get_flex_library());
+	}
+
+	md.vertices_buffer->resize(faces.size());
+	md.indices_buffer->resize(faces.size());
+
+	PoolVector<Vector3>::Read r = faces.read();
+
+	AABB aabb;
+	for (int i = 0; i < faces.size(); ++i) {
+
+		aabb.expand_to(r[i]);
+		(*md.vertices_buffer)[i] = flvec4_from_vec3(r[i]);
+		(*md.indices_buffer)[i] = i;
+	}
+
+	md.vertices_buffer->unmap();
+	md.indices_buffer->unmap();
+
+	Vector3 half_size_aabb = aabb.get_size() * 0.5;
+	Vector3 inverse_half_size_aabb = half_size_aabb * -1;
+
+	NvFlexUpdateTriangleMesh(p_space->get_flex_library(), md.mesh_id, md.vertices_buffer->buffer, md.indices_buffer->buffer, md.vertices_buffer->size(), md.indices_buffer->size() / 3, (float *)(&inverse_half_size_aabb), (float *)(&half_size_aabb));
+
+	cache[p_space] = md;
 }

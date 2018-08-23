@@ -807,6 +807,9 @@ RID FlexParticlePhysicsServer::primitive_shape_create(PrimitiveShapeType p_type)
 		case PARTICLE_PRIMITIVE_SHAPE_TYPE_SPHERE: {
 			primitive_shape = memnew(FlexPrimitiveSphereShape);
 		} break;
+		case PARTICLE_PRIMITIVE_SHAPE_TYPE_TRIMESH: {
+			primitive_shape = memnew(FlexPrimitiveTriangleShape);
+		} break;
 	}
 
 	if (primitive_shape) {

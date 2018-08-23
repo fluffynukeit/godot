@@ -113,6 +113,10 @@ void FlexSpace::init() {
 	CRASH_COND(has_error());
 }
 
+NvFlexLibrary *FlexSpace::get_flex_library() {
+	return flex_lib;
+}
+
 void FlexSpace::init_buffers() {
 	CRASH_COND(particles_memory);
 	CRASH_COND(particles_allocator);
@@ -443,6 +447,7 @@ void FlexSpace::add_primitive_body(FlexPrimitiveBody *p_body) {
 	ERR_FAIL_COND(p_body->space);
 	p_body->space = this;
 	p_body->changed_parameters = eChangedPrimitiveBodyParamAll;
+	p_body->geometry_mchunk = geometries_allocator->allocate_chunk(0);
 	primitive_bodies.push_back(p_body);
 }
 
@@ -962,8 +967,8 @@ void FlexSpace::execute_geometries_commands() {
 
 		if (!body->get_shape()) {
 			// Remove geometry if has memory chunk
-			if (body->geometry_mchunk) {
-				geometries_allocator->deallocate_chunk(body->geometry_mchunk);
+			if (body->geometry_mchunk->get_size()) {
+				geometries_allocator->resize_chunk(body->geometry_mchunk, 0);
 				geometries_memory->notify_change();
 			}
 			continue;
@@ -974,14 +979,14 @@ void FlexSpace::execute_geometries_commands() {
 		if (body->changed_parameters == 0)
 			continue; // Nothing to update
 
-		if (!body->geometry_mchunk) {
-			body->geometry_mchunk = geometries_allocator->allocate_chunk(1);
+		if (!body->geometry_mchunk->get_size()) {
+			geometries_allocator->resize_chunk(body->geometry_mchunk, 1);
 			body->changed_parameters = eChangedPrimitiveBodyParamAll;
 		}
 
 		if (body->changed_parameters & eChangedPrimitiveBodyParamShape) {
 			NvFlexCollisionGeometry geometry;
-			body->get_shape()->get_shape(&geometry);
+			body->get_shape()->get_shape(this, &geometry);
 			geometries_memory->set_shape(body->geometry_mchunk, 0, geometry);
 			body->changed_parameters |= eChangedPrimitiveBodyParamFlags;
 		}

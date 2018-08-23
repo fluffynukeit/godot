@@ -30,6 +30,7 @@
 
 #include "concave_polygon_shape.h"
 
+#include "servers/particle_physics_server.h"
 #include "servers/physics_server.h"
 
 Vector<Vector3> ConcavePolygonShape::_gen_debug_mesh_lines() {
@@ -70,6 +71,7 @@ void ConcavePolygonShape::_update_shape() {
 void ConcavePolygonShape::set_faces(const PoolVector<Vector3> &p_faces) {
 
 	PhysicsServer::get_singleton()->shape_set_data(get_shape(), p_faces);
+	ParticlePhysicsServer::get_singleton()->primitive_shape_set_data(get_particle_shape(), p_faces);
 	notify_change_to_owners();
 }
 
@@ -86,7 +88,7 @@ void ConcavePolygonShape::_bind_methods() {
 }
 
 ConcavePolygonShape::ConcavePolygonShape() :
-		Shape(PhysicsServer::get_singleton()->shape_create(PhysicsServer::SHAPE_CONCAVE_POLYGON)) {
+		Shape(PhysicsServer::get_singleton()->shape_create(PhysicsServer::SHAPE_CONCAVE_POLYGON), ParticlePhysicsServer::get_singleton()->primitive_shape_create(ParticlePhysicsServer::PARTICLE_PRIMITIVE_SHAPE_TYPE_TRIMESH)) {
 
 	//set_planes(Vector3(1,1,1));
 }
