@@ -189,18 +189,32 @@ void FlexPrimitiveTriangleShape::update_space_mesh(FlexSpace *p_space) {
 	PoolVector<Vector3>::Read r = faces.read();
 
 	AABB aabb;
-	for (int i = 0; i < faces.size(); ++i) {
+	const int fs = faces.size() / 3;
+	for (int i = 0; i < fs; ++i) {
 
-		aabb.expand_to(r[i]);
-		(*md.vertices_buffer)[i] = flvec4_from_vec3(r[i]);
-		(*md.indices_buffer)[i] = i;
+		aabb.expand_to(r[i * 3 + 0]);
+		aabb.expand_to(r[i * 3 + 1]);
+		aabb.expand_to(r[i * 3 + 2]);
+
+		// Seems to use normals and are invorse of normals used by Godot.
+		//(*md.vertices_buffer)[i * 3 + 0] = flvec4_from_vec3(r[i * 3 + 0]);
+		//(*md.vertices_buffer)[i * 3 + 1] = flvec4_from_vec3(r[i * 3 + 1]);
+		//(*md.vertices_buffer)[i * 3 + 2] = flvec4_from_vec3(r[i * 3 + 2]);
+
+		(*md.vertices_buffer)[i * 3 + 0] = flvec4_from_vec3(r[i * 3 + 2]);
+		(*md.vertices_buffer)[i * 3 + 1] = flvec4_from_vec3(r[i * 3 + 1]);
+		(*md.vertices_buffer)[i * 3 + 2] = flvec4_from_vec3(r[i * 3 + 0]);
+
+		(*md.indices_buffer)[i * 3 + 0] = i * 3 + 0;
+		(*md.indices_buffer)[i * 3 + 1] = i * 3 + 1;
+		(*md.indices_buffer)[i * 3 + 2] = i * 3 + 2;
 	}
 
 	md.vertices_buffer->unmap();
 	md.indices_buffer->unmap();
 
-	const Vector3 lower_bound = aabb.get_position() * 2;
-	const Vector3 upper_bound = (aabb.get_size() * 0.5) * 2;
+	const Vector3 lower_bound = (aabb.get_position()) * 2.5;
+	const Vector3 upper_bound = (aabb.get_size() * 0.5) * 2.5;
 
 	NvFlexUpdateTriangleMesh(p_space->get_flex_library(), md.mesh_id, md.vertices_buffer->buffer, md.indices_buffer->buffer, md.vertices_buffer->size(), md.indices_buffer->size() / 3, (float *)(&lower_bound), (float *)(&upper_bound));
 
