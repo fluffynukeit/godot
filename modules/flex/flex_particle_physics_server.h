@@ -198,6 +198,7 @@ public:
 	virtual void space_get_params_defaults(Map<StringName, Variant> *r_defs) const;
 	virtual bool space_set_param(RID p_space, const StringName &p_name, const Variant &p_property);
 	virtual bool space_get_param(RID p_space, const StringName &p_name, Variant &r_property) const;
+	virtual real_t space_get_particle_radius(RID p_space) const;
 	virtual void space_reset_params_to_default(RID p_space);
 	virtual bool space_is_using_default_params(RID p_space) const;
 

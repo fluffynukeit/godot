@@ -418,9 +418,11 @@ void ParticleBody::debug_initialize_resource() {
 	if (!is_inside_tree() || !get_tree()->is_debugging_collisions_hint())
 		return;
 
+	const real_t radius = ParticlePhysicsServer::get_singleton()->space_get_particle_radius(get_world()->get_particle_space());
+
 	debug_particle_mesh.instance();
-	debug_particle_mesh->set_radius(0.1);
-	debug_particle_mesh->set_height(0.2);
+	debug_particle_mesh->set_radius(radius);
+	debug_particle_mesh->set_height(radius * 2);
 	debug_particle_mesh->set_radial_segments(8);
 	debug_particle_mesh->set_rings(8);
 
