@@ -142,6 +142,7 @@ public:
 
 	bool set_param(const StringName &p_name, const Variant &p_property);
 	bool get_param(const StringName &p_name, Variant &r_property) const;
+	real_t get_particle_radius_against_primitives() const;
 	void reset_params_to_defaults();
 	bool is_using_default_params() const;
 

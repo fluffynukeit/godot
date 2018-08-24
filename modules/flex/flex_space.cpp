@@ -722,6 +722,14 @@ bool FlexSpace::get_param(const StringName &p_name, Variant &r_property) const {
 	return true;
 }
 
+real_t FlexSpace::get_particle_radius_against_primitives() const {
+	Variant v;
+	if (get_param(FlexParticlePhysicsServer::singleton->solver_param_collisionDistance, v)) {
+		return v;
+	}
+	return 0;
+}
+
 void FlexSpace::reset_params_to_defaults() {
 	Map<StringName, Variant> defaults;
 	FlexParticlePhysicsServer::singleton->space_get_params_defaults(&defaults);
