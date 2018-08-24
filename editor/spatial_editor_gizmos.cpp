@@ -3520,10 +3520,6 @@ ParticleBodySpatialGizmoPlugin::ParticleBodySpatialGizmoPlugin() {
 
 	EDITOR_DEF("editors/3d_gizmos/gizmo_colors/instanced", Color(0.7, 0.7, 0.7, 0.5));
 
-	radius = 0.1; // TODO take this correcly
-
-	spherem.set_radius(radius);
-	spherem.set_height(radius * 2);
 	spherem.set_radial_segments(8);
 	spherem.set_rings(8);
 
@@ -3545,6 +3541,11 @@ String ParticleBodySpatialGizmoPlugin::get_name() const {
 }
 
 void ParticleBodySpatialGizmoPlugin::redraw(EditorSpatialGizmo *p_gizmo) {
+
+	radius = ParticlePhysicsServer::get_singleton()->space_get_particle_radius(SceneTree::get_singleton()->get_root()->find_world()->get_particle_space());
+
+	spherem.set_radius(radius);
+	spherem.set_height(radius * 2);
 
 	ParticleBody *body = Object::cast_to<ParticleBody>(p_gizmo->get_spatial_node());
 

@@ -449,6 +449,13 @@ bool FlexParticlePhysicsServer::space_get_param(RID p_space, const StringName &p
 	return space->get_param(p_name, r_property);
 }
 
+real_t FlexParticlePhysicsServer::space_get_particle_radius(RID p_space) const {
+	const FlexSpace *space = space_owner.get(p_space);
+	ERR_FAIL_COND_V(!space, 0);
+
+	return space->get_particle_radius();
+}
+
 void FlexParticlePhysicsServer::space_reset_params_to_default(RID p_space) {
 	FlexSpace *space = space_owner.get(p_space);
 	ERR_FAIL_COND(!space);
