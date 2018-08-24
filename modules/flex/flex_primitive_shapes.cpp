@@ -197,10 +197,6 @@ void FlexPrimitiveTriangleShape::update_space_mesh(FlexSpace *p_space) {
 		aabb.expand_to(r[i * 3 + 2]);
 
 		// Seems to use normals and are invorse of normals used by Godot.
-		//(*md.vertices_buffer)[i * 3 + 0] = flvec4_from_vec3(r[i * 3 + 0]);
-		//(*md.vertices_buffer)[i * 3 + 1] = flvec4_from_vec3(r[i * 3 + 1]);
-		//(*md.vertices_buffer)[i * 3 + 2] = flvec4_from_vec3(r[i * 3 + 2]);
-
 		(*md.vertices_buffer)[i * 3 + 0] = flvec4_from_vec3(r[i * 3 + 2]);
 		(*md.vertices_buffer)[i * 3 + 1] = flvec4_from_vec3(r[i * 3 + 1]);
 		(*md.vertices_buffer)[i * 3 + 2] = flvec4_from_vec3(r[i * 3 + 0]);
@@ -212,9 +208,6 @@ void FlexPrimitiveTriangleShape::update_space_mesh(FlexSpace *p_space) {
 
 	md.vertices_buffer->unmap();
 	md.indices_buffer->unmap();
-
-	//const Vector3 lower_bound = (aabb.get_position()) * 2.5;
-	//const Vector3 upper_bound = (aabb.get_size() * 0.5) * 2.5;
 
 	const Vector3 lower_bound = aabb.get_position() - Vector3(0.1, 0.1, 0.1);
 	const Vector3 upper_bound = aabb.get_size() + aabb.get_position() + Vector3(0.1, 0.1, 0.1);
