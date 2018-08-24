@@ -412,7 +412,7 @@ void FlexParticlePhysicsServer::space_get_params_defaults(Map<StringName, Varian
 	(*r_defs)[solver_param_wind] = Vector3();
 	(*r_defs)[solver_param_drag] = 0.0;
 	(*r_defs)[solver_param_lift] = 0.0;
-	(*r_defs)[solver_param_cohesion] = 0.0;
+	(*r_defs)[solver_param_cohesion] = 0.025;
 	(*r_defs)[solver_param_surfaceTension] = 0.0;
 	(*r_defs)[solver_param_viscosity] = 0.0;
 	(*r_defs)[solver_param_vorticityConfinement] = 0.0;
