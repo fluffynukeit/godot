@@ -213,8 +213,11 @@ void FlexPrimitiveTriangleShape::update_space_mesh(FlexSpace *p_space) {
 	md.vertices_buffer->unmap();
 	md.indices_buffer->unmap();
 
-	const Vector3 lower_bound = (aabb.get_position()) * 2.5;
-	const Vector3 upper_bound = (aabb.get_size() * 0.5) * 2.5;
+	//const Vector3 lower_bound = (aabb.get_position()) * 2.5;
+	//const Vector3 upper_bound = (aabb.get_size() * 0.5) * 2.5;
+
+	const Vector3 lower_bound = aabb.get_position() - Vector3(0.1, 0.1, 0.1);
+	const Vector3 upper_bound = aabb.get_size() + aabb.get_position() + Vector3(0.1, 0.1, 0.1);
 
 	NvFlexUpdateTriangleMesh(p_space->get_flex_library(), md.mesh_id, md.vertices_buffer->buffer, md.indices_buffer->buffer, md.vertices_buffer->size(), md.indices_buffer->size() / 3, (float *)(&lower_bound), (float *)(&upper_bound));
 
