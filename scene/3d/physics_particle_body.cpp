@@ -664,3 +664,36 @@ void SoftParticleBody::set_plastic_creep(real_t p_value) {
 real_t SoftParticleBody::get_plastic_creep() const {
 	return plastic_creep;
 }
+
+RigidParticleBody::RigidParticleBody() :
+		ParticleBody(),
+		radius(0.1),
+		expand(0.05) {
+}
+
+void RigidParticleBody::_bind_methods() {
+
+	ClassDB::bind_method(D_METHOD("set_radius", "value"), &RigidParticleBody::set_radius);
+	ClassDB::bind_method(D_METHOD("get_radius"), &RigidParticleBody::get_radius);
+	ClassDB::bind_method(D_METHOD("set_expand", "value"), &RigidParticleBody::set_expand);
+	ClassDB::bind_method(D_METHOD("get_expand"), &RigidParticleBody::get_expand);
+
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "radius"), "set_radius", "get_radius");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "expand"), "set_expand", "get_expand");
+}
+
+void RigidParticleBody::set_radius(real_t p_value) {
+	radius = p_value;
+}
+
+real_t RigidParticleBody::get_radius() const {
+	return radius;
+}
+
+void RigidParticleBody::set_expand(real_t p_value) {
+	expand = p_value;
+}
+
+real_t RigidParticleBody::get_expand() const {
+	return expand;
+}

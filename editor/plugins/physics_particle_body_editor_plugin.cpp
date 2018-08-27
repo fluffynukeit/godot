@@ -175,6 +175,14 @@ void ParticleBodyEditor::_bake_model() {
 				spb->get_link_stiffness(),
 				spb->get_plastic_threshold(),
 				spb->get_plastic_creep());
+
+	} else if (cast_to<RigidParticleBody>(node)) {
+
+		RigidParticleBody *rpb = cast_to<RigidParticleBody>(node);
+		model = ParticlePhysicsServer::get_singleton()->create_rigid_particle_body_model(
+				node->get_particle_body_mesh()->get_mesh()->generate_triangle_mesh(),
+				rpb->get_radius(),
+				rpb->get_expand());
 	}
 
 	if (model.is_null())
