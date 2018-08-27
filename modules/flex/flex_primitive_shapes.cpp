@@ -128,6 +128,80 @@ Variant FlexPrimitiveSphereShape::get_data() const {
 	return radius;
 }
 
+FlexPrimitiveConvexShape::FlexPrimitiveConvexShape() {}
+
+FlexPrimitiveConvexShape::~FlexPrimitiveConvexShape() {
+
+	for (Map<FlexSpace *, MeshData>::Element *e = cache.front(); e; e = e->next()) {
+		NvFlexDestroyConvexMesh(e->get().vertices_buffer->lib, e->get().mesh_id);
+		e->get().vertices_buffer->destroy();
+		delete e->get().vertices_buffer;
+		cache.erase(e);
+	}
+}
+
+void FlexPrimitiveConvexShape::get_shape(FlexSpace *p_space, NvFlexCollisionGeometry *r_shape) {
+
+	if (!cache.has(p_space)) {
+		update_space_mesh(p_space);
+	}
+
+	r_shape->convexMesh.scale[0] = 1;
+	r_shape->convexMesh.scale[1] = 1;
+	r_shape->convexMesh.scale[2] = 1;
+	r_shape->convexMesh.mesh = cache[p_space].mesh_id;
+}
+
+void FlexPrimitiveConvexShape::set_data(const Variant &p_data) {
+	setup(p_data);
+}
+
+Variant FlexPrimitiveConvexShape::get_data() const {
+	return vertices;
+}
+
+void FlexPrimitiveConvexShape::setup(const Vector<Vector3> &p_vertices) {
+	vertices = p_vertices;
+
+	for (Map<FlexSpace *, MeshData>::Element *e = cache.front(); e; e = e->next()) {
+		update_space_mesh(e->key());
+	}
+}
+
+void FlexPrimitiveConvexShape::update_space_mesh(FlexSpace *p_space) {
+
+	MeshData md;
+	if (cache.has(p_space)) {
+		md = cache[p_space];
+		md.vertices_buffer->map();
+	} else {
+		md.mesh_id = NvFlexCreateConvexMesh(p_space->get_flex_library());
+		md.vertices_buffer = new NvFlexVector<FlVector4>(p_space->get_flex_library());
+	}
+
+	md.vertices_buffer->resize(vertices.size());
+
+	/// This is completelly wrong aproach. I need to think a way on how to create planes from points
+	/// Commented to avoid generation of wrong shapes
+	AABB aabb;
+	//const int vs = vertices.size();
+	//for (int i = 0; i < vs; ++i) {
+	//
+	//	aabb.expand_to(vertices[i]);
+	//	(*md.vertices_buffer)[i] = flvec4_from_vec3(vertices[i].normalized());
+	//	(*md.vertices_buffer)[i].w = vertices[i].length() * -1;
+	//}
+
+	md.vertices_buffer->unmap();
+
+	const Vector3 lower_bound = aabb.get_position() - Vector3(0.1, 0.1, 0.1);
+	const Vector3 upper_bound = aabb.get_size() + aabb.get_position() + Vector3(0.1, 0.1, 0.1);
+
+	NvFlexUpdateConvexMesh(p_space->get_flex_library(), md.mesh_id, md.vertices_buffer->buffer, md.vertices_buffer->size(), (float *)(&lower_bound), (float *)(&upper_bound));
+
+	cache[p_space] = md;
+}
+
 FlexPrimitiveTriangleShape::FlexPrimitiveTriangleShape() {}
 
 FlexPrimitiveTriangleShape::~FlexPrimitiveTriangleShape() {

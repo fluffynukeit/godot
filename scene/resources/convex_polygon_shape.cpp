@@ -30,6 +30,7 @@
 
 #include "convex_polygon_shape.h"
 #include "core/math/quick_hull.h"
+#include "servers/particle_physics_server.h"
 #include "servers/physics_server.h"
 
 Vector<Vector3> ConvexPolygonShape::_gen_debug_mesh_lines() {
@@ -58,6 +59,7 @@ Vector<Vector3> ConvexPolygonShape::_gen_debug_mesh_lines() {
 void ConvexPolygonShape::_update_shape() {
 
 	PhysicsServer::get_singleton()->shape_set_data(get_shape(), points);
+	ParticlePhysicsServer::get_singleton()->primitive_shape_set_data(get_particle_rid(), points);
 	emit_changed();
 }
 
@@ -82,7 +84,7 @@ void ConvexPolygonShape::_bind_methods() {
 }
 
 ConvexPolygonShape::ConvexPolygonShape() :
-		Shape(PhysicsServer::get_singleton()->shape_create(PhysicsServer::SHAPE_CONVEX_POLYGON)) {
+		Shape(PhysicsServer::get_singleton()->shape_create(PhysicsServer::SHAPE_CONVEX_POLYGON), ParticlePhysicsServer::get_singleton()->primitive_shape_create(ParticlePhysicsServer::PARTICLE_PRIMITIVE_SHAPE_TYPE_CONVEX)) {
 
 	//set_points(Vector3(1,1,1));
 }
