@@ -151,6 +151,43 @@ void ParticleBodyEditor::_create_thread() {
 	ur->commit_action();
 }
 
+void ParticleBodyEditor::_bake_model() {
+
+	ERR_FAIL_COND(!node);
+	ERR_FAIL_COND(!node->get_particle_body_mesh());
+	ERR_FAIL_COND(node->get_particle_body_mesh()->get_mesh().is_null());
+
+	Ref<ParticleBodyModel> model;
+
+	if (cast_to<SoftParticleBody>(node)) {
+		SoftParticleBody *spb = cast_to<SoftParticleBody>(node);
+		model = ParticlePhysicsServer::get_singleton()->create_soft_particle_body_model(
+				node->get_particle_body_mesh()->get_mesh()->generate_triangle_mesh(),
+				spb->get_radius(),
+				spb->get_global_stiffness(),
+				spb->get_internal_sample(),
+				spb->get_particle_spacing(),
+				spb->get_sampling(),
+				spb->get_cluster_spacing(),
+				spb->get_cluster_radius(),
+				spb->get_cluster_stiffness(),
+				spb->get_link_radius(),
+				spb->get_link_stiffness(),
+				spb->get_plastic_threshold(),
+				spb->get_plastic_creep());
+	}
+
+	if (model.is_null())
+		return;
+
+	UndoRedo *ur = EditorNode::get_singleton()->get_undo_redo();
+
+	ur->create_action(TTR("Create particle Soft body"));
+	ur->add_do_method(node, "set_particle_body_model", model);
+	ur->add_undo_method(node, "set_particle_body_model", node->get_particle_body_model());
+	ur->commit_action();
+}
+
 void ParticleBodyEditor::_toggle_show_hide_gizmo() {
 	if (!node)
 		return;
@@ -259,6 +296,7 @@ void ParticleBodyEditor::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_create_cloth"), &ParticleBodyEditor::_create_cloth);
 	ClassDB::bind_method(D_METHOD("_create_thread"), &ParticleBodyEditor::_create_thread);
 	ClassDB::bind_method(D_METHOD("_node_removed"), &ParticleBodyEditor::_node_removed);
+	ClassDB::bind_method(D_METHOD("_bake_model"), &ParticleBodyEditor::_bake_model);
 	ClassDB::bind_method(D_METHOD("_toggle_show_hide_gizmo"), &ParticleBodyEditor::_toggle_show_hide_gizmo);
 	ClassDB::bind_method(D_METHOD("_mass_changed", "mass"), &ParticleBodyEditor::_mass_changed);
 
@@ -314,8 +352,8 @@ ParticleBodyEditor::ParticleBodyEditor() {
 		make_check_box(soft_body_dialog.internal_sample_check, true, dialog_vbc, TTR("Internal sampling:"));
 		make_spin_box(soft_body_dialog.particle_spacing_input, 0.001, 10, 0.01, 1, dialog_vbc, TTR("Particle spacing:"));
 		make_spin_box(soft_body_dialog.sampling_input, 0.001, 1, 0.01, 1, dialog_vbc, TTR("Sampling:"));
-		make_spin_box(soft_body_dialog.clusterSpacing_input, 0.001, 100000, 0.1, 1, dialog_vbc, TTR("Cluster spacing:"));
-		make_spin_box(soft_body_dialog.clusterRadius_input, 0.1, 100000, 0.1, 2, dialog_vbc, TTR("Cluster radius:"));
+		make_spin_box(soft_body_dialog.clusterSpacing_input, 0.001, 100000, 0.1, 4, dialog_vbc, TTR("Cluster spacing:"));
+		make_spin_box(soft_body_dialog.clusterRadius_input, 0.1, 100000, 0.1, 6, dialog_vbc, TTR("Cluster radius:"));
 		make_spin_box(soft_body_dialog.clusterStiffness_input, 0.01, 1, 0.01, 0.2, dialog_vbc, TTR("Cluster stiffness:"));
 		make_spin_box(soft_body_dialog.linkRadius_input, 0.01, 50, 0.01, 0.5, dialog_vbc, TTR("Link radius:"));
 		make_spin_box(soft_body_dialog.linkStiffness_input, 0.01, 1, 0.01, 0.1, dialog_vbc, TTR("Link stiffness:"));
@@ -382,6 +420,12 @@ ParticleBodyEditor::ParticleBodyEditor() {
 	}
 
 	set_custom_minimum_size(Size2(200, 0) * EDSCALE);
+
+	bake_btn = memnew(Button);
+	SpatialEditor::get_singleton()->add_control_to_menu_panel(bake_btn);
+	bake_btn->set_text(TTR("Bake!"));
+	bake_btn->connect("pressed", this, "_bake_model");
+
 	show_gizmo_btn = memnew(Button);
 	SpatialEditor::get_singleton()->add_control_to_menu_panel(show_gizmo_btn);
 	show_gizmo_btn->set_text(TTR("Show gizmo"));

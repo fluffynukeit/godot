@@ -134,4 +134,52 @@ private:
 	void debug_reset_particle_positions();
 };
 
+class SoftParticleBody : public ParticleBody {
+	GDCLASS(SoftParticleBody, ParticleBody);
+
+	real_t radius;
+	real_t global_stiffness;
+	bool internal_sample;
+	real_t particle_spacing;
+	real_t sampling;
+	real_t cluster_spacing;
+	real_t cluster_radius;
+	real_t cluster_stiffness;
+	real_t link_radius;
+	real_t link_stiffness;
+	real_t plastic_threshold;
+	real_t plastic_creep;
+
+protected:
+	static void _bind_methods();
+
+public:
+	SoftParticleBody();
+
+	void set_radius(real_t p_value);
+	real_t get_radius() const;
+	void set_global_stiffness(real_t p_value);
+	real_t get_global_stiffness() const;
+	void set_internal_sample(bool p_value);
+	bool get_internal_sample() const;
+	void set_particle_spacing(real_t p_value);
+	real_t get_particle_spacing() const;
+	void set_sampling(real_t p_value);
+	real_t get_sampling() const;
+	void set_cluster_spacing(real_t p_value);
+	real_t get_cluster_spacing() const;
+	void set_cluster_radius(real_t p_value);
+	real_t get_cluster_radius() const;
+	void set_cluster_stiffness(real_t p_value);
+	real_t get_cluster_stiffness() const;
+	void set_link_radius(real_t p_value);
+	real_t get_link_radius() const;
+	void set_link_stiffness(real_t p_value);
+	real_t get_link_stiffness() const;
+	void set_plastic_threshold(real_t p_value);
+	real_t get_plastic_threshold() const;
+	void set_plastic_creep(real_t p_value);
+	real_t get_plastic_creep() const;
+};
+
 #endif // PARTICLE_BODY_H

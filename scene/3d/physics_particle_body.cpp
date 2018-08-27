@@ -501,3 +501,166 @@ void ParticleBody::debug_reset_particle_positions() {
 		}
 	}
 }
+
+SoftParticleBody::SoftParticleBody() :
+		ParticleBody(),
+		radius(0.1),
+		global_stiffness(0.1),
+		internal_sample(true),
+		particle_spacing(1),
+		sampling(1),
+		cluster_spacing(4),
+		cluster_radius(6),
+		cluster_stiffness(0.2),
+		link_radius(0.5),
+		link_stiffness(0.1),
+		plastic_threshold(0),
+		plastic_creep(0) {
+}
+
+void SoftParticleBody::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_radius", "value"), &SoftParticleBody::set_radius);
+	ClassDB::bind_method(D_METHOD("get_radius"), &SoftParticleBody::get_radius);
+
+	ClassDB::bind_method(D_METHOD("set_global_stiffness", "value"), &SoftParticleBody::set_global_stiffness);
+	ClassDB::bind_method(D_METHOD("get_global_stiffness"), &SoftParticleBody::get_global_stiffness);
+
+	ClassDB::bind_method(D_METHOD("set_internal_sample", "value"), &SoftParticleBody::set_internal_sample);
+	ClassDB::bind_method(D_METHOD("get_internal_sample"), &SoftParticleBody::get_internal_sample);
+
+	ClassDB::bind_method(D_METHOD("set_particle_spacing", "value"), &SoftParticleBody::set_particle_spacing);
+	ClassDB::bind_method(D_METHOD("get_particle_spacing"), &SoftParticleBody::get_particle_spacing);
+
+	ClassDB::bind_method(D_METHOD("set_sampling", "value"), &SoftParticleBody::set_sampling);
+	ClassDB::bind_method(D_METHOD("get_sampling"), &SoftParticleBody::get_sampling);
+
+	ClassDB::bind_method(D_METHOD("set_cluster_spacing", "value"), &SoftParticleBody::set_cluster_spacing);
+	ClassDB::bind_method(D_METHOD("get_cluster_spacing"), &SoftParticleBody::get_cluster_spacing);
+
+	ClassDB::bind_method(D_METHOD("set_cluster_radius", "value"), &SoftParticleBody::set_cluster_radius);
+	ClassDB::bind_method(D_METHOD("get_cluster_radius"), &SoftParticleBody::get_cluster_radius);
+
+	ClassDB::bind_method(D_METHOD("set_cluster_stiffness", "value"), &SoftParticleBody::set_cluster_stiffness);
+	ClassDB::bind_method(D_METHOD("get_cluster_stiffness"), &SoftParticleBody::get_cluster_stiffness);
+
+	ClassDB::bind_method(D_METHOD("set_link_radius", "value"), &SoftParticleBody::set_link_radius);
+	ClassDB::bind_method(D_METHOD("get_link_radius"), &SoftParticleBody::get_link_radius);
+
+	ClassDB::bind_method(D_METHOD("set_link_stiffness", "value"), &SoftParticleBody::set_link_stiffness);
+	ClassDB::bind_method(D_METHOD("get_link_stiffness"), &SoftParticleBody::get_link_stiffness);
+
+	ClassDB::bind_method(D_METHOD("set_plastic_threshold", "value"), &SoftParticleBody::set_plastic_threshold);
+	ClassDB::bind_method(D_METHOD("get_plastic_threshold"), &SoftParticleBody::get_plastic_threshold);
+
+	ClassDB::bind_method(D_METHOD("set_plastic_creep", "value"), &SoftParticleBody::set_plastic_creep);
+	ClassDB::bind_method(D_METHOD("get_plastic_creep"), &SoftParticleBody::get_plastic_creep);
+
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "radius"), "set_radius", "get_radius");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "global_stiffness"), "set_global_stiffness", "get_global_stiffness");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "internal_sample"), "set_internal_sample", "get_internal_sample");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "particle_spacing"), "set_particle_spacing", "get_particle_spacing");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "sampling"), "set_sampling", "get_sampling");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "cluster_spacing"), "set_cluster_spacing", "get_cluster_spacing");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "cluster_radius"), "set_cluster_radius", "get_cluster_radius");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "cluster_stiffness"), "set_cluster_stiffness", "get_cluster_stiffness");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "link_radius"), "set_link_radius", "get_link_radius");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "link_stiffness"), "set_link_stiffness", "get_link_stiffness");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "plastic_threshold"), "set_plastic_threshold", "get_plastic_threshold");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "plastic_creep"), "set_plastic_creep", "get_plastic_creep");
+}
+
+void SoftParticleBody::set_radius(real_t p_value) {
+	radius = p_value;
+}
+
+real_t SoftParticleBody::get_radius() const {
+	return radius;
+}
+
+void SoftParticleBody::set_global_stiffness(real_t p_value) {
+	global_stiffness = p_value;
+}
+
+real_t SoftParticleBody::get_global_stiffness() const {
+	return global_stiffness;
+}
+
+void SoftParticleBody::set_internal_sample(bool p_value) {
+	internal_sample = p_value;
+}
+
+bool SoftParticleBody::get_internal_sample() const {
+	return internal_sample;
+}
+
+void SoftParticleBody::set_particle_spacing(real_t p_value) {
+	particle_spacing = p_value;
+}
+
+real_t SoftParticleBody::get_particle_spacing() const {
+	return particle_spacing;
+}
+
+void SoftParticleBody::set_sampling(real_t p_value) {
+	sampling = p_value;
+}
+
+real_t SoftParticleBody::get_sampling() const {
+	return sampling;
+}
+
+void SoftParticleBody::set_cluster_spacing(real_t p_value) {
+	cluster_spacing = p_value;
+}
+
+real_t SoftParticleBody::get_cluster_spacing() const {
+	return cluster_spacing;
+}
+
+void SoftParticleBody::set_cluster_radius(real_t p_value) {
+	cluster_radius = p_value;
+}
+
+real_t SoftParticleBody::get_cluster_radius() const {
+	return cluster_radius;
+}
+
+void SoftParticleBody::set_cluster_stiffness(real_t p_value) {
+	cluster_stiffness = p_value;
+}
+
+real_t SoftParticleBody::get_cluster_stiffness() const {
+	return cluster_stiffness;
+}
+
+void SoftParticleBody::set_link_radius(real_t p_value) {
+	link_radius = p_value;
+}
+
+real_t SoftParticleBody::get_link_radius() const {
+	return link_radius;
+}
+
+void SoftParticleBody::set_link_stiffness(real_t p_value) {
+	link_stiffness = p_value;
+}
+
+real_t SoftParticleBody::get_link_stiffness() const {
+	return link_stiffness;
+}
+
+void SoftParticleBody::set_plastic_threshold(real_t p_value) {
+	plastic_threshold = p_value;
+}
+
+real_t SoftParticleBody::get_plastic_threshold() const {
+	return plastic_threshold;
+}
+
+void SoftParticleBody::set_plastic_creep(real_t p_value) {
+	plastic_creep = p_value;
+}
+
+real_t SoftParticleBody::get_plastic_creep() const {
+	return plastic_creep;
+}
