@@ -112,6 +112,38 @@ public:
 	virtual Variant get_data() const;
 };
 
+class FlexPrimitiveConvexShape : public FlexPrimitiveShape {
+
+	struct MeshData {
+		MeshData() :
+				mesh_id(0),
+				vertices_buffer(NULL) {}
+
+		MeshData(const MeshData &p_other) :
+				mesh_id(p_other.mesh_id),
+				vertices_buffer(p_other.vertices_buffer) {}
+
+		NvFlexConvexMeshId mesh_id;
+		NvFlexVector<FlVector4> *vertices_buffer;
+	};
+
+	Vector<Vector3> vertices;
+	Map<FlexSpace *, MeshData> cache;
+
+public:
+	FlexPrimitiveConvexShape();
+	~FlexPrimitiveConvexShape();
+
+	virtual NvFlexCollisionShapeType get_type() { return eNvFlexShapeConvexMesh; }
+	virtual void get_shape(FlexSpace *p_space, NvFlexCollisionGeometry *r_shape);
+	virtual void set_data(const Variant &p_data);
+	virtual Variant get_data() const;
+
+private:
+	void setup(const Vector<Vector3> &p_vertices);
+	void update_space_mesh(FlexSpace *p_space);
+};
+
 class FlexPrimitiveTriangleShape : public FlexPrimitiveShape {
 
 	struct MeshData {
