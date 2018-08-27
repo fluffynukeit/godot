@@ -182,4 +182,23 @@ public:
 	real_t get_plastic_creep() const;
 };
 
+class RigidParticleBody : public ParticleBody {
+	GDCLASS(RigidParticleBody, ParticleBody);
+
+	real_t radius;
+	real_t expand;
+
+protected:
+	static void _bind_methods();
+
+public:
+	RigidParticleBody();
+
+	void set_radius(real_t p_value);
+	real_t get_radius() const;
+
+	void set_expand(real_t p_value);
+	real_t get_expand() const;
+};
+
 #endif // PARTICLE_BODY_H
