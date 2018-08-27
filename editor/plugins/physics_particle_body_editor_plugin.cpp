@@ -160,6 +160,7 @@ void ParticleBodyEditor::_bake_model() {
 	Ref<ParticleBodyModel> model;
 
 	if (cast_to<SoftParticleBody>(node)) {
+
 		SoftParticleBody *spb = cast_to<SoftParticleBody>(node);
 		model = ParticlePhysicsServer::get_singleton()->create_soft_particle_body_model(
 				node->get_particle_body_mesh()->get_mesh()->generate_triangle_mesh(),
@@ -183,6 +184,17 @@ void ParticleBodyEditor::_bake_model() {
 				node->get_particle_body_mesh()->get_mesh()->generate_triangle_mesh(),
 				rpb->get_radius(),
 				rpb->get_expand());
+
+	} else if (cast_to<ClothParticleBody>(node)) {
+
+		ClothParticleBody *cpb = cast_to<ClothParticleBody>(node);
+		model = ParticlePhysicsServer::get_singleton()->create_cloth_particle_body_model(
+				node->get_particle_body_mesh()->get_mesh()->generate_triangle_mesh(),
+				cpb->get_stretch_stiffness(),
+				cpb->get_bend_stiffness(),
+				cpb->get_tether_stiffness(),
+				cpb->get_tether_give(),
+				cpb->get_rest_pressure());
 	}
 
 	if (model.is_null())
