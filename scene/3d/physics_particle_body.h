@@ -201,4 +201,35 @@ public:
 	real_t get_expand() const;
 };
 
+class ClothParticleBody : public ParticleBody {
+	GDCLASS(ClothParticleBody, ParticleBody);
+
+protected:
+	static void _bind_methods();
+
+	real_t stretch_stiffness;
+	real_t bend_stiffness;
+	real_t tether_stiffness;
+	real_t tether_give;
+	real_t rest_pressure;
+
+public:
+	ClothParticleBody();
+
+	void set_stretch_stiffness(real_t p_value);
+	real_t get_stretch_stiffness() const;
+
+	void set_bend_stiffness(real_t p_value);
+	real_t get_bend_stiffness() const;
+
+	void set_tether_stiffness(real_t p_value);
+	real_t get_tether_stiffness() const;
+
+	void set_tether_give(real_t p_value);
+	real_t get_tether_give() const;
+
+	void set_rest_pressure(real_t p_value);
+	real_t get_rest_pressure() const;
+};
+
 #endif // PARTICLE_BODY_H

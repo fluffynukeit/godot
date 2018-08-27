@@ -697,3 +697,71 @@ void RigidParticleBody::set_expand(real_t p_value) {
 real_t RigidParticleBody::get_expand() const {
 	return expand;
 }
+
+ClothParticleBody::ClothParticleBody() :
+		ParticleBody(),
+		stretch_stiffness(0.8),
+		bend_stiffness(0.8),
+		tether_stiffness(0.8),
+		tether_give(0.8),
+		rest_pressure(1) {}
+
+void ClothParticleBody::_bind_methods() {
+
+	ClassDB::bind_method(D_METHOD("set_stretch_stiffness", "value"), &ClothParticleBody::set_stretch_stiffness);
+	ClassDB::bind_method(D_METHOD("get_stretch_stiffness"), &ClothParticleBody::get_stretch_stiffness);
+	ClassDB::bind_method(D_METHOD("set_bend_stiffness", "value"), &ClothParticleBody::set_bend_stiffness);
+	ClassDB::bind_method(D_METHOD("get_bend_stiffness"), &ClothParticleBody::get_bend_stiffness);
+	ClassDB::bind_method(D_METHOD("set_tether_stiffness", "value"), &ClothParticleBody::set_tether_stiffness);
+	ClassDB::bind_method(D_METHOD("get_tether_stiffness"), &ClothParticleBody::get_tether_stiffness);
+	ClassDB::bind_method(D_METHOD("set_tether_give", "value"), &ClothParticleBody::set_tether_give);
+	ClassDB::bind_method(D_METHOD("get_tether_give"), &ClothParticleBody::get_tether_give);
+	ClassDB::bind_method(D_METHOD("set_rest_pressure", "value"), &ClothParticleBody::set_rest_pressure);
+	ClassDB::bind_method(D_METHOD("get_rest_pressure"), &ClothParticleBody::get_rest_pressure);
+
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "stretch_stiffness"), "set_stretch_stiffness", "get_stretch_stiffness");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "bend_stiffness"), "set_bend_stiffness", "get_bend_stiffness");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "tether_stiffness"), "set_tether_stiffness", "get_tether_stiffness");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "tether_give"), "set_tether_give", "get_tether_give");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "rest_pressure"), "set_rest_pressure", "get_rest_pressure");
+}
+
+void ClothParticleBody::set_stretch_stiffness(real_t p_value) {
+	stretch_stiffness = p_value;
+}
+
+real_t ClothParticleBody::get_stretch_stiffness() const {
+	return stretch_stiffness;
+}
+
+void ClothParticleBody::set_bend_stiffness(real_t p_value) {
+	bend_stiffness = p_value;
+}
+
+real_t ClothParticleBody::get_bend_stiffness() const {
+	return bend_stiffness;
+}
+
+void ClothParticleBody::set_tether_stiffness(real_t p_value) {
+	tether_stiffness = p_value;
+}
+
+real_t ClothParticleBody::get_tether_stiffness() const {
+	return tether_stiffness;
+}
+
+void ClothParticleBody::set_tether_give(real_t p_value) {
+	tether_give = p_value;
+}
+
+real_t ClothParticleBody::get_tether_give() const {
+	return tether_give;
+}
+
+void ClothParticleBody::set_rest_pressure(real_t p_value) {
+	rest_pressure = p_value;
+}
+
+real_t ClothParticleBody::get_rest_pressure() const {
+	return rest_pressure;
+}
