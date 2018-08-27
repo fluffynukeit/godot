@@ -452,6 +452,7 @@ void register_scene_types() {
 	ClassDB::register_class<PhysicsParticleWorld>();
 	ClassDB::register_virtual_class<ParticleObject>();
 	ClassDB::register_class<ParticleBody>();
+	ClassDB::register_class<SoftParticleBody>();
 	ClassDB::register_class<ParticlePrimitiveBody>();
 	ClassDB::register_class<ParticlePrimitiveArea>();
 	ClassDB::register_class<PhysicsParticleGlue>();

@@ -100,6 +100,7 @@ class ParticleBodyEditor : public Control {
 	ParticleBody *node;
 
 	MenuButton *options;
+	Button *bake_btn;
 	Button *show_gizmo_btn;
 
 	SpinBox *inspector_mass_inp;
@@ -117,6 +118,7 @@ class ParticleBodyEditor : public Control {
 	void _create_cloth();
 	void _create_thread();
 
+	void _bake_model();
 	void _toggle_show_hide_gizmo();
 
 	void _mass_changed(real_t p_mass);
