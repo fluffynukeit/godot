@@ -443,7 +443,7 @@ ParticleBodyEditor::ParticleBodyEditor() {
 
 	bake_btn = memnew(Button);
 	SpatialEditor::get_singleton()->add_control_to_menu_panel(bake_btn);
-	bake_btn->set_text(TTR("Bake!"));
+	bake_btn->set_text(TTR("Bake Particle Model"));
 	bake_btn->connect("pressed", this, "_bake_model");
 
 	show_gizmo_btn = memnew(Button);
@@ -571,7 +571,17 @@ void PhysicsParticleBodyEditorPlugin::make_visible(bool p_visible) {
 
 	if (p_visible) {
 
-		particle_body_editor->options->show();
+		if (cast_to<SoftParticleBody>(particle_body_editor->node) || cast_to<RigidParticleBody>(particle_body_editor->node) || cast_to<ClothParticleBody>(particle_body_editor->node)) {
+
+			particle_body_editor->options->hide();
+			particle_body_editor->bake_btn->show();
+
+		} else {
+
+			particle_body_editor->options->show();
+			particle_body_editor->bake_btn->hide();
+		}
+
 		particle_body_editor->show_gizmo_btn->show();
 		if (particle_body_editor->show_gizmo_btn->is_pressed())
 			particle_body_editor->show();
@@ -579,6 +589,7 @@ void PhysicsParticleBodyEditorPlugin::make_visible(bool p_visible) {
 	} else {
 
 		particle_body_editor->options->hide();
+		particle_body_editor->bake_btn->hide();
 		particle_body_editor->show_gizmo_btn->hide();
 		particle_body_editor->hide();
 		particle_body_editor->edit(NULL);
