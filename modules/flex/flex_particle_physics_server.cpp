@@ -281,6 +281,15 @@ AABB FlexParticleBodyCommands::get_aabb() const {
 		}
 	}
 
+#ifdef DEBUG_ENABLED
+	ERR_FAIL_COND_V(Math::is_nan(aabb.position.x), AABB());
+	ERR_FAIL_COND_V(Math::is_nan(aabb.position.y), AABB());
+	ERR_FAIL_COND_V(Math::is_nan(aabb.position.z), AABB());
+	ERR_FAIL_COND_V(Math::is_nan(aabb.size.x), AABB());
+	ERR_FAIL_COND_V(Math::is_nan(aabb.size.y), AABB());
+	ERR_FAIL_COND_V(Math::is_nan(aabb.size.z), AABB());
+#endif
+
 	return aabb;
 }
 
