@@ -438,8 +438,8 @@ void FlexParticlePhysicsServer::space_get_params_defaults(Map<StringName, Varian
 	(*r_defs)[solver_param_diffuseBallistic] = 0.0;
 	(*r_defs)[solver_param_diffuseLifetime] = 0.0;
 	(*r_defs)[solver_param_collisionDistance] = def_radius;
-	(*r_defs)[solver_param_particleCollisionMargin] = 0.04;
-	(*r_defs)[solver_param_shapeCollisionMargin] = 0.04;
+	(*r_defs)[solver_param_particleCollisionMargin] = 0.001;
+	(*r_defs)[solver_param_shapeCollisionMargin] = 0.001;
 	(*r_defs)[solver_param_relaxationMode] = "local";
 	(*r_defs)[solver_param_relaxationFactor] = 0.8;
 }
