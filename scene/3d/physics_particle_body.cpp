@@ -45,9 +45,6 @@ void ParticleBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_particle_body_model", "model"), &ParticleBody::set_particle_body_model);
 	ClassDB::bind_method(D_METHOD("get_particle_body_model"), &ParticleBody::get_particle_body_model);
 
-	ClassDB::bind_method(D_METHOD("set_pressure", "pressure"), &ParticleBody::set_pressure);
-	ClassDB::bind_method(D_METHOD("get_pressure"), &ParticleBody::get_pressure);
-
 	ClassDB::bind_method(D_METHOD("set_update_spatial_transform", "update"), &ParticleBody::set_update_spatial_transform);
 	ClassDB::bind_method(D_METHOD("get_update_spatial_transform"), &ParticleBody::get_update_spatial_transform);
 
@@ -96,7 +93,6 @@ void ParticleBody::_bind_methods() {
 
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "particle_body_model", PROPERTY_HINT_RESOURCE_TYPE, "ParticleBodyModel"), "set_particle_body_model", "get_particle_body_model");
 
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "pressure"), "set_pressure", "get_pressure");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "update_spatial_transform"), "set_update_spatial_transform", "get_update_spatial_transform");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitorable"), "set_monitorable", "is_monitorable");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitoring_primitives_contacts"), "set_monitoring_primitives_contacts", "is_monitoring_primitives_contacts");
@@ -283,14 +279,6 @@ void ParticleBody::set_monitoring_primitives_contacts(bool p_monitoring) {
 
 bool ParticleBody::is_monitoring_primitives_contacts() const {
 	return ParticlePhysicsServer::get_singleton()->body_is_monitoring_primitives_contacts(rid);
-}
-
-void ParticleBody::set_pressure(real_t p_pressure) {
-	ParticlePhysicsServer::get_singleton()->body_set_pressure(rid, p_pressure);
-}
-
-real_t ParticleBody::get_pressure() const {
-	return ParticlePhysicsServer::get_singleton()->body_get_pressure(rid);
 }
 
 void ParticleBody::set_update_spatial_transform(bool p_update) {
@@ -555,18 +543,18 @@ void SoftParticleBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_plastic_creep", "value"), &SoftParticleBody::set_plastic_creep);
 	ClassDB::bind_method(D_METHOD("get_plastic_creep"), &SoftParticleBody::get_plastic_creep);
 
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "radius"), "set_radius", "get_radius");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "global_stiffness"), "set_global_stiffness", "get_global_stiffness");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "internal_sample"), "set_internal_sample", "get_internal_sample");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "particle_spacing"), "set_particle_spacing", "get_particle_spacing");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "sampling"), "set_sampling", "get_sampling");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "cluster_spacing"), "set_cluster_spacing", "get_cluster_spacing");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "cluster_radius"), "set_cluster_radius", "get_cluster_radius");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "cluster_stiffness"), "set_cluster_stiffness", "get_cluster_stiffness");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "link_radius"), "set_link_radius", "get_link_radius");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "link_stiffness"), "set_link_stiffness", "get_link_stiffness");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "plastic_threshold"), "set_plastic_threshold", "get_plastic_threshold");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "plastic_creep"), "set_plastic_creep", "get_plastic_creep");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/radius"), "set_radius", "get_radius");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/global_stiffness"), "set_global_stiffness", "get_global_stiffness");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "model/internal_sample"), "set_internal_sample", "get_internal_sample");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/particle_spacing"), "set_particle_spacing", "get_particle_spacing");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/sampling"), "set_sampling", "get_sampling");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/cluster_spacing"), "set_cluster_spacing", "get_cluster_spacing");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/cluster_radius"), "set_cluster_radius", "get_cluster_radius");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/cluster_stiffness"), "set_cluster_stiffness", "get_cluster_stiffness");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/link_radius"), "set_link_radius", "get_link_radius");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/link_stiffness"), "set_link_stiffness", "get_link_stiffness");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/plastic_threshold"), "set_plastic_threshold", "get_plastic_threshold");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/plastic_creep"), "set_plastic_creep", "get_plastic_creep");
 }
 
 void SoftParticleBody::set_radius(real_t p_value) {
@@ -678,8 +666,8 @@ void RigidParticleBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_expand", "value"), &RigidParticleBody::set_expand);
 	ClassDB::bind_method(D_METHOD("get_expand"), &RigidParticleBody::get_expand);
 
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "radius"), "set_radius", "get_radius");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "expand"), "set_expand", "get_expand");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/radius"), "set_radius", "get_radius");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/expand"), "set_expand", "get_expand");
 }
 
 void RigidParticleBody::set_radius(real_t p_value) {
@@ -719,11 +707,16 @@ void ClothParticleBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_rest_pressure", "value"), &ClothParticleBody::set_rest_pressure);
 	ClassDB::bind_method(D_METHOD("get_rest_pressure"), &ClothParticleBody::get_rest_pressure);
 
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "stretch_stiffness"), "set_stretch_stiffness", "get_stretch_stiffness");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "bend_stiffness"), "set_bend_stiffness", "get_bend_stiffness");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "tether_stiffness"), "set_tether_stiffness", "get_tether_stiffness");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "tether_give"), "set_tether_give", "get_tether_give");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "rest_pressure"), "set_rest_pressure", "get_rest_pressure");
+	ClassDB::bind_method(D_METHOD("set_pressure", "pressure"), &ClothParticleBody::set_pressure);
+	ClassDB::bind_method(D_METHOD("get_pressure"), &ClothParticleBody::get_pressure);
+
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/stretch_stiffness"), "set_stretch_stiffness", "get_stretch_stiffness");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/bend_stiffness"), "set_bend_stiffness", "get_bend_stiffness");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/tether_stiffness"), "set_tether_stiffness", "get_tether_stiffness");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/tether_give"), "set_tether_give", "get_tether_give");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/rest_pressure"), "set_rest_pressure", "get_rest_pressure");
+
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "pressure"), "set_pressure", "get_pressure");
 }
 
 void ClothParticleBody::set_stretch_stiffness(real_t p_value) {
@@ -764,4 +757,12 @@ void ClothParticleBody::set_rest_pressure(real_t p_value) {
 
 real_t ClothParticleBody::get_rest_pressure() const {
 	return rest_pressure;
+}
+
+void ClothParticleBody::set_pressure(real_t p_pressure) {
+	ParticlePhysicsServer::get_singleton()->body_set_pressure(rid, p_pressure);
+}
+
+real_t ClothParticleBody::get_pressure() const {
+	return ParticlePhysicsServer::get_singleton()->body_get_pressure(rid);
 }

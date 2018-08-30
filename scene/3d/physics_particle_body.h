@@ -78,9 +78,6 @@ public:
 	void set_particle_body_model(Ref<ParticleBodyModel> p_model);
 	Ref<ParticleBodyModel> get_particle_body_model() const;
 
-	void set_pressure(real_t p_pressure);
-	real_t get_pressure() const;
-
 	void set_update_spatial_transform(bool p_update);
 	bool get_update_spatial_transform() const;
 
@@ -230,6 +227,9 @@ public:
 
 	void set_rest_pressure(real_t p_value);
 	real_t get_rest_pressure() const;
+
+	void set_pressure(real_t p_pressure);
+	real_t get_pressure() const;
 };
 
 #endif // PARTICLE_BODY_H
