@@ -54,7 +54,8 @@ FlexParticleBody::FlexParticleBody() :
 		rest_volume(0),
 		pressure(1),
 		constraint_scale(0),
-		_is_monitorable(false) {
+		_is_monitorable(false),
+		_is_monitoring_primitives_contacts(false) {
 	sync_callback.receiver = NULL;
 }
 
