@@ -63,6 +63,7 @@ void PhysicsParticleGlue::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("find_particle", "particle_index"), &PhysicsParticleGlue::find_particle);
 	ClassDB::bind_method(D_METHOD("add_particle", "particle_index"), &PhysicsParticleGlue::add_particle);
 	ClassDB::bind_method(D_METHOD("remove_particle", "position"), &PhysicsParticleGlue::remove_particle);
+	ClassDB::bind_method(D_METHOD("remove_all_particles"), &PhysicsParticleGlue::remove_all_particles);
 	ClassDB::bind_method(D_METHOD("get_particle_index", "position"), &PhysicsParticleGlue::get_particle_index);
 
 	ClassDB::bind_method(D_METHOD("particle_physics_sync", "space"), &PhysicsParticleGlue::particle_physics_sync);
@@ -182,11 +183,21 @@ void PhysicsParticleGlue::add_particle(int p_particle_index) {
 		glued_particles_data.write[i].state = GluedParticleData::GLUED_PARTICLE_STATE_IN_RUNTIME;
 		_are_particles_dirty = true;
 		_compute_offsets();
+	} else {
+		if (glued_particles_data[i].state == GluedParticleData::GLUED_PARTICLE_STATE_OUT)
+			glued_particles_data.write[i].state = GluedParticleData::GLUED_PARTICLE_STATE_IN_RUNTIME;
 	}
 }
 
 void PhysicsParticleGlue::remove_particle(int p_position) {
 	glued_particles_data.write[p_position].state = GluedParticleData::GLUED_PARTICLE_STATE_OUT;
+	_are_particles_dirty = true;
+}
+
+void PhysicsParticleGlue::remove_all_particles() {
+	for (int i = glued_particles_data.size() - 1; 0 <= i; --i) {
+		glued_particles_data.write[i].state = GluedParticleData::GLUED_PARTICLE_STATE_OUT;
+	}
 	_are_particles_dirty = true;
 }
 

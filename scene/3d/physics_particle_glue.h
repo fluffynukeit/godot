@@ -109,6 +109,7 @@ public:
 
 	void add_particle(int p_particle_index);
 	void remove_particle(int p_position);
+	void remove_all_particles();
 	int get_particle_index(int p_position);
 
 private:
