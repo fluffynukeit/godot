@@ -340,11 +340,12 @@ public:
 class ParticleBodySpatialGizmoPlugin : public EditorSpatialGizmoPlugin {
 	GDCLASS(ParticleBodySpatialGizmoPlugin, EditorSpatialGizmoPlugin);
 
-	SphereMesh spherem;
+	class SphereMesh *spherem;
 	real_t radius;
 
 public:
 	ParticleBodySpatialGizmoPlugin();
+	virtual ~ParticleBodySpatialGizmoPlugin();
 
 	virtual bool has_gizmo(Spatial *p_spatial);
 	virtual String get_name() const;

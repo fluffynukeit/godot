@@ -46,6 +46,7 @@
 #include "scene/3d/collision_shape.h"
 #include "scene/3d/mesh_instance.h"
 #include "scene/3d/physics_body.h"
+#include "scene/3d/physics_particle_body.h"
 #include "scene/3d/visual_instance.h"
 #include "scene/resources/packed_scene.h"
 #include "scene/resources/surface_tool.h"
