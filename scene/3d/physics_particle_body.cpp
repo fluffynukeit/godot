@@ -303,7 +303,7 @@ int ParticleBody::get_rigid_count() const {
 
 void ParticleBody::_notification(int p_what) {
 	switch (p_what) {
-		case NOTIFICATION_READY: {
+		case NOTIFICATION_ENTER_TREE: {
 			ParticlePhysicsServer::get_singleton()->body_set_space(rid, get_world()->get_particle_space());
 			ParticlePhysicsServer::get_singleton()->body_set_callback(rid, ParticlePhysicsServer::PARTICLE_BODY_CALLBACK_SYNC, this, "commands_process_internal");
 			resource_changed(particle_body_model);
@@ -317,7 +317,6 @@ void ParticleBody::_notification(int p_what) {
 					}
 				}
 			}
-
 		} break;
 		case NOTIFICATION_TRANSFORM_CHANGED: {
 
