@@ -3029,6 +3029,8 @@ void BakedIndirectLightGizmoPlugin::redraw(EditorSpatialGizmo *p_gizmo) {
 
 ////
 
+#include "scene/3d/physics_particle_primitive_body.h"
+
 ParticlePrimitiveShapeSpatialGizmoPlugin::ParticlePrimitiveShapeSpatialGizmoPlugin() {
 
 	Color gizmo_color = EDITOR_DEF("editors/3d_gizmos/gizmo_colors/shape", Color(0.5, 0.7, 1));
@@ -3520,14 +3522,19 @@ ParticleBodySpatialGizmoPlugin::ParticleBodySpatialGizmoPlugin() {
 
 	EDITOR_DEF("editors/3d_gizmos/gizmo_colors/instanced", Color(0.7, 0.7, 0.7, 0.5));
 
-	spherem.set_radial_segments(8);
-	spherem.set_rings(8);
+	spherem = memnew(SphereMesh);
+	spherem->set_radial_segments(8);
+	spherem->set_rings(8);
 
 	Color gizmo_color = EDITOR_GET("editors/3d_gizmos/gizmo_colors/shape");
 	add_material("particle_body_particle_material", create_material_pb(gizmo_color));
 	add_material("particle_body_particle_material_fixed", create_material_pb(Color(0.5, 1, 1)));
 	add_material("particle_body_particle_material_selected", create_material_pb(Color(1, 0, 0)));
 	add_material("particle_body_particle_material_selected_fixed", create_material_pb(Color(0.5, 1, 1)));
+}
+
+ParticleBodySpatialGizmoPlugin::~ParticleBodySpatialGizmoPlugin() {
+	memdelete(spherem);
 }
 
 #include "editor/plugins/physics_particle_body_editor_plugin.h"
@@ -3544,8 +3551,8 @@ void ParticleBodySpatialGizmoPlugin::redraw(EditorSpatialGizmo *p_gizmo) {
 
 	radius = ParticlePhysicsServer::get_singleton()->space_get_particle_radius(SceneTree::get_singleton()->get_root()->find_world()->get_particle_space());
 
-	spherem.set_radius(radius);
-	spherem.set_height(radius * 2);
+	spherem->set_radius(radius);
+	spherem->set_height(radius * 2);
 
 	ParticleBody *body = Object::cast_to<ParticleBody>(p_gizmo->get_spatial_node());
 
@@ -3704,7 +3711,7 @@ Ref<SpatialMaterial> ParticleBodySpatialGizmoPlugin::create_material_pb(const Co
 void ParticleBodySpatialGizmoPlugin::add_solid_sphere(EditorSpatialGizmo *p_gizmo, Ref<Material> &p_material, Vector3 p_position) {
 	ERR_FAIL_COND(!p_gizmo);
 
-	Array arrays = spherem.surface_get_arrays(0);
+	Array arrays = spherem->surface_get_arrays(0);
 	PoolVector3Array vertex = arrays[VS::ARRAY_VERTEX];
 	PoolVector3Array::Write w = vertex.write();
 
@@ -3715,7 +3722,7 @@ void ParticleBodySpatialGizmoPlugin::add_solid_sphere(EditorSpatialGizmo *p_gizm
 	arrays[VS::ARRAY_VERTEX] = vertex;
 
 	Ref<ArrayMesh> m = memnew(ArrayMesh);
-	m->add_surface_from_arrays(spherem.surface_get_primitive_type(0), arrays);
+	m->add_surface_from_arrays(spherem->surface_get_primitive_type(0), arrays);
 	m->surface_set_material(0, p_material);
 	p_gizmo->add_mesh(m);
 }
