@@ -3642,7 +3642,7 @@ bool ParticleBodySpatialGizmoPlugin::intersect_ray(EditorSpatialGizmo *p_gizmo, 
 	if (body->get_particle_body_model().is_null())
 		return false;
 
-	Transform t = body->get_global_transform();
+	Transform body_transform = body->get_global_transform();
 
 	PoolVector<Vector3> particles = body->get_particle_body_model()->get_particles();
 	if (particles.size() <= 0)
@@ -3650,26 +3650,39 @@ bool ParticleBodySpatialGizmoPlugin::intersect_ray(EditorSpatialGizmo *p_gizmo, 
 
 	PoolVector<Vector3>::Read r = particles.read();
 
-	real_t distance_to_camera = FLT_MAX;
 	int particle_id = -1;
 	Vector3 position;
 
+	Transform camera_tr = p_camera->get_camera_transform();
+
+	real_t distance_to_camera = FLT_MAX;
 	for (int i(particles.size() - 1); 0 <= i; --i) {
 
-		Vector3 center = t.xform(r[i]);
-		Vector3 projected_out(center);
-		projected_out.y += radius * 0.5;
-		//projected_out += p_camera->get_camera_transform().basis.get_axis(1) * radius * 0.5;
+		Transform pt;
+		pt.set_look_at(body_transform.xform(r[i]), camera_tr.origin, Vector3(0, 1, 0));
 
-		Vector2 on_screen_center = p_camera->unproject_position(center);
-		Vector2 on_screen_out = p_camera->unproject_position(projected_out);
+		Point2 center = p_camera->unproject_position(pt.origin);
 
-		if (on_screen_center.distance_squared_to(p_point) <= on_screen_center.distance_squared_to(on_screen_out)) {
-			real_t par_distance_to_camera = (center - p_camera->get_global_transform().origin).length_squared();
-			if (distance_to_camera > par_distance_to_camera) {
-				distance_to_camera = par_distance_to_camera;
+		p_camera->look_at(pt.origin, Vector3(0, 1, 0));
+		Vector3 c0 = pt.xform(Vector3(radius, radius, 0));
+		Vector3 c1 = pt.xform(Vector3(-radius, -radius, 0));
+
+		Point2 p0 = p_camera->unproject_position(c0);
+		Point2 p1 = p_camera->unproject_position(c1);
+
+		p_camera->set_global_transform(camera_tr);
+
+		Rect2 rect(p0, p1 - p0);
+
+		rect.set_position(center - rect.get_size() / 2.0);
+
+		if (rect.has_point(p_point)) {
+
+			const real_t dist((pt.origin - camera_tr.origin).length_squared());
+			if (dist < distance_to_camera) {
+				distance_to_camera = dist;
+				position = pt.origin;
 				particle_id = i;
-				position = r[i];
 			}
 		}
 	}
