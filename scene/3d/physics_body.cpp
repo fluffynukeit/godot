@@ -1273,11 +1273,26 @@ Vector3 KinematicBody::move_and_slide_with_snap(const Vector3 &p_linear_velocity
 	return ret;
 }
 
-void KinematicBody::step_motion(Vector3 p_linear_velocity, Vector3 p_up, real_t p_step_height, bool p_infinite_inertia) {
+void KinematicBody::step_motion(Vector3 p_linear_velocity, Vector3 p_up, real_t p_step_height, real_t p_floor_max_angle, bool p_infinite_inertia) {
 
 	Transform body_transform(get_global_transform());
+	Vector3 lv = p_linear_velocity;
 
-	Vector3 motion(p_linear_velocity * get_physics_process_delta_time());
+	for (int i = 0; i < 3; i++) {
+		if (locked_axis & (1 << i)) {
+			lv[i] = 0;
+		}
+	}
+
+	Vector3 motion((floor_velocity + lv) * get_physics_process_delta_time());
+	bool was_on_floor(on_floor);
+
+	on_floor = false;
+	on_slope = false;
+	on_ceiling = false;
+	on_wall = false;
+	colliders.clear();
+	floor_velocity.zero();
 
 	const real_t vertical_motion_magnitude = motion.dot(p_up);
 
@@ -1290,11 +1305,11 @@ void KinematicBody::step_motion(Vector3 p_linear_velocity, Vector3 p_up, real_t 
 		step_up_motion = p_step_height;
 	}
 
-	const real_t step_up_fraction = test_step_up(body_transform, p_up, step_up_motion, p_infinite_inertia);
+	const real_t step_up_fraction = test_step_up(body_transform, step_up_motion, p_up, p_infinite_inertia);
 
 	/// Step 2) Forward Strafe
 
-	test_step_forward_and_strafe(body_transform, motion, p_infinite_inertia);
+	test_step_forward_and_strafe(body_transform, motion, p_up, p_infinite_inertia);
 
 	/// Step 3) Down
 
@@ -1306,13 +1321,13 @@ void KinematicBody::step_motion(Vector3 p_linear_velocity, Vector3 p_up, real_t 
 		step_down_motion += p_step_height * step_up_fraction;
 	}
 
-	test_step_down(body_transform, p_up * -1, step_down_motion, p_step_height, p_infinite_inertia);
+	test_step_down(body_transform, p_up, step_down_motion, p_step_height, p_floor_max_angle, was_on_floor, p_infinite_inertia);
 
 	/// Step 4) Perform recover and get collision info
 
 	Vector3 recover_motion(0, 0, 0);
 	for (int t(4); 0 < t; --t) {
-		if (!PhysicsServer::get_singleton()->body_test_motion_depenetrate(get_rid(), body_transform, 0.2, p_infinite_inertia, 0.1, true, recover_motion, NULL)) {
+		if (!PhysicsServer::get_singleton()->body_test_motion_depenetrate(get_rid(), body_transform, 0.2, p_infinite_inertia, 0.2, true, recover_motion, NULL)) {
 			break;
 		}
 	}
@@ -1320,13 +1335,16 @@ void KinematicBody::step_motion(Vector3 p_linear_velocity, Vector3 p_up, real_t 
 	body_transform.origin += recover_motion;
 
 	set_global_transform(body_transform);
-
-	on_floor = true;
 }
 
 bool KinematicBody::is_on_floor() const {
 
 	return on_floor;
+}
+
+bool KinematicBody::is_on_slope() const {
+
+	return on_slope;
 }
 
 bool KinematicBody::is_on_wall() const {
@@ -1437,11 +1455,12 @@ void KinematicBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("move_and_slide", "linear_velocity", "floor_normal", "stop_on_slope", "max_slides", "floor_max_angle", "infinite_inertia"), &KinematicBody::move_and_slide, DEFVAL(Vector3(0, 0, 0)), DEFVAL(false), DEFVAL(4), DEFVAL(Math::deg2rad((float)45)), DEFVAL(true));
 	ClassDB::bind_method(D_METHOD("move_and_slide_with_snap", "linear_velocity", "snap", "floor_normal", "infinite_inertia", "stop_on_slope", "max_bounces", "floor_max_angle"), &KinematicBody::move_and_slide_with_snap, DEFVAL(Vector3(0, 0, 0)), DEFVAL(true), DEFVAL(false), DEFVAL(4), DEFVAL(Math::deg2rad((float)45)));
 
-	ClassDB::bind_method(D_METHOD("step_motion", "linear_velocity", "up", "step_height", "infinite_inertia"), &KinematicBody::step_motion);
+	ClassDB::bind_method(D_METHOD("step_motion", "linear_velocity", "up", "step_height", "floor_max_angle", "infinite_inertia"), &KinematicBody::step_motion, DEFVAL(Math::deg2rad((float)45)), DEFVAL(true));
 
 	ClassDB::bind_method(D_METHOD("test_move", "from", "rel_vec", "infinite_inertia"), &KinematicBody::test_move);
 
 	ClassDB::bind_method(D_METHOD("is_on_floor"), &KinematicBody::is_on_floor);
+	ClassDB::bind_method(D_METHOD("is_on_slope"), &KinematicBody::is_on_slope);
 	ClassDB::bind_method(D_METHOD("is_on_ceiling"), &KinematicBody::is_on_ceiling);
 	ClassDB::bind_method(D_METHOD("is_on_wall"), &KinematicBody::is_on_wall);
 	ClassDB::bind_method(D_METHOD("get_floor_velocity"), &KinematicBody::get_floor_velocity);
@@ -1468,6 +1487,8 @@ KinematicBody::KinematicBody() :
 	margin = 0.001;
 	locked_axis = 0;
 	on_floor = false;
+	was_slope_detected = false;
+	on_slope = false;
 	on_ceiling = false;
 	on_wall = false;
 }
@@ -1484,7 +1505,7 @@ KinematicBody::~KinematicBody() {
 	}
 }
 
-real_t KinematicBody::test_step_up(Transform &r_transform, const Vector3 &p_up, real_t p_motion, bool p_infinite_inertia) {
+real_t KinematicBody::test_step_up(Transform &r_transform, real_t p_motion, const Vector3 &p_up, bool p_infinite_inertia) {
 
 	real_t step_up_fraction = 1;
 
@@ -1497,6 +1518,20 @@ real_t KinematicBody::test_step_up(Transform &r_transform, const Vector3 &p_up, 
 		// Change fraction only if the hitten body is a slope
 		if (motion_result.collision_normal.dot(p_up) > 0) {
 			step_up_fraction = hit_fraction;
+		} else {
+			on_ceiling = true;
+
+			Collision c;
+			c.collider = motion_result.collider_id;
+			c.collider_rid = motion_result.collider;
+			c.collider_shape = motion_result.collider_shape;
+			c.collider_vel = Vector3();
+			c.local_shape = motion_result.collision_local_shape;
+			c.normal = motion_result.collision_normal;
+			c.collision = motion_result.collision_point;
+			c.travel = Vector3();
+			c.remainder = Vector3();
+			colliders.push_back(c);
 		}
 	}
 
@@ -1527,7 +1562,7 @@ Vector3 perpendicular_component(const Vector3 &direction, const Vector3 &normal)
 	return direction - parallel_component(direction, normal);
 }
 
-void KinematicBody::test_step_forward_and_strafe(Transform &r_transform, const Vector3 &p_motion, bool p_infinite_inertia) {
+void KinematicBody::test_step_forward_and_strafe(Transform &r_transform, const Vector3 &p_motion, const Vector3 &p_up, bool p_infinite_inertia) {
 
 	Vector3 motion(p_motion);
 
@@ -1541,25 +1576,46 @@ void KinematicBody::test_step_forward_and_strafe(Transform &r_transform, const V
 
 		if (sub_test_hit_fraction < 1) {
 
+			Collision c;
+			c.collider = motion_result.collider_id;
+			c.collider_rid = motion_result.collider;
+			c.collider_shape = motion_result.collider_shape;
+			c.collider_vel = Vector3();
+			c.local_shape = motion_result.collision_local_shape;
+			c.normal = motion_result.collision_normal;
+			c.collision = motion_result.collision_point;
+			c.travel = Vector3();
+			c.remainder = Vector3();
+			colliders.push_back(c);
+
 			fraction -= sub_test_hit_fraction;
 
 			// Re-compute motion
-			const real_t motion_length = motion.length();
+			real_t motion_length = motion.length();
+
+			Vector3 motion_direction = motion.normalized();
+			const Vector3 reflected_motion(compute_reflection_direction(motion_direction, motion_result.collision_normal).normalized());
+			const Vector3 perp_component = perpendicular_component(reflected_motion, motion_result.collision_normal);
+
+			motion = perp_component * motion_length;
+			motion_length = motion.length();
+
 			if (motion_length > FLT_EPSILON) {
-				Vector3 motion_direction = motion.normalized();
-
-				const Vector3 reflected_motion(compute_reflection_direction(motion_direction, motion_result.collision_normal).normalized());
-				const Vector3 perp_component = perpendicular_component(reflected_motion, motion_result.collision_normal);
-
-				motion = perp_component * motion_length;
 
 				motion_direction = motion.normalized();
+
+				if (ABS(motion_direction.dot(p_up)) <= FLT_EPSILON) {
+
+					on_wall = true;
+				}
+
 				/* See Quake2 / Bullet: "If velocity is against original velocity, stop end to avoid tiny oscilations in sloping corners." */
 				if (motion_direction.dot(initial_motion_dir) <= 0.0) {
 					break;
 				}
 			} else {
 				motion.zero();
+				on_wall = true;
 				break;
 			}
 		} else {
@@ -1570,40 +1626,87 @@ void KinematicBody::test_step_forward_and_strafe(Transform &r_transform, const V
 	r_transform.origin += motion;
 }
 
-void KinematicBody::test_step_down(Transform &r_transform, const Vector3 &p_down, real_t p_motion, real_t p_step_height, bool p_infinite_inertia) {
+void KinematicBody::test_step_down(Transform &r_transform, const Vector3 &p_up, real_t p_motion, real_t p_step_height, real_t p_floor_max_angle, bool p_was_on_floor, bool p_infinite_inertia) {
 
 	PhysicsServer::LightMotionResult motion_result;
 	real_t hit_fraction;
-	//PhysicsServer::LightMotionResult motion_result_double;
-	//real_t hit_fraction_double;
 
-	real_t motion;
+	real_t motion = p_motion;
 	for (int i = 1; 0 <= i; --i) {
-		motion = p_motion;
-		hit_fraction = PhysicsServer::get_singleton()->body_test_motion_light(get_rid(), r_transform, p_down * motion, p_infinite_inertia, false, motion_result);
+
+		hit_fraction = PhysicsServer::get_singleton()->body_test_motion_light(get_rid(), r_transform, p_up * (motion * -1), p_infinite_inertia, false, motion_result);
+
+		if (hit_fraction >= 1.0 && p_was_on_floor && i == 1) {
+
+			/// Detect stair step during descending phase
+
+			PhysicsServer::LightMotionResult motion_result_double;
+			real_t hit_fraction_double;
+
+			hit_fraction_double = PhysicsServer::get_singleton()->body_test_motion_light(get_rid(), r_transform, p_up * (motion * 2 * -1), p_infinite_inertia, false, motion_result_double);
+
+			if (hit_fraction_double < 1) {
+
+				/// The step was detected, add the step_height to motion and rerun the collision test
+				motion += p_step_height;
+				continue;
+			}
+		}
+
 		break;
-
-		//if (!btResult.hasHit()) {
-		//
-		//	motion = p_motion * 2;
-		//	hit_fraction_double = PhysicsServer::get_singleton()->body_test_motion_light(get_rid(), r_transform, p_down * (motion * 2), p_infinite_inertia, false, motion_result_double);
-		//}
-
-		// TODO check this
-		//const bool has_hit = btResult.hasHit() || btResult_double.hasHit();
-		//if (has_hit && p_motion < p_step_height && was_on_ground ) {
-		//
-		//	//redo the velocity calculation when falling a small amount, for fast stairs motion
-		//	p_motion = p_step_height;
-		//	continue;
-		//}
-		//break;
 	}
 
 	if (hit_fraction < 1) {
-		r_transform.origin += p_down * (hit_fraction * motion);
+
+		real_t col_norm_dot_up(motion_result.collision_normal.dot(p_up));
+		if (Math::acos(col_norm_dot_up) < p_floor_max_angle) {
+
+			was_slope_detected = false;
+			on_floor = true;
+			on_floor_body = motion_result.collider;
+			floor_velocity = Vector3(); // TODO please implement this
+
+		} else if (col_norm_dot_up < (1 - FLT_EPSILON)) {
+
+			if (was_slope_detected) {
+
+				/// Now I'm sure this is a slope
+				on_slope = true;
+
+			} else {
+
+				/// Delay slope by 1 frame to be sure that is a slope and not just a step corner
+				/// and treat this hit as floor
+				was_slope_detected = true;
+				on_floor = true;
+				on_floor_body = motion_result.collider;
+				floor_velocity = Vector3(); // TODO please implement this
+			}
+
+		} else {
+
+			// This is not floor nor slope
+			was_slope_detected = false;
+			r_transform.origin += p_up * (motion * -1);
+			return;
+		}
+
+		r_transform.origin += p_up * (hit_fraction * motion * -1);
+
+		Collision c;
+		c.collider = motion_result.collider_id;
+		c.collider_rid = motion_result.collider;
+		c.collider_shape = motion_result.collider_shape;
+		c.collider_vel = Vector3();
+		c.local_shape = motion_result.collision_local_shape;
+		c.normal = motion_result.collision_normal;
+		c.collision = motion_result.collision_point;
+		c.travel = Vector3();
+		c.remainder = Vector3();
+		colliders.push_back(c);
+
 	} else {
-		r_transform.origin += p_down * motion;
+		r_transform.origin += p_up * (motion * -1);
 	}
 }
 
