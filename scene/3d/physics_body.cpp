@@ -1435,6 +1435,42 @@ KinematicBody::~KinematicBody() {
 		}
 	}
 }
+
+real_t KinematicBody::test_step_up(Transform &r_transform, const Vector3 &p_up, real_t p_motion, bool p_infinite_inertia) {
+
+	real_t step_up_fraction = 1;
+
+	Vector3 motion = p_up * p_motion;
+
+	PhysicsServer::LightMotionResult motion_result;
+	PhysicsServer::get_singleton()->body_test_motion_light(get_rid(), r_transform, motion, p_infinite_inertia, false, motion_result);
+	sweep_test_multi_shapes(p_body, r_transform, motion, p_infinite_inertia, false, btResult);
+	if (btResult.hasHit()) {
+
+		// Change fraction only if the hitten body is a slope
+		if (btResult.m_hitNormalWorld.dot(p_up) > 0) {
+			step_up_fraction = btResult.m_closestHitFraction;
+		}
+	}
+
+	r_transform.origin += motion * step_up_fraction;
+	btVector3 recover_motion(0, 0, 0);
+	for (int t(4); 0 < t; --t) {
+		if (!recover_from_penetration(p_body, r_transform, 0.2, p_infinite_inertia, 0.1, true, recover_motion, NULL)) {
+			break;
+		}
+	}
+	// Add recover movement in order to make it safe
+	r_transform.origin += recover_motion;
+
+	return step_up_fraction;
+}
+
+void KinematicBody::test_step_forward_and_strafe(Transform &r_transform, const Vector3 &p_motion, bool p_infinite_inertia) {
+}
+
+void KinematicBody::test_step_down(Transform &r_transform, const Vector3 &p_down, real_t p_motion, real_t p_step_height, bool p_infinite_inertia) {
+}
 ///////////////////////////////////////
 
 Vector3 KinematicCollision::get_position() const {

@@ -342,6 +342,11 @@ public:
 
 	KinematicBody();
 	~KinematicBody();
+
+private:
+	real_t test_step_up(Transform &r_transform, const Vector3 &p_up, real_t p_motion, bool p_infinite_inertia);
+	void test_step_forward_and_strafe(Transform &r_transform, const Vector3 &p_motion, bool p_infinite_inertia);
+	void test_step_down(Transform &r_transform, const Vector3 &p_down, real_t p_motion, real_t p_step_height, bool p_infinite_inertia);
 };
 
 class KinematicCollision : public Reference {
