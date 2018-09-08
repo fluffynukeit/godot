@@ -1274,6 +1274,54 @@ Vector3 KinematicBody::move_and_slide_with_snap(const Vector3 &p_linear_velocity
 }
 
 void KinematicBody::step_motion(Vector3 p_linear_velocity, Vector3 p_up, real_t p_step_height, bool p_infinite_inertia) {
+
+	Transform body_transform(get_global_transform());
+
+	Vector3 motion(p_linear_velocity * get_physics_process_delta_time());
+
+	const real_t vertical_motion_magnitude = motion.dot(p_up);
+
+	/// Step 1) UP
+
+	real_t step_up_motion;
+	if (vertical_motion_magnitude > 0.0) {
+		step_up_motion = vertical_motion_magnitude;
+	} else {
+		step_up_motion = p_step_height;
+	}
+
+	const real_t step_up_fraction = test_step_up(body_transform, p_up, step_up_motion, p_infinite_inertia);
+
+	/// Step 2) Forward Strafe
+
+	test_step_forward_and_strafe(body_transform, motion, p_infinite_inertia);
+
+	/// Step 3) Down
+
+	real_t step_down_motion(0);
+	if (vertical_motion_magnitude > 0.0) {
+		step_down_motion = p_step_height;
+	} else {
+		step_down_motion = -vertical_motion_magnitude;
+		step_down_motion += p_step_height * step_up_fraction;
+	}
+
+	test_step_down(body_transform, p_up * -1, step_down_motion, p_step_height, p_infinite_inertia);
+
+	/// Step 4) Perform recover and get collision info
+
+	Vector3 recover_motion(0, 0, 0);
+	for (int t(4); 0 < t; --t) {
+		if (!PhysicsServer::get_singleton()->body_test_motion_depenetrate(get_rid(), body_transform, 0.2, p_infinite_inertia, 0.1, true, recover_motion, NULL)) {
+			break;
+		}
+	}
+	// Add recover movement in order to make it safe
+	body_transform.origin += recover_motion;
+
+	set_global_transform(body_transform);
+
+	on_floor = true;
 }
 
 bool KinematicBody::is_on_floor() const {
@@ -1443,20 +1491,19 @@ real_t KinematicBody::test_step_up(Transform &r_transform, const Vector3 &p_up, 
 	Vector3 motion = p_up * p_motion;
 
 	PhysicsServer::LightMotionResult motion_result;
-	PhysicsServer::get_singleton()->body_test_motion_light(get_rid(), r_transform, motion, p_infinite_inertia, false, motion_result);
-	sweep_test_multi_shapes(p_body, r_transform, motion, p_infinite_inertia, false, btResult);
-	if (btResult.hasHit()) {
+	const real_t hit_fraction = PhysicsServer::get_singleton()->body_test_motion_light(get_rid(), r_transform, motion, p_infinite_inertia, false, motion_result);
+	if (hit_fraction < 1) {
 
 		// Change fraction only if the hitten body is a slope
-		if (btResult.m_hitNormalWorld.dot(p_up) > 0) {
-			step_up_fraction = btResult.m_closestHitFraction;
+		if (motion_result.collision_normal.dot(p_up) > 0) {
+			step_up_fraction = hit_fraction;
 		}
 	}
 
 	r_transform.origin += motion * step_up_fraction;
-	btVector3 recover_motion(0, 0, 0);
+	Vector3 recover_motion(0, 0, 0);
 	for (int t(4); 0 < t; --t) {
-		if (!recover_from_penetration(p_body, r_transform, 0.2, p_infinite_inertia, 0.1, true, recover_motion, NULL)) {
+		if (!PhysicsServer::get_singleton()->body_test_motion_depenetrate(get_rid(), r_transform, 0.2, p_infinite_inertia, 0, true, recover_motion, NULL)) {
 			break;
 		}
 	}
@@ -1466,11 +1513,100 @@ real_t KinematicBody::test_step_up(Transform &r_transform, const Vector3 &p_up, 
 	return step_up_fraction;
 }
 
+Vector3 compute_reflection_direction(const Vector3 &direction, const Vector3 &normal) {
+	return direction - (2.0 * direction.dot(normal)) * normal;
+}
+
+/// Returns the portion of 'direction' that is parallel to 'normal'
+Vector3 parallel_component(const Vector3 &direction, const Vector3 &normal) {
+	return normal * direction.dot(normal);
+}
+
+/// Returns the portion of 'direction' that is perpindicular to 'normal'
+Vector3 perpendicular_component(const Vector3 &direction, const Vector3 &normal) {
+	return direction - parallel_component(direction, normal);
+}
+
 void KinematicBody::test_step_forward_and_strafe(Transform &r_transform, const Vector3 &p_motion, bool p_infinite_inertia) {
+
+	Vector3 motion(p_motion);
+
+	real_t fraction = 1;
+
+	const Vector3 initial_motion_dir(motion.normalized());
+
+	for (int test = 9; 0 <= test && fraction > 0.01; --test) {
+		PhysicsServer::LightMotionResult motion_result;
+		const real_t sub_test_hit_fraction = PhysicsServer::get_singleton()->body_test_motion_light(get_rid(), r_transform, motion * fraction, p_infinite_inertia, true, motion_result);
+
+		if (sub_test_hit_fraction < 1) {
+
+			fraction -= sub_test_hit_fraction;
+
+			// Re-compute motion
+			const real_t motion_length = motion.length();
+			if (motion_length > FLT_EPSILON) {
+				Vector3 motion_direction = motion.normalized();
+
+				const Vector3 reflected_motion(compute_reflection_direction(motion_direction, motion_result.collision_normal).normalized());
+				const Vector3 perp_component = perpendicular_component(reflected_motion, motion_result.collision_normal);
+
+				motion = perp_component * motion_length;
+
+				motion_direction = motion.normalized();
+				/* See Quake2 / Bullet: "If velocity is against original velocity, stop end to avoid tiny oscilations in sloping corners." */
+				if (motion_direction.dot(initial_motion_dir) <= 0.0) {
+					break;
+				}
+			} else {
+				motion.zero();
+				break;
+			}
+		} else {
+			break;
+		}
+	}
+
+	r_transform.origin += motion;
 }
 
 void KinematicBody::test_step_down(Transform &r_transform, const Vector3 &p_down, real_t p_motion, real_t p_step_height, bool p_infinite_inertia) {
+
+	PhysicsServer::LightMotionResult motion_result;
+	real_t hit_fraction;
+	//PhysicsServer::LightMotionResult motion_result_double;
+	//real_t hit_fraction_double;
+
+	real_t motion;
+	for (int i = 1; 0 <= i; --i) {
+		motion = p_motion;
+		hit_fraction = PhysicsServer::get_singleton()->body_test_motion_light(get_rid(), r_transform, p_down * motion, p_infinite_inertia, false, motion_result);
+		break;
+
+		//if (!btResult.hasHit()) {
+		//
+		//	motion = p_motion * 2;
+		//	hit_fraction_double = PhysicsServer::get_singleton()->body_test_motion_light(get_rid(), r_transform, p_down * (motion * 2), p_infinite_inertia, false, motion_result_double);
+		//}
+
+		// TODO check this
+		//const bool has_hit = btResult.hasHit() || btResult_double.hasHit();
+		//if (has_hit && p_motion < p_step_height && was_on_ground ) {
+		//
+		//	//redo the velocity calculation when falling a small amount, for fast stairs motion
+		//	p_motion = p_step_height;
+		//	continue;
+		//}
+		//break;
+	}
+
+	if (hit_fraction < 1) {
+		r_transform.origin += p_down * (hit_fraction * motion);
+	} else {
+		r_transform.origin += p_down * motion;
+	}
 }
+
 ///////////////////////////////////////
 
 Vector3 KinematicCollision::get_position() const {
