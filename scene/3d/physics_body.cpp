@@ -1273,6 +1273,9 @@ Vector3 KinematicBody::move_and_slide_with_snap(const Vector3 &p_linear_velocity
 	return ret;
 }
 
+void KinematicBody::step_motion(Vector3 p_linear_velocity, Vector3 p_up, real_t p_step_height, bool p_infinite_inertia) {
+}
+
 bool KinematicBody::is_on_floor() const {
 
 	return on_floor;
@@ -1385,6 +1388,8 @@ void KinematicBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("move_and_collide", "rel_vec", "infinite_inertia", "test_only"), &KinematicBody::_move, DEFVAL(true), DEFVAL(false));
 	ClassDB::bind_method(D_METHOD("move_and_slide", "linear_velocity", "floor_normal", "stop_on_slope", "max_slides", "floor_max_angle", "infinite_inertia"), &KinematicBody::move_and_slide, DEFVAL(Vector3(0, 0, 0)), DEFVAL(false), DEFVAL(4), DEFVAL(Math::deg2rad((float)45)), DEFVAL(true));
 	ClassDB::bind_method(D_METHOD("move_and_slide_with_snap", "linear_velocity", "snap", "floor_normal", "infinite_inertia", "stop_on_slope", "max_bounces", "floor_max_angle"), &KinematicBody::move_and_slide_with_snap, DEFVAL(Vector3(0, 0, 0)), DEFVAL(true), DEFVAL(false), DEFVAL(4), DEFVAL(Math::deg2rad((float)45)));
+
+	ClassDB::bind_method(D_METHOD("step_motion", "linear_velocity", "up", "step_height", "infinite_inertia"), &KinematicBody::step_motion);
 
 	ClassDB::bind_method(D_METHOD("test_move", "from", "rel_vec", "infinite_inertia"), &KinematicBody::test_move);
 
