@@ -1315,7 +1315,8 @@ void KinematicBody::step_motion(Vector3 p_linear_velocity, Vector3 p_up, real_t 
 
 	real_t step_down_motion(0);
 	if (vertical_motion_magnitude > 0.0) {
-		step_down_motion = p_step_height;
+		// In case is jumping no down motion
+		step_down_motion = 0.0;
 	} else {
 		step_down_motion = -vertical_motion_magnitude;
 		step_down_motion += p_step_height * step_up_fraction;
@@ -1627,6 +1628,9 @@ void KinematicBody::test_step_forward_and_strafe(Transform &r_transform, const V
 }
 
 void KinematicBody::test_step_down(Transform &r_transform, const Vector3 &p_up, real_t p_motion, real_t p_step_height, real_t p_floor_max_angle, bool p_was_on_floor, bool p_infinite_inertia) {
+
+	if (p_motion <= FLT_EPSILON)
+		return; // Avoid if motion is really short
 
 	PhysicsServer::LightMotionResult motion_result;
 	real_t hit_fraction;
