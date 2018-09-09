@@ -1273,7 +1273,7 @@ Vector3 KinematicBody::move_and_slide_with_snap(const Vector3 &p_linear_velocity
 	return ret;
 }
 
-void KinematicBody::step_motion(Vector3 p_linear_velocity, Vector3 p_up, real_t p_step_height, real_t p_floor_max_angle, bool p_infinite_inertia) {
+Vector3 KinematicBody::step_motion(Vector3 p_linear_velocity, Vector3 p_up, real_t p_step_height, real_t p_floor_max_angle, bool p_infinite_inertia) {
 
 	Transform body_transform(get_global_transform());
 	Vector3 lv = p_linear_velocity;
@@ -1284,7 +1284,7 @@ void KinematicBody::step_motion(Vector3 p_linear_velocity, Vector3 p_up, real_t 
 		}
 	}
 
-	Vector3 motion((floor_velocity + lv) * get_physics_process_delta_time());
+	const Vector3 motion((floor_velocity + lv) * get_physics_process_delta_time());
 	bool was_on_floor(on_floor);
 
 	on_floor = false;
@@ -1295,7 +1295,7 @@ void KinematicBody::step_motion(Vector3 p_linear_velocity, Vector3 p_up, real_t 
 	floor_velocity.zero();
 
 	const real_t vertical_motion_magnitude = motion.dot(p_up);
-
+	const Vector3 perpendicular_motion(motion - (p_up * vertical_motion_magnitude));
 	/// Step 1) UP
 
 	real_t step_up_motion;
@@ -1309,7 +1309,7 @@ void KinematicBody::step_motion(Vector3 p_linear_velocity, Vector3 p_up, real_t 
 
 	/// Step 2) Forward Strafe
 
-	test_step_forward_and_strafe(body_transform, motion, p_up, p_infinite_inertia);
+	test_step_forward_and_strafe(body_transform, perpendicular_motion, p_up, p_infinite_inertia);
 
 	/// Step 3) Down
 
@@ -1335,7 +1335,11 @@ void KinematicBody::step_motion(Vector3 p_linear_velocity, Vector3 p_up, real_t 
 	// Add recover movement in order to make it safe
 	body_transform.origin += recover_motion;
 
+	const Vector3 performed_motion(body_transform.origin - get_global_transform().origin);
+
 	set_global_transform(body_transform);
+
+	return performed_motion / get_physics_process_delta_time();
 }
 
 bool KinematicBody::is_on_floor() const {
