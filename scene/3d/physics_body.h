@@ -348,7 +348,7 @@ public:
 
 private:
 	real_t test_step_up(Transform &r_transform, real_t p_motion, const Vector3 &p_up, bool p_infinite_inertia);
-	void test_step_forward_and_strafe(Transform &r_transform, const Vector3 &p_motion, const Vector3 &p_up, bool p_infinite_inertia);
+	void test_step_forward_and_strafe(Transform &r_transform, const Vector3 &p_horizontal_motion, const Vector3 &p_up, bool p_infinite_inertia);
 	void test_step_down(Transform &r_transform, const Vector3 &p_up, real_t p_motion, real_t p_step_height, real_t p_floor_max_angle, bool p_was_on_floor, bool p_infinite_inertia);
 };
 

@@ -1567,9 +1567,9 @@ Vector3 perpendicular_component(const Vector3 &direction, const Vector3 &normal)
 	return direction - parallel_component(direction, normal);
 }
 
-void KinematicBody::test_step_forward_and_strafe(Transform &r_transform, const Vector3 &p_motion, const Vector3 &p_up, bool p_infinite_inertia) {
+void KinematicBody::test_step_forward_and_strafe(Transform &r_transform, const Vector3 &p_horizontal_motion, const Vector3 &p_up, bool p_infinite_inertia) {
 
-	Vector3 motion(p_motion);
+	Vector3 motion(p_horizontal_motion);
 
 	real_t fraction = 1;
 
