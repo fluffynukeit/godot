@@ -111,6 +111,7 @@ public:
 	const StringName solver_param_numIterations;
 	const StringName solver_param_gravity;
 	const StringName solver_param_radius;
+	const StringName solver_param_collisionDistance;
 	const StringName solver_param_solidRestDistance;
 	const StringName solver_param_fluidRestDistance;
 	const StringName solver_param_dynamicFriction;
@@ -143,7 +144,6 @@ public:
 	const StringName solver_param_diffuseDrag;
 	const StringName solver_param_diffuseBallistic;
 	const StringName solver_param_diffuseLifetime;
-	const StringName solver_param_collisionDistance;
 	const StringName solver_param_particleCollisionMargin;
 	const StringName solver_param_shapeCollisionMargin;
 	const StringName solver_param_relaxationMode;

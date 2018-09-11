@@ -323,7 +323,8 @@ FlexParticlePhysicsServer::FlexParticlePhysicsServer() :
 		ParticlePhysicsServer(),
 		solver_param_numIterations("numIterations"),
 		solver_param_gravity("gravity"),
-		solver_param_radius("detection_radius"),
+		solver_param_radius("radius_particle_particle"),
+		solver_param_collisionDistance("radius_primitive_particle"),
 		solver_param_solidRestDistance("solidRestDistance"),
 		solver_param_fluidRestDistance("fluidRestDistance"),
 		solver_param_dynamicFriction("dynamicFriction"),
@@ -356,7 +357,6 @@ FlexParticlePhysicsServer::FlexParticlePhysicsServer() :
 		solver_param_diffuseDrag("diffuseDrag"),
 		solver_param_diffuseBallistic("diffuseBallistic"),
 		solver_param_diffuseLifetime("diffuseLifetime"),
-		solver_param_collisionDistance("collisionDistance"),
 		solver_param_particleCollisionMargin("particleCollisionMargin"),
 		solver_param_shapeCollisionMargin("shapeCollisionMargin"),
 		solver_param_relaxationMode("relaxationMode"),
@@ -404,9 +404,10 @@ void FlexParticlePhysicsServer::space_get_params_defaults(Map<StringName, Varian
 
 	(*r_defs)[solver_param_numIterations] = 3;
 	(*r_defs)[solver_param_gravity] = Vector3(0, -10, 0);
-	(*r_defs)[solver_param_radius] = def_radius * 1.5;
-	(*r_defs)[solver_param_solidRestDistance] = def_radius;
-	(*r_defs)[solver_param_fluidRestDistance] = def_radius;
+	(*r_defs)[solver_param_radius] = def_radius;
+	(*r_defs)[solver_param_collisionDistance] = def_radius;
+	(*r_defs)[solver_param_solidRestDistance] = def_radius * 1.5;
+	(*r_defs)[solver_param_fluidRestDistance] = def_radius * 1.5;
 	(*r_defs)[solver_param_dynamicFriction] = 0.1;
 	(*r_defs)[solver_param_staticFriction] = 0.1;
 	(*r_defs)[solver_param_particleFriction] = 0.1;
@@ -437,7 +438,6 @@ void FlexParticlePhysicsServer::space_get_params_defaults(Map<StringName, Varian
 	(*r_defs)[solver_param_diffuseDrag] = 0.0;
 	(*r_defs)[solver_param_diffuseBallistic] = 0.0;
 	(*r_defs)[solver_param_diffuseLifetime] = 0.0;
-	(*r_defs)[solver_param_collisionDistance] = def_radius;
 	(*r_defs)[solver_param_particleCollisionMargin] = 0.001;
 	(*r_defs)[solver_param_shapeCollisionMargin] = 0.001;
 	(*r_defs)[solver_param_relaxationMode] = "local";
