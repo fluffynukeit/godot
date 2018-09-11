@@ -4886,6 +4886,7 @@ EditorNode::EditorNode() {
 	VisualServer::get_singleton()->set_debug_generate_wireframes(true);
 
 	PhysicsServer::get_singleton()->set_active(false); // no physics by default if editor
+	ParticlePhysicsServer::get_singleton()->set_active(false); // no physics by default if editor
 	Physics2DServer::get_singleton()->set_active(false); // no physics by default if editor
 	ScriptServer::set_scripting_enabled(false); // no scripting by default if editor
 

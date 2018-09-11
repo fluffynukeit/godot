@@ -156,7 +156,7 @@ public:
 	/// Allocate memory, return null if no more space available
 	MemoryChunk *allocate_chunk(FlexUnit p_size);
 	void deallocate_chunk(MemoryChunk *&r_chunk);
-	void resize_chunk(MemoryChunk *&r_chunk, FlexUnit p_size);
+	void resize_chunk(MemoryChunk *&r_chunk, FlexUnit p_size, bool p_keep_data = true);
 
 	/// If the chunks have different sizes the copy will be performed only by the size of smaller chunk
 	void copy_chunk(MemoryChunk *p_to, MemoryChunk *p_from);

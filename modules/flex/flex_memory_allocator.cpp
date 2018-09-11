@@ -212,7 +212,7 @@ void FlexMemoryAllocator::deallocate_chunk(MemoryChunk *&r_chunk) {
 	sanitize(false, false); // Merge only, no cache update, no trim
 }
 
-void FlexMemoryAllocator::resize_chunk(MemoryChunk *&r_chunk, FlexUnit p_size) {
+void FlexMemoryAllocator::resize_chunk(MemoryChunk *&r_chunk, FlexUnit p_size, bool p_keep_data) {
 
 	ERR_FAIL_COND(p_size < 0);
 
@@ -245,11 +245,16 @@ void FlexMemoryAllocator::resize_chunk(MemoryChunk *&r_chunk, FlexUnit p_size) {
 
 	} else {
 
-		// Re allocate all chunk
-		MemoryChunk *new_chunk = allocate_chunk(p_size);
-		copy_chunk(new_chunk, r_chunk);
-		deallocate_chunk(r_chunk);
-		r_chunk = new_chunk;
+		if (p_keep_data) {
+			// Re allocate all chunk
+			MemoryChunk *new_chunk = allocate_chunk(p_size);
+			copy_chunk(new_chunk, r_chunk);
+			deallocate_chunk(r_chunk);
+			r_chunk = new_chunk;
+		} else {
+			deallocate_chunk(r_chunk);
+			r_chunk = allocate_chunk(p_size);
+		}
 	}
 }
 

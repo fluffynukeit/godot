@@ -237,6 +237,12 @@ void ParticleBodyConstraint::set_constraint(int p_index, int p_body0_particle_in
 
 void ParticleBodyConstraint::add_constraint(int p_body0_particle_index, int p_body1_particle_index, real_t p_length, real_t p_stiffness) {
 
+	for (int i(constraints.size() - 1); 0 <= i; --i) {
+		if (constraints[i].body0_particle_index == p_body0_particle_index && constraints[i].body1_particle_index == p_body1_particle_index) {
+			return; // skip if already inside
+		}
+	}
+
 	Constraint c;
 	c.body0_particle_index = p_body0_particle_index;
 	c.body1_particle_index = p_body1_particle_index;
