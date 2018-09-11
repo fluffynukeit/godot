@@ -885,7 +885,8 @@ void FlexSpace::execute_delayed_commands() {
 
 	if (active_particles_mchunk->get_size() != particles_count) {
 
-		active_particles_allocator->resize_chunk(active_particles_mchunk, particles_count);
+		active_particles_allocator->resize_chunk(active_particles_mchunk, particles_count, false);
+		ERR_FAIL_COND(active_particles_mchunk->get_begin_index() != 0);
 
 		int active_particle_index(0);
 		for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
