@@ -112,6 +112,7 @@ ParticleBody::ParticleBody() :
 		ParticleObject(ParticlePhysicsServer::get_singleton()->body_create()),
 		update_spatial_transform(false),
 		reload_particle_model(true),
+		reset_transform(false),
 		particle_body_mesh(NULL),
 		draw_gizmo(false) {
 
@@ -321,6 +322,7 @@ void ParticleBody::_notification(int p_what) {
 		case NOTIFICATION_TRANSFORM_CHANGED: {
 
 			debug_reset_particle_positions();
+			reset_transform = true;
 
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
@@ -346,11 +348,18 @@ void ParticleBody::commands_process_internal(Object *p_cmds) {
 
 	if (reload_particle_model) {
 		reload_particle_model = false;
+		reset_transform = false;
 		cmds->load_model(particle_body_model, get_global_transform());
 		emit_signal("resource_loaded");
 	}
 
-	update_transform(cmds);
+	if (reset_transform) {
+		reset_transform = false;
+		cmds->move_particles(get_global_transform() * compute_transform(cmds).inverse());
+	} else {
+
+		update_transform(cmds);
+	}
 
 	if (particle_body_mesh)
 		particle_body_mesh->update_mesh(cmds);
@@ -361,15 +370,12 @@ void ParticleBody::commands_process_internal(Object *p_cmds) {
 	}
 }
 
-void ParticleBody::update_transform(ParticleBodyCommands *p_cmds) {
-
-	if (!update_spatial_transform)
-		return;
+Transform ParticleBody::compute_transform(ParticleBodyCommands *p_cmds) {
 
 	const int rigids_count = ParticlePhysicsServer::get_singleton()->body_get_rigid_count(get_rid());
 
 	if (!rigids_count)
-		return;
+		return Transform();
 
 	Transform average_transform(Basis(p_cmds->get_rigid_rotation(0)), p_cmds->get_rigid_position(0));
 
@@ -378,7 +384,17 @@ void ParticleBody::update_transform(ParticleBodyCommands *p_cmds) {
 		average_transform = average_transform.interpolate_with(Transform(Basis(p_cmds->get_rigid_rotation(i)), p_cmds->get_rigid_position(i)), 0.5);
 	}
 
-	set_global_transform(average_transform);
+	return average_transform;
+}
+
+void ParticleBody::update_transform(ParticleBodyCommands *p_cmds) {
+
+	if (!update_spatial_transform)
+		return;
+
+	set_notify_transform(false);
+	set_global_transform(compute_transform(p_cmds));
+	set_notify_transform(true);
 }
 
 void ParticleBody::on_primitive_contact(Object *p_cmds, Object *p_primitive_object, int p_particle_index, Vector3 p_velocity, Vector3 p_normal) {

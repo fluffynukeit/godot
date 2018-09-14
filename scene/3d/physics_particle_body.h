@@ -49,6 +49,7 @@ class ParticleBody : public ParticleObject {
 	bool update_spatial_transform;
 
 	bool reload_particle_model;
+	bool reset_transform;
 	ParticleBodyMeshInstance *particle_body_mesh;
 	Ref<ParticleBodyModel> particle_body_model;
 
@@ -119,6 +120,7 @@ protected:
 	void resource_changed(RES p_res);
 
 	void commands_process_internal(Object *p_cmds);
+	Transform compute_transform(ParticleBodyCommands *p_cmds);
 	void update_transform(ParticleBodyCommands *p_cmds);
 	void on_primitive_contact(Object *p_cmds, Object *p_primitive_object, int p_particle_index, Vector3 p_velocity, Vector3 p_normal);
 

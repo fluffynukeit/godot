@@ -13,6 +13,7 @@ protected:
 	static void _bind_methods();
 
 public:
+	virtual void move_particles(const Transform &transform) = 0;
 	virtual void load_model(Ref<ParticleBodyModel> p_shape, const Transform &initial_transform) = 0;
 
 	virtual void set_particle_position_mass(int p_particle_index, const Vector3 &p_position, real_t p_mass) = 0;
