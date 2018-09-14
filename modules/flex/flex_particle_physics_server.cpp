@@ -48,6 +48,13 @@
 	rid_data->__set_physics_server(this);    \
 	return rid;
 
+void FlexParticleBodyCommands::move_particles(const Transform &transform) {
+
+	for (int i(get_particle_count() - 1); 0 <= i; --i) {
+		set_particle_position(i, transform.xform(get_particle_position(i)));
+	}
+}
+
 void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const Transform &initial_transform) {
 	if (p_model.is_null())
 		return;

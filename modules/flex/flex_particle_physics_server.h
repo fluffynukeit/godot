@@ -50,6 +50,7 @@ class FlexParticleBodyCommands : public ParticleBodyCommands {
 public:
 	FlexParticleBody *body;
 
+	virtual void move_particles(const Transform &transform);
 	virtual void load_model(Ref<ParticleBodyModel> p_model, const Transform &initial_transform);
 
 	virtual void add_particle(const Vector3 &p_local_position, real_t p_mass);
