@@ -411,10 +411,10 @@ void FlexParticlePhysicsServer::space_get_params_defaults(Map<StringName, Varian
 
 	(*r_defs)[solver_param_numIterations] = 3;
 	(*r_defs)[solver_param_gravity] = Vector3(0, -10, 0);
-	(*r_defs)[solver_param_radius] = def_radius;
+	(*r_defs)[solver_param_radius] = def_radius * 1.5;
 	(*r_defs)[solver_param_collisionDistance] = def_radius;
-	(*r_defs)[solver_param_solidRestDistance] = def_radius * 1.5;
-	(*r_defs)[solver_param_fluidRestDistance] = def_radius * 1.5;
+	(*r_defs)[solver_param_solidRestDistance] = def_radius;
+	(*r_defs)[solver_param_fluidRestDistance] = def_radius;
 	(*r_defs)[solver_param_dynamicFriction] = 0.1;
 	(*r_defs)[solver_param_staticFriction] = 0.1;
 	(*r_defs)[solver_param_particleFriction] = 0.1;
