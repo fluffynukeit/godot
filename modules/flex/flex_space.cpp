@@ -1056,6 +1056,8 @@ void FlexSpace::commands_write_buffer() {
 					NvFlexSetNormals(solver, particles_memory->normals.buffer, &copy_desc);
 				if (changed_params & eChangedBodyParamPhase)
 					NvFlexSetPhases(solver, particles_memory->phases.buffer, &copy_desc);
+				//if(changed_params & eChangedBodyRestParticles)
+				//	NvFlexSetRestParticles(solver, )
 			}
 
 			body->clear_changed_params();

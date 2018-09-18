@@ -52,8 +52,9 @@ enum ChangedBodyParameter {
 	eChangedBodyParamNormal = 1 << 2,
 	eChangedBodyParamPhase = 1 << 3,
 	eChangedBodyParamInflatable = 1 << 4,
+	eChangedBodyRestParticles = 1 << 5,
 
-	eChangedBodyParamALL = eChangedBodyParamParticleJustAdded | eChangedBodyParamPositionMass | eChangedBodyParamVelocity | eChangedBodyParamPhase | eChangedBodyParamInflatable
+	eChangedBodyParamALL = eChangedBodyParamParticleJustAdded | eChangedBodyParamPositionMass | eChangedBodyParamVelocity | eChangedBodyParamPhase | eChangedBodyParamInflatable | eChangedBodyRestParticles
 };
 
 /// This class represent a group of particles that are constrained each other and form a body.
