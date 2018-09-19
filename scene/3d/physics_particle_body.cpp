@@ -392,9 +392,9 @@ void ParticleBody::update_transform(ParticleBodyCommands *p_cmds) {
 	if (!update_spatial_transform)
 		return;
 
-	set_notify_transform(false);
+	bool old_rt = reset_transform;
 	set_global_transform(compute_transform(p_cmds));
-	set_notify_transform(true);
+	reset_transform = old_rt;
 }
 
 void ParticleBody::on_primitive_contact(Object *p_cmds, Object *p_primitive_object, int p_particle_index, Vector3 p_velocity, Vector3 p_normal) {
