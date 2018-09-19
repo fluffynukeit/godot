@@ -50,6 +50,7 @@ class ParticleBody : public ParticleObject {
 
 	bool reload_particle_model;
 	bool reset_transform;
+	bool initial_transform;
 	ParticleBodyMeshInstance *particle_body_mesh;
 	Ref<ParticleBodyModel> particle_body_model;
 

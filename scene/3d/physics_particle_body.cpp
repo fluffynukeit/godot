@@ -112,6 +112,7 @@ ParticleBody::ParticleBody() :
 		ParticleObject(ParticlePhysicsServer::get_singleton()->body_create()),
 		update_spatial_transform(false),
 		reload_particle_model(true),
+		initial_transform(true),
 		reset_transform(false),
 		particle_body_mesh(NULL),
 		draw_gizmo(false) {
@@ -322,7 +323,11 @@ void ParticleBody::_notification(int p_what) {
 		case NOTIFICATION_TRANSFORM_CHANGED: {
 
 			debug_reset_particle_positions();
-			reset_transform = true;
+			if (initial_transform) {
+				initial_transform = false;
+			} else {
+				reset_transform = true;
+			}
 
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
