@@ -29,6 +29,8 @@ public:
 	virtual const Vector3 &get_particle_velocity(int p_particle_index) const = 0;
 	virtual void set_particle_velocity(int p_particle_index, const Vector3 &p_velocity) = 0;
 
+	virtual void apply_force(int p_particle_index, const Vector3 &p_force) = 0;
+
 	virtual Vector3 get_particle_normal(int p_index) const = 0;
 
 	virtual const Vector3 &get_rigid_position(int p_index) const = 0;
