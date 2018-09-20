@@ -261,6 +261,14 @@ void FlexParticleBodyCommands::set_particle_velocity(int p_particle_index, const
 	body->set_particle_velocity(p_particle_index, p_velocity);
 }
 
+void FlexParticleBodyCommands::apply_force(int p_particle_index, const Vector3 &p_force) {
+	const real_t mass = get_particle_mass(p_particle_index);
+	if (mass <= 0.0)
+		return;
+	const Vector3 velocity = (p_force / mass) * FlexParticlePhysicsServer::singleton->get_delta_time();
+	set_particle_velocity(p_particle_index, get_particle_velocity(p_particle_index) + velocity);
+}
+
 Vector3 FlexParticleBodyCommands::get_particle_normal(int p_index) const {
 	return vec3_from_flvec4(body->get_particle_normal(p_index));
 }
@@ -1289,6 +1297,8 @@ void FlexParticlePhysicsServer::step(real_t p_delta_time) {
 
 	if (!is_active)
 		return;
+
+	delta_time = p_delta_time;
 
 	for (short i = last_space_index; 0 <= i; --i) {
 		active_spaces[i]->step(p_delta_time);

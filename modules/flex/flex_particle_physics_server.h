@@ -82,6 +82,8 @@ public:
 	virtual const Vector3 &get_particle_velocity(int p_particle_index) const;
 	virtual void set_particle_velocity(int p_particle_index, const Vector3 &p_velocity);
 
+	virtual void apply_force(int p_particle_index, const Vector3 &p_force);
+
 	virtual Vector3 get_particle_normal(int p_index) const;
 	virtual void set_particle_normal(int p_index, const Vector3 &p_normal);
 
@@ -157,6 +159,7 @@ private:
 	mutable RID_Owner<FlexPrimitiveBody> primitive_body_owner;
 	mutable RID_Owner<FlexPrimitiveShape> primitive_shape_owner;
 
+	real_t delta_time;
 	short last_space_index;
 	Vector<FlexSpace *> active_spaces;
 
@@ -189,6 +192,10 @@ public:
 	_FORCE_INLINE_ Variant *get_particle_body_constraint_commands_variant(FlexParticleBodyConstraint *p_constraint) {
 		particle_body_constraint_commands->constraint = p_constraint;
 		return &particle_body_constraint_commands_variant;
+	}
+
+	real_t get_delta_time() const {
+		return delta_time;
 	}
 
 	/* SPACE */
