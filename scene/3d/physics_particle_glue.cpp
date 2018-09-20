@@ -290,15 +290,19 @@ void PhysicsParticleGlue::apply_force(int p_particle, const Vector3 &p_offset, P
 
 	if (0 > pull_force) {
 
-		p_cmds->set_particle_position_mass(p_particle, get_global_transform().xform(p_offset), .0);
+		//p_cmds->set_particle_position_mass(p_particle, get_global_transform().xform(p_offset), .0);
+
+		Vector3 target_position = get_global_transform().xform(p_offset);
+		Vector3 particle_pos(p_cmds->get_particle_position(p_particle));
+		p_cmds->set_particle_velocity(p_particle, (target_position - particle_pos) / get_physics_process_delta_time());
+
 	} else {
 
 		Vector3 target_position = get_global_transform().xform(p_offset);
 		Vector3 particle_pos(p_cmds->get_particle_position(p_particle));
 
 		Vector3 delta(target_position - particle_pos);
-
-		p_cmds->set_particle_velocity(p_particle, delta * pull_force);
+		p_cmds->apply_force(p_particle, delta * pull_force);
 	}
 }
 
