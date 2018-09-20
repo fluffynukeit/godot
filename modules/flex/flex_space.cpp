@@ -724,7 +724,7 @@ bool FlexSpace::get_param(const StringName &p_name, Variant &r_property) const {
 
 real_t FlexSpace::get_particle_radius() const {
 	Variant v;
-	if (get_param(FlexParticlePhysicsServer::singleton->solver_param_collisionDistance, v)) {
+	if (get_param(FlexParticlePhysicsServer::singleton->solver_param_solidRestDistance, v)) {
 		return v;
 	}
 	return 0;
