@@ -135,13 +135,17 @@ void ParticleBodyEditor::_create_thread() {
 	ERR_FAIL_COND(!node->get_particle_body_mesh());
 	ERR_FAIL_COND(node->get_particle_body_mesh()->get_mesh().is_null());
 
+	const int attach_to_particle = thread_dialog.attach_to_current_particle_model_input->get_value();
+
 	Ref<ParticleBodyModel> model = ParticlePhysicsServer::get_singleton()->create_thread_particle_body_model(
 			thread_dialog.particle_radius_input->get_value(),
 			thread_dialog.extent_input->get_value(),
 			thread_dialog.spacing_input->get_value(),
 			thread_dialog.link_stiffness_input->get_value(),
 			thread_dialog.cluster_size_input->get_value(),
-			thread_dialog.cluster_stiffness_input->get_value());
+			thread_dialog.cluster_stiffness_input->get_value(),
+			attach_to_particle,
+			node->get_particle_body_model());
 
 	UndoRedo *ur = EditorNode::get_singleton()->get_undo_redo();
 
@@ -434,6 +438,7 @@ ParticleBodyEditor::ParticleBodyEditor() {
 		make_spin_box(thread_dialog.link_stiffness_input, 0, 10, 0.01, 0.5, dialog_vbc, TTR("Link stiffness: "));
 		make_spin_box(thread_dialog.cluster_size_input, 2, 100, 1, 2, dialog_vbc, TTR("Cluster size: "));
 		make_spin_box(thread_dialog.cluster_stiffness_input, 0, 10, 0.01, 0.5, dialog_vbc, TTR("Cluster stiffness: "));
+		make_spin_box(thread_dialog.attach_to_current_particle_model_input, -1, 9999, 1, -1, dialog_vbc, TTR("Attach to current particle model: "));
 
 		add_child(thread_dialog.dialog);
 		thread_dialog.dialog->connect("confirmed", this, "_create_thread");

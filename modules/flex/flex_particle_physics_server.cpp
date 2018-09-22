@@ -1053,7 +1053,7 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_rigid_particle_body_mod
 	return model;
 }
 
-Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_thread_particle_body_model(real_t p_particle_radius, real_t p_extent, real_t p_spacing, real_t p_link_stiffness, int p_cluster_size, real_t p_cluster_stiffness) {
+Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_thread_particle_body_model(real_t p_particle_radius, real_t p_extent, real_t p_spacing, real_t p_link_stiffness, int p_cluster_size, real_t p_cluster_stiffness, int p_attach_to_particle, Ref<ParticleBodyModel> p_current_model) {
 
 	ERR_FAIL_COND_V(p_cluster_size < 2, NULL);
 
@@ -1061,24 +1061,61 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_thread_particle_body_mo
 	real_t size = p_extent * 2.f;
 
 	Ref<ParticleBodyModel> model;
-	model.instance();
+
+	bool want_to_attach = false;
+
+	Vector3 position_offset;
+
+	int particle_count_start = 0;
+	int masses_count_start = 0;
+	int constraint_indices_count_start = 0;
+	int constraint_info_count_start = 0;
+	int cluster_position_count_start = 0;
+	int cluster_stiffness_count_start = 0;
+	int cluster_plastic_thresold_count_start = 0;
+	int cluster_plastic_creep_count_start = 0;
+	int cluster_offset_count_start = 0;
+	int cluster_particle_indices_counst_start = 0;
+
+	if (p_current_model.is_valid() && p_attach_to_particle >= 0) {
+		// Copy
+		model = p_current_model->duplicate();
+
+		want_to_attach = true;
+
+		position_offset = model->get_particles().get(p_attach_to_particle);
+
+		particle_count_start = model->get_particles().size();
+		masses_count_start = model->get_masses().size();
+		constraint_indices_count_start = model->get_constraints_indexes().size();
+		constraint_info_count_start = model->get_constraints_info().size();
+		cluster_position_count_start = model->get_clusters_positions().size();
+		cluster_stiffness_count_start = model->get_clusters_stiffness().size();
+		cluster_plastic_thresold_count_start = model->get_clusters_plastic_threshold().size();
+		cluster_plastic_creep_count_start = model->get_clusters_plastic_creep().size();
+		cluster_offset_count_start = model->get_clusters_offsets().size();
+		cluster_particle_indices_counst_start = model->get_clusters_particle_indices().size();
+
+	} else {
+		model.instance();
+	}
 
 	int particle_count = (size / (particle_radius * 2)) + 1;
 
 	/// Create particles
-	PoolVector<Vector3> particles;
-	particles.resize(particle_count);
+	PoolVector<Vector3> &particles = model->get_particles_ref();
+	particles.resize(particle_count_start + particle_count);
 
-	PoolVector<real_t> masses;
-	masses.resize(particle_count);
+	PoolVector<real_t> &masses = model->get_masses_ref();
+	masses.resize(masses_count_start + particle_count);
 
 	{
 		PoolVector<Vector3>::Write particles_w = particles.write();
 		PoolVector<real_t>::Write masses_w = masses.write();
 
 		for (int i(0); i < particle_count; ++i) {
-			particles_w[i] = Vector3(0, (particle_radius * i * 2) - p_extent, 0);
-			masses_w[i] = 1.f;
+			particles_w[particle_count_start + i] = position_offset + Vector3(0, (particle_radius * i * 2), 0);
+			masses_w[masses_count_start + i] = 1.f;
 		}
 	}
 
@@ -1093,19 +1130,19 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_thread_particle_body_mo
 		++cluster_count;
 	}
 
-	PoolVector<Vector3> clusters_positions;
-	PoolVector<real_t> cluster_stiffness;
-	PoolVector<real_t> cluster_plastic_thresold;
-	PoolVector<real_t> cluster_plastic_creep;
-	PoolVector<int> cluster_offsets;
-	PoolVector<int> cluster_indices;
+	PoolVector<Vector3> &clusters_positions = model->get_clusters_positions_ref();
+	PoolVector<real_t> &cluster_stiffness = model->get_clusters_stiffness_ref();
+	PoolVector<real_t> &cluster_plastic_thresold = model->get_clusters_plastic_threshold_ref();
+	PoolVector<real_t> &cluster_plastic_creep = model->get_clusters_plastic_creep_ref();
+	PoolVector<int> &cluster_offsets = model->get_clusters_offsets_ref();
+	PoolVector<int> &cluster_indices = model->get_clusters_particle_indices_ref();
 
-	clusters_positions.resize(cluster_count);
-	cluster_stiffness.resize(cluster_count);
-	cluster_plastic_thresold.resize(cluster_count);
-	cluster_plastic_creep.resize(cluster_count);
-	cluster_offsets.resize(cluster_count);
-	cluster_indices.resize(cluster_count * p_cluster_size);
+	clusters_positions.resize(cluster_position_count_start + cluster_count);
+	cluster_stiffness.resize(cluster_stiffness_count_start + cluster_count);
+	cluster_plastic_thresold.resize(cluster_plastic_thresold_count_start + cluster_count);
+	cluster_plastic_creep.resize(cluster_plastic_creep_count_start + cluster_count);
+	cluster_offsets.resize(cluster_offset_count_start + cluster_count);
+	cluster_indices.resize(cluster_particle_indices_counst_start + cluster_count * p_cluster_size);
 
 	{
 		PoolVector<Vector3>::Read particles_r = particles.read();
@@ -1119,19 +1156,19 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_thread_particle_body_mo
 
 		for (int i(0); i < cluster_count; ++i) {
 
-			AABB aabb(particles_r[i * p_cluster_size], Vector3());
+			AABB aabb(particles_r[particle_count_start + (i * p_cluster_size)], Vector3());
 			for (int p(1); p < p_cluster_size; ++p) {
-				aabb.expand_to(particles_r[i * p_cluster_size + p]);
+				aabb.expand_to(particles_r[particle_count_start + (i * p_cluster_size + p)]);
 			}
 
-			clusters_positions_w[i] = aabb.get_position() + (aabb.get_size() * 0.5);
-			cluster_stiffness_w[i] = p_cluster_stiffness;
-			cluster_plastic_thresold_w[i] = 0;
-			cluster_plastic_creep_w[i] = 0;
-			cluster_offsets_w[i] = i * p_cluster_size + p_cluster_size;
+			clusters_positions_w[cluster_position_count_start + i] = aabb.get_position() + (aabb.get_size() * 0.5);
+			cluster_stiffness_w[cluster_stiffness_count_start + i] = p_cluster_stiffness;
+			cluster_plastic_thresold_w[cluster_plastic_thresold_count_start + i] = 0;
+			cluster_plastic_creep_w[cluster_plastic_creep_count_start + i] = 0;
+			cluster_offsets_w[cluster_offset_count_start + i] = particle_count_start + (i * p_cluster_size + p_cluster_size);
 
 			for (int p(0); p < p_cluster_size; ++p) {
-				cluster_indices_w[i * p_cluster_size + p] = i * p_cluster_size + p;
+				cluster_indices_w[cluster_particle_indices_counst_start + (i * p_cluster_size + p)] = particle_count_start + (i * p_cluster_size + p);
 			}
 		}
 	}
@@ -1151,20 +1188,32 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_thread_particle_body_mo
 		++springs_count;
 	}
 
-	PoolVector<int> springs_indices;
-	springs_indices.resize(springs_count * 2);
+	PoolVector<int> &springs_indices = model->get_constraints_indexes_ref();
+	PoolVector<Vector2> &springs_info = model->get_constraints_info_ref();
 
-	PoolVector<Vector2> springs_info;
-	springs_info.resize(springs_count);
+	if (want_to_attach) {
+		// Add 1 extra spring for Needle <-> Thread attachment
+		springs_indices.resize(constraint_indices_count_start + (springs_count + 1) * 2);
+		springs_info.resize(constraint_info_count_start + (springs_count + 1));
+	} else {
+		springs_indices.resize(constraint_indices_count_start + springs_count * 2);
+		springs_info.resize(constraint_info_count_start + springs_count);
+	}
 
 	{
 		PoolVector<int>::Write springs_indices_w = springs_indices.write();
 		PoolVector<Vector2>::Write springs_info_w = springs_info.write();
 
 		for (int i(0); i < springs_count; ++i) {
-			springs_indices_w[i * 2 + 0] = i * p_cluster_size + p_cluster_size - 1;
-			springs_indices_w[i * 2 + 1] = i * p_cluster_size + p_cluster_size;
-			springs_info_w[i] = Vector2(particle_radius * 2, p_link_stiffness);
+			springs_indices_w[constraint_indices_count_start + (i * 2 + 0)] = particle_count_start + (i * p_cluster_size + p_cluster_size - 1);
+			springs_indices_w[constraint_indices_count_start + (i * 2 + 1)] = particle_count_start + (i * p_cluster_size + p_cluster_size);
+			springs_info_w[constraint_info_count_start + i] = Vector2(particle_radius * 2, p_link_stiffness);
+		}
+
+		if (want_to_attach) {
+			springs_indices_w[springs_count * 2 + 0] = p_attach_to_particle;
+			springs_indices_w[springs_count * 2 + 1] = particle_count_start;
+			springs_info_w[springs_count + 0] = Vector2(0, 1); // Needle <-> Thread no gap with max stiffness
 		}
 	}
 
