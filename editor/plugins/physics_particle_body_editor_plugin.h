@@ -95,6 +95,7 @@ class ParticleBodyEditor : public Control {
 		SpinBox *link_stiffness_input;
 		SpinBox *cluster_size_input;
 		SpinBox *cluster_stiffness_input;
+		SpinBox *attach_to_current_particle_model_input;
 	} thread_dialog;
 
 	ParticleBody *node;
