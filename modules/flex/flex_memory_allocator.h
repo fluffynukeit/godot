@@ -35,8 +35,8 @@
 #ifndef FLEX_MEMORY_ALLOCATOR_H
 #define FLEX_MEMORY_ALLOCATOR_H
 
+#include "core/vector.h"
 #include "flex_utility.h"
-#include "vector.h"
 
 class FlexMemoryAllocator;
 

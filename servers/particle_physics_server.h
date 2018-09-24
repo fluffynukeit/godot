@@ -2,8 +2,8 @@
 #define PARTICLE_PHYSICS_SERVER_H
 
 #include "core/math/triangle_mesh.h"
-#include "object.h"
-#include "resource.h"
+#include "core/object.h"
+#include "core/resource.h"
 #include "scene/resources/particle_body_model.h"
 
 class ParticleBodyCommands : public Object {

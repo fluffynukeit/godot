@@ -34,7 +34,7 @@
 
 #include "physics_particle_body.h"
 
-#include "core_string_names.h"
+#include "core/core_string_names.h"
 #include "scene/3d/physics_particle_body_mesh_instance.h"
 #include "scene/3d/skeleton.h"
 

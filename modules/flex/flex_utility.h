@@ -58,11 +58,11 @@
 #undef Plane
 #undef Transform
 
+#include "core/math/math_defs.h"
 #include "core/math/quat.h"
 #include "core/math/transform.h"
 #include "core/math/vector3.h"
 #include "core/string_db.h"
-#include "math_defs.h"
 
 typedef int FlexUnit;
 
