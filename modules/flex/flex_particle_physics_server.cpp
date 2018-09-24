@@ -253,6 +253,10 @@ float FlexParticleBodyCommands::get_particle_mass(int p_particle_index) const {
 	return body->get_particle_mass(p_particle_index);
 }
 
+float FlexParticleBodyCommands::get_particle_inv_mass(int p_particle_index) const {
+	return body->get_particle_inv_mass(p_particle_index);
+}
+
 const Vector3 &FlexParticleBodyCommands::get_particle_velocity(int p_particle_index) const {
 	return body->get_particle_velocity(p_particle_index);
 }
@@ -262,10 +266,10 @@ void FlexParticleBodyCommands::set_particle_velocity(int p_particle_index, const
 }
 
 void FlexParticleBodyCommands::apply_force(int p_particle_index, const Vector3 &p_force) {
-	const real_t mass = get_particle_mass(p_particle_index);
-	if (mass <= 0.0)
+	const real_t inv_mass = get_particle_inv_mass(p_particle_index);
+	if (inv_mass <= 0.0)
 		return;
-	const Vector3 velocity = (p_force / mass) * FlexParticlePhysicsServer::singleton->get_delta_time();
+	const Vector3 velocity = p_force * inv_mass * FlexParticlePhysicsServer::singleton->get_delta_time();
 	set_particle_velocity(p_particle_index, get_particle_velocity(p_particle_index) + velocity);
 }
 
@@ -377,6 +381,7 @@ FlexParticlePhysicsServer::FlexParticlePhysicsServer() :
 		solver_param_relaxationMode("relaxationMode"),
 		solver_param_relaxationFactor("relaxationFactor"),
 		is_active(true),
+		delta_time(0.0),
 		last_space_index(-1) {
 
 	ERR_FAIL_COND(singleton);

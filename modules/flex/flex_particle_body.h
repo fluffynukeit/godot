@@ -165,6 +165,7 @@ public:
 
 	void set_particle_mass(ParticleIndex p_particle, real_t p_mass);
 	float get_particle_mass(ParticleIndex p_particle) const;
+	float get_particle_inv_mass(ParticleIndex p_particle) const;
 
 	const Vector3 &get_particle_velocity(ParticleIndex p_particle) const;
 	void set_particle_velocity(ParticleIndex p_particle, const Vector3 &p_velocity);
