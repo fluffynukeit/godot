@@ -246,6 +246,10 @@ float FlexParticleBody::get_particle_mass(ParticleIndex p_particle_index) const 
 	return extract_mass(space->get_particles_memory()->get_particle(particles_mchunk, p_particle_index));
 }
 
+float FlexParticleBody::get_particle_inv_mass(ParticleIndex p_particle_index) const {
+	return extract_inverse_mass(space->get_particles_memory()->get_particle(particles_mchunk, p_particle_index));
+}
+
 const Vector3 &FlexParticleBody::get_particle_velocity(ParticleIndex p_particle_index) const {
 	return space->get_particles_memory()->get_velocity(particles_mchunk, p_particle_index);
 }
