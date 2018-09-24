@@ -33,7 +33,7 @@
 */
 
 #include "flex_memory_allocator.h"
-#include "print_string.h"
+#include "core/print_string.h"
 
 MemoryChunk FlexMemoryAllocator::zero_memory_chunk(0, -1, false);
 

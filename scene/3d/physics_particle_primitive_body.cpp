@@ -33,7 +33,7 @@
  */
 
 #include "physics_particle_primitive_body.h"
-#include "engine.h"
+#include "core/engine.h"
 #include "physics_particle_body.h"
 #include "scene/3d/mesh_instance.h"
 

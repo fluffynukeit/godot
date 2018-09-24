@@ -35,7 +35,7 @@
 #ifndef PARTICLE_BODY_MODEL_H
 #define PARTICLE_BODY_MODEL_H
 
-#include "resource.h"
+#include "core/resource.h"
 
 /// The particle model is a resource that doesn't have a specific RID that identify the shape in the ParticlePhysicsServer
 /// Because it's not necessary

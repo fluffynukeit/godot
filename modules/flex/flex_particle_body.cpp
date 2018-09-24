@@ -33,9 +33,9 @@
 */
 
 #include "flex_particle_body.h"
+#include "core/object.h"
 #include "flex_memory.h"
 #include "flex_space.h"
-#include "object.h"
 
 FlexParticleBody::FlexParticleBody() :
 		RIDFlex(),

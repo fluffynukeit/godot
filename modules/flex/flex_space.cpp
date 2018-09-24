@@ -36,12 +36,12 @@
 
 #include "thirdparty/flex/include/NvFlex.h"
 
+#include "core/print_string.h"
 #include "flex_memory.h"
 #include "flex_particle_body.h"
 #include "flex_particle_body_constraint.h"
 #include "flex_primitive_body.h"
 #include "flex_primitive_shapes.h"
-#include "print_string.h"
 
 #define DEVICE_ID 0
 
