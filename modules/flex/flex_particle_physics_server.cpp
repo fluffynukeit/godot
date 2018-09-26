@@ -312,6 +312,56 @@ AABB FlexParticleBodyCommands::get_aabb() const {
 	return aabb;
 }
 
+int FlexParticleBodyCommands::get_rigid_index_of_particle(int p_particle_index) {
+
+	RigidComponentIndex rigid_component_index = -1;
+	for (RigidComponentIndex i(body->rigids_components_mchunk->get_size() - 1); 0 <= i; --i) {
+		const ParticleBufferIndex pbindex = body->space->rigids_components_memory->get_index(body->rigids_components_mchunk, i);
+		const ParticleIndex pindex = body->particles_mchunk->get_chunk_index(pbindex);
+		if (pindex == p_particle_index) {
+			rigid_component_index = i;
+			break;
+		}
+	}
+
+	if (0 <= rigid_component_index) {
+		for (RigidIndex i(0); i < body->rigids_mchunk->get_size(); ++i) {
+			const RigidComponentIndex rcindex = body->space->rigids_memory->get_offset(body->rigids_mchunk, i);
+			if (rcindex > rigid_component_index) {
+				return i;
+			}
+		}
+	}
+
+	return -1;
+}
+
+void FlexParticleBodyCommands::set_rigid_velocity_toward_position(int p_rigid_index, const Transform &p_new_position) {
+
+	const real_t dt(FlexParticlePhysicsServer::singleton->get_delta_time());
+
+	if (!dt)
+		return;
+
+	Transform current_transform_inv(Basis(get_rigid_rotation(p_rigid_index)), get_rigid_position(p_rigid_index));
+	current_transform_inv.invert();
+
+	const RigidComponentIndex initial_component_index(p_rigid_index ? body->space->rigids_memory->get_offset(body->rigids_mchunk, p_rigid_index - 1) : RigidComponentIndex(0));
+	const RigidComponentIndex last_component_index(body->space->rigids_memory->get_offset(body->rigids_mchunk, p_rigid_index));
+
+	RigidsComponentsMemory *components_memory = body->space->rigids_components_memory;
+
+	for (RigidComponentIndex i(initial_component_index); i < last_component_index; ++i) {
+
+		const ParticleIndex pindex = body->particles_mchunk->get_chunk_index(components_memory->get_index(body->rigids_components_mchunk, i));
+
+		const Vector3 current_ppos(get_particle_position(pindex));
+		const Vector3 new_ppos(p_new_position.xform(current_transform_inv.xform(current_ppos)));
+
+		set_particle_velocity(pindex, (new_ppos - current_ppos) / dt);
+	}
+}
+
 int FlexParticleBodyConstraintCommands::get_spring_count() const {
 	return constraint->get_spring_count();
 }

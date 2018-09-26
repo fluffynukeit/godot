@@ -37,6 +37,10 @@ public:
 	virtual const Quat &get_rigid_rotation(int p_index) const = 0;
 
 	virtual AABB get_aabb() const = 0;
+
+	virtual int get_rigid_index_of_particle(int p_particle_index) = 0;
+	// Move all particles of rigid body by setting velocity to reach next position
+	virtual void set_rigid_velocity_toward_position(int p_rigid_index, const Transform &p_new_position) = 0;
 };
 
 class ParticleBodyConstraintCommands : public Object {
