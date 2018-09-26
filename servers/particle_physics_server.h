@@ -191,7 +191,7 @@ public:
 		int bone_id;
 		real_t weight;
 	};
-	virtual void create_skeleton(const Vector3 *bones_poses, int bone_count, const Vector3 *p_vertices, int p_vertex_count, PoolVector<float> *r_weights, PoolVector<int> *r_particle_indices, int *r_max_weight_per_vertex) = 0;
+	virtual void create_skeleton(real_t weight_fall_off, real_t weight_max_distance, const Vector3 *bones_poses, int bone_count, const Vector3 *p_vertices, int p_vertex_count, PoolVector<float> *r_weights, PoolVector<int> *r_particle_indices, int *r_max_weight_per_vertex) = 0;
 
 public:
 	// Internals

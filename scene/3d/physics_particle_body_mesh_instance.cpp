@@ -95,7 +95,21 @@ void ParticleClothVisualServerHandler::set_aabb(const AABB &p_aabb) {
 }
 
 void ParticleBodyMeshInstance::_bind_methods() {
+
+	ClassDB::bind_method(D_METHOD("set_keep_first_bone_rotation", "keep"), &ParticleBodyMeshInstance::set_keep_first_bone_rotation);
+	ClassDB::bind_method(D_METHOD("get_keep_first_bone_rotation"), &ParticleBodyMeshInstance::get_keep_first_bone_rotation);
+
+	ClassDB::bind_method(D_METHOD("set_weight_fall_off", "fall_off"), &ParticleBodyMeshInstance::set_weight_fall_off);
+	ClassDB::bind_method(D_METHOD("get_weight_fall_off"), &ParticleBodyMeshInstance::get_weight_fall_off);
+
+	ClassDB::bind_method(D_METHOD("set_weight_max_distance", "max_distance"), &ParticleBodyMeshInstance::set_weight_max_distance);
+	ClassDB::bind_method(D_METHOD("get_weight_max_distance"), &ParticleBodyMeshInstance::get_weight_max_distance);
+
 	ClassDB::bind_method(D_METHOD("_draw_mesh_pvparticles"), &ParticleBodyMeshInstance::_draw_mesh_pvparticles);
+
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "keep_first_bone_rotation"), "set_keep_first_bone_rotation", "get_keep_first_bone_rotation");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "weight_fall_off"), "set_weight_fall_off", "get_weight_fall_off");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "weight_max_distance"), "set_weight_max_distance", "get_weight_max_distance");
 }
 
 void ParticleBodyMeshInstance::_notification(int p_what) {
@@ -141,6 +155,9 @@ void ParticleBodyMeshInstance::_notification(int p_what) {
 
 ParticleBodyMeshInstance::ParticleBodyMeshInstance() :
 		MeshInstance(),
+		keep_first_bone_rotation(false),
+		weight_fall_off(2),
+		weight_max_distance(100.0),
 		particle_body(NULL),
 		skeleton(NULL),
 		rendering_approach(RENDERING_UPDATE_APPROACH_NONE),
@@ -153,6 +170,18 @@ ParticleBodyMeshInstance::ParticleBodyMeshInstance() :
 
 ParticleBodyMeshInstance::~ParticleBodyMeshInstance() {
 	_clear_pvparticles_drawing();
+}
+
+void ParticleBodyMeshInstance::set_keep_first_bone_rotation(bool keep) {
+	keep_first_bone_rotation = keep;
+}
+
+void ParticleBodyMeshInstance::set_weight_fall_off(real_t p_weight_fall_off) {
+	weight_fall_off = p_weight_fall_off;
+}
+
+void ParticleBodyMeshInstance::set_weight_max_distance(real_t p_weight_max_distance) {
+	weight_max_distance = p_weight_max_distance;
 }
 
 void ParticleBodyMeshInstance::update_mesh(ParticleBodyCommands *p_cmds) {
@@ -196,9 +225,33 @@ void ParticleBodyMeshInstance::update_mesh_skeleton(ParticleBodyCommands *p_cmds
 	const int rigids_count = ParticlePhysicsServer::get_singleton()->body_get_rigid_count(particle_body->get_rid());
 	const PoolVector<Vector3>::Read rigids_local_pos_r = particle_body->get_particle_body_model()->get_clusters_positions().read();
 
+	Vector3 x;
+	if (rigids_count && keep_first_bone_rotation) {
+
+		x = Basis(p_cmds->get_rigid_rotation(0)).xform(Vector3(1, 0, 0));
+	}
+
 	for (int i = 0; i < rigids_count; ++i) {
 
-		Transform t(Basis(p_cmds->get_rigid_rotation(i)), p_cmds->get_rigid_position(i));
+		Basis b;
+		if (i != 0 && keep_first_bone_rotation) {
+
+			Vector3 delta = p_cmds->get_rigid_position(i) - p_cmds->get_rigid_position(i - 1);
+			delta.normalize();
+
+			Vector3 xa = x;
+			Vector3 ya = delta;
+			Vector3 za = xa.cross(ya).normalized();
+			if (za.x == 0 && za.y == 0 && za.z == 0) {
+				za = Vector3(0, 0, 1);
+			}
+			xa = ya.cross(za).normalized();
+			b.set(xa, ya, za);
+		} else {
+			b = Basis(p_cmds->get_rigid_rotation(i));
+		}
+
+		Transform t(b, p_cmds->get_rigid_position(i));
 		t.translate(rigids_local_pos_r[i] * -1);
 		skeleton->set_bone_pose(i, t);
 	}
@@ -295,7 +348,7 @@ void ParticleBodyMeshInstance::prepare_mesh_skeleton_deformation() {
 	PoolVector<int> bone_indices; // The index of bone relative of vertex
 	int max_weights_per_vertex = 0;
 
-	ParticlePhysicsServer::get_singleton()->create_skeleton(clusters_pos_r.ptr(), bone_count, vertices_read.ptr(), vertex_count, &weights, &bone_indices, &max_weights_per_vertex);
+	ParticlePhysicsServer::get_singleton()->create_skeleton(weight_fall_off, weight_max_distance, clusters_pos_r.ptr(), bone_count, vertices_read.ptr(), vertex_count, &weights, &bone_indices, &max_weights_per_vertex);
 
 	ERR_FAIL_COND(max_weights_per_vertex != VS::ARRAY_WEIGHTS_SIZE);
 

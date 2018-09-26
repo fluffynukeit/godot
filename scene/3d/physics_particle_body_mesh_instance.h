@@ -84,6 +84,10 @@ class ParticleBodyMeshInstance : public MeshInstance {
 
 	ParticleClothVisualServerHandler *visual_server_handler;
 
+	bool keep_first_bone_rotation;
+	real_t weight_fall_off;
+	real_t weight_max_distance;
+
 	ParticleBody *particle_body;
 	Skeleton *skeleton;
 
@@ -96,7 +100,17 @@ public:
 	ParticleBodyMeshInstance();
 	virtual ~ParticleBodyMeshInstance();
 
+	void set_keep_first_bone_rotation(bool keep);
+	bool get_keep_first_bone_rotation() const { return keep_first_bone_rotation; }
+
+	void set_weight_fall_off(real_t p_weight_fall_off);
+	real_t get_weight_fall_off() const { return weight_fall_off; }
+
+	void set_weight_max_distance(real_t p_weight_max_distance);
+	real_t get_weight_max_distance() const { return weight_max_distance; }
+
 	_FORCE_INLINE_ Skeleton *get_skeleton() { return skeleton; }
+
 	void update_mesh(ParticleBodyCommands *p_cmds);
 
 	void update_mesh_pvparticles(ParticleBodyCommands *p_cmds);
