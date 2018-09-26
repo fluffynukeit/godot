@@ -96,8 +96,8 @@ void ParticleClothVisualServerHandler::set_aabb(const AABB &p_aabb) {
 
 void ParticleBodyMeshInstance::_bind_methods() {
 
-	ClassDB::bind_method(D_METHOD("set_keep_first_bone_rotation", "keep"), &ParticleBodyMeshInstance::set_keep_first_bone_rotation);
-	ClassDB::bind_method(D_METHOD("get_keep_first_bone_rotation"), &ParticleBodyMeshInstance::get_keep_first_bone_rotation);
+	ClassDB::bind_method(D_METHOD("set_look_y_previous_cluster", "look"), &ParticleBodyMeshInstance::set_look_y_previous_cluster);
+	ClassDB::bind_method(D_METHOD("get_look_y_previous_cluster"), &ParticleBodyMeshInstance::get_look_y_previous_cluster);
 
 	ClassDB::bind_method(D_METHOD("set_weight_fall_off", "fall_off"), &ParticleBodyMeshInstance::set_weight_fall_off);
 	ClassDB::bind_method(D_METHOD("get_weight_fall_off"), &ParticleBodyMeshInstance::get_weight_fall_off);
@@ -107,7 +107,7 @@ void ParticleBodyMeshInstance::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("_draw_mesh_pvparticles"), &ParticleBodyMeshInstance::_draw_mesh_pvparticles);
 
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "keep_first_bone_rotation"), "set_keep_first_bone_rotation", "get_keep_first_bone_rotation");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "look_y_previous_cluster"), "set_look_y_previous_cluster", "get_look_y_previous_cluster");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "weight_fall_off"), "set_weight_fall_off", "get_weight_fall_off");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "weight_max_distance"), "set_weight_max_distance", "get_weight_max_distance");
 }
@@ -155,7 +155,7 @@ void ParticleBodyMeshInstance::_notification(int p_what) {
 
 ParticleBodyMeshInstance::ParticleBodyMeshInstance() :
 		MeshInstance(),
-		keep_first_bone_rotation(false),
+		look_y_previous_cluster(false),
 		weight_fall_off(2),
 		weight_max_distance(100.0),
 		particle_body(NULL),
@@ -172,8 +172,8 @@ ParticleBodyMeshInstance::~ParticleBodyMeshInstance() {
 	_clear_pvparticles_drawing();
 }
 
-void ParticleBodyMeshInstance::set_keep_first_bone_rotation(bool keep) {
-	keep_first_bone_rotation = keep;
+void ParticleBodyMeshInstance::set_look_y_previous_cluster(bool look) {
+	look_y_previous_cluster = look;
 }
 
 void ParticleBodyMeshInstance::set_weight_fall_off(real_t p_weight_fall_off) {
@@ -225,30 +225,28 @@ void ParticleBodyMeshInstance::update_mesh_skeleton(ParticleBodyCommands *p_cmds
 	const int rigids_count = ParticlePhysicsServer::get_singleton()->body_get_rigid_count(particle_body->get_rid());
 	const PoolVector<Vector3>::Read rigids_local_pos_r = particle_body->get_particle_body_model()->get_clusters_positions().read();
 
-	Vector3 x;
-	if (rigids_count && keep_first_bone_rotation) {
+	Vector3 initial_cluster_x;
+	if (look_y_previous_cluster && rigids_count) {
 
-		x = Basis(p_cmds->get_rigid_rotation(0)).xform(Vector3(1, 0, 0));
+		initial_cluster_x = Basis(p_cmds->get_rigid_rotation(0)).xform(Vector3(1, 0, 0));
 	}
 
 	for (int i = 0; i < rigids_count; ++i) {
 
 		Basis b;
-		if (i != 0 && keep_first_bone_rotation) {
+		if (look_y_previous_cluster && i != 0) {
 
 			Vector3 delta = p_cmds->get_rigid_position(i) - p_cmds->get_rigid_position(i - 1);
 			delta.normalize();
 
-			Vector3 xa = x;
+			Vector3 xa = initial_cluster_x;
 			Vector3 ya = delta;
 			Vector3 za = xa.cross(ya).normalized();
-			if (za.x == 0 && za.y == 0 && za.z == 0) {
-				za = Vector3(0, 0, 1);
-			}
 			xa = ya.cross(za).normalized();
 			b.set(xa, ya, za);
 		} else {
-			b = Basis(p_cmds->get_rigid_rotation(i));
+
+			b.set_quat(p_cmds->get_rigid_rotation(i));
 		}
 
 		Transform t(b, p_cmds->get_rigid_position(i));
