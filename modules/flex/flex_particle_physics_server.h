@@ -294,7 +294,7 @@ public:
 	virtual Ref<ParticleBodyModel> create_rigid_particle_body_model(Ref<TriangleMesh> p_mesh, float p_radius, float p_expand);
 	virtual Ref<ParticleBodyModel> create_thread_particle_body_model(real_t p_particle_radius, real_t p_extent, real_t p_spacing, real_t p_link_stiffness, int p_cluster_size, real_t p_cluster_stiffness, int p_attach_to_particle, Ref<ParticleBodyModel> p_current_model);
 	Ref<ParticleBodyModel> make_model(class NvFlexExtAsset *p_asset);
-	virtual void create_skeleton(const Vector3 *bones_poses, int bone_count, const Vector3 *p_vertices, int p_vertex_count, PoolVector<float> *r_weights, PoolVector<int> *r_particle_indices, int *r_max_weight_per_vertex);
+	virtual void create_skeleton(real_t weight_fall_off, real_t weight_max_distance, const Vector3 *bones_poses, int bone_count, const Vector3 *p_vertices, int p_vertex_count, PoolVector<float> *r_weights, PoolVector<int> *r_particle_indices, int *r_max_weight_per_vertex);
 
 	virtual void init();
 	virtual void terminate();

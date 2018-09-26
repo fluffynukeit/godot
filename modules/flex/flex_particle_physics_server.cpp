@@ -1286,13 +1286,10 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::make_model(NvFlexExtAsset *p_a
 	return model;
 }
 
-void FlexParticlePhysicsServer::create_skeleton(const Vector3 *bones_poses, int bone_count, const Vector3 *p_vertices, int p_vertex_count, PoolVector<float> *r_weights, PoolVector<int> *r_particle_indices, int *r_max_weight_per_vertex) {
+void FlexParticlePhysicsServer::create_skeleton(real_t weight_fall_off, real_t weight_max_distance, const Vector3 *bones_poses, int bone_count, const Vector3 *p_vertices, int p_vertex_count, PoolVector<float> *r_weights, PoolVector<int> *r_particle_indices, int *r_max_weight_per_vertex) {
 
 	ERR_FAIL_COND(0 >= bone_count);
 	ERR_FAIL_COND(0 >= p_vertex_count);
-
-	float falloff = 10.f;
-	float max_distance = 100.f;
 
 	*r_max_weight_per_vertex = 4;
 	r_weights->resize(p_vertex_count * 4);
@@ -1306,8 +1303,8 @@ void FlexParticlePhysicsServer::create_skeleton(const Vector3 *bones_poses, int 
 			p_vertex_count,
 			((const float *)bones_poses),
 			bone_count,
-			falloff,
-			max_distance,
+			weight_fall_off,
+			weight_max_distance,
 			weight_w.ptr(),
 			indices_w.ptr());
 }
