@@ -90,6 +90,7 @@ public:
 
 	virtual const Vector3 &get_rigid_position(int p_index) const;
 	virtual const Quat &get_rigid_rotation(int p_index) const;
+	virtual Transform get_rigid_transform(int p_index) const;
 
 	virtual AABB get_aabb() const;
 

@@ -281,14 +281,6 @@ void FlexParticleBodyCommands::set_particle_normal(int p_index, const Vector3 &p
 	body->set_particle_normal(p_index, p_normal);
 }
 
-const Vector3 &FlexParticleBodyCommands::get_rigid_position(int p_index) const {
-	return body->get_rigid_position(p_index);
-}
-
-const Quat &FlexParticleBodyCommands::get_rigid_rotation(int p_index) const {
-	return body->get_rigid_rotation(p_index);
-}
-
 AABB FlexParticleBodyCommands::get_aabb() const {
 	AABB aabb;
 
@@ -310,6 +302,18 @@ AABB FlexParticleBodyCommands::get_aabb() const {
 #endif
 
 	return aabb;
+}
+
+const Vector3 &FlexParticleBodyCommands::get_rigid_position(int p_index) const {
+	return body->get_rigid_position(p_index);
+}
+
+const Quat &FlexParticleBodyCommands::get_rigid_rotation(int p_index) const {
+	return body->get_rigid_rotation(p_index);
+}
+
+Transform FlexParticleBodyCommands::get_rigid_transform(int p_index) const {
+	return Transform(Basis(get_rigid_rotation(p_index)), get_rigid_position(p_index));
 }
 
 int FlexParticleBodyCommands::get_rigid_index_of_particle(int p_particle_index) {
