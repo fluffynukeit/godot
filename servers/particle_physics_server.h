@@ -33,10 +33,11 @@ public:
 
 	virtual Vector3 get_particle_normal(int p_index) const = 0;
 
+	virtual AABB get_aabb() const = 0;
+
 	virtual const Vector3 &get_rigid_position(int p_index) const = 0;
 	virtual const Quat &get_rigid_rotation(int p_index) const = 0;
-
-	virtual AABB get_aabb() const = 0;
+	virtual Transform get_rigid_transform(int p_index) const = 0;
 
 	virtual int get_rigid_index_of_particle(int p_particle_index) = 0;
 	// Move all particles of rigid body by setting velocity to reach next position

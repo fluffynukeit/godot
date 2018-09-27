@@ -24,6 +24,8 @@ void ParticleBodyCommands::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("get_particle_normal", "particle_index"), &ParticleBodyCommands::get_particle_normal);
 
+	ClassDB::bind_method(D_METHOD("get_rigid_transform", "index"), &ParticleBodyCommands::get_rigid_transform);
+
 	ClassDB::bind_method(D_METHOD("get_rigid_index_of_particle", "particle_index"), &ParticleBodyCommands::get_rigid_index_of_particle);
 	ClassDB::bind_method(D_METHOD("set_rigid_velocity_toward_position", "rigid_index", "new_position"), &ParticleBodyCommands::set_rigid_velocity_toward_position);
 }
