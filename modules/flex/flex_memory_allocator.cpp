@@ -286,7 +286,7 @@ FlexUnit FlexMemoryAllocator::get_chunk_count() const {
 }
 
 MemoryChunk *FlexMemoryAllocator::get_chunk(FlexUnit i) const {
-	memory_table.get(i);
+	return memory_table.get(i);
 }
 
 bool FlexMemoryAllocator::redux_memory(FlexUnit p_size) {
