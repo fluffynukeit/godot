@@ -87,6 +87,7 @@ class ParticleBodyMeshInstance : public MeshInstance {
 	bool look_y_previous_cluster;
 	real_t weight_fall_off;
 	real_t weight_max_distance;
+	real_t grow_aabb;
 
 	ParticleBody *particle_body;
 	Skeleton *skeleton;
@@ -108,6 +109,9 @@ public:
 
 	void set_weight_max_distance(real_t p_weight_max_distance);
 	real_t get_weight_max_distance() const { return weight_max_distance; }
+
+	void set_grow_aabb(real_t p_grow_aabb);
+	real_t get_grow_aabb() const { return grow_aabb; }
 
 	_FORCE_INLINE_ Skeleton *get_skeleton() { return skeleton; }
 

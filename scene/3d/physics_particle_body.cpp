@@ -48,6 +48,9 @@ void ParticleBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_update_spatial_transform", "update"), &ParticleBody::set_update_spatial_transform);
 	ClassDB::bind_method(D_METHOD("get_update_spatial_transform"), &ParticleBody::get_update_spatial_transform);
 
+	ClassDB::bind_method(D_METHOD("set_grow_aabb", "grow_aabb"), &ParticleBodyMeshInstance::set_grow_aabb);
+	ClassDB::bind_method(D_METHOD("get_grow_aabb"), &ParticleBodyMeshInstance::get_grow_aabb);
+
 	ClassDB::bind_method(D_METHOD("remove_particle", "particle_index"), &ParticleBody::remove_particle);
 	ClassDB::bind_method(D_METHOD("remove_rigid", "rigid_index"), &ParticleBody::remove_rigid);
 
@@ -94,6 +97,7 @@ void ParticleBody::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "particle_body_model", PROPERTY_HINT_RESOURCE_TYPE, "ParticleBodyModel"), "set_particle_body_model", "get_particle_body_model");
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "update_spatial_transform"), "set_update_spatial_transform", "get_update_spatial_transform");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "grow_aabb"), "set_grow_aabb", "get_grow_aabb");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitorable"), "set_monitorable", "is_monitorable");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitoring_primitives_contacts"), "set_monitoring_primitives_contacts", "is_monitoring_primitives_contacts");
 
@@ -111,6 +115,7 @@ void ParticleBody::_bind_methods() {
 ParticleBody::ParticleBody() :
 		ParticleObject(ParticlePhysicsServer::get_singleton()->body_create()),
 		update_spatial_transform(false),
+		aabb_margin(1),
 		reload_particle_model(true),
 		initial_transform(true),
 		reset_transform(false),
@@ -291,6 +296,10 @@ bool ParticleBody::get_update_spatial_transform() const {
 	return update_spatial_transform;
 }
 
+void ParticleBody::set_aabb_margin(real_t p_aabb_margin) {
+	aabb_margin = p_aabb_margin;
+}
+
 int ParticleBody::get_particle_count() const {
 	return ParticlePhysicsServer::get_singleton()->body_get_particle_count(rid);
 }
@@ -368,6 +377,7 @@ void ParticleBody::commands_process_internal(Object *p_cmds) {
 
 	if (particle_body_mesh)
 		particle_body_mesh->update_mesh(cmds);
+
 	debug_update(cmds);
 
 	if (!get_script().is_null() && has_method("_commands_process")) {
@@ -397,9 +407,9 @@ void ParticleBody::update_transform(ParticleBodyCommands *p_cmds) {
 	if (!update_spatial_transform)
 		return;
 
-	bool old_rt = reset_transform;
+	set_notify_transform(false);
 	set_global_transform(compute_transform(p_cmds));
-	reset_transform = old_rt;
+	set_notify_transform(true);
 }
 
 void ParticleBody::on_primitive_contact(Object *p_cmds, Object *p_primitive_object, int p_particle_index, Vector3 p_velocity, Vector3 p_normal) {
@@ -481,7 +491,7 @@ void ParticleBody::debug_update(ParticleBodyCommands *p_cmds) {
 		return;
 
 	const int particle_count = ParticlePhysicsServer::get_singleton()->body_get_particle_count(rid);
-	debug_resize_particle_visual_instance(ParticlePhysicsServer::get_singleton()->body_get_particle_count(rid));
+	debug_resize_particle_visual_instance(particle_count);
 
 	Transform transf;
 	for (int i = 0; i < particle_count; ++i) {

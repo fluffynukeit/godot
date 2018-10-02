@@ -47,6 +47,7 @@ class ParticleBody : public ParticleObject {
 	GDCLASS(ParticleBody, ParticleObject);
 
 	bool update_spatial_transform;
+	real_t aabb_margin;
 
 	bool reload_particle_model;
 	bool reset_transform;
@@ -82,6 +83,9 @@ public:
 
 	void set_update_spatial_transform(bool p_update);
 	bool get_update_spatial_transform() const;
+
+	void set_aabb_margin(real_t p_aabb_margin);
+	void get_aabb_margin() const { return aabb_margin; }
 
 	void remove_particle(int p_particle_index);
 	void remove_rigid(int p_rigid_index);

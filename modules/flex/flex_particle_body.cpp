@@ -54,6 +54,7 @@ FlexParticleBody::FlexParticleBody() :
 		rest_volume(0),
 		pressure(1),
 		constraint_scale(0),
+		aabb_margin(1),
 		_is_monitorable(false),
 		_is_monitoring_primitives_contacts(false) {
 	sync_callback.receiver = NULL;
@@ -321,6 +322,61 @@ void FlexParticleBody::reload_rigid_COM(RigidIndex p_rigid) {
 
 	// Assign new position
 	space->get_rigids_memory()->set_position(rigids_mchunk, p_rigid, center);
+}
+
+void FlexParticleBody::reload_aabb() {
+	if (aabb_margin > 0 && get_rigid_count()) {
+		aabb = compute_rigids_aabb();
+		aabb.grow_by(aabb);
+	} else {
+		aabb = compute_particles_aabb();
+	}
+}
+
+AABB FlexParticleBody::compute_rigids_aabb() const {
+	AABB aabb;
+
+	const int rigid_count(get_rigid_count());
+	if (rigid_count) {
+		aabb.set_position(get_rigid_position(0));
+		for (int i(1); i < rigid_count; ++i) {
+			aabb.expand_to(get_rigid_position(i));
+		}
+	}
+
+#ifdef DEBUG_ENABLED
+	ERR_FAIL_COND_V(Math::is_nan(aabb.position.x), AABB());
+	ERR_FAIL_COND_V(Math::is_nan(aabb.position.y), AABB());
+	ERR_FAIL_COND_V(Math::is_nan(aabb.position.z), AABB());
+	ERR_FAIL_COND_V(Math::is_nan(aabb.size.x), AABB());
+	ERR_FAIL_COND_V(Math::is_nan(aabb.size.y), AABB());
+	ERR_FAIL_COND_V(Math::is_nan(aabb.size.z), AABB());
+#endif
+
+	return aabb;
+}
+
+AABB FlexParticleBody::compute_particles_aabb() const {
+	AABB aabb;
+
+	const int particle_count(get_particle_count());
+	if (particle_count) {
+		aabb.set_position(get_particle_position(0));
+		for (int i(1); i < particle_count; ++i) {
+			aabb.expand_to(get_particle_position(i));
+		}
+	}
+
+#ifdef DEBUG_ENABLED
+	ERR_FAIL_COND_V(Math::is_nan(aabb.position.x), AABB());
+	ERR_FAIL_COND_V(Math::is_nan(aabb.position.y), AABB());
+	ERR_FAIL_COND_V(Math::is_nan(aabb.position.z), AABB());
+	ERR_FAIL_COND_V(Math::is_nan(aabb.size.x), AABB());
+	ERR_FAIL_COND_V(Math::is_nan(aabb.size.y), AABB());
+	ERR_FAIL_COND_V(Math::is_nan(aabb.size.z), AABB());
+#endif
+
+	return aabb;
 }
 
 bool FlexParticleBody::is_owner_of_particle(ParticleIndex p_particle) const {
