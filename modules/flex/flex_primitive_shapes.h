@@ -47,6 +47,7 @@ class FlexSpace;
 class FlexPrimitiveShape : public RIDFlex {
 
 	Vector<FlexPrimitiveBody *> owners;
+	AABB aabb;
 
 public:
 	FlexPrimitiveShape();
@@ -63,6 +64,8 @@ public:
 	virtual Variant get_data() const = 0;
 	virtual bool need_alignment() const { return false; }
 	virtual const Basis &get_alignment_basis() const { return Basis(); }
+
+	const AABB &get_aabb() const { aabb; }
 };
 
 class FlexPrimitiveBoxShape : public FlexPrimitiveShape {

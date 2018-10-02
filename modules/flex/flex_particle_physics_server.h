@@ -92,7 +92,7 @@ public:
 	virtual const Quat &get_rigid_rotation(int p_index) const;
 	virtual Transform get_rigid_transform(int p_index) const;
 
-	virtual AABB get_aabb() const;
+	virtual const AABB &get_aabb() const;
 
 	virtual int get_rigid_index_of_particle(int p_particle_index);
 	virtual void set_rigid_velocity_toward_position(int p_rigid_index, const Transform &p_new_position);

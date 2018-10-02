@@ -79,6 +79,8 @@ Variant FlexPrimitiveBoxShape::get_data() const {
 
 void FlexPrimitiveBoxShape::set_extends(const Vector3 &p_extends) {
 	extends = p_extends;
+	aabb.set_position(Vector3());
+	aabb.set_size(extends * 2.0);
 }
 
 Basis FlexPrimitiveCapsuleShape::alignment(0, 0, -1, 0, 1, 0, 1, 0, 0);
@@ -100,6 +102,8 @@ void FlexPrimitiveCapsuleShape::set_data(const Variant &p_data) {
 	ERR_FAIL_COND(!d.has("height"));
 	half_height = static_cast<float>(d["height"]) / 2.0;
 	radius = d["radius"];
+	aabb.set_position(Vector3());
+	aabb.set_size(Vector3(radius, half_height, radius));
 }
 
 Variant FlexPrimitiveCapsuleShape::get_data() const {
@@ -122,6 +126,8 @@ void FlexPrimitiveSphereShape::get_shape(FlexSpace *p_space, NvFlexCollisionGeom
 
 void FlexPrimitiveSphereShape::set_data(const Variant &p_data) {
 	radius = p_data;
+	aabb.set_position(Vector3());
+	aabb.set_size(Vector3(radius, radius, radius));
 }
 
 Variant FlexPrimitiveSphereShape::get_data() const {
@@ -163,6 +169,12 @@ Variant FlexPrimitiveConvexShape::get_data() const {
 void FlexPrimitiveConvexShape::setup(const Vector<Vector3> &p_vertices) {
 	vertices = p_vertices;
 
+	const int vs = vertices.size();
+	for (int i = 0; i < vs; ++i) {
+		aabb.expand_to(vertices[i]);
+	}
+	aabb.set_position(Vector3());
+
 	for (Map<FlexSpace *, MeshData>::Element *e = cache.front(); e; e = e->next()) {
 		update_space_mesh(e->key());
 	}
@@ -183,7 +195,7 @@ void FlexPrimitiveConvexShape::update_space_mesh(FlexSpace *p_space) {
 
 	/// This is completelly wrong aproach. I need to think a way on how to create planes from points
 	/// Commented to avoid generation of wrong shapes
-	AABB aabb;
+	AABB mesh_aabb;
 	//const int vs = vertices.size();
 	//for (int i = 0; i < vs; ++i) {
 	//
@@ -194,8 +206,8 @@ void FlexPrimitiveConvexShape::update_space_mesh(FlexSpace *p_space) {
 
 	md.vertices_buffer->unmap();
 
-	const Vector3 lower_bound = aabb.get_position() - Vector3(0.1, 0.1, 0.1);
-	const Vector3 upper_bound = aabb.get_size() + aabb.get_position() + Vector3(0.1, 0.1, 0.1);
+	const Vector3 lower_bound = mesh_aabb.get_position() - Vector3(0.1, 0.1, 0.1);
+	const Vector3 upper_bound = mesh_aabb.get_size() + mesh_aabb.get_position() + Vector3(0.1, 0.1, 0.1);
 
 	NvFlexUpdateConvexMesh(p_space->get_flex_library(), md.mesh_id, md.vertices_buffer->buffer, md.vertices_buffer->size(), (float *)(&lower_bound), (float *)(&upper_bound));
 
@@ -239,6 +251,16 @@ Variant FlexPrimitiveTriangleShape::get_data() const {
 void FlexPrimitiveTriangleShape::setup(PoolVector<Vector3> p_faces) {
 	faces = p_faces;
 
+	PoolVector<Vector3>::Read r = faces.read();
+
+	const int fs = faces.size() / 3;
+	for (int i = 0; i < fs; ++i) {
+
+		aabb.expand_to(r[i * 3 + 0]);
+		aabb.expand_to(r[i * 3 + 1]);
+		aabb.expand_to(r[i * 3 + 2]);
+	}
+
 	for (Map<FlexSpace *, MeshData>::Element *e = cache.front(); e; e = e->next()) {
 		update_space_mesh(e->key());
 	}
@@ -262,13 +284,13 @@ void FlexPrimitiveTriangleShape::update_space_mesh(FlexSpace *p_space) {
 
 	PoolVector<Vector3>::Read r = faces.read();
 
-	AABB aabb;
+	AABB mesh_aabb;
 	const int fs = faces.size() / 3;
 	for (int i = 0; i < fs; ++i) {
 
-		aabb.expand_to(r[i * 3 + 0]);
-		aabb.expand_to(r[i * 3 + 1]);
-		aabb.expand_to(r[i * 3 + 2]);
+		mesh_aabb.expand_to(r[i * 3 + 0]);
+		mesh_aabb.expand_to(r[i * 3 + 1]);
+		mesh_aabb.expand_to(r[i * 3 + 2]);
 
 		// Seems to use normals and are invorse of normals used by Godot.
 		(*md.vertices_buffer)[i * 3 + 0] = flvec4_from_vec3(r[i * 3 + 2]);
@@ -283,8 +305,8 @@ void FlexPrimitiveTriangleShape::update_space_mesh(FlexSpace *p_space) {
 	md.vertices_buffer->unmap();
 	md.indices_buffer->unmap();
 
-	const Vector3 lower_bound = aabb.get_position() - Vector3(0.1, 0.1, 0.1);
-	const Vector3 upper_bound = aabb.get_size() + aabb.get_position() + Vector3(0.1, 0.1, 0.1);
+	const Vector3 lower_bound = mesh_aabb.get_position() - Vector3(0.1, 0.1, 0.1);
+	const Vector3 upper_bound = mesh_aabb.get_size() + mesh_aabb.get_position() + Vector3(0.1, 0.1, 0.1);
 
 	NvFlexUpdateTriangleMesh(p_space->get_flex_library(), md.mesh_id, md.vertices_buffer->buffer, md.indices_buffer->buffer, md.vertices_buffer->size(), md.indices_buffer->size() / 3, (float *)(&lower_bound), (float *)(&upper_bound));
 

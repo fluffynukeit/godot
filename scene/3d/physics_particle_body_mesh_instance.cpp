@@ -222,6 +222,7 @@ void ParticleBodyMeshInstance::_draw_mesh_pvparticles() {
 }
 
 void ParticleBodyMeshInstance::update_mesh_skeleton(ParticleBodyCommands *p_cmds) {
+
 	const int rigids_count = ParticlePhysicsServer::get_singleton()->body_get_rigid_count(particle_body->get_rid());
 	const PoolVector<Vector3>::Read rigids_local_pos_r = particle_body->get_particle_body_model()->get_clusters_positions().read();
 

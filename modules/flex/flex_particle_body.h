@@ -102,6 +102,8 @@ class FlexParticleBody : public RIDFlex {
 	float rest_volume;
 	float pressure; // 1 mean rest_volume
 	float constraint_scale;
+	real_t aabb_margin;
+	AABB aabb;
 
 	bool _is_monitorable;
 	bool _is_monitoring_primitives_contacts;
@@ -155,6 +157,8 @@ public:
 	int get_triangle_count() const;
 	int get_rigid_count() const;
 
+	const AABB &get_aabb() { return aabb; }
+
 	// CMD
 	void reset_spring(SpringIndex p_spring, ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness);
 
@@ -180,6 +184,11 @@ public:
 
 	void reload_rigids_COM();
 	void reload_rigid_COM(RigidIndex p_rigid);
+
+	void reload_aabb();
+
+	AABB compute_rigids_aabb() const;
+	AABB compute_particles_aabb() const;
 	// ~CMD
 
 	bool is_owner_of_particle(ParticleIndex p_particle) const;

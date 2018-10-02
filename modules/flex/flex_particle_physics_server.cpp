@@ -281,14 +281,14 @@ void FlexParticleBodyCommands::set_particle_normal(int p_index, const Vector3 &p
 	body->set_particle_normal(p_index, p_normal);
 }
 
-AABB FlexParticleBodyCommands::get_aabb() const {
+AABB FlexParticleBodyCommands::get_rigids_aabb() const {
 	AABB aabb;
 
-	const int s(body->get_particle_count());
-	if (s) {
-		aabb.set_position(body->get_particle_position(0));
-		for (int i(1); i < s; ++i) {
-			aabb.expand_to(body->get_particle_position(i));
+	const int rigid_count(body->get_rigid_count());
+	if (rigid_count) {
+		aabb.set_position(body->get_rigid_position(0));
+		for (int i(1); i < rigid_count; ++i) {
+			aabb.expand_to(body->get_rigid_position(i));
 		}
 	}
 
@@ -302,6 +302,10 @@ AABB FlexParticleBodyCommands::get_aabb() const {
 #endif
 
 	return aabb;
+}
+
+const AABB &FlexParticleBodyCommands::get_aabb() const {
+	return body->get_aabb();
 }
 
 const Vector3 &FlexParticleBodyCommands::get_rigid_position(int p_index) const {
