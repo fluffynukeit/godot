@@ -48,9 +48,6 @@ void ParticleBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_update_spatial_transform", "update"), &ParticleBody::set_update_spatial_transform);
 	ClassDB::bind_method(D_METHOD("get_update_spatial_transform"), &ParticleBody::get_update_spatial_transform);
 
-	ClassDB::bind_method(D_METHOD("set_grow_aabb", "grow_aabb"), &ParticleBodyMeshInstance::set_grow_aabb);
-	ClassDB::bind_method(D_METHOD("get_grow_aabb"), &ParticleBodyMeshInstance::get_grow_aabb);
-
 	ClassDB::bind_method(D_METHOD("remove_particle", "particle_index"), &ParticleBody::remove_particle);
 	ClassDB::bind_method(D_METHOD("remove_rigid", "rigid_index"), &ParticleBody::remove_rigid);
 
@@ -97,7 +94,6 @@ void ParticleBody::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "particle_body_model", PROPERTY_HINT_RESOURCE_TYPE, "ParticleBodyModel"), "set_particle_body_model", "get_particle_body_model");
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "update_spatial_transform"), "set_update_spatial_transform", "get_update_spatial_transform");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "grow_aabb"), "set_grow_aabb", "get_grow_aabb");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitorable"), "set_monitorable", "is_monitorable");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitoring_primitives_contacts"), "set_monitoring_primitives_contacts", "is_monitoring_primitives_contacts");
 
@@ -115,7 +111,6 @@ void ParticleBody::_bind_methods() {
 ParticleBody::ParticleBody() :
 		ParticleObject(ParticlePhysicsServer::get_singleton()->body_create()),
 		update_spatial_transform(false),
-		aabb_margin(1),
 		reload_particle_model(true),
 		initial_transform(true),
 		reset_transform(false),
@@ -294,10 +289,6 @@ void ParticleBody::set_update_spatial_transform(bool p_update) {
 
 bool ParticleBody::get_update_spatial_transform() const {
 	return update_spatial_transform;
-}
-
-void ParticleBody::set_aabb_margin(real_t p_aabb_margin) {
-	aabb_margin = p_aabb_margin;
 }
 
 int ParticleBody::get_particle_count() const {
