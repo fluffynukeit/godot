@@ -66,7 +66,6 @@ class FlexPrimitiveBody : public RIDFlex {
 	FlexPrimitiveShape *shape;
 
 	Transform transf;
-	AABB aabb;
 
 	// allow only first 7 bit (max 7 channel)
 	uint32_t layer;
@@ -105,8 +104,6 @@ public:
 
 	void set_monitoring_particles_contacts(bool p_monitoring);
 	_FORCE_INLINE_ bool is_monitoring_particles_contacts() const { return _is_monitoring_particles_contacts; }
-
-	AABB get_aabb() const;
 
 	// Internals
 	void set_clean();

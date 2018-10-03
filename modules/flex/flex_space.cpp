@@ -751,22 +751,6 @@ void FlexSpace::dispatch_callback_contacts() {
 		if (!particle_body->is_monitorable())
 			continue;
 
-		// TODO create a proper function -> can_collide()
-		// TODO use a vector that store only primitive that generate contacs
-		bool could_collide = false;
-		for (int prim_i = primitive_bodies.size() - 1; 0 <= prim_i; --prim_i) {
-			FlexPrimitiveBody *prim = primitive_bodies[prim_i];
-
-			if (prim->get_aabb().intersects(particle_body->get_aabb())) {
-				could_collide = true;
-				break;
-			}
-		}
-
-		if (could_collide)
-			continue;
-		// TODO put here a check to discard some body checks
-
 		for (int particle_buffer_index(particle_body->particles_mchunk->get_begin_index()); particle_buffer_index <= particle_body->particles_mchunk->get_end_index(); ++particle_buffer_index) {
 
 			const int contact_index(contacts_buffers->indices[particle_buffer_index]);

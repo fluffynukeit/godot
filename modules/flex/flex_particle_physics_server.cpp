@@ -304,8 +304,27 @@ AABB FlexParticleBodyCommands::get_rigids_aabb() const {
 	return aabb;
 }
 
-const AABB &FlexParticleBodyCommands::get_aabb() const {
-	return body->get_aabb();
+AABB FlexParticleBodyCommands::get_particles_aabb() const {
+	AABB aabb;
+
+	const int particle_count(body->get_particle_count());
+	if (particle_count) {
+		aabb.set_position(body->get_particle_position(0));
+		for (int i(1); i < particle_count; ++i) {
+			aabb.expand_to(body->get_particle_position(i));
+		}
+	}
+
+#ifdef DEBUG_ENABLED
+	ERR_FAIL_COND_V(Math::is_nan(aabb.position.x), AABB());
+	ERR_FAIL_COND_V(Math::is_nan(aabb.position.y), AABB());
+	ERR_FAIL_COND_V(Math::is_nan(aabb.position.z), AABB());
+	ERR_FAIL_COND_V(Math::is_nan(aabb.size.x), AABB());
+	ERR_FAIL_COND_V(Math::is_nan(aabb.size.y), AABB());
+	ERR_FAIL_COND_V(Math::is_nan(aabb.size.z), AABB());
+#endif
+
+	return aabb;
 }
 
 const Vector3 &FlexParticleBodyCommands::get_rigid_position(int p_index) const {

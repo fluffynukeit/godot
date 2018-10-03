@@ -105,8 +105,12 @@ void ParticleBodyMeshInstance::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_weight_max_distance", "max_distance"), &ParticleBodyMeshInstance::set_weight_max_distance);
 	ClassDB::bind_method(D_METHOD("get_weight_max_distance"), &ParticleBodyMeshInstance::get_weight_max_distance);
 
+	ClassDB::bind_method(D_METHOD("set_grow_aabb", "grow_aabb"), &ParticleBodyMeshInstance::set_grow_aabb);
+	ClassDB::bind_method(D_METHOD("get_grow_aabb"), &ParticleBodyMeshInstance::get_grow_aabb);
+
 	ClassDB::bind_method(D_METHOD("_draw_mesh_pvparticles"), &ParticleBodyMeshInstance::_draw_mesh_pvparticles);
 
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "grow_aabb"), "set_grow_aabb", "get_grow_aabb");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "look_y_previous_cluster"), "set_look_y_previous_cluster", "get_look_y_previous_cluster");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "weight_fall_off"), "set_weight_fall_off", "get_weight_fall_off");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "weight_max_distance"), "set_weight_max_distance", "get_weight_max_distance");
@@ -158,6 +162,7 @@ ParticleBodyMeshInstance::ParticleBodyMeshInstance() :
 		look_y_previous_cluster(false),
 		weight_fall_off(2),
 		weight_max_distance(100.0),
+		grow_aabb(1),
 		particle_body(NULL),
 		skeleton(NULL),
 		rendering_approach(RENDERING_UPDATE_APPROACH_NONE),
@@ -182,6 +187,10 @@ void ParticleBodyMeshInstance::set_weight_fall_off(real_t p_weight_fall_off) {
 
 void ParticleBodyMeshInstance::set_weight_max_distance(real_t p_weight_max_distance) {
 	weight_max_distance = p_weight_max_distance;
+}
+
+void ParticleBodyMeshInstance::set_grow_aabb(real_t p_grow_aabb) {
+	grow_aabb = p_grow_aabb;
 }
 
 void ParticleBodyMeshInstance::update_mesh(ParticleBodyCommands *p_cmds) {
@@ -210,7 +219,7 @@ void ParticleBodyMeshInstance::update_mesh_pvparticles(ParticleBodyCommands *p_c
 		visual_server_handler->set_normal(mesh_indices_r[i], reinterpret_cast<void *>(&v));
 	}
 
-	visual_server_handler->set_aabb(p_cmds->get_aabb());
+	visual_server_handler->set_aabb(p_cmds->get_particles_aabb());
 
 	visual_server_handler->close();
 }
@@ -255,7 +264,7 @@ void ParticleBodyMeshInstance::update_mesh_skeleton(ParticleBodyCommands *p_cmds
 		skeleton->set_bone_pose(i, t);
 	}
 
-	VS::get_singleton()->mesh_set_custom_aabb(mesh->get_rid(), p_cmds->get_aabb());
+	VS::get_singleton()->mesh_set_custom_aabb(mesh->get_rid(), p_cmds->get_rigids_aabb().grow(grow_aabb));
 }
 
 void ParticleBodyMeshInstance::prepare_mesh_for_rendering() {

@@ -93,11 +93,8 @@ void FlexPrimitiveBody::set_shape(FlexPrimitiveShape *p_shape) {
 	}
 	shape = p_shape;
 	changed_parameters |= eChangedPrimitiveBodyParamShape;
-	if (shape) {
+	if (shape)
 		shape->add_owner(this);
-		aabb = transf.xform(shape->get_aabb());
-	} else
-		aabb = AABB();
 }
 
 FlexPrimitiveShape *FlexPrimitiveBody::get_shape() const {
@@ -113,10 +110,6 @@ void FlexPrimitiveBody::set_transform(const Transform &p_transf, bool p_is_telep
 	changed_parameters |= eChangedPrimitiveBodyParamTransform;
 	if (!p_is_teleport)
 		changed_parameters |= eChangedPrimitiveBodyParamTransformIsMotion;
-	if (shape)
-		aabb = transf.xform(shape->get_aabb());
-	else
-		aabb = AABB();
 }
 
 void FlexPrimitiveBody::set_layer(uint32_t p_layer) {
@@ -136,10 +129,6 @@ void FlexPrimitiveBody::set_area(bool p_area) {
 
 void FlexPrimitiveBody::set_monitoring_particles_contacts(bool p_monitoring) {
 	_is_monitoring_particles_contacts = p_monitoring;
-}
-
-AABB FlexPrimitiveBody::get_aabb() const {
-	return aabb;
 }
 
 void FlexPrimitiveBody::set_clean() {
