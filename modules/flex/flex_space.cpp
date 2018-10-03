@@ -42,6 +42,7 @@
 #include "flex_particle_body_constraint.h"
 #include "flex_primitive_body.h"
 #include "flex_primitive_shapes.h"
+#include "godot_flex_ext.h"
 
 #define DEVICE_ID 0
 
@@ -316,6 +317,8 @@ void FlexSpace::sync() {
 	rigids_components_memory->map();
 	geometries_memory->map();
 	contacts_buffers->map();
+
+	//ApplyCollisionVerifierCallback(solver);
 
 	///
 	/// Stepping phase

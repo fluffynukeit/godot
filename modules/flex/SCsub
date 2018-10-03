@@ -5,6 +5,18 @@ Import('env_modules')
 
 env_flex = env_modules.Clone()
 
+# Compile cuda files
+nvcc_flags = "-O3"
+
+if env['target']=="debug":
+    nvcc_flags += " -g "
+
+Execute("nvcc " + nvcc_flags + " --compile ./godot_flex_ext/collision_verifier.cu -o ./godot_flex_ext/collision_verifier.o")
+
+# Add compiled cuda to library
+env.Prepend(LIBS=["-l:collision_verifier.o"])
+env.Prepend(LIBPATH=["#/modules/flex/godot_flex_ext"])
+
 flex_base = "#thirdparty/flex"
 flex_lib = flex_base + "/lib"
 flex_include = flex_base + "/include"
@@ -15,8 +27,8 @@ cuda_lib = "/usr/local/cuda-9.2/lib64"
 # TODO change according to realease and debug version of godot
 FLEX_LIBS = ["NvFlexDebugCUDA_x64", "NvFlexDeviceDebug_x64", "NvFlexExtDebugCUDA_x64"]
 
- # TODO This is necessary in order to compile after PR #20380
- # Make sure to remove it and compile it correctly
+# TODO This is necessary in order to compile after PR #20380
+# Make sure to remove it and compile it correctly
 env["LIBSUFFIXES"] = ""
 
 # TODO make platform agnostic
@@ -25,4 +37,5 @@ env.Prepend(LIBS=["-l:" + file_name + ".a" for file_name in FLEX_LIBS])
 env.Prepend(LIBPATH=[flex_lib + "/linux64", cuda_lib])
 
 env_flex.Append(CPPPATH=[flex_include, flex_core])
-env_flex.add_source_files(env.modules_sources, "*.cpp")
+env_flex.add_source_files(env.modules_sources, "*.cpp", "collision_verifier.o")
+
