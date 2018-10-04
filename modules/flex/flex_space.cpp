@@ -78,7 +78,8 @@ FlexSpace::FlexSpace() :
 		rigids_components_memory(NULL),
 		geometries_allocator(NULL),
 		geometries_memory(NULL),
-		contacts_buffers(NULL) {
+		contacts_buffers(NULL),
+		compute_aabb_callback(NULL) {
 	init();
 }
 
@@ -112,6 +113,8 @@ void FlexSpace::init() {
 
 	reset_params_to_defaults();
 	CRASH_COND(has_error());
+
+	compute_aabb_callback = GdFlexExtCreateComputeAABBCallback(solver);
 }
 
 NvFlexLibrary *FlexSpace::get_flex_library() {
@@ -193,6 +196,11 @@ void FlexSpace::init_solver() {
 }
 
 void FlexSpace::terminate() {
+
+	if (compute_aabb_callback) {
+		GdFlexExtDestroyComputeAABBCallback(compute_aabb_callback);
+		compute_aabb_callback = NULL;
+	}
 
 	if (particles_memory) {
 		particles_memory->terminate();
@@ -318,8 +326,6 @@ void FlexSpace::sync() {
 	geometries_memory->map();
 	contacts_buffers->map();
 
-	//ApplyCollisionVerifierCallback(solver);
-
 	///
 	/// Stepping phase
 	dispatch_callback_contacts();
@@ -330,6 +336,9 @@ void FlexSpace::sync() {
 	///
 	/// Emit server sync
 	ParticlePhysicsServer::get_singleton()->emit_signal("sync_end", get_self());
+
+	// Call this just before the unmap to doesn't reset the AABB computed on previous step
+	set_custom_flex_callback();
 
 	///
 	/// Unmap phase
@@ -395,9 +404,14 @@ bool FlexSpace::can_commands_be_executed() const {
 
 void FlexSpace::add_particle_body(FlexParticleBody *p_body) {
 	ERR_FAIL_COND(p_body->space);
-	p_body->space = this;
-	particle_bodies.push_back(p_body);
 
+	p_body->space = this;
+	const int particle_body_id = particle_bodies.size();
+	particle_bodies.push_back(p_body);
+	particle_bodies_last_index.resize(particle_body_id + 1);
+	particle_bodies_aabb.resize(particle_body_id + 1);
+
+	p_body->id = particle_body_id;
 	p_body->changed_parameters = eChangedBodyParamALL;
 	p_body->particles_mchunk = particles_allocator->allocate_chunk(0);
 	p_body->springs_mchunk = springs_allocator->allocate_chunk(0);
@@ -424,7 +438,15 @@ void FlexSpace::remove_particle_body(FlexParticleBody *p_body) {
 	springs_memory->notify_change();
 
 	p_body->space = NULL;
+	p_body->id = -1;
 	particle_bodies.erase(p_body);
+
+	// Rebuild ids
+	particle_bodies_last_index.resize(particle_bodies_last_index.size() - 1);
+	particle_bodies_aabb.resize(particle_bodies_aabb.size() - 1);
+	for (int i = 0; i < particle_bodies.size(); ++i) {
+		particle_bodies[i]->id = i;
+	}
 
 	// TODO Show a warning and remove body constraint associated to this body
 }
@@ -744,6 +766,20 @@ void FlexSpace::reset_params_to_defaults() {
 
 bool FlexSpace::is_using_default_params() const {
 	return _is_using_default_params;
+}
+
+void FlexSpace::set_custom_flex_callback() {
+
+	const int particle_body_count = particle_bodies.size();
+
+	for (int i = 0; i < particle_body_count; ++i) {
+		const FlexParticleBody *pb = particle_bodies[i];
+		particle_bodies_last_index.write[i] = pb->particles_mchunk->get_end_index();
+		particle_bodies_aabb.write[i].set_position(pb->get_particle_position(0));
+		particle_bodies_aabb.write[i].set_size(Vector3());
+	}
+
+	GdFlexExtSetComputeAABBCallback(compute_aabb_callback, particle_body_count, particle_bodies_last_index.ptrw(), (float *)particle_bodies_aabb.ptrw());
 }
 
 void FlexSpace::dispatch_callback_contacts() {

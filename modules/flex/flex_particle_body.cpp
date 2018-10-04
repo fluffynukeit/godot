@@ -39,6 +39,7 @@
 
 FlexParticleBody::FlexParticleBody() :
 		RIDFlex(),
+		id(-1),
 		space(NULL),
 		object_instance(NULL),
 		particles_mchunk(NULL),

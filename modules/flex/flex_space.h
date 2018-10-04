@@ -55,6 +55,7 @@ class RigidsMemory;
 class RigidsComponentsMemory;
 class GeometryMemory;
 class ContactsBuffers;
+class GdFlexExtComputeAABBCallback;
 
 class FlexSpace : public RIDFlex {
 
@@ -98,6 +99,10 @@ class FlexSpace : public RIDFlex {
 	Vector<FlexPrimitiveBody *> primitive_bodies;
 
 	bool _is_using_default_params;
+
+	Vector<int> particle_bodies_last_index;
+	Vector<AABB> particle_bodies_aabb;
+	GdFlexExtComputeAABBCallback *compute_aabb_callback;
 
 public:
 	FlexSpace();
@@ -147,6 +152,7 @@ public:
 	bool is_using_default_params() const;
 
 	// internals
+	void set_custom_flex_callback();
 	void dispatch_callback_contacts();
 	void dispatch_callbacks();
 	void execute_delayed_commands();

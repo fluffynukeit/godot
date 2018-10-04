@@ -264,7 +264,9 @@ void ParticleBodyMeshInstance::update_mesh_skeleton(ParticleBodyCommands *p_cmds
 		skeleton->set_bone_pose(i, t);
 	}
 
-	VS::get_singleton()->mesh_set_custom_aabb(mesh->get_rid(), p_cmds->get_rigids_aabb().grow(grow_aabb));
+	// TODO remove grow variable please
+	//VS::get_singleton()->mesh_set_custom_aabb(mesh->get_rid(), p_cmds->get_rigids_aabb().grow(grow_aabb));
+	VS::get_singleton()->mesh_set_custom_aabb(mesh->get_rid(), p_cmds->get_rigids_aabb());
 }
 
 void ParticleBodyMeshInstance::prepare_mesh_for_rendering() {

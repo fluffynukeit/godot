@@ -11,7 +11,7 @@ nvcc_flags = "-O3"
 if env['target']=="debug":
     nvcc_flags += " -g "
 
-Execute("nvcc " + nvcc_flags + " --compile ./godot_flex_ext/collision_verifier.cu -o ./godot_flex_ext/collision_verifier.o")
+Execute("nvcc " + nvcc_flags + " -I../../ --compile ./godot_flex_ext/collision_verifier.cu -o ./godot_flex_ext/collision_verifier.o")
 
 # Add compiled cuda to library
 env.Prepend(LIBS=["-l:collision_verifier.o"])

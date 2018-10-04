@@ -46,22 +46,46 @@ struct GdFlexExtCollisionVerifierCallback;
  * @param[in] solver A valid solver created with NvFlexCreateSolver()
  * @return
  */
-NV_FLEX_API GdFlexExtCollisionVerifierCallback *GdFlexExtCreateCollisionVerifierCallback(NvFlexSolver *solver);
+GdFlexExtCollisionVerifierCallback *GdFlexExtCreateCollisionVerifierCallback(NvFlexSolver *solver);
 
 /**
  * Destroy the GdFlexExtCollisionVerifierCallback callback
  *
  * @param p_callback pointer to callback structure
  */
-NV_FLEX_API void GdFlexExtDestroyCollisionVerifierCallback(GdFlexExtCollisionVerifierCallback *p_callback);
+void GdFlexExtDestroyCollisionVerifierCallback(GdFlexExtCollisionVerifierCallback *p_callback);
 
 /**
  * Set the callback that verify the collisions
  *
  * @param p_callback pointer to callback structure
  */
-NV_FLEX_API void GdFlexExtSetCollisionVerifierCallback(GdFlexExtCollisionVerifierCallback *p_callback);
+void GdFlexExtSetCollisionVerifierCallback(GdFlexExtCollisionVerifierCallback *p_callback);
 
-NV_FLEX_API void GdFlexExtSetComputeAABBCallback(NvFlexSolver);
+struct GdFlexExtComputeAABBCallback;
+
+/**
+ * Craete callback struct that halds info about Compute AABB task
+ * @param p_solver valid solver
+ * @return struct callback
+ */
+GdFlexExtComputeAABBCallback *GdFlexExtCreateComputeAABBCallback(NvFlexSolver *p_solver);
+
+/**
+ * Destroy the callback
+ *
+ * @param p_callback valid pointer to the callback created by GdFlexExtCreateComputeAABBCallback
+ */
+void GdFlexExtDestroyComputeAABBCallback(GdFlexExtComputeAABBCallback *p_callback);
+
+/**
+ * Set the callback that compute AABB for each rigid body
+ *
+ * @param p_callback a valid pointer created by GdFlexExtCreateCollisionVerifierCallback
+ * @param p_particle_body_count The number of particle body
+ * @param p_last_pindex_particle_body The Array (size = p_particle_body_count) of last particle index for each body
+ * @param p_aabbs The Array (size = p_particle_body_count) with initial AABB
+ */
+void GdFlexExtSetComputeAABBCallback(GdFlexExtComputeAABBCallback *p_callback, int p_particle_body_count, int *p_last_pindex_particle_body, float *p_aabbs);
 
 #endif // GODOT_FLEX_EXT_H
