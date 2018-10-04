@@ -282,6 +282,10 @@ void FlexParticleBodyCommands::set_particle_normal(int p_index, const Vector3 &p
 }
 
 AABB FlexParticleBodyCommands::get_rigids_aabb() const {
+
+	// TODO remove this please
+	return body->get_space()->particle_bodies_aabb[body->id];
+
 	AABB aabb;
 
 	const int rigid_count(body->get_rigid_count());
@@ -305,6 +309,10 @@ AABB FlexParticleBodyCommands::get_rigids_aabb() const {
 }
 
 AABB FlexParticleBodyCommands::get_particles_aabb() const {
+
+	// TODO remove this please
+	return body->get_space()->particle_bodies_aabb[body->id];
+
 	AABB aabb;
 
 	const int particle_count(body->get_particle_count());
