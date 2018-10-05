@@ -408,7 +408,7 @@ void FlexSpace::add_particle_body(FlexParticleBody *p_body) {
 	p_body->space = this;
 	const int particle_body_id = particle_bodies.size();
 	particle_bodies.push_back(p_body);
-	particle_bodies_last_index.resize(particle_body_id + 1);
+	particle_bodies_pindices.resize((particle_body_id + 1) * 2);
 	particle_bodies_aabb.resize(particle_body_id + 1);
 
 	p_body->id = particle_body_id;
@@ -442,7 +442,7 @@ void FlexSpace::remove_particle_body(FlexParticleBody *p_body) {
 	particle_bodies.erase(p_body);
 
 	// Rebuild ids
-	particle_bodies_last_index.resize(particle_bodies_last_index.size() - 1);
+	particle_bodies_pindices.resize(particle_bodies_pindices.size() - 2);
 	particle_bodies_aabb.resize(particle_bodies_aabb.size() - 1);
 	for (int i = 0; i < particle_bodies.size(); ++i) {
 		particle_bodies[i]->id = i;
@@ -773,13 +773,19 @@ void FlexSpace::set_custom_flex_callback() {
 	const int particle_body_count = particle_bodies.size();
 
 	for (int i = 0; i < particle_body_count; ++i) {
+
 		const FlexParticleBody *pb = particle_bodies[i];
-		particle_bodies_last_index.write[i] = pb->particles_mchunk->get_end_index();
+
+		// Rebuilding this each time allow me to not bother too much on
+		// particle addition / removal that each function can do
+		particle_bodies_pindices.write[i * 2 + 0] = pb->particles_mchunk->get_begin_index();
+		particle_bodies_pindices.write[i * 2 + 1] = pb->particles_mchunk->get_end_index();
+
 		particle_bodies_aabb.write[i].set_position(pb->get_particle_position(0));
 		particle_bodies_aabb.write[i].set_size(Vector3());
 	}
 
-	GdFlexExtSetComputeAABBCallback(compute_aabb_callback, particle_body_count, particle_bodies_last_index.ptrw(), (float *)particle_bodies_aabb.ptrw());
+	GdFlexExtSetComputeAABBCallback(compute_aabb_callback, particle_body_count, particle_bodies_pindices.ptrw(), (float *)particle_bodies_aabb.ptrw());
 }
 
 void FlexSpace::dispatch_callback_contacts() {

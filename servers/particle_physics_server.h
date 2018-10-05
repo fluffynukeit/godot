@@ -33,8 +33,7 @@ public:
 
 	virtual Vector3 get_particle_normal(int p_index) const = 0;
 
-	virtual AABB get_rigids_aabb() const = 0;
-	virtual AABB get_particles_aabb() const = 0;
+	virtual const AABB &get_aabb() const = 0;
 
 	virtual const Vector3 &get_rigid_position(int p_index) const = 0;
 	virtual const Quat &get_rigid_rotation(int p_index) const = 0;
