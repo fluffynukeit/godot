@@ -79,7 +79,7 @@ GdFlexExtComputeAABBCallback *GdFlexExtCreateComputeAABBCallback(NvFlexSolver *p
 void GdFlexExtDestroyComputeAABBCallback(GdFlexExtComputeAABBCallback *p_callback);
 
 /**
- * Set the callback that compute AABB for each rigid body
+ * Set the callback that compute particle body AABB
  *
  * @param p_callback a valid pointer created by GdFlexExtCreateCollisionVerifierCallback
  * @param p_particle_body_count The number of particle body

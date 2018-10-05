@@ -100,7 +100,8 @@ class FlexSpace : public RIDFlex {
 
 	bool _is_using_default_params;
 
-	Vector<int> particle_bodies_last_index;
+	// Array size particle_bodies.size() * 2 where the first element is the starting index and the second the last particle index
+	Vector<int> particle_bodies_pindices;
 	Vector<AABB> particle_bodies_aabb;
 	GdFlexExtComputeAABBCallback *compute_aabb_callback;
 

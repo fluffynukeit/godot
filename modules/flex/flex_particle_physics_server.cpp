@@ -281,58 +281,8 @@ void FlexParticleBodyCommands::set_particle_normal(int p_index, const Vector3 &p
 	body->set_particle_normal(p_index, p_normal);
 }
 
-AABB FlexParticleBodyCommands::get_rigids_aabb() const {
-
-	// TODO remove this please
+const AABB &FlexParticleBodyCommands::get_aabb() const {
 	return body->get_space()->particle_bodies_aabb[body->id];
-
-	AABB aabb;
-
-	const int rigid_count(body->get_rigid_count());
-	if (rigid_count) {
-		aabb.set_position(body->get_rigid_position(0));
-		for (int i(1); i < rigid_count; ++i) {
-			aabb.expand_to(body->get_rigid_position(i));
-		}
-	}
-
-#ifdef DEBUG_ENABLED
-	ERR_FAIL_COND_V(Math::is_nan(aabb.position.x), AABB());
-	ERR_FAIL_COND_V(Math::is_nan(aabb.position.y), AABB());
-	ERR_FAIL_COND_V(Math::is_nan(aabb.position.z), AABB());
-	ERR_FAIL_COND_V(Math::is_nan(aabb.size.x), AABB());
-	ERR_FAIL_COND_V(Math::is_nan(aabb.size.y), AABB());
-	ERR_FAIL_COND_V(Math::is_nan(aabb.size.z), AABB());
-#endif
-
-	return aabb;
-}
-
-AABB FlexParticleBodyCommands::get_particles_aabb() const {
-
-	// TODO remove this please
-	return body->get_space()->particle_bodies_aabb[body->id];
-
-	AABB aabb;
-
-	const int particle_count(body->get_particle_count());
-	if (particle_count) {
-		aabb.set_position(body->get_particle_position(0));
-		for (int i(1); i < particle_count; ++i) {
-			aabb.expand_to(body->get_particle_position(i));
-		}
-	}
-
-#ifdef DEBUG_ENABLED
-	ERR_FAIL_COND_V(Math::is_nan(aabb.position.x), AABB());
-	ERR_FAIL_COND_V(Math::is_nan(aabb.position.y), AABB());
-	ERR_FAIL_COND_V(Math::is_nan(aabb.position.z), AABB());
-	ERR_FAIL_COND_V(Math::is_nan(aabb.size.x), AABB());
-	ERR_FAIL_COND_V(Math::is_nan(aabb.size.y), AABB());
-	ERR_FAIL_COND_V(Math::is_nan(aabb.size.z), AABB());
-#endif
-
-	return aabb;
 }
 
 const Vector3 &FlexParticleBodyCommands::get_rigid_position(int p_index) const {
