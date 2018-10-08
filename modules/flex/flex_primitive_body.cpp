@@ -122,6 +122,14 @@ void FlexPrimitiveBody::set_kinematic(bool p_kinematic) {
 	changed_parameters |= eChangedPrimitiveBodyParamFlags;
 }
 
+void FlexPrimitiveBody::set_friction(real_t p_friction) {
+	friction = p_friction;
+}
+
+real_t FlexPrimitiveBody::get_friction() const {
+	return friction;
+}
+
 void FlexPrimitiveBody::set_area(bool p_area) {
 	_is_area = p_area;
 	changed_parameters |= eChangedPrimitiveBodyParamFlags;

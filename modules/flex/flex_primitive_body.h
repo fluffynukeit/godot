@@ -65,11 +65,15 @@ class FlexPrimitiveBody : public RIDFlex {
 	Object *object_instance;
 	FlexPrimitiveShape *shape;
 
+	Vector3 angular_velocity;
+	Vector3 linear_velocity;
+	Transform previous_transf;
 	Transform transf;
 
 	// allow only first 7 bit (max 7 channel)
 	uint32_t layer;
 	bool _is_kinematic; // if false is static
+	real_t friction;
 	bool _is_area;
 
 	bool _is_monitoring_particles_contacts;
@@ -98,6 +102,9 @@ public:
 
 	void set_kinematic(bool p_kinematic);
 	bool is_kinematic() const { return _is_kinematic; }
+
+	void set_friction(real_t p_friction);
+	real_t get_friction() const;
 
 	void set_area(bool p_area);
 	bool is_area() const { return _is_area; }
