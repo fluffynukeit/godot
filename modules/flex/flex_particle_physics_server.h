@@ -277,9 +277,6 @@ public:
 	virtual void primitive_body_set_kinematic(RID p_body, bool p_kinematic);
 	virtual bool primitive_body_is_kinematic(RID p_body) const;
 
-	virtual void primitive_body_set_friction(RID p_body, real_t p_friction);
-	virtual real_t primitive_body_get_friction(RID p_body) const;
-
 	virtual void primitive_body_set_as_area(RID p_body, bool p_area);
 	virtual bool primitive_body_is_area(RID p_body) const;
 

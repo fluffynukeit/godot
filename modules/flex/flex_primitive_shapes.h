@@ -48,9 +48,14 @@ class FlexPrimitiveShape : public RIDFlex {
 
 	Vector<FlexPrimitiveBody *> owners;
 
+protected:
+	AABB aabb;
+
 public:
 	FlexPrimitiveShape();
 	~FlexPrimitiveShape();
+
+	const AABB &get_aabb() const { return aabb; }
 
 	void add_owner(FlexPrimitiveBody *p_owner);
 	void remove_owner(FlexPrimitiveBody *p_owner);

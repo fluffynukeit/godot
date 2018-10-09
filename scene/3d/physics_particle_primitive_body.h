@@ -45,7 +45,6 @@ class ParticlePrimitiveBody : public ParticleObject {
 
 	Ref<Shape> shape;
 
-	real_t friction;
 	uint32_t collision_layer;
 
 protected:
@@ -68,9 +67,6 @@ public:
 
 	void set_kinematic(bool p_kinematic);
 	bool is_kinematic() const;
-
-	void set_friction(real_t p_friction);
-	real_t get_friction() const;
 
 	void set_collision_layer(uint32_t p_layer);
 	uint32_t get_collision_layer() const;

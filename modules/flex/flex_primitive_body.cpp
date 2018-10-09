@@ -105,6 +105,13 @@ void FlexPrimitiveBody::notify_shape_changed() {
 	changed_parameters |= eChangedPrimitiveBodyParamShape;
 }
 
+void FlexPrimitiveBody::update_aabb() {
+	if (shape)
+		aabb = transf.xform(shape->get_aabb());
+	else
+		aabb = AABB();
+}
+
 void FlexPrimitiveBody::set_transform(const Transform &p_transf, bool p_is_teleport) {
 	transf = p_transf;
 	changed_parameters |= eChangedPrimitiveBodyParamTransform;
@@ -122,14 +129,6 @@ void FlexPrimitiveBody::set_kinematic(bool p_kinematic) {
 	changed_parameters |= eChangedPrimitiveBodyParamFlags;
 }
 
-void FlexPrimitiveBody::set_friction(real_t p_friction) {
-	friction = p_friction;
-}
-
-real_t FlexPrimitiveBody::get_friction() const {
-	return friction;
-}
-
 void FlexPrimitiveBody::set_area(bool p_area) {
 	_is_area = p_area;
 	changed_parameters |= eChangedPrimitiveBodyParamFlags;
@@ -137,6 +136,9 @@ void FlexPrimitiveBody::set_area(bool p_area) {
 
 void FlexPrimitiveBody::set_monitoring_particles_contacts(bool p_monitoring) {
 	_is_monitoring_particles_contacts = p_monitoring;
+
+	if (space)
+		space->primitive_body_sync_cmonitoring(this);
 }
 
 void FlexPrimitiveBody::set_clean() {
