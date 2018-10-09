@@ -95,8 +95,11 @@ class FlexSpace : public RIDFlex {
 	GeometryMemory *geometries_memory;
 
 	Vector<FlexParticleBody *> particle_bodies;
+
 	Vector<FlexParticleBodyConstraint *> constraints;
+
 	Vector<FlexPrimitiveBody *> primitive_bodies;
+	Vector<FlexPrimitiveBody *> primitive_bodies_contact_monitoring;
 
 	bool _is_using_default_params;
 
@@ -145,6 +148,7 @@ public:
 
 	void add_primitive_body(FlexPrimitiveBody *p_body);
 	void remove_primitive_body(FlexPrimitiveBody *p_body);
+	void primitive_body_sync_cmonitoring(FlexPrimitiveBody *p_body);
 
 	bool set_param(const StringName &p_name, const Variant &p_property);
 	bool get_param(const StringName &p_name, Variant &r_property) const;
@@ -169,7 +173,7 @@ public:
 	void rebuild_inflatables_indices();
 
 	FlexParticleBody *find_particle_body(ParticleBufferIndex p_index) const;
-	FlexPrimitiveBody *find_primitive_body(GeometryBufferIndex p_index) const;
+	FlexPrimitiveBody *find_primitive_body(GeometryBufferIndex p_index, bool p_contact_monitoring_only) const;
 };
 
 class FlexMemorySweeper : public FlexMemoryModificator {

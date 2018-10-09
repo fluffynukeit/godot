@@ -47,9 +47,6 @@ void ParticlePrimitiveBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_kinematic", "kinematic"), &ParticlePrimitiveBody::set_kinematic);
 	ClassDB::bind_method(D_METHOD("is_kinematic"), &ParticlePrimitiveBody::is_kinematic);
 
-	ClassDB::bind_method(D_METHOD("set_friction", "friction"), &ParticlePrimitiveBody::set_friction);
-	ClassDB::bind_method(D_METHOD("get_friction"), &ParticlePrimitiveBody::get_friction);
-
 	ClassDB::bind_method(D_METHOD("set_collision_layer", "layer"), &ParticlePrimitiveBody::set_collision_layer);
 	ClassDB::bind_method(D_METHOD("get_collision_layer"), &ParticlePrimitiveBody::get_collision_layer);
 	ClassDB::bind_method(D_METHOD("set_collision_layer_bit", "bit", "value"), &ParticlePrimitiveBody::set_collision_layer_bit);
@@ -69,7 +66,6 @@ void ParticlePrimitiveBody::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "shape", PROPERTY_HINT_RESOURCE_TYPE, "Shape"), "set_shape", "get_shape");
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "kinematic"), "set_kinematic", "is_kinematic");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "friction", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_friction", "get_friction");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitoring_particles_contacts"), "set_monitoring_particles_contacts", "is_monitoring_particles_contacts");
 
 	ADD_GROUP("Collision", "collision_");
@@ -101,7 +97,6 @@ void ParticlePrimitiveBody::_notification(int p_what) {
 
 ParticlePrimitiveBody::ParticlePrimitiveBody() :
 		ParticleObject(ParticlePhysicsServer::get_singleton()->primitive_body_create()),
-		friction(0),
 		collision_layer(1),
 		debug_shape(NULL) {
 
@@ -154,15 +149,6 @@ void ParticlePrimitiveBody::set_kinematic(bool p_kinematic) {
 
 bool ParticlePrimitiveBody::is_kinematic() const {
 	return ParticlePhysicsServer::get_singleton()->primitive_body_is_kinematic(rid);
-}
-
-void ParticlePrimitiveBody::set_friction(real_t p_friction) {
-	friction = p_friction;
-	ParticlePhysicsServer::get_singleton()->primitive_body_set_friction(rid, friction);
-}
-
-real_t ParticlePrimitiveBody::get_friction() const {
-	return friction;
 }
 
 void ParticlePrimitiveBody::set_collision_layer(uint32_t p_layer) {

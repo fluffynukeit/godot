@@ -837,20 +837,6 @@ bool FlexParticlePhysicsServer::primitive_body_is_kinematic(RID p_body) const {
 	return body->is_kinematic();
 }
 
-void FlexParticlePhysicsServer::primitive_body_set_friction(RID p_body, real_t p_friction) {
-	FlexPrimitiveBody *body = primitive_body_owner.get(p_body);
-	ERR_FAIL_COND(!body);
-
-	body->set_friction(p_friction);
-}
-
-real_t FlexParticlePhysicsServer::primitive_body_get_friction(RID p_body) const {
-	FlexPrimitiveBody *body = primitive_body_owner.get(p_body);
-	ERR_FAIL_COND_V(!body, 0);
-
-	return body->get_friction();
-}
-
 void FlexParticlePhysicsServer::primitive_body_set_as_area(RID p_body, bool p_area) {
 	FlexPrimitiveBody *body = primitive_body_owner.get(p_body);
 	ERR_FAIL_COND(!body);

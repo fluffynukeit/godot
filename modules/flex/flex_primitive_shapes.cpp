@@ -79,6 +79,7 @@ Variant FlexPrimitiveBoxShape::get_data() const {
 
 void FlexPrimitiveBoxShape::set_extends(const Vector3 &p_extends) {
 	extends = p_extends;
+	aabb = AABB(p_extends * -1, p_extends);
 }
 
 Basis FlexPrimitiveCapsuleShape::alignment(0, 0, -1, 0, 1, 0, 1, 0, 0);
@@ -100,6 +101,8 @@ void FlexPrimitiveCapsuleShape::set_data(const Variant &p_data) {
 	ERR_FAIL_COND(!d.has("height"));
 	half_height = static_cast<float>(d["height"]) / 2.0;
 	radius = d["radius"];
+	const Vector3 extent(radius + half_height, radius, radius);
+	aabb = AABB(extent * -1, extent);
 }
 
 Variant FlexPrimitiveCapsuleShape::get_data() const {
@@ -122,6 +125,8 @@ void FlexPrimitiveSphereShape::get_shape(FlexSpace *p_space, NvFlexCollisionGeom
 
 void FlexPrimitiveSphereShape::set_data(const Variant &p_data) {
 	radius = p_data;
+	const Vector3 extent(radius, radius, radius);
+	aabb = AABB(extent * -1, extent);
 }
 
 Variant FlexPrimitiveSphereShape::get_data() const {
@@ -183,7 +188,7 @@ void FlexPrimitiveConvexShape::update_space_mesh(FlexSpace *p_space) {
 
 	/// This is completelly wrong aproach. I need to think a way on how to create planes from points
 	/// Commented to avoid generation of wrong shapes
-	AABB aabb;
+	AABB l_aabb;
 	//const int vs = vertices.size();
 	//for (int i = 0; i < vs; ++i) {
 	//
@@ -194,8 +199,8 @@ void FlexPrimitiveConvexShape::update_space_mesh(FlexSpace *p_space) {
 
 	md.vertices_buffer->unmap();
 
-	const Vector3 lower_bound = aabb.get_position() - Vector3(0.1, 0.1, 0.1);
-	const Vector3 upper_bound = aabb.get_size() + aabb.get_position() + Vector3(0.1, 0.1, 0.1);
+	const Vector3 lower_bound = l_aabb.get_position() - Vector3(0.1, 0.1, 0.1);
+	const Vector3 upper_bound = l_aabb.get_size() + l_aabb.get_position() + Vector3(0.1, 0.1, 0.1);
 
 	NvFlexUpdateConvexMesh(p_space->get_flex_library(), md.mesh_id, md.vertices_buffer->buffer, md.vertices_buffer->size(), (float *)(&lower_bound), (float *)(&upper_bound));
 
@@ -242,6 +247,17 @@ void FlexPrimitiveTriangleShape::setup(PoolVector<Vector3> p_faces) {
 	for (Map<FlexSpace *, MeshData>::Element *e = cache.front(); e; e = e->next()) {
 		update_space_mesh(e->key());
 	}
+
+	PoolVector<Vector3>::Read r = faces.read();
+
+	aabb = AABB();
+	const int fs = faces.size() / 3;
+	for (int i = 0; i < fs; ++i) {
+
+		aabb.expand_to(r[i * 3 + 0]);
+		aabb.expand_to(r[i * 3 + 1]);
+		aabb.expand_to(r[i * 3 + 2]);
+	}
 }
 
 void FlexPrimitiveTriangleShape::update_space_mesh(FlexSpace *p_space) {
@@ -262,13 +278,13 @@ void FlexPrimitiveTriangleShape::update_space_mesh(FlexSpace *p_space) {
 
 	PoolVector<Vector3>::Read r = faces.read();
 
-	AABB aabb;
+	AABB l_aabb;
 	const int fs = faces.size() / 3;
 	for (int i = 0; i < fs; ++i) {
 
-		aabb.expand_to(r[i * 3 + 0]);
-		aabb.expand_to(r[i * 3 + 1]);
-		aabb.expand_to(r[i * 3 + 2]);
+		l_aabb.expand_to(r[i * 3 + 0]);
+		l_aabb.expand_to(r[i * 3 + 1]);
+		l_aabb.expand_to(r[i * 3 + 2]);
 
 		// Seems to use normals and are invorse of normals used by Godot.
 		(*md.vertices_buffer)[i * 3 + 0] = flvec4_from_vec3(r[i * 3 + 2]);
@@ -283,8 +299,8 @@ void FlexPrimitiveTriangleShape::update_space_mesh(FlexSpace *p_space) {
 	md.vertices_buffer->unmap();
 	md.indices_buffer->unmap();
 
-	const Vector3 lower_bound = aabb.get_position() - Vector3(0.1, 0.1, 0.1);
-	const Vector3 upper_bound = aabb.get_size() + aabb.get_position() + Vector3(0.1, 0.1, 0.1);
+	const Vector3 lower_bound = l_aabb.get_position() - Vector3(0.1, 0.1, 0.1);
+	const Vector3 upper_bound = l_aabb.get_size() + l_aabb.get_position() + Vector3(0.1, 0.1, 0.1);
 
 	NvFlexUpdateTriangleMesh(p_space->get_flex_library(), md.mesh_id, md.vertices_buffer->buffer, md.indices_buffer->buffer, md.vertices_buffer->size(), md.indices_buffer->size() / 3, (float *)(&lower_bound), (float *)(&upper_bound));
 

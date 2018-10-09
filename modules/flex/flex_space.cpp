@@ -474,6 +474,7 @@ void FlexSpace::add_primitive_body(FlexPrimitiveBody *p_body) {
 	p_body->changed_parameters = eChangedPrimitiveBodyParamAll;
 	p_body->geometry_mchunk = geometries_allocator->allocate_chunk(0);
 	primitive_bodies.push_back(p_body);
+	primitive_body_sync_cmonitoring(p_body);
 }
 
 void FlexSpace::remove_primitive_body(FlexPrimitiveBody *p_body) {
@@ -484,6 +485,18 @@ void FlexSpace::remove_primitive_body(FlexPrimitiveBody *p_body) {
 
 	p_body->space = NULL;
 	primitive_bodies.erase(p_body);
+	primitive_bodies_contact_monitoring.erase(p_body);
+}
+
+void FlexSpace::primitive_body_sync_cmonitoring(FlexPrimitiveBody *p_body) {
+	ERR_FAIL_COND(p_body->space != this);
+
+	if (p_body->is_monitoring_particles_contacts()) {
+		if (primitive_bodies_contact_monitoring.find(p_body) == -1)
+			primitive_bodies_contact_monitoring.push_back(p_body);
+	} else {
+		primitive_bodies_contact_monitoring.erase(p_body);
+	}
 }
 
 bool FlexSpace::set_param(const StringName &p_name, const Variant &p_property) {
@@ -796,6 +809,15 @@ void FlexSpace::dispatch_callback_contacts() {
 		if (!particle_body->is_monitorable())
 			continue;
 
+		bool intersect = false;
+		for (int y = primitive_bodies_contact_monitoring.size() - 1; 0 <= y; --y) {
+			if (primitive_bodies_contact_monitoring[y]->get_aabb().intersects(particle_bodies_aabb[particle_body->id]))
+				intersect = true;
+		}
+
+		if (!intersect)
+			continue;
+
 		for (int particle_buffer_index(particle_body->particles_mchunk->get_begin_index()); particle_buffer_index <= particle_body->particles_mchunk->get_end_index(); ++particle_buffer_index) {
 
 			const int contact_index(contacts_buffers->indices[particle_buffer_index]);
@@ -815,7 +837,7 @@ void FlexSpace::dispatch_callback_contacts() {
 				Vector3 normal(vec3_from_flvec4(raw_normal));
 
 				const int primitive_body_index(velocity_and_primitive.w);
-				FlexPrimitiveBody *primitive_body = find_primitive_body(primitive_body_index);
+				FlexPrimitiveBody *primitive_body = find_primitive_body(primitive_body_index, true);
 
 				if (!primitive_body)
 					continue;
@@ -1063,6 +1085,7 @@ void FlexSpace::execute_geometries_commands() {
 
 			geometries_memory->set_position(body->geometry_mchunk, 0, flvec4_from_vec3(body->transf.origin));
 			geometries_memory->set_rotation(body->geometry_mchunk, 0, basis.get_quat());
+			body->update_aabb();
 		}
 
 		if (body->changed_parameters & eChangedPrimitiveBodyParamFlags) {
@@ -1298,10 +1321,11 @@ FlexParticleBody *FlexSpace::find_particle_body(ParticleBufferIndex p_index) con
 	return NULL;
 }
 
-FlexPrimitiveBody *FlexSpace::find_primitive_body(GeometryBufferIndex p_index) const {
-	for (int i(primitive_bodies.size() - 1); 0 <= i; --i) {
-		if (p_index == primitive_bodies[i]->geometry_mchunk->get_begin_index()) {
-			return primitive_bodies[i];
+FlexPrimitiveBody *FlexSpace::find_primitive_body(GeometryBufferIndex p_index, bool p_contact_monitoring_only) const {
+	const Vector<FlexPrimitiveBody *> &search_vector = p_contact_monitoring_only ? primitive_bodies_contact_monitoring : primitive_bodies;
+	for (int i(search_vector.size() - 1); 0 <= i; --i) {
+		if (p_index == search_vector[i]->geometry_mchunk->get_begin_index()) {
+			return search_vector[i];
 		}
 	}
 	return NULL;
