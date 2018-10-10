@@ -56,6 +56,7 @@ class RigidsComponentsMemory;
 class GeometryMemory;
 class ContactsBuffers;
 class GdFlexExtComputeAABBCallback;
+class GdFlexExtComputeFrictionCallback;
 
 class FlexSpace : public RIDFlex {
 
@@ -103,10 +104,14 @@ class FlexSpace : public RIDFlex {
 
 	bool _is_using_default_params;
 
+	/// Custom kernels
+
 	// Array size particle_bodies.size() * 2 where the first element is the starting index and the second the last particle index
 	Vector<int> particle_bodies_pindices;
 	Vector<AABB> particle_bodies_aabb;
 	GdFlexExtComputeAABBCallback *compute_aabb_callback;
+
+	GdFlexExtComputeFrictionCallback *compute_friction_callback;
 
 public:
 	FlexSpace();

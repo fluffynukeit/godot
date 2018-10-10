@@ -88,4 +88,17 @@ void GdFlexExtDestroyComputeAABBCallback(GdFlexExtComputeAABBCallback *p_callbac
  */
 void GdFlexExtSetComputeAABBCallback(GdFlexExtComputeAABBCallback *p_callback, int p_particle_body_count, int *p_last_pindex_particle_body, float *p_aabbs);
 
+/**
+ * Callback struct used to hold compute friction callback
+ */
+struct GdFlexExtComputeFrictionCallback;
+
+GdFlexExtComputeFrictionCallback *GdFlexExtCreateComputeFrictionCallback(NvFlexSolver *p_solver);
+
+void GdFlexExtDestroyComputeFrictionCallback(GdFlexExtComputeFrictionCallback *p_callback);
+
+void ComputeFrictionCallback(NvFlexSolverCallbackParams p_params);
+
+void GdFlexExtSetComputeFrictionCallback(GdFlexExtComputeFrictionCallback *p_callback, int p_primitive_body_count, float *p_primitive_transform, float *p_primitive_lvelocity, float *p_primitive_avelocity, float *p_primitive_aabbs, float *p_primitive_extent);
+
 #endif // GODOT_FLEX_EXT_H

@@ -79,7 +79,8 @@ FlexSpace::FlexSpace() :
 		geometries_allocator(NULL),
 		geometries_memory(NULL),
 		contacts_buffers(NULL),
-		compute_aabb_callback(NULL) {
+		compute_aabb_callback(NULL),
+		compute_friction_callback(NULL) {
 	init();
 }
 
@@ -115,6 +116,8 @@ void FlexSpace::init() {
 	CRASH_COND(has_error());
 
 	compute_aabb_callback = GdFlexExtCreateComputeAABBCallback(solver);
+
+	compute_friction_callback = GdFlexExtCreateComputeFrictionCallback(solver);
 }
 
 NvFlexLibrary *FlexSpace::get_flex_library() {
@@ -200,6 +203,11 @@ void FlexSpace::terminate() {
 	if (compute_aabb_callback) {
 		GdFlexExtDestroyComputeAABBCallback(compute_aabb_callback);
 		compute_aabb_callback = NULL;
+	}
+
+	if (compute_friction_callback) {
+		GdFlexExtDestroyComputeFrictionCallback(compute_friction_callback);
+		compute_friction_callback = NULL;
 	}
 
 	if (particles_memory) {
@@ -799,6 +807,31 @@ void FlexSpace::set_custom_flex_callback() {
 	}
 
 	GdFlexExtSetComputeAABBCallback(compute_aabb_callback, particle_body_count, particle_bodies_pindices.ptrw(), (float *)particle_bodies_aabb.ptrw());
+
+	const int size = primitive_bodies.size();
+
+	Vector<AABB> aabbs;
+	Vector<Transform> transforms;
+	Vector<Vector3> lvelocities;
+	Vector<Vector3> avelocities;
+	Vector<Vector3> extents;
+
+	for (int i = 0; i < size; ++i) {
+		FlexPrimitiveBody *pb = primitive_bodies[i];
+		if (!pb->get_shape())
+			continue;
+
+		if (pb->get_shape()->get_type() != eNvFlexShapeBox)
+			continue;
+
+		aabbs.push_back(primitive_bodies[i]->get_aabb());
+		transforms.push_back(primitive_bodies[i]->get_transform());
+		lvelocities.push_back(Vector3());
+		avelocities.push_back(Vector3());
+		extents.push_back(pb->get_shape()->get_data());
+	}
+
+	GdFlexExtSetComputeFrictionCallback(compute_friction_callback, aabbs.size(), (float *)transforms.ptrw(), (float *)lvelocities.ptrw(), (float *)avelocities.ptrw(), (float *)aabbs.ptrw(), (float *)extents.ptrw());
 }
 
 void FlexSpace::dispatch_callback_contacts() {
