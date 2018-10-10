@@ -94,6 +94,7 @@ public:
 	void update_aabb();
 	const AABB &get_aabb() { return aabb; }
 	void set_transform(const Transform &p_transf, bool p_is_teleport);
+	const Transform &get_transform() const { return transf; }
 
 	// Accept only the first 7 bit
 	void set_layer(uint32_t p_layer);

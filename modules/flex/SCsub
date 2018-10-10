@@ -25,7 +25,9 @@ env_flex.object_cuda_sources = []
 for cuda_file in env_flex.cuda_sources:
     object_cuda_file = os.path.splitext(cuda_file)[0] + ".o"
     env_flex.object_cuda_sources.append(object_cuda_file)
-    Execute(nvcc_path + "nvcc " + nvcc_flags + " -I../../ --compile " + cuda_file + " -o " + object_cuda_file)
+    status = Execute(nvcc_path + "nvcc " + nvcc_flags + " -I../../ --compile " + cuda_file + " -o " + object_cuda_file)
+    if 0 != status:
+        env.Exit(1)
 
 # Add compiled cuda to library
 env.Prepend(LIBS=["-l:collision_verifier.o"])
