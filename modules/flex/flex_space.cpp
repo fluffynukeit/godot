@@ -117,7 +117,7 @@ void FlexSpace::init() {
 
 	compute_aabb_callback = GdFlexExtCreateComputeAABBCallback(solver);
 
-	compute_friction_callback = GdFlexExtCreateComputeFrictionCallback(solver);
+	//compute_friction_callback = GdFlexExtCreateComputeFrictionCallback(solver);
 }
 
 NvFlexLibrary *FlexSpace::get_flex_library() {
@@ -205,10 +205,10 @@ void FlexSpace::terminate() {
 		compute_aabb_callback = NULL;
 	}
 
-	if (compute_friction_callback) {
-		GdFlexExtDestroyComputeFrictionCallback(compute_friction_callback);
-		compute_friction_callback = NULL;
-	}
+	//if (compute_friction_callback) {
+	//	GdFlexExtDestroyComputeFrictionCallback(compute_friction_callback);
+	//	compute_friction_callback = NULL;
+	//}
 
 	if (particles_memory) {
 		particles_memory->terminate();
@@ -835,14 +835,14 @@ void FlexSpace::set_custom_flex_callback() {
 		extents.push_back(pb->get_shape()->get_data());
 	}
 
-	GdFlexExtSetComputeFrictionCallback(
-			compute_friction_callback,
-			aabbs.size(),
-			(float *)transforms.ptrw(),
-			(float *)lvelocities.ptrw(),
-			(float *)avelocities.ptrw(),
-			(float *)aabbs.ptrw(),
-			(float *)extents.ptrw());
+	//GdFlexExtSetComputeFrictionCallback(
+	//		compute_friction_callback,
+	//		aabbs.size(),
+	//		(float *)transforms.ptrw(),
+	//		(float *)lvelocities.ptrw(),
+	//		(float *)avelocities.ptrw(),
+	//		(float *)aabbs.ptrw(),
+	//		(float *)extents.ptrw());
 }
 
 void FlexSpace::dispatch_callback_contacts() {
