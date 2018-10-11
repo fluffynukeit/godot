@@ -829,7 +829,7 @@ void FlexSpace::set_custom_flex_callback() {
 			continue;
 
 		aabbs.push_back(primitive_bodies[i]->get_aabb());
-		transforms.push_back(primitive_bodies[i]->get_transform());
+		transforms.push_back(primitive_bodies[i]->get_transform().inverse());
 		lvelocities.push_back(Vector3());
 		avelocities.push_back(Vector3());
 		extents.push_back(pb->get_shape()->get_data());
