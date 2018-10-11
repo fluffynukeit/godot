@@ -347,6 +347,29 @@ void FlexParticleBodyCommands::set_rigid_velocity_toward_position(int p_rigid_in
 	}
 }
 
+void FlexParticleBodyCommands::set_particle_group(int p_particle_index, int group) {
+	FlexSpace *space = body->space;
+	int phase = space->particles_memory->get_phase(
+			body->particles_mchunk,
+			p_particle_index);
+
+	// Reset phase
+	phase = (~eNvFlexPhaseGroupMask) & phase;
+
+	space->particles_memory->set_phase(
+			body->particles_mchunk,
+			p_particle_index,
+			(group & eNvFlexPhaseGroupMask) | phase);
+}
+
+int FlexParticleBodyCommands::get_particle_group(int p_particle_index) const {
+	FlexSpace *space = body->space;
+	const int phase = space->particles_memory->get_phase(
+			body->particles_mchunk,
+			p_particle_index);
+	return phase & eNvFlexPhaseGroupMask;
+}
+
 int FlexParticleBodyConstraintCommands::get_spring_count() const {
 	return constraint->get_spring_count();
 }

@@ -96,6 +96,9 @@ public:
 
 	virtual int get_rigid_index_of_particle(int p_particle_index);
 	virtual void set_rigid_velocity_toward_position(int p_rigid_index, const Transform &p_new_position);
+
+	virtual void set_particle_group(int p_particle_index, int group);
+	virtual int get_particle_group(int p_particle_index) const;
 };
 
 class FlexParticleBodyConstraintCommands : public ParticleBodyConstraintCommands {

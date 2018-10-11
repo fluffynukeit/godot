@@ -28,6 +28,9 @@ void ParticleBodyCommands::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("get_rigid_index_of_particle", "particle_index"), &ParticleBodyCommands::get_rigid_index_of_particle);
 	ClassDB::bind_method(D_METHOD("set_rigid_velocity_toward_position", "rigid_index", "new_position"), &ParticleBodyCommands::set_rigid_velocity_toward_position);
+
+	ClassDB::bind_method(D_METHOD("set_particle_group", "group"), &ParticleBodyCommands::set_particle_group);
+	ClassDB::bind_method(D_METHOD("get_particle_group"), &ParticleBodyCommands::get_particle_group);
 }
 
 void ParticleBodyConstraintCommands::_bind_methods() {
