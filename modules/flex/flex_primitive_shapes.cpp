@@ -79,7 +79,7 @@ Variant FlexPrimitiveBoxShape::get_data() const {
 
 void FlexPrimitiveBoxShape::set_extends(const Vector3 &p_extends) {
 	extends = p_extends;
-	aabb = AABB(p_extends * -1, p_extends);
+	aabb = AABB(p_extends * -1, p_extends * 2);
 }
 
 Basis FlexPrimitiveCapsuleShape::alignment(0, 0, -1, 0, 1, 0, 1, 0, 0);
@@ -102,7 +102,7 @@ void FlexPrimitiveCapsuleShape::set_data(const Variant &p_data) {
 	half_height = static_cast<float>(d["height"]) / 2.0;
 	radius = d["radius"];
 	const Vector3 extent(radius + half_height, radius, radius);
-	aabb = AABB(extent * -1, extent);
+	aabb = AABB(extent * -1, extent * 2);
 }
 
 Variant FlexPrimitiveCapsuleShape::get_data() const {
@@ -126,7 +126,7 @@ void FlexPrimitiveSphereShape::get_shape(FlexSpace *p_space, NvFlexCollisionGeom
 void FlexPrimitiveSphereShape::set_data(const Variant &p_data) {
 	radius = p_data;
 	const Vector3 extent(radius, radius, radius);
-	aabb = AABB(extent * -1, extent);
+	aabb = AABB(extent * -1, extent * 2);
 }
 
 Variant FlexPrimitiveSphereShape::get_data() const {

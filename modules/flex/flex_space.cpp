@@ -806,7 +806,11 @@ void FlexSpace::set_custom_flex_callback() {
 		particle_bodies_aabb.write[i].set_size(Vector3());
 	}
 
-	GdFlexExtSetComputeAABBCallback(compute_aabb_callback, particle_body_count, particle_bodies_pindices.ptrw(), (float *)particle_bodies_aabb.ptrw());
+	GdFlexExtSetComputeAABBCallback(
+			compute_aabb_callback,
+			particle_body_count,
+			particle_bodies_pindices.ptrw(),
+			(float *)particle_bodies_aabb.ptrw());
 
 	const int size = primitive_bodies.size();
 
@@ -831,7 +835,14 @@ void FlexSpace::set_custom_flex_callback() {
 		extents.push_back(pb->get_shape()->get_data());
 	}
 
-	GdFlexExtSetComputeFrictionCallback(compute_friction_callback, aabbs.size(), (float *)transforms.ptrw(), (float *)lvelocities.ptrw(), (float *)avelocities.ptrw(), (float *)aabbs.ptrw(), (float *)extents.ptrw());
+	GdFlexExtSetComputeFrictionCallback(
+			compute_friction_callback,
+			aabbs.size(),
+			(float *)transforms.ptrw(),
+			(float *)lvelocities.ptrw(),
+			(float *)avelocities.ptrw(),
+			(float *)aabbs.ptrw(),
+			(float *)extents.ptrw());
 }
 
 void FlexSpace::dispatch_callback_contacts() {
