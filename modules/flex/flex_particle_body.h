@@ -51,8 +51,9 @@ enum ChangedBodyParameter {
 	eChangedBodyParamVelocity = 1 << 2,
 	eChangedBodyParamNormal = 1 << 2,
 	eChangedBodyParamPhase = 1 << 3,
-	eChangedBodyParamInflatable = 1 << 4,
-	eChangedBodyRestParticles = 1 << 5,
+	eChangedBodyParamPhaseSingle = 1 << 4,
+	eChangedBodyParamInflatable = 1 << 5,
+	eChangedBodyRestParticles = 1 << 6,
 
 	eChangedBodyParamALL = eChangedBodyParamParticleJustAdded | eChangedBodyParamPositionMass | eChangedBodyParamVelocity | eChangedBodyParamPhase | eChangedBodyParamInflatable | eChangedBodyRestParticles
 };

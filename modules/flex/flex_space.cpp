@@ -911,6 +911,8 @@ void FlexSpace::dispatch_callbacks() {
 
 void FlexSpace::execute_delayed_commands() {
 
+	// TODO Instead of loop each tick all particle bodies should be created
+	// a separate list that holds pointer of particle bodies that should be updated
 	int particles_count = 0;
 	for (int body_index(particle_bodies.size() - 1); 0 <= body_index; --body_index) {
 
@@ -1167,7 +1169,7 @@ void FlexSpace::commands_write_buffer() {
 					NvFlexSetVelocities(solver, particles_memory->velocities.buffer, &copy_desc);
 				if (changed_params & eChangedBodyParamNormal)
 					NvFlexSetNormals(solver, particles_memory->normals.buffer, &copy_desc);
-				if (changed_params & eChangedBodyParamPhase)
+				if (changed_params & (eChangedBodyParamPhase | eChangedBodyParamPhaseSingle))
 					NvFlexSetPhases(solver, particles_memory->phases.buffer, &copy_desc);
 				//if(changed_params & eChangedBodyRestParticles)
 				//	NvFlexSetRestParticles(solver, )
