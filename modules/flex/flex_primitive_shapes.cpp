@@ -33,6 +33,8 @@
 */
 
 #include "flex_primitive_shapes.h"
+
+#include "core/math/quick_hull.h"
 #include "flex_primitive_body.h"
 
 FlexPrimitiveShape::FlexPrimitiveShape() :
@@ -184,25 +186,38 @@ void FlexPrimitiveConvexShape::update_space_mesh(FlexSpace *p_space) {
 		md.vertices_buffer = new NvFlexVector<FlVector4>(p_space->get_flex_library());
 	}
 
-	md.vertices_buffer->resize(vertices.size());
+	Geometry::MeshData geometry_md;
+	ERR_FAIL_COND(OK != QuickHull::build(vertices, geometry_md));
 
-	/// This is completelly wrong aproach. I need to think a way on how to create planes from points
-	/// Commented to avoid generation of wrong shapes
+	md.vertices_buffer->resize(geometry_md.faces.size());
+
 	AABB l_aabb;
-	//const int vs = vertices.size();
-	//for (int i = 0; i < vs; ++i) {
-	//
-	//	aabb.expand_to(vertices[i]);
-	//	(*md.vertices_buffer)[i] = flvec4_from_vec3(vertices[i].normalized());
-	//	(*md.vertices_buffer)[i].w = vertices[i].length() * -1;
-	//}
+	const int ps = geometry_md.faces.size();
+	for (int i = 0; i < ps; ++i) {
+
+		aabb.expand_to(geometry_md.faces[i].plane.center());
+		(*md.vertices_buffer)[i] = flvec4_from_vec3(geometry_md.faces[i].plane.center());
+		(*md.vertices_buffer)[i].w = geometry_md.faces[i].plane.d * -1;
+	}
 
 	md.vertices_buffer->unmap();
 
-	const Vector3 lower_bound = l_aabb.get_position() - Vector3(0.1, 0.1, 0.1);
-	const Vector3 upper_bound = l_aabb.get_size() + l_aabb.get_position() + Vector3(0.1, 0.1, 0.1);
+	const Vector3 lower_bound =
+			l_aabb.get_position() -
+			Vector3(0.1, 0.1, 0.1);
 
-	NvFlexUpdateConvexMesh(p_space->get_flex_library(), md.mesh_id, md.vertices_buffer->buffer, md.vertices_buffer->size(), (float *)(&lower_bound), (float *)(&upper_bound));
+	const Vector3 upper_bound =
+			l_aabb.get_size() +
+			l_aabb.get_position() +
+			Vector3(0.1, 0.1, 0.1);
+
+	NvFlexUpdateConvexMesh(
+			p_space->get_flex_library(),
+			md.mesh_id,
+			md.vertices_buffer->buffer,
+			md.vertices_buffer->size(),
+			(float *)(&lower_bound),
+			(float *)(&upper_bound));
 
 	cache[p_space] = md;
 }
