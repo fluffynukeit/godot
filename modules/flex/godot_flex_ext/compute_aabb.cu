@@ -42,8 +42,6 @@
 #include "thirdparty/flex/include/NvFlex.h"
 #include "thirdparty/flex/core/maths.h"
 
-static const int kNumThreadsPerBlock = 256;
-
 struct GdFlexExtComputeAABBCallback{
 	NvFlexSolver *solver;
 
@@ -124,6 +122,7 @@ __global__ void ComputeAABB(const Vec4* __restrict__ positions, const int* __res
 	((Vector3*)p_aabbs)[particle_body_index*2+1] = end - begin;
 }
 
+//static const int kNumThreadsPerBlock = 256;
 void ComputeAABBCallback(NvFlexSolverCallbackParams p_params){
 
 	GdFlexExtComputeAABBCallback* callback = static_cast<GdFlexExtComputeAABBCallback*>(p_params.userData);
@@ -141,7 +140,7 @@ void ComputeAABBCallback(NvFlexSolverCallbackParams p_params){
 		callback->d_last_pindex_particle_body,
 		(Vector3*)callback->d_aabbs);
 
-	cudaMemcpy(callback->aabbs, callback->d_aabbs, sizeof(float) * 2 * 3 * callback->particle_body_count, cudaMemcpyDeviceToHost);
+	cudaMemcpyAsync(callback->aabbs, callback->d_aabbs, sizeof(float) * 2 * 3 * callback->particle_body_count, cudaMemcpyDeviceToHost);
 
 	callback->aabbs = NULL;
 }
