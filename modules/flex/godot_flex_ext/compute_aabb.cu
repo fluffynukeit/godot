@@ -129,15 +129,19 @@ void ComputeAABBCallback(NvFlexSolverCallbackParams p_params){
 	GdFlexExtComputeAABBCallback* callback = static_cast<GdFlexExtComputeAABBCallback*>(p_params.userData);
 
 	const int particle_count = p_params.numActive;
-	const int kNumBlocks = (particle_count + kNumThreadsPerBlock - 1) / kNumThreadsPerBlock;
 
-	ComputeAABB<<<kNumBlocks, kNumThreadsPerBlock>>>((Vec4*)p_params.particles,
-													 p_params.sortedToOriginalMap,
-													 callback->particle_body_count,
-													 callback->d_last_pindex_particle_body,
-													 (Vector3*)callback->d_aabbs);
+	// Using only one thread to avoid race condition
+	// It's really limiting
+	//const int kNumBlocks = (particle_count + kNumThreadsPerBlock - 1) / kNumThreadsPerBlock;
+	//ComputeAABB<<<kNumBlocks, kNumThreadsPerBlock>>>(
+	ComputeAABB<<<particle_count, 1>>>(
+		(Vec4*)p_params.particles,
+		p_params.sortedToOriginalMap,
+		callback->particle_body_count,
+		callback->d_last_pindex_particle_body,
+		(Vector3*)callback->d_aabbs);
 
-	cudaMemcpyAsync(callback->aabbs, callback->d_aabbs, sizeof(float) * 2 * 3 * callback->particle_body_count, cudaMemcpyDeviceToHost);
+	cudaMemcpy(callback->aabbs, callback->d_aabbs, sizeof(float) * 2 * 3 * callback->particle_body_count, cudaMemcpyDeviceToHost);
 
 	callback->aabbs = NULL;
 }
