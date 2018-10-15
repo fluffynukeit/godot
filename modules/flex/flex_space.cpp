@@ -188,7 +188,7 @@ void FlexSpace::init_solver() {
 	solver_max_particles = particles_allocator->get_memory_size();
 
 	NvFlexSetSolverDescDefaults(&solver_desc);
-	solver_desc.featureMode = eNvFlexFeatureModeDefault; // All modes enabled (Solid|Fluids) // TODO should be customizable
+	solver_desc.featureMode = eNvFlexFeatureModeSimpleSolids; // TODO should be customizable
 	solver_desc.maxParticles = solver_max_particles;
 	solver_desc.maxDiffuseParticles = 0; // TODO should be customizable
 	solver_desc.maxNeighborsPerParticle = 32; // TODO should be customizable
@@ -886,7 +886,6 @@ void FlexSpace::dispatch_callback_contacts() {
 				if (!primitive_body)
 					continue;
 
-				// TODO try to remove these check after implementing AABB check
 				if (particle_body->is_monitoring_primitives_contacts())
 					particle_body->dispatch_primitive_contact(primitive_body, particle_index, velocity, normal);
 
@@ -911,8 +910,6 @@ void FlexSpace::dispatch_callbacks() {
 
 void FlexSpace::execute_delayed_commands() {
 
-	// TODO Instead of loop each tick all particle bodies should be created
-	// a separate list that holds pointer of particle bodies that should be updated
 	int particles_count = 0;
 	for (int body_index(particle_bodies.size() - 1); 0 <= body_index; --body_index) {
 
@@ -1225,22 +1222,29 @@ void FlexSpace::commands_write_buffer() {
 }
 
 void FlexSpace::commands_read_buffer() {
-	NvFlexCopyDesc copy_desc;
-	for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
 
-		if (!particle_bodies[i]->particles_mchunk)
-			continue;
+	// In this moment this code doesn't make sense because doesn't have a way
+	// to skip some bodies
+	//
+	//NvFlexCopyDesc copy_desc;
+	//for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
+	//
+	//	if (!particle_bodies[i]->particles_mchunk)
+	//		continue;
+	//
+	//	// Write back to buffer (command)
+	//	copy_desc.srcOffset = particle_bodies[i]->particles_mchunk->get_begin_index();
+	//	copy_desc.dstOffset = particle_bodies[i]->particles_mchunk->get_begin_index();
+	//	copy_desc.elementCount = particle_bodies[i]->particles_mchunk->get_size();
+	//
+	//	NvFlexGetParticles(solver, particles_memory->particles.buffer, &copy_desc);
+	//	NvFlexGetVelocities(solver, particles_memory->velocities.buffer, &copy_desc);
+	//	NvFlexGetNormals(solver, particles_memory->normals.buffer, &copy_desc);
+	//}
 
-		// Write back to buffer (command)
-		copy_desc.srcOffset = particle_bodies[i]->particles_mchunk->get_begin_index();
-		copy_desc.dstOffset = particle_bodies[i]->particles_mchunk->get_begin_index();
-		copy_desc.elementCount = particle_bodies[i]->particles_mchunk->get_size();
-
-		// TODO read only necessary (part of buffer or just skip an entire buffer if not necessary)
-		NvFlexGetParticles(solver, particles_memory->particles.buffer, &copy_desc);
-		NvFlexGetVelocities(solver, particles_memory->velocities.buffer, &copy_desc);
-		NvFlexGetNormals(solver, particles_memory->normals.buffer, &copy_desc);
-	}
+	NvFlexGetParticles(solver, particles_memory->particles.buffer, NULL);
+	NvFlexGetVelocities(solver, particles_memory->velocities.buffer, NULL);
+	NvFlexGetNormals(solver, particles_memory->normals.buffer, NULL);
 
 	// Read rigids
 	NvFlexGetRigids(
