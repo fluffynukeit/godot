@@ -16,6 +16,18 @@ public:
 	virtual void move_particles(const Transform &transform) = 0;
 	virtual void load_model(Ref<ParticleBodyModel> p_shape, const Transform &initial_transform) = 0;
 
+	virtual int add_particles(int p_particle_count) = 0;
+	virtual void initialize_particle(
+			int p_index,
+			const Vector3 &p_local_position,
+			real_t p_mass) = 0;
+
+	virtual void add_spring(
+			int p_particle_0,
+			int p_particle_1,
+			float p_length,
+			float p_stiffness) = 0;
+
 	virtual void set_particle_position_mass(int p_particle_index, const Vector3 &p_position, real_t p_mass) = 0;
 
 	virtual int get_particle_count() const = 0;

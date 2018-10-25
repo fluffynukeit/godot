@@ -53,10 +53,13 @@ public:
 	virtual void move_particles(const Transform &transform);
 	virtual void load_model(Ref<ParticleBodyModel> p_model, const Transform &initial_transform);
 
-	virtual void add_particle(const Vector3 &p_local_position, real_t p_mass);
-	virtual void set_particle(ParticleIndex p_index, const Vector3 &p_local_position, real_t p_mass);
+	virtual int add_particles(int p_particle_count);
+	virtual void initialize_particle(
+			int p_index,
+			const Vector3 &p_local_position,
+			real_t p_mass);
 
-	virtual void add_spring(ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness);
+	virtual void add_spring(int p_particle_0, int p_particle_1, float p_length, float p_stiffness);
 	virtual void set_spring(SpringIndex p_index, ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness);
 
 	virtual void triangles_set_count(int p_count);

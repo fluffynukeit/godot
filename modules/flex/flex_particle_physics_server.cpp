@@ -68,7 +68,7 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 		PoolVector<real_t>::Read masses_r = p_model->get_masses().read();
 
 		for (int i(0); i < resource_p_count; ++i) {
-			set_particle(i, initial_transform.xform(particle_positions_r[i]), masses_r[i]);
+			initialize_particle(i, initial_transform.xform(particle_positions_r[i]), masses_r[i]);
 		}
 	}
 
@@ -147,23 +147,40 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 	}
 }
 
-void FlexParticleBodyCommands::add_particle(const Vector3 &p_local_position, real_t p_mass) {
+int FlexParticleBodyCommands::add_particles(int p_particle_count) {
+	ERR_FAIL_COND_V(p_particle_count < 1, -1);
+
 	const int previous_size = body->get_particle_count();
-	body->space->particles_allocator->resize_chunk(body->particles_mchunk, previous_size + 1);
-	set_particle(previous_size, p_local_position, p_mass);
+	body->space->particles_allocator->resize_chunk(body->particles_mchunk, previous_size + p_particle_count);
+	return previous_size;
 }
 
-void FlexParticleBodyCommands::set_particle(ParticleIndex p_index, const Vector3 &p_local_position, real_t p_mass) {
+void FlexParticleBodyCommands::initialize_particle(int p_index, const Vector3 &p_global_position, real_t p_mass) {
 
 	ERR_FAIL_COND(!body->is_owner_of_particle(p_index));
 
-	body->space->particles_memory->set_particle(body->particles_mchunk, p_index, make_particle(p_local_position, p_mass));
-	body->space->particles_memory->set_velocity(body->particles_mchunk, p_index, Vector3());
-	body->space->particles_memory->set_phase(body->particles_mchunk, p_index, NvFlexMakePhaseWithChannels(body->collision_group, body->collision_flags, body->collision_primitive_mask));
+	body->space->particles_memory->set_particle(
+			body->particles_mchunk,
+			p_index,
+			make_particle(p_global_position, p_mass));
+
+	body->space->particles_memory->set_velocity(
+			body->particles_mchunk,
+			p_index,
+			Vector3());
+
+	body->space->particles_memory->set_phase(
+			body->particles_mchunk,
+			p_index,
+			NvFlexMakePhaseWithChannels(
+					body->collision_group,
+					body->collision_flags,
+					body->collision_primitive_mask));
+
 	body->changed_parameters |= eChangedBodyParamParticleJustAdded;
 }
 
-void FlexParticleBodyCommands::add_spring(ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness) {
+void FlexParticleBodyCommands::add_spring(int p_particle_0, int p_particle_1, float p_length, float p_stiffness) {
 	const int previous_size = body->get_spring_count();
 	body->space->springs_allocator->resize_chunk(body->springs_mchunk, previous_size + 1);
 	set_spring(previous_size, p_particle_0, p_particle_1, p_length, p_stiffness);
