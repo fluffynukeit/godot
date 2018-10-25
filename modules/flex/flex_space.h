@@ -113,6 +113,8 @@ class FlexSpace : public RIDFlex {
 
 	GdFlexExtComputeFrictionCallback *compute_friction_callback;
 
+	bool force_buffer_write;
+
 public:
 	FlexSpace();
 	~FlexSpace();

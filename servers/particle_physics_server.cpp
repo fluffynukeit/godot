@@ -7,6 +7,26 @@ void ParticleBodyCommands::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("load_model", "shape", "initial_transform"), &ParticleBodyCommands::load_model);
 
+	ClassDB::bind_method(
+			D_METHOD("add_particles",
+					"particle_count"),
+			&ParticleBodyCommands::add_particles);
+
+	ClassDB::bind_method(
+			D_METHOD("initialize_particle",
+					"particle_index",
+					"global_position",
+					"mass"),
+			&ParticleBodyCommands::initialize_particle);
+
+	ClassDB::bind_method(
+			D_METHOD("add_spring",
+					"particle_0",
+					"particle_1",
+					"length",
+					"stiffness"),
+			&ParticleBodyCommands::add_spring);
+
 	ClassDB::bind_method(D_METHOD("set_particle_position_mass", "particle_index", "position", "mass"), &ParticleBodyCommands::set_particle_position_mass);
 
 	ClassDB::bind_method(D_METHOD("get_particle_count"), &ParticleBodyCommands::get_particle_count);

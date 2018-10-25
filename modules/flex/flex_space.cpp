@@ -80,7 +80,8 @@ FlexSpace::FlexSpace() :
 		geometries_memory(NULL),
 		contacts_buffers(NULL),
 		compute_aabb_callback(NULL),
-		compute_friction_callback(NULL) {
+		compute_friction_callback(NULL),
+		force_buffer_write(false) {
 	init();
 }
 
@@ -128,7 +129,7 @@ void FlexSpace::init_buffers() {
 	CRASH_COND(particles_memory);
 	CRASH_COND(particles_allocator);
 	particles_memory = memnew(ParticlesMemory(flex_lib));
-	particles_allocator = memnew(FlexMemoryAllocator(particles_memory, 2000, 1000, -1));
+	particles_allocator = memnew(FlexMemoryAllocator(particles_memory, 10000, 5000, -1));
 	particles_memory->unmap(); // *1
 
 	CRASH_COND(active_particles_allocator);
@@ -188,14 +189,16 @@ void FlexSpace::init_solver() {
 	solver_max_particles = particles_allocator->get_memory_size();
 
 	NvFlexSetSolverDescDefaults(&solver_desc);
-	solver_desc.featureMode = eNvFlexFeatureModeSimpleSolids; // TODO should be customizable
+	solver_desc.featureMode = eNvFlexFeatureModeDefault; // TODO should be customizable
 	solver_desc.maxParticles = solver_max_particles;
 	solver_desc.maxDiffuseParticles = 0; // TODO should be customizable
-	solver_desc.maxNeighborsPerParticle = 32; // TODO should be customizable
+	solver_desc.maxNeighborsPerParticle = 96; // TODO should be customizable
 	solver_desc.maxContactsPerParticle = MAX_PERPARTICLE_CONTACT_COUNT;
 
 	solver = NvFlexCreateSolver(flex_lib, &solver_desc);
 	CRASH_COND(has_error());
+
+	force_buffer_write = true;
 }
 
 void FlexSpace::terminate() {
@@ -371,11 +374,13 @@ void FlexSpace::sync() {
 
 	// *1: The memory must be consecutive to correctly write it on GPU
 
+	NvFlexSolver *old_solver = NULL;
 	if (particles_allocator->get_memory_size() != solver_max_particles) {
 
 		NvFlexParams params;
 		NvFlexGetParams(solver, &params);
-		terminate_solver();
+		old_solver = solver;
+		solver = NULL;
 		init_solver();
 		NvFlexSetParams(solver, &params);
 
@@ -387,6 +392,10 @@ void FlexSpace::sync() {
 	///
 	/// Write phase
 	commands_write_buffer();
+
+	/// Destroy old solver
+	if (old_solver)
+		NvFlexDestroySolver(old_solver);
 }
 
 void FlexSpace::step(real_t p_delta_time) {
@@ -1148,7 +1157,10 @@ void FlexSpace::commands_write_buffer() {
 		if (!body->particles_mchunk)
 			continue;
 
-		const uint32_t changed_params(body->get_changed_parameters());
+		const uint32_t changed_params(force_buffer_write ?
+											  eChangedBodyParamParticleJustAdded :
+											  body->get_changed_parameters());
+
 		if (changed_params != 0) {
 			copy_desc.srcOffset = body->particles_mchunk->get_begin_index();
 			copy_desc.dstOffset = body->particles_mchunk->get_begin_index();
@@ -1176,7 +1188,7 @@ void FlexSpace::commands_write_buffer() {
 		}
 	}
 
-	if (active_particles_memory->was_changed()) {
+	if (force_buffer_write || active_particles_memory->was_changed()) {
 		copy_desc.srcOffset = 0;
 		copy_desc.dstOffset = 0;
 		copy_desc.elementCount = active_particles_mchunk->get_size();
@@ -1185,16 +1197,16 @@ void FlexSpace::commands_write_buffer() {
 		NvFlexSetActiveCount(solver, active_particles_mchunk->get_size());
 	}
 
-	if (springs_memory->was_changed())
+	if (force_buffer_write || springs_memory->was_changed())
 		NvFlexSetSprings(solver, springs_memory->springs.buffer, springs_memory->lengths.buffer, springs_memory->stiffness.buffer, springs_allocator->get_last_used_index() + 1);
 
-	if (triangles_memory->was_changed())
+	if (force_buffer_write || triangles_memory->was_changed())
 		NvFlexSetDynamicTriangles(solver, triangles_memory->triangles.buffer, NULL, triangles_allocator->get_last_used_index() + 1);
 
-	if (inflatables_memory->was_changed())
+	if (force_buffer_write || inflatables_memory->was_changed())
 		NvFlexSetInflatables(solver, inflatables_memory->start_triangle_indices.buffer, inflatables_memory->triangle_counts.buffer, inflatables_memory->rest_volumes.buffer, inflatables_memory->pressures.buffer, inflatables_memory->constraint_scales.buffer, inflatables_allocator->get_last_used_index() + 1);
 
-	if (rigids_memory->was_changed())
+	if (force_buffer_write || rigids_memory->was_changed())
 		NvFlexSetRigids(
 				solver,
 				rigids_memory->buffer_offsets.buffer,
@@ -1209,7 +1221,7 @@ void FlexSpace::commands_write_buffer() {
 				rigids_allocator->get_last_used_index() + 1,
 				rigids_components_allocator->get_last_used_index() + 1);
 
-	if (geometries_memory->was_changed())
+	if (force_buffer_write || geometries_memory->was_changed())
 		NvFlexSetShapes(solver, geometries_memory->collision_shapes.buffer, geometries_memory->positions.buffer, geometries_memory->rotations.buffer, geometries_memory->positions_prev.buffer, geometries_memory->rotations_prev.buffer, geometries_memory->flags.buffer, geometries_allocator->get_last_used_index() + 1);
 
 	active_particles_memory->changes_synced();

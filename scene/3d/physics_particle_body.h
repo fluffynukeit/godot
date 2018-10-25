@@ -56,6 +56,7 @@ class ParticleBody : public ParticleObject {
 
 	Vector<MeshInstance *> debug_particles_mesh;
 	Ref<SphereMesh> debug_particle_mesh;
+	Ref<SpatialMaterial> debug_particle_material;
 
 #ifdef TOOLS_ENABLED
 public:

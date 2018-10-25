@@ -432,11 +432,17 @@ void ParticleBody::debug_initialize_resource() {
 
 	const real_t radius = ParticlePhysicsServer::get_singleton()->space_get_particle_radius(get_world()->get_particle_space());
 
+	debug_particle_material = Ref<SpatialMaterial>(memnew(SpatialMaterial));
+	debug_particle_material->set_flag(SpatialMaterial::FLAG_UNSHADED, true);
+	debug_particle_material->set_feature(SpatialMaterial::FEATURE_TRANSPARENT, true);
+	debug_particle_material->set_albedo(Color(0.0, 0.6, 0.7, 0.5));
+
 	debug_particle_mesh.instance();
 	debug_particle_mesh->set_radius(radius);
 	debug_particle_mesh->set_height(radius * 2);
-	debug_particle_mesh->set_radial_segments(8);
-	debug_particle_mesh->set_rings(8);
+	debug_particle_mesh->set_radial_segments(4);
+	debug_particle_mesh->set_rings(2);
+	debug_particle_mesh->set_material(debug_particle_material);
 
 	const int particle_count = particle_body_model.is_valid() ? particle_body_model->get_particles_ref().size() : 0;
 	debug_resize_particle_visual_instance(particle_count);
