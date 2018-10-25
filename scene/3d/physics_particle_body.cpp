@@ -105,6 +105,7 @@ void ParticleBody::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_primitive_mask", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collision_primitive_mask", "get_collision_primitive_mask");
 
 	ADD_SIGNAL(MethodInfo("resource_loaded"));
+	ADD_SIGNAL(MethodInfo("commands_process", PropertyInfo(Variant::OBJECT, "commands", PROPERTY_HINT_RESOURCE_TYPE, "ParticleBodyCommands")));
 	ADD_SIGNAL(MethodInfo("primitive_contact", PropertyInfo(Variant::OBJECT, "commands", PROPERTY_HINT_RESOURCE_TYPE, "ParticleBodyCommands"), PropertyInfo(Variant::OBJECT, "primitive_body"), PropertyInfo(Variant::INT, "particle_index"), PropertyInfo(Variant::VECTOR3, "velocity"), PropertyInfo(Variant::VECTOR3, "normal")));
 }
 
@@ -368,6 +369,8 @@ void ParticleBody::commands_process_internal(Object *p_cmds) {
 
 	if (particle_body_mesh)
 		particle_body_mesh->update_mesh(cmds);
+
+	emit_signal("commands_process", cmds);
 
 	debug_update(cmds);
 
