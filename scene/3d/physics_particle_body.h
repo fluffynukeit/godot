@@ -36,11 +36,12 @@
 #define PARTICLE_BODY_H
 
 #include "physics_particle_object.h"
+#include "scene/resources/multimesh.h"
 #include "scene/resources/particle_body_model.h"
 #include "scene/resources/primitive_meshes.h"
 #include "spatial.h"
 
-class MeshInstance;
+class MultiMeshInstance;
 class ParticleBodyMeshInstance;
 
 class ParticleBody : public ParticleObject {
@@ -54,7 +55,8 @@ class ParticleBody : public ParticleObject {
 	ParticleBodyMeshInstance *particle_body_mesh;
 	Ref<ParticleBodyModel> particle_body_model;
 
-	Vector<MeshInstance *> debug_particles_mesh;
+	MultiMeshInstance *debug_particle_multi_mesh;
+	Ref<MultiMesh> multi_mesh;
 	Ref<SphereMesh> debug_particle_mesh;
 	Ref<SpatialMaterial> debug_particle_material;
 

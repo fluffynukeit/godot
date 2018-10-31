@@ -35,6 +35,7 @@
 #include "physics_particle_body.h"
 
 #include "core/core_string_names.h"
+#include "scene/3d/multimesh_instance.h"
 #include "scene/3d/physics_particle_body_mesh_instance.h"
 #include "scene/3d/skeleton.h"
 
@@ -430,59 +431,41 @@ void ParticleBody::debug_initialize_resource() {
 	if (!is_inside_tree() || !get_tree()->is_debugging_collisions_hint())
 		return;
 
-	const real_t radius = ParticlePhysicsServer::get_singleton()->space_get_particle_radius(get_world()->get_particle_space());
-
 	debug_particle_material = Ref<SpatialMaterial>(memnew(SpatialMaterial));
 	debug_particle_material->set_flag(SpatialMaterial::FLAG_UNSHADED, true);
-	debug_particle_material->set_feature(SpatialMaterial::FEATURE_TRANSPARENT, true);
+	debug_particle_material->set_feature(SpatialMaterial::FEATURE_TRANSPARENT, false);
 	debug_particle_material->set_albedo(Color(0.0, 0.6, 0.7, 0.5));
 
 	debug_particle_mesh.instance();
-	debug_particle_mesh->set_radius(radius);
-	debug_particle_mesh->set_height(radius * 2);
 	debug_particle_mesh->set_radial_segments(4);
 	debug_particle_mesh->set_rings(2);
 	debug_particle_mesh->set_material(debug_particle_material);
 
-	const int particle_count = particle_body_model.is_valid() ? particle_body_model->get_particles_ref().size() : 0;
+	multi_mesh.instance();
+	multi_mesh->set_mesh(debug_particle_mesh);
+	multi_mesh->set_transform_format(MultiMesh::TRANSFORM_3D);
+
+	debug_particle_multi_mesh = memnew(MultiMeshInstance);
+	debug_particle_multi_mesh->set_as_toplevel(true);
+	debug_particle_multi_mesh->set_material_override(debug_particle_material);
+	debug_particle_multi_mesh->set_multimesh(multi_mesh);
+	add_child(debug_particle_multi_mesh);
+	debug_particle_multi_mesh->set_global_transform(Transform());
+
+	const int particle_count =
+			particle_body_model.is_valid() ?
+					particle_body_model->get_particles_ref().size() :
+					0;
+
 	debug_resize_particle_visual_instance(particle_count);
 	debug_reset_particle_positions();
 }
 
 void ParticleBody::debug_resize_particle_visual_instance(int new_size) {
-
-	if (debug_particles_mesh.size() == new_size)
+	if (multi_mesh->get_instance_count() == new_size)
 		return;
 
-	if (debug_particles_mesh.size() > new_size) {
-
-		// If the particle count is less then visual instances size, free the last
-		const int dif = debug_particles_mesh.size() - new_size;
-		for (int i = 0; i < dif; ++i) {
-
-			const int p = debug_particles_mesh.size() - i - 1;
-			debug_particles_mesh[p]->queue_delete();
-			debug_particles_mesh.write[p] = NULL;
-		}
-		debug_particles_mesh.resize(new_size);
-	} else {
-
-		if (!is_inside_world())
-			return;
-
-		// If the particle count is more then visual instances resize and create last
-		const int dif = new_size - debug_particles_mesh.size();
-		debug_particles_mesh.resize(new_size);
-		for (int i = 0; i < dif; ++i) {
-
-			const int p = new_size - i - 1;
-			debug_particles_mesh.write[p] = memnew(MeshInstance);
-			debug_particles_mesh[p]->set_as_toplevel(true);
-			debug_particles_mesh[p]->set_material_override(get_tree()->get_debug_collision_material());
-			debug_particles_mesh[p]->set_mesh(debug_particle_mesh);
-			add_child(debug_particles_mesh[p]);
-		}
-	}
+	multi_mesh->set_instance_count(new_size);
 }
 
 void ParticleBody::debug_update(ParticleBodyCommands *p_cmds) {
@@ -493,11 +476,18 @@ void ParticleBody::debug_update(ParticleBodyCommands *p_cmds) {
 	const int particle_count = ParticlePhysicsServer::get_singleton()->body_get_particle_count(rid);
 	debug_resize_particle_visual_instance(particle_count);
 
+	const real_t radius = ParticlePhysicsServer::get_singleton()->space_get_particle_radius(get_world()->get_particle_space());
+
+	debug_particle_mesh->set_radius(radius);
+	debug_particle_mesh->set_height(radius * 2);
+
 	Transform transf;
 	for (int i = 0; i < particle_count; ++i) {
 
 		transf.origin = p_cmds->get_particle_position(i);
-		debug_particles_mesh[i]->set_global_transform(transf);
+		multi_mesh->set_instance_transform(
+				i,
+				transf);
 	}
 }
 
@@ -509,13 +499,15 @@ void ParticleBody::debug_reset_particle_positions() {
 	if (particle_body_model.is_null())
 		return;
 
-	if (debug_particles_mesh.size() == particle_body_model->get_particles_ref().size()) {
+	if (multi_mesh->get_instance_count() == particle_body_model->get_particles_ref().size()) {
 
 		Transform particle_relative_transf;
-		for (int i = 0; i < debug_particles_mesh.size(); ++i) {
+		for (int i = 0; i < multi_mesh->get_instance_count(); ++i) {
 
 			particle_relative_transf.origin = particle_body_model->get_particles_ref()[i];
-			debug_particles_mesh[i]->set_global_transform(get_global_transform() * particle_relative_transf);
+			multi_mesh->set_instance_transform(
+					i,
+					get_global_transform() * particle_relative_transf);
 		}
 	}
 }
