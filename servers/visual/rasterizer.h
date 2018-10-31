@@ -538,6 +538,12 @@ public:
 	virtual int particles_get_draw_passes(RID p_particles) const = 0;
 	virtual RID particles_get_draw_pass_mesh(RID p_particles, int p_pass) const = 0;
 
+	/* FLUID PARTICLES */
+
+	virtual RID fluid_particles_create() = 0;
+
+	virtual AABB fluid_particles_get_aabb(RID p_particles) const = 0;
+
 	/* RENDER TARGET */
 
 	enum RenderTargetFlags {
@@ -685,6 +691,7 @@ public:
 				TYPE_MESH,
 				TYPE_MULTIMESH,
 				TYPE_PARTICLES,
+				TYPE_FLUID_PARTICLES,
 				TYPE_CIRCLE,
 				TYPE_TRANSFORM,
 				TYPE_CLIP_IGNORE,
@@ -805,6 +812,13 @@ public:
 			RID texture;
 			RID normal_map;
 			CommandParticles() { type = TYPE_PARTICLES; }
+		};
+
+		struct CommandFluidParticles : public Command {
+
+			CommandFluidParticles() { type = TYPE_FLUID_PARTICLES; }
+
+			RID fluid_particles;
 		};
 
 		struct CommandCircle : public Command {
@@ -978,6 +992,12 @@ public:
 							AABB aabb = RasterizerStorage::base_singleton->particles_get_aabb(particles_cmd->particles);
 							r = Rect2(aabb.position.x, aabb.position.y, aabb.size.x, aabb.size.y);
 						}
+
+					} break;
+					case Item::Command::TYPE_FLUID_PARTICLES: {
+
+						/// The entire Screen
+						r = Rect2(0, 0, 9999, 9999);
 
 					} break;
 					case Item::Command::TYPE_CIRCLE: {

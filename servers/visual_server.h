@@ -182,6 +182,7 @@ public:
 		SHADER_SPATIAL,
 		SHADER_CANVAS_ITEM,
 		SHADER_PARTICLES,
+		SHADER_FLUID_PARTICLES,
 		SHADER_MAX
 	};
 
@@ -579,6 +580,10 @@ public:
 
 	virtual void particles_set_emission_transform(RID p_particles, const Transform &p_transform) = 0; //this is only used for 2D, in 3D it's automatic
 
+	/* FLUID */
+
+	virtual RID fluid_particles_create() = 0;
+
 	/* CAMERA API */
 
 	virtual RID camera_create() = 0;
@@ -794,13 +799,14 @@ public:
 		INSTANCE_MULTIMESH,
 		INSTANCE_IMMEDIATE,
 		INSTANCE_PARTICLES,
+		INSTANCE_FLUID_PARTICLES,
 		INSTANCE_LIGHT,
 		INSTANCE_REFLECTION_PROBE,
 		INSTANCE_GI_PROBE,
 		INSTANCE_LIGHTMAP_CAPTURE,
 		INSTANCE_MAX,
 
-		INSTANCE_GEOMETRY_MASK = (1 << INSTANCE_MESH) | (1 << INSTANCE_MULTIMESH) | (1 << INSTANCE_IMMEDIATE) | (1 << INSTANCE_PARTICLES)
+		INSTANCE_GEOMETRY_MASK = (1 << INSTANCE_MESH) | (1 << INSTANCE_MULTIMESH) | (1 << INSTANCE_IMMEDIATE) | (1 << INSTANCE_PARTICLES) | (1 << INSTANCE_FLUID_PARTICLES)
 	};
 
 	virtual RID instance_create2(RID p_base, RID p_scenario);

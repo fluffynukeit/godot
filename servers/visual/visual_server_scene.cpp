@@ -441,7 +441,8 @@ void VisualServerScene::instance_set_base(RID p_instance, RID p_base) {
 			case VS::INSTANCE_MESH:
 			case VS::INSTANCE_MULTIMESH:
 			case VS::INSTANCE_IMMEDIATE:
-			case VS::INSTANCE_PARTICLES: {
+			case VS::INSTANCE_PARTICLES:
+			case VS::INSTANCE_FLUID_PARTICLES: {
 
 				InstanceGeometryData *geom = memnew(InstanceGeometryData);
 				instance->base_data = geom;
@@ -675,7 +676,7 @@ void VisualServerScene::instance_set_visible(RID p_instance, bool p_visible) {
 	}
 }
 inline bool is_geometry_instance(VisualServer::InstanceType p_type) {
-	return p_type == VS::INSTANCE_MESH || p_type == VS::INSTANCE_MULTIMESH || p_type == VS::INSTANCE_PARTICLES || p_type == VS::INSTANCE_IMMEDIATE;
+	return p_type == VS::INSTANCE_MESH || p_type == VS::INSTANCE_MULTIMESH || p_type == VS::INSTANCE_PARTICLES || p_type == VS::INSTANCE_FLUID_PARTICLES || p_type == VS::INSTANCE_IMMEDIATE;
 }
 
 void VisualServerScene::instance_set_use_lightmap(RID p_instance, RID p_lightmap_instance, RID p_lightmap) {
@@ -905,6 +906,11 @@ void VisualServerScene::_update_instance(Instance *p_instance) {
 		VSG::storage->particles_set_emission_transform(p_instance->base, p_instance->transform);
 	}
 
+	if (p_instance->base_type == VS::INSTANCE_FLUID_PARTICLES) {
+
+		// TODO update fluid instance
+	}
+
 	if (p_instance->aabb.has_no_surface()) {
 		return;
 	}
@@ -1018,6 +1024,14 @@ void VisualServerScene::_update_instance_aabb(Instance *p_instance) {
 				new_aabb = *p_instance->custom_aabb;
 			else
 				new_aabb = VSG::storage->particles_get_aabb(p_instance->base);
+
+		} break;
+		case VisualServer::INSTANCE_FLUID_PARTICLES: {
+
+			if (p_instance->custom_aabb)
+				new_aabb = *p_instance->custom_aabb;
+			else
+				new_aabb = VSG::storage->fluid_particles_get_aabb(p_instance->base);
 
 		} break;
 		case VisualServer::INSTANCE_LIGHT: {
@@ -3397,6 +3411,8 @@ void VisualServerScene::_update_dirty_instance(Instance *p_instance) {
 					if (!cast_shadows) {
 						can_cast_shadows = false;
 					}
+				} else if (p_instance->base_type == VS::INSTANCE_FLUID_PARTICLES) {
+					// TODO update dirty instance
 				}
 			}
 

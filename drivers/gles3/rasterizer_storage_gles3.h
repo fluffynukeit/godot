@@ -41,6 +41,7 @@
 #include "shaders/canvas.glsl.gen.h"
 #include "shaders/copy.glsl.gen.h"
 #include "shaders/cubemap_filter.glsl.gen.h"
+#include "shaders/fluid_particles.glsl.gen.h"
 #include "shaders/particles.glsl.gen.h"
 
 // WebGL 2.0 has no MapBufferRange/UnmapBuffer, but offers a non-ES style BufferSubData API instead.
@@ -1262,6 +1263,34 @@ public:
 	virtual RID particles_get_draw_pass_mesh(RID p_particles, int p_pass) const;
 
 	virtual bool particles_is_inactive(RID p_particles) const;
+
+	/* FLUID PARTICLE */
+	struct FluidParticles : public Geometry {
+
+		GLuint vertex_buffer;
+		GLuint vertex_array;
+
+		int vertex_buffer_size;
+
+		int amount;
+		AABB aabb;
+
+		FluidParticles() :
+				amount(1),
+				aabb(AABB(Vector3(-100, -100, -100), Vector3(200, 200, 200))) {
+
+			glGenBuffers(1, &vertex_buffer);
+			glGenVertexArrays(1, &vertex_array);
+		}
+	};
+
+	mutable RID_Owner<FluidParticles> fluid_particles_owner;
+
+	virtual RID fluid_particles_create();
+
+	virtual AABB fluid_particles_get_aabb(RID p_particles) const;
+
+	virtual void fluid_particles_pre_allocate_memory(RID p_particles, int p_size);
 
 	/* INSTANCE */
 

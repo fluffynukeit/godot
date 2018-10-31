@@ -64,6 +64,7 @@
 #include "scene/2d/touch_screen_button.h"
 #include "scene/2d/visibility_notifier_2d.h"
 #include "scene/2d/y_sort.h"
+#include "scene/3d/fluid_particles.h"
 #include "scene/animation/animation_blend_space_1d.h"
 #include "scene/animation/animation_blend_space_2d.h"
 #include "scene/animation/animation_blend_tree.h"
@@ -459,6 +460,7 @@ void register_scene_types() {
 	ClassDB::register_class<ParticlePrimitiveArea>();
 	ClassDB::register_class<PhysicsParticleGlue>();
 	ClassDB::register_class<ParticleBodyConstraint>();
+	ClassDB::register_class<FluidParticles>();
 
 	ClassDB::register_class<VehicleBody>();
 	ClassDB::register_class<VehicleWheel>();

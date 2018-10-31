@@ -421,6 +421,10 @@ public:
 	BIND1R(AABB, particles_get_current_aabb, RID)
 	BIND2(particles_set_emission_transform, RID, const Transform &)
 
+	/* FLUID PARTICLES */
+
+	BIND0R(RID, fluid_particles_create)
+
 #undef BINDBASE
 //from now on, calls forwarded to this singleton
 #define BINDBASE VSG::scene

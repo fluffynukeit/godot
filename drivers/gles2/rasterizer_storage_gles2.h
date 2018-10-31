@@ -1117,6 +1117,12 @@ public:
 
 	virtual bool particles_is_inactive(RID p_particles) const;
 
+	/* FLUID */
+
+	virtual RID fluid_particles_create() { return RID(); }
+
+	virtual AABB fluid_particles_get_aabb(RID p_fluid_particles) const { return AABB(); }
+
 	/* INSTANCE */
 
 	virtual void instance_add_skeleton(RID p_skeleton, RasterizerScene::InstanceBase *p_instance);
