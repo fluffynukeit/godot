@@ -112,6 +112,7 @@ public:
 		SsaoBlurShaderGLES3 ssao_blur_shader;
 		ExposureShaderGLES3 exposure_shader;
 		TonemapShaderGLES3 tonemap_shader;
+		FluidParticlesShaderGLES3 fluid_particles;
 
 		struct SceneDataUBO {
 			//this is a std140 compatible struct. Please read the OpenGL 3.3 Specification spec before doing any changes

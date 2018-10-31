@@ -2011,6 +2011,8 @@ void RasterizerStorageGLES3::shader_set_code(RID p_shader, const String &p_code)
 		mode = VS::SHADER_CANVAS_ITEM;
 	else if (mode_string == "particles")
 		mode = VS::SHADER_PARTICLES;
+	else if (mode_string == "fluid_particles")
+		mode = VS::SHADER_FLUID_PARTICLES;
 	else
 		mode = VS::SHADER_SPATIAL;
 
@@ -6629,6 +6631,38 @@ bool RasterizerStorageGLES3::particles_is_inactive(RID p_particles) const {
 
 ////////
 
+RID RasterizerStorageGLES3::fluid_particles_create() {
+	return fluid_particles_owner.make_rid(memnew(FluidParticles));
+}
+
+AABB RasterizerStorageGLES3::fluid_particles_get_aabb(RID p_fluid_particles) const {
+	FluidParticles *fp = fluid_particles_owner.getornull(p_fluid_particles);
+	ERR_FAIL_COND_V(!fp, AABB());
+
+	return fp->aabb;
+}
+
+void RasterizerStorageGLES3::fluid_particles_pre_allocate_memory(
+		RID p_fluid_particles,
+		int p_size) {
+
+	FluidParticles *fp = fluid_particles_owner.getornull(p_fluid_particles);
+	ERR_FAIL_COND(!fp);
+
+	if (fp->vertex_buffer_size == p_size)
+		return;
+
+	glBindBuffer(GL_ARRAY_BUFFER, fp->vertex_buffer);
+	glBufferData(
+			GL_ARRAY_BUFFER,
+			p_size * sizeof(Vector3),
+			NULL,
+			GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+////////
+
 void RasterizerStorageGLES3::instance_add_skeleton(RID p_skeleton, RasterizerScene::InstanceBase *p_instance) {
 
 	Skeleton *skeleton = skeleton_owner.getornull(p_skeleton);
@@ -6663,6 +6697,10 @@ void RasterizerStorageGLES3::instance_add_dependency(RID p_base, RasterizerScene
 		} break;
 		case VS::INSTANCE_PARTICLES: {
 			inst = particles_owner.getornull(p_base);
+			ERR_FAIL_COND(!inst);
+		} break;
+		case VS::INSTANCE_FLUID_PARTICLES: {
+			inst = fluid_particles_owner.getornull(p_base);
 			ERR_FAIL_COND(!inst);
 		} break;
 		case VS::INSTANCE_REFLECTION_PROBE: {
@@ -6710,6 +6748,10 @@ void RasterizerStorageGLES3::instance_remove_dependency(RID p_base, RasterizerSc
 		} break;
 		case VS::INSTANCE_PARTICLES: {
 			inst = particles_owner.getornull(p_base);
+			ERR_FAIL_COND(!inst);
+		} break;
+		case VS::INSTANCE_FLUID_PARTICLES: {
+			inst = fluid_particles_owner.getornull(p_base);
 			ERR_FAIL_COND(!inst);
 		} break;
 		case VS::INSTANCE_REFLECTION_PROBE: {
@@ -7479,6 +7521,10 @@ VS::InstanceType RasterizerStorageGLES3::get_base_type(RID p_rid) const {
 		return VS::INSTANCE_PARTICLES;
 	}
 
+	if (fluid_particles_owner.owns(p_rid)) {
+		return VS::INSTANCE_FLUID_PARTICLES;
+	}
+
 	if (light_owner.owns(p_rid)) {
 		return VS::INSTANCE_LIGHT;
 	}
@@ -7718,6 +7764,11 @@ bool RasterizerStorageGLES3::free(RID p_rid) {
 		particles->instance_remove_deps();
 		particles_owner.free(p_rid);
 		memdelete(particles);
+	} else if (fluid_particles_owner.owns(p_rid)) {
+
+		FluidParticles *fluid_particles = fluid_particles_owner.get(p_rid);
+		fluid_particles_owner.free(p_rid);
+		memdelete(fluid_particles);
 	} else {
 		return false;
 	}

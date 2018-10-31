@@ -355,6 +355,10 @@ public:
 
 	FUNC1R(AABB, particles_get_current_aabb, RID)
 
+	/* FLUID PARTICLES */
+
+	FUNCRID(fluid_particles)
+
 	/* CAMERA API */
 
 	FUNCRID(camera)

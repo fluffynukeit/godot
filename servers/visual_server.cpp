@@ -1860,6 +1860,8 @@ void VisualServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("particles_get_current_aabb", "particles"), &VisualServer::particles_get_current_aabb);
 	ClassDB::bind_method(D_METHOD("particles_set_emission_transform", "particles", "transform"), &VisualServer::particles_set_emission_transform);
 
+	ClassDB::bind_method(D_METHOD("fluid_particles_create"), &VisualServer::fluid_particles_create);
+
 	ClassDB::bind_method(D_METHOD("camera_create"), &VisualServer::camera_create);
 	ClassDB::bind_method(D_METHOD("camera_set_perspective", "camera", "fovy_degrees", "z_near", "z_far"), &VisualServer::camera_set_perspective);
 	ClassDB::bind_method(D_METHOD("camera_set_orthogonal", "camera", "size", "z_near", "z_far"), &VisualServer::camera_set_orthogonal);
@@ -2084,6 +2086,7 @@ void VisualServer::_bind_methods() {
 	BIND_ENUM_CONSTANT(SHADER_SPATIAL);
 	BIND_ENUM_CONSTANT(SHADER_CANVAS_ITEM);
 	BIND_ENUM_CONSTANT(SHADER_PARTICLES);
+	BIND_ENUM_CONSTANT(SHADER_FLUID_PARTICLES);
 	BIND_ENUM_CONSTANT(SHADER_MAX);
 
 	BIND_ENUM_CONSTANT(ARRAY_VERTEX);
@@ -2205,6 +2208,7 @@ void VisualServer::_bind_methods() {
 	BIND_ENUM_CONSTANT(INSTANCE_MULTIMESH);
 	BIND_ENUM_CONSTANT(INSTANCE_IMMEDIATE);
 	BIND_ENUM_CONSTANT(INSTANCE_PARTICLES);
+	BIND_ENUM_CONSTANT(INSTANCE_FLUID_PARTICLES);
 	BIND_ENUM_CONSTANT(INSTANCE_LIGHT);
 	BIND_ENUM_CONSTANT(INSTANCE_REFLECTION_PROBE);
 	BIND_ENUM_CONSTANT(INSTANCE_GI_PROBE);

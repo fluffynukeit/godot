@@ -687,6 +687,8 @@ public:
 
 	virtual bool particles_is_inactive(RID p_particles) const { return false; }
 
+	RID fluid_particles_create() { return RID(); }
+
 	/* RENDER TARGET */
 
 	RID render_target_create() { return RID(); }

@@ -1525,6 +1525,13 @@ void RasterizerSceneGLES3::_setup_geometry(RenderList::Element *e, const Transfo
 			}
 
 		} break;
+		case VS::INSTANCE_FLUID_PARTICLES: {
+
+			RasterizerStorageGLES3::FluidParticles *fp =
+					static_cast<RasterizerStorageGLES3::FluidParticles *>(
+							e->geometry);
+
+		} break;
 		default: {}
 	}
 }
@@ -1846,6 +1853,32 @@ void RasterizerSceneGLES3::_render_geometry(RenderList::Element *e) {
 				}
 			}
 
+		} break;
+		case VS::INSTANCE_FLUID_PARTICLES: {
+
+			RasterizerStorageGLES3::FluidParticles *fp =
+					static_cast<RasterizerStorageGLES3::FluidParticles *>(
+							e->geometry);
+
+			state.scene_shader.unbind();
+			state.fluid_particles.bind();
+			state.fluid_particles.bind_uniforms();
+
+			glBindBuffer(GL_ARRAY_BUFFER, fp->vertex_buffer);
+			glBindVertexArray(fp->vertex_array);
+
+			state.fluid_particles.set_uniform(
+					FluidParticlesShaderGLES3::COLOR,
+					Vector3(1, 0, 0));
+
+			// Perform the rendering of fluid
+			glDrawArrays(
+					GL_POINTS,
+					0,
+					fp->amount);
+
+			state.fluid_particles.unbind();
+			state.scene_shader.bind();
 		} break;
 		default: {}
 	}
@@ -3241,6 +3274,14 @@ void RasterizerSceneGLES3::_fill_render_list(InstanceBase **p_cull_result, int p
 						_add_geometry(s, inst, particles, -1, p_depth_pass, p_shadow_pass);
 					}
 				}
+
+			} break;
+			case VS::INSTANCE_FLUID_PARTICLES: {
+
+				RasterizerStorageGLES3::FluidParticles *fp = storage->fluid_particles_owner.getptr(inst->base);
+				ERR_CONTINUE(!fp);
+
+				_add_geometry(fp, inst, NULL, -1, p_depth_pass, p_shadow_pass);
 
 			} break;
 			default: {}
@@ -5158,6 +5199,7 @@ void RasterizerSceneGLES3::initialize() {
 	state.ssao_blur_shader.init();
 	state.exposure_shader.init();
 	state.tonemap_shader.init();
+	state.fluid_particles.init();
 
 	{
 		GLOBAL_DEF("rendering/quality/subsurface_scattering/quality", 1);
