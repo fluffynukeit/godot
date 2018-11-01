@@ -6652,13 +6652,47 @@ void RasterizerStorageGLES3::fluid_particles_pre_allocate_memory(
 	if (fp->vertex_buffer_size == p_size)
 		return;
 
+	fp->vertex_buffer_size = p_size;
+
 	glBindBuffer(GL_ARRAY_BUFFER, fp->vertex_buffer);
 	glBufferData(
 			GL_ARRAY_BUFFER,
-			p_size * sizeof(Vector3),
+			p_size,
 			NULL,
 			GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void RasterizerStorageGLES3::fluid_particles_set_positions(
+		RID p_fluid_particles,
+		float *p_positions,
+		int p_stride,
+		int p_amount) {
+
+	FluidParticles *fp = fluid_particles_owner.getornull(p_fluid_particles);
+	ERR_FAIL_COND(!fp);
+
+	int new_vertex_buffer_size = sizeof(float) * p_stride * p_amount;
+
+	float ratio(0);
+	if (fp->vertex_buffer_size)
+		ratio = float(new_vertex_buffer_size) / float(fp->vertex_buffer_size);
+
+	if (ratio <= 0.7 || ratio > 1.0) {
+		// Resize only if the new size is 30% smaller or bigger
+		fluid_particles_pre_allocate_memory(p_fluid_particles, new_vertex_buffer_size);
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, fp->vertex_buffer);
+	glBufferSubData(
+			fp->vertex_buffer,
+			0,
+			new_vertex_buffer_size,
+			p_positions);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	fp->vertex_stride = p_stride;
+	fp->amount = p_amount;
 }
 
 ////////

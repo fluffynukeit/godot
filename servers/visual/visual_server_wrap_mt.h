@@ -358,6 +358,8 @@ public:
 	/* FLUID PARTICLES */
 
 	FUNCRID(fluid_particles)
+	FUNC2(fluid_particles_pre_allocate_memory, RID, int)
+	FUNC4(fluid_particles_set_positions, RID, float *, int, int)
 
 	/* CAMERA API */
 

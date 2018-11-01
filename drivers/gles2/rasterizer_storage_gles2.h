@@ -1123,6 +1123,13 @@ public:
 
 	virtual AABB fluid_particles_get_aabb(RID p_fluid_particles) const { return AABB(); }
 
+	virtual void fluid_particles_pre_allocate_memory(RID p_particles, int p_size) {}
+	virtual void fluid_particles_set_positions(
+			RID p_particles,
+			float *p_positions,
+			int p_stride,
+			int p_amount) {}
+
 	/* INSTANCE */
 
 	virtual void instance_add_skeleton(RID p_skeleton, RasterizerScene::InstanceBase *p_instance);

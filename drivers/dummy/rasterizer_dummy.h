@@ -689,6 +689,13 @@ public:
 
 	RID fluid_particles_create() { return RID(); }
 
+	virtual AABB fluid_particles_get_aabb(RID p_particles) const { return AABB(); }
+	virtual void fluid_particles_set_positions(
+			RID p_particles,
+			float *p_positions,
+			int p_stride,
+			int p_amount) {}
+
 	/* RENDER TARGET */
 
 	RID render_target_create() { return RID(); }
