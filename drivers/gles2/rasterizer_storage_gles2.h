@@ -1130,6 +1130,10 @@ public:
 			int p_stride,
 			int p_amount) {}
 
+	virtual void fluid_particles_set_radius(
+			RID p_fluid_particles,
+			float p_radius) {}
+
 	/* INSTANCE */
 
 	virtual void instance_add_skeleton(RID p_skeleton, RasterizerScene::InstanceBase *p_instance);

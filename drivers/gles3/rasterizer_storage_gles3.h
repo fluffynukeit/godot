@@ -1275,6 +1275,7 @@ public:
 		int vertex_stride;
 		int amount;
 		AABB aabb;
+		real_t radius;
 
 		FluidParticles() :
 				amount(1),
@@ -1289,14 +1290,18 @@ public:
 
 	virtual RID fluid_particles_create();
 
-	virtual AABB fluid_particles_get_aabb(RID p_particles) const;
+	virtual AABB fluid_particles_get_aabb(RID p_fluid_particles) const;
 
-	virtual void fluid_particles_pre_allocate_memory(RID p_particles, int p_size);
+	virtual void fluid_particles_pre_allocate_memory(RID p_fluid_particles, int p_size);
 	virtual void fluid_particles_set_positions(
-			RID p_particles,
+			RID p_fluid_particles,
 			float *p_positions,
 			int p_stride,
 			int p_amount);
+
+	virtual void fluid_particles_set_radius(
+			RID p_fluid_particles,
+			float p_radius);
 
 	/* INSTANCE */
 

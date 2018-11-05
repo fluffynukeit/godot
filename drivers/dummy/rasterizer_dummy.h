@@ -696,6 +696,10 @@ public:
 			int p_stride,
 			int p_amount) {}
 
+	virtual void fluid_particles_set_radius(
+			RID p_fluid_particles,
+			float p_radius) {}
+
 	/* RENDER TARGET */
 
 	RID render_target_create() { return RID(); }
