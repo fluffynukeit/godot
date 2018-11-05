@@ -426,6 +426,7 @@ public:
 	BIND0R(RID, fluid_particles_create)
 	BIND2(fluid_particles_pre_allocate_memory, RID, int)
 	BIND4(fluid_particles_set_positions, RID, float *, int, int)
+	BIND2(fluid_particles_set_radius, RID, float)
 
 #undef BINDBASE
 //from now on, calls forwarded to this singleton

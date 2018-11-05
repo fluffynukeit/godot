@@ -6683,16 +6683,39 @@ void RasterizerStorageGLES3::fluid_particles_set_positions(
 		fluid_particles_pre_allocate_memory(p_fluid_particles, new_vertex_buffer_size);
 	}
 
+	fp->vertex_stride = p_stride;
+	fp->amount = p_amount;
+
+	glBindVertexArray(fp->vertex_array);
+
 	glBindBuffer(GL_ARRAY_BUFFER, fp->vertex_buffer);
 	glBufferSubData(
-			fp->vertex_buffer,
+			GL_ARRAY_BUFFER,
 			0,
 			new_vertex_buffer_size,
 			p_positions);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	fp->vertex_stride = p_stride;
-	fp->amount = p_amount;
+	glVertexAttribPointer(
+			0,
+			3,
+			GL_FLOAT,
+			GL_FALSE,
+			p_stride * sizeof(float),
+			(void *)0);
+	glEnableVertexAttribArray(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+}
+
+void RasterizerStorageGLES3::fluid_particles_set_radius(
+		RID p_fluid_particles,
+		float p_radius) {
+
+	FluidParticles *fp = fluid_particles_owner.getornull(p_fluid_particles);
+	ERR_FAIL_COND(!fp);
+
+	fp->radius = p_radius;
 }
 
 ////////

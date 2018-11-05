@@ -29,11 +29,20 @@
 /*************************************************************************/
 
 #include "fluid_particles.h"
+#include "scene/resources/world.h"
 
 void FluidParticles::_bind_methods() {
 }
 
 void FluidParticles::_notification(int p_what) {
+
+	if (p_what == NOTIFICATION_ENTER_WORLD) {
+
+		VisualServer::get_singleton()->fluid_particles_set_radius(
+				fluid_particles,
+				ParticlePhysicsServer::get_singleton()->space_get_particle_radius(
+						get_world()->get_particle_space()));
+	}
 }
 
 AABB FluidParticles::get_aabb() const {
@@ -49,6 +58,22 @@ FluidParticles::FluidParticles() :
 		GeometryInstance() {
 	fluid_particles = VisualServer::get_singleton()->fluid_particles_create();
 	set_base(fluid_particles);
+
+	Vector<Vector3> positions;
+	positions.push_back(Vector3(0, 0, 0));
+	positions.push_back(Vector3(1, 0, 0));
+	positions.push_back(Vector3(0, 1, 0));
+	positions.push_back(Vector3(0, 0, 1));
+
+	VisualServer::get_singleton()->fluid_particles_pre_allocate_memory(
+			fluid_particles,
+			10);
+
+	VisualServer::get_singleton()->fluid_particles_set_positions(
+			fluid_particles,
+			(float *)positions.ptrw(),
+			3,
+			positions.size());
 }
 
 FluidParticles::~FluidParticles() {

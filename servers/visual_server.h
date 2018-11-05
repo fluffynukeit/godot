@@ -591,6 +591,10 @@ public:
 			int p_stride,
 			int p_amount) = 0;
 
+	virtual void fluid_particles_set_radius(
+			RID p_fluid_particles,
+			float p_radius) = 0;
+
 	/* CAMERA API */
 
 	virtual RID camera_create() = 0;
