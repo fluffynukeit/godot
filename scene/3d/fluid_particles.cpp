@@ -60,11 +60,6 @@ void FluidParticles::_notification(int p_what) {
 				particle_body->connect("commands_process", this, "update_data");
 			}
 
-			VisualServer::get_singleton()->fluid_particles_set_radius(
-					fluid_particles,
-					ParticlePhysicsServer::get_singleton()->space_get_particle_radius(
-							get_world()->get_particle_space()));
-
 		} break;
 		case NOTIFICATION_LOCAL_TRANSFORM_CHANGED: {
 
@@ -110,16 +105,25 @@ void FluidParticles::update_data(Object *p_cmds) {
 
 	ParticleBodyCommands *cmds = cast_to<ParticleBodyCommands>(p_cmds);
 
+	const AABB aabb = cmds->get_aabb();
+	const float *pbuffer = cmds->get_particle_buffer();
+	const int count = cmds->get_particle_count();
+
 	VisualServer::get_singleton()->fluid_particles_set_aabb(
 			fluid_particles,
-			cmds->get_aabb());
+			aabb);
 
-	const float *pbuffer = cmds->get_particle_buffer();
-
-	// TODO please move this to proper method, copy this here is wrong
+	// TODO please move this to proper method, copy this here is wrong.
+	// See how ParticleBody update its mesh
 	VisualServer::get_singleton()->fluid_particles_set_positions(
 			fluid_particles,
 			pbuffer,
 			cmds->get_particle_buffer_stride(),
-			cmds->get_particle_count());
+			count);
+
+	if (get_world().is_valid())
+		VisualServer::get_singleton()->fluid_particles_set_radius(
+				fluid_particles,
+				ParticlePhysicsServer::get_singleton()->space_get_particle_radius(
+						get_world()->get_particle_space()));
 }

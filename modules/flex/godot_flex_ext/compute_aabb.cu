@@ -140,12 +140,20 @@ void ComputeAABBCallback(NvFlexSolverCallbackParams p_params){
 		callback->d_last_pindex_particle_body,
 		(Vector3*)callback->d_aabbs);
 
-	cudaMemcpyAsync(callback->aabbs, callback->d_aabbs, sizeof(float) * 2 * 3 * callback->particle_body_count, cudaMemcpyDeviceToHost);
+	cudaMemcpyAsync(
+				callback->aabbs,
+				callback->d_aabbs,
+				sizeof(float) * 2 * 3 * callback->particle_body_count,
+				cudaMemcpyDeviceToHost);
 
 	callback->aabbs = NULL;
 }
 
-void GdFlexExtSetComputeAABBCallback(GdFlexExtComputeAABBCallback* p_callback, int p_particle_body_count, int* p_last_pindex_particle_body, float* p_aabbs){
+void GdFlexExtSetComputeAABBCallback(
+		GdFlexExtComputeAABBCallback* p_callback,
+		int p_particle_body_count,
+		int* p_last_pindex_particle_body,
+		float* p_aabbs){
 
 	p_callback->aabbs = p_aabbs;
 

@@ -63,7 +63,10 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 
 	{ // Particle
 		const int resource_p_count(p_model->get_particles().size());
-		body->space->particles_allocator->resize_chunk(body->particles_mchunk, resource_p_count);
+		body->space->particles_allocator->resize_chunk(
+				body->particles_mchunk,
+				resource_p_count);
+		body->set_particle_count(resource_p_count);
 
 		PoolVector<real_t>::Read masses_r = p_model->get_masses().read();
 
@@ -147,11 +150,32 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 	}
 }
 
+void FlexParticleBodyCommands::add_unactive_particles(int p_particle_count) {
+	ERR_FAIL_COND(p_particle_count < 1);
+
+	const int previous_size = body->get_particle_count();
+	const int new_size = previous_size + p_particle_count;
+
+	body->space->particles_allocator->resize_chunk(
+			body->particles_mchunk,
+			new_size);
+}
+
 int FlexParticleBodyCommands::add_particles(int p_particle_count) {
 	ERR_FAIL_COND_V(p_particle_count < 1, -1);
 
 	const int previous_size = body->get_particle_count();
-	body->space->particles_allocator->resize_chunk(body->particles_mchunk, previous_size + p_particle_count);
+	const int new_size = previous_size + p_particle_count;
+
+	if (new_size > body->particles_mchunk->get_size()) {
+		// Require resize
+		body->space->particles_allocator->resize_chunk(
+				body->particles_mchunk,
+				new_size);
+	}
+
+	body->set_particle_count(new_size);
+
 	return previous_size;
 }
 

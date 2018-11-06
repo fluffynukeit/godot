@@ -8,6 +8,11 @@ void ParticleBodyCommands::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("load_model", "shape", "initial_transform"), &ParticleBodyCommands::load_model);
 
 	ClassDB::bind_method(
+			D_METHOD("add_unactive_particles",
+					"particle_count"),
+			&ParticleBodyCommands::add_unactive_particles);
+
+	ClassDB::bind_method(
 			D_METHOD("add_particles",
 					"particle_count"),
 			&ParticleBodyCommands::add_particles);

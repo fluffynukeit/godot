@@ -115,10 +115,6 @@ void FlexSpace::init() {
 
 	reset_params_to_defaults();
 	CRASH_COND(has_error());
-
-	compute_aabb_callback = GdFlexExtCreateComputeAABBCallback(solver);
-
-	//compute_friction_callback = GdFlexExtCreateComputeFrictionCallback(solver);
 }
 
 NvFlexLibrary *FlexSpace::get_flex_library() {
@@ -129,7 +125,12 @@ void FlexSpace::init_buffers() {
 	CRASH_COND(particles_memory);
 	CRASH_COND(particles_allocator);
 	particles_memory = memnew(ParticlesMemory(flex_lib));
-	particles_allocator = memnew(FlexMemoryAllocator(particles_memory, 10000, 5000, -1));
+	particles_allocator = memnew(FlexMemoryAllocator(
+			particles_memory,
+			10000,
+			5000,
+			-1));
+
 	particles_memory->unmap(); // *1
 
 	CRASH_COND(active_particles_allocator);
@@ -184,6 +185,17 @@ void FlexSpace::init_buffers() {
 
 void FlexSpace::init_solver() {
 	CRASH_COND(solver);
+
+	if (compute_aabb_callback) {
+		GdFlexExtDestroyComputeAABBCallback(compute_aabb_callback);
+		compute_aabb_callback = NULL;
+	}
+
+	//if (compute_friction_callback) {
+	//	GdFlexExtDestroyComputeFrictionCallback(compute_friction_callback);
+	//	compute_friction_callback = NULL;
+	//}
+
 	NvFlexSolverDesc solver_desc;
 
 	solver_max_particles = particles_allocator->get_memory_size();
@@ -198,20 +210,13 @@ void FlexSpace::init_solver() {
 	solver = NvFlexCreateSolver(flex_lib, &solver_desc);
 	CRASH_COND(has_error());
 
+	compute_aabb_callback = GdFlexExtCreateComputeAABBCallback(solver);
+	//compute_friction_callback = GdFlexExtCreateComputeFrictionCallback(solver);
+
 	force_buffer_write = true;
 }
 
 void FlexSpace::terminate() {
-
-	if (compute_aabb_callback) {
-		GdFlexExtDestroyComputeAABBCallback(compute_aabb_callback);
-		compute_aabb_callback = NULL;
-	}
-
-	//if (compute_friction_callback) {
-	//	GdFlexExtDestroyComputeFrictionCallback(compute_friction_callback);
-	//	compute_friction_callback = NULL;
-	//}
 
 	if (particles_memory) {
 		particles_memory->terminate();
@@ -348,7 +353,8 @@ void FlexSpace::sync() {
 	/// Emit server sync
 	ParticlePhysicsServer::get_singleton()->emit_signal("sync_end", get_self());
 
-	// Call this just before the unmap to doesn't reset the AABB computed on previous step
+	// Call this just before the unmap to doesn't reset the AABB
+	// computed on previous step
 	set_custom_flex_callback();
 
 	///
@@ -808,10 +814,16 @@ void FlexSpace::set_custom_flex_callback() {
 
 		// Rebuilding this each time allow me to not bother too much on
 		// particle addition / removal that each function can do
-		particle_bodies_pindices.write[i * 2 + 0] = pb->particles_mchunk->get_begin_index();
-		particle_bodies_pindices.write[i * 2 + 1] = pb->particles_mchunk->get_end_index();
+		particle_bodies_pindices.write[i * 2 + 0] =
+				pb->particles_mchunk->get_begin_index();
 
-		particle_bodies_aabb.write[i].set_position(pb->get_particle_position(0));
+		particle_bodies_pindices.write[i * 2 + 1] =
+				pb->particles_mchunk->get_buffer_index(
+						pb->get_particle_count());
+
+		particle_bodies_aabb.write[i].set_position(
+				pb->get_particle_position(0));
+
 		particle_bodies_aabb.write[i].set_size(Vector3());
 	}
 
@@ -821,29 +833,29 @@ void FlexSpace::set_custom_flex_callback() {
 			particle_bodies_pindices.ptrw(),
 			(float *)particle_bodies_aabb.ptrw());
 
-	const int size = primitive_bodies.size();
-
-	Vector<AABB> aabbs;
-	Vector<Transform> transforms;
-	Vector<Vector3> lvelocities;
-	Vector<Vector3> avelocities;
-	Vector<Vector3> extents;
-
-	for (int i = 0; i < size; ++i) {
-		FlexPrimitiveBody *pb = primitive_bodies[i];
-		if (!pb->get_shape())
-			continue;
-
-		if (pb->get_shape()->get_type() != eNvFlexShapeBox)
-			continue;
-
-		aabbs.push_back(primitive_bodies[i]->get_aabb());
-		transforms.push_back(primitive_bodies[i]->get_transform().inverse());
-		lvelocities.push_back(Vector3());
-		avelocities.push_back(Vector3());
-		extents.push_back(pb->get_shape()->get_data());
-	}
-
+	//const int size = primitive_bodies.size();
+	//
+	//Vector<AABB> aabbs;
+	//Vector<Transform> transforms;
+	//Vector<Vector3> lvelocities;
+	//Vector<Vector3> avelocities;
+	//Vector<Vector3> extents;
+	//
+	//for (int i = 0; i < size; ++i) {
+	//	FlexPrimitiveBody *pb = primitive_bodies[i];
+	//	if (!pb->get_shape())
+	//		continue;
+	//
+	//	if (pb->get_shape()->get_type() != eNvFlexShapeBox)
+	//		continue;
+	//
+	//	aabbs.push_back(primitive_bodies[i]->get_aabb());
+	//	transforms.push_back(primitive_bodies[i]->get_transform().inverse());
+	//	lvelocities.push_back(Vector3());
+	//	avelocities.push_back(Vector3());
+	//	extents.push_back(pb->get_shape()->get_data());
+	//}
+	//
 	//GdFlexExtSetComputeFrictionCallback(
 	//		compute_friction_callback,
 	//		aabbs.size(),
@@ -988,7 +1000,7 @@ void FlexSpace::execute_delayed_commands() {
 			}
 		}
 
-		particles_count += body->particles_mchunk ? body->particles_mchunk->get_size() : 0;
+		particles_count += body->get_particle_count();
 	}
 
 	for (int constraint_index(constraints.size() - 1); 0 <= constraint_index; --constraint_index) {
@@ -1013,8 +1025,13 @@ void FlexSpace::execute_delayed_commands() {
 
 			FlexParticleBody *body = particle_bodies[i];
 
-			for (int p(0); p < body->particles_mchunk->get_size(); ++p) {
-				active_particles_memory->set_active_particle(active_particles_mchunk, active_particle_index, body->particles_mchunk->get_buffer_index(p));
+			for (int p(0); p < body->get_particle_count(); ++p) {
+
+				active_particles_memory->set_active_particle(
+						active_particles_mchunk,
+						active_particle_index,
+						body->particles_mchunk->get_buffer_index(p));
+
 				++active_particle_index;
 			}
 		}
@@ -1157,9 +1174,10 @@ void FlexSpace::commands_write_buffer() {
 		if (!body->particles_mchunk)
 			continue;
 
-		const uint32_t changed_params(force_buffer_write ?
-											  eChangedBodyParamParticleJustAdded :
-											  body->get_changed_parameters());
+		const uint32_t changed_params(
+				force_buffer_write ?
+						eChangedBodyParamParticleJustAdded :
+						body->get_changed_parameters());
 
 		if (changed_params != 0) {
 			copy_desc.srcOffset = body->particles_mchunk->get_begin_index();
@@ -1234,25 +1252,6 @@ void FlexSpace::commands_write_buffer() {
 }
 
 void FlexSpace::commands_read_buffer() {
-
-	// In this moment this code doesn't make sense because doesn't have a way
-	// to skip some bodies
-	//
-	//NvFlexCopyDesc copy_desc;
-	//for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
-	//
-	//	if (!particle_bodies[i]->particles_mchunk)
-	//		continue;
-	//
-	//	// Write back to buffer (command)
-	//	copy_desc.srcOffset = particle_bodies[i]->particles_mchunk->get_begin_index();
-	//	copy_desc.dstOffset = particle_bodies[i]->particles_mchunk->get_begin_index();
-	//	copy_desc.elementCount = particle_bodies[i]->particles_mchunk->get_size();
-	//
-	//	NvFlexGetParticles(solver, particles_memory->particles.buffer, &copy_desc);
-	//	NvFlexGetVelocities(solver, particles_memory->velocities.buffer, &copy_desc);
-	//	NvFlexGetNormals(solver, particles_memory->normals.buffer, &copy_desc);
-	//}
 
 	NvFlexGetParticles(solver, particles_memory->particles.buffer, NULL);
 	NvFlexGetVelocities(solver, particles_memory->velocities.buffer, NULL);

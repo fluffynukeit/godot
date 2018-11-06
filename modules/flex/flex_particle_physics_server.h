@@ -53,6 +53,8 @@ public:
 	virtual void move_particles(const Transform &transform);
 	virtual void load_model(Ref<ParticleBodyModel> p_model, const Transform &initial_transform);
 
+	virtual void add_unactive_particles(int p_particle_count);
+
 	virtual int add_particles(int p_particle_count);
 	virtual void initialize_particle(
 			int p_index,

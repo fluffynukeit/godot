@@ -106,6 +106,7 @@ class FlexParticleBody : public RIDFlex {
 	float pressure; // 1 mean rest_volume
 	float constraint_scale;
 
+	int particle_count;
 	bool _is_monitorable;
 	bool _is_monitoring_primitives_contacts;
 
@@ -153,10 +154,12 @@ public:
 	void remove_rigid(RigidIndex p_rigid_index);
 	void remove_rigid_component(RigidComponentIndex p_rigid_component_index);
 
-	int get_particle_count() const;
 	int get_spring_count() const;
 	int get_triangle_count() const;
 	int get_rigid_count() const;
+
+	void set_particle_count(int p_particle_count);
+	int get_particle_count() const;
 
 	// CMD
 	void reset_spring(SpringIndex p_spring, ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness);

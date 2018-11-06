@@ -55,6 +55,7 @@ FlexParticleBody::FlexParticleBody() :
 		rest_volume(0),
 		pressure(1),
 		constraint_scale(0),
+		particle_count(0),
 		_is_monitorable(false),
 		_is_monitoring_primitives_contacts(false) {
 	sync_callback.receiver = NULL;
@@ -201,10 +202,6 @@ void FlexParticleBody::remove_rigid_component(RigidComponentIndex p_rigid_compon
 		delayed_commands.rigids_components_to_remove.push_back(p_rigid_component_index);
 }
 
-int FlexParticleBody::get_particle_count() const {
-	return particles_mchunk ? particles_mchunk->get_size() : 0;
-}
-
 int FlexParticleBody::get_spring_count() const {
 	return springs_mchunk ? springs_mchunk->get_size() : 0;
 }
@@ -215,6 +212,20 @@ int FlexParticleBody::get_triangle_count() const {
 
 int FlexParticleBody::get_rigid_count() const {
 	return rigids_mchunk ? rigids_mchunk->get_size() : 0;
+}
+
+void FlexParticleBody::set_particle_count(int p_particle_count) {
+	int memory_size = particles_mchunk ? particles_mchunk->get_size() : 0;
+	if (memory_size < p_particle_count) {
+		particle_count = memory_size;
+		ERR_FAIL();
+	} else {
+		particle_count = p_particle_count;
+	}
+}
+
+int FlexParticleBody::get_particle_count() const {
+	return particle_count;
 }
 
 void FlexParticleBody::reset_spring(SpringIndex p_spring, ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness) {
