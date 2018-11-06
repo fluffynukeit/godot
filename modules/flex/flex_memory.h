@@ -395,6 +395,7 @@ class ParticlesMemory : public FlexBufferMemory {
 
 	void set_particle(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, FlVector4 p_particle);
 	const FlVector4 &get_particle(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const;
+	const FlVector4 *get_particles_buffers(const MemoryChunk *p_chunk);
 
 	void set_velocity(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, Vector3 p_velocity);
 	const Vector3 &get_velocity(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const;

@@ -6642,6 +6642,16 @@ AABB RasterizerStorageGLES3::fluid_particles_get_aabb(RID p_fluid_particles) con
 	return fp->aabb;
 }
 
+void RasterizerStorageGLES3::fluid_particles_set_aabb(
+		RID p_fluid_particles,
+		const AABB &p_aabb) {
+
+	FluidParticles *fp = fluid_particles_owner.getornull(p_fluid_particles);
+	ERR_FAIL_COND(!fp);
+
+	fp->aabb = p_aabb;
+}
+
 void RasterizerStorageGLES3::fluid_particles_pre_allocate_memory(
 		RID p_fluid_particles,
 		int p_size) {
@@ -6665,7 +6675,7 @@ void RasterizerStorageGLES3::fluid_particles_pre_allocate_memory(
 
 void RasterizerStorageGLES3::fluid_particles_set_positions(
 		RID p_fluid_particles,
-		float *p_positions,
+		const float *p_positions,
 		int p_stride,
 		int p_amount) {
 

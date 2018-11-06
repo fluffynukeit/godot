@@ -42,7 +42,7 @@
 class FlexParticleBody;
 class FlexSpace;
 class Object;
-class MemoryChunk;
+struct MemoryChunk;
 class FlexPrimitiveBody;
 
 enum ChangedBodyParameter {

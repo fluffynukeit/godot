@@ -424,8 +424,10 @@ public:
 	/* FLUID PARTICLES */
 
 	BIND0R(RID, fluid_particles_create)
+	BIND1RC(AABB, fluid_particles_get_aabb, RID)
+	BIND2(fluid_particles_set_aabb, RID, const AABB &)
 	BIND2(fluid_particles_pre_allocate_memory, RID, int)
-	BIND4(fluid_particles_set_positions, RID, float *, int, int)
+	BIND4(fluid_particles_set_positions, RID, const float *, int, int)
 	BIND2(fluid_particles_set_radius, RID, float)
 
 #undef BINDBASE

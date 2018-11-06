@@ -75,6 +75,8 @@ public:
 	virtual void set_particle_position_mass(int p_particle_index, const Vector3 &p_position, real_t p_mass);
 
 	virtual int get_particle_count() const;
+	virtual int get_particle_buffer_stride() const;
+	virtual const float *get_particle_buffer() const;
 
 	virtual void set_particle_position(int p_particle_index, const Vector3 &p_position);
 	virtual Vector3 get_particle_position(int p_particle_index) const;

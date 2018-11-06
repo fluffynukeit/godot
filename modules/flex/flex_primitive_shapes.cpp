@@ -37,6 +37,8 @@
 #include "core/math/quick_hull.h"
 #include "flex_primitive_body.h"
 
+Basis FlexPrimitiveShape::base_alignment;
+
 FlexPrimitiveShape::FlexPrimitiveShape() :
 		RIDFlex() {
 }

@@ -29,25 +29,65 @@
 /*************************************************************************/
 
 #include "fluid_particles.h"
+#include "core/engine.h"
+#include "scene/3d/physics_particle_body.h"
 #include "scene/resources/world.h"
 
 void FluidParticles::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("update_data", "cmds"), &FluidParticles::update_data);
 }
 
 void FluidParticles::_notification(int p_what) {
 
-	if (p_what == NOTIFICATION_ENTER_WORLD) {
+	switch (p_what) {
+		case NOTIFICATION_ENTER_TREE: {
 
-		VisualServer::get_singleton()->fluid_particles_set_radius(
-				fluid_particles,
-				ParticlePhysicsServer::get_singleton()->space_get_particle_radius(
-						get_world()->get_particle_space()));
+			ERR_FAIL_COND(particle_body);
+
+			if (!Engine::get_singleton()->is_editor_hint()) {
+
+				set_as_toplevel(true);
+				set_global_transform(Transform());
+			}
+
+			if (particle_body) {
+				particle_body->disconnect("commands_process", this, "update_data");
+			}
+
+			particle_body = Object::cast_to<ParticleBody>(get_parent());
+
+			if (particle_body) {
+				particle_body->connect("commands_process", this, "update_data");
+			}
+
+			VisualServer::get_singleton()->fluid_particles_set_radius(
+					fluid_particles,
+					ParticlePhysicsServer::get_singleton()->space_get_particle_radius(
+							get_world()->get_particle_space()));
+
+		} break;
+		case NOTIFICATION_LOCAL_TRANSFORM_CHANGED: {
+
+			if (!Engine::get_singleton()->is_editor_hint())
+				return;
+
+			if (!particle_body)
+				return;
+
+			particle_body->set_global_transform(get_global_transform());
+			set_notify_local_transform(false);
+			set_transform(Transform());
+			set_notify_local_transform(true);
+
+		} break;
+		case NOTIFICATION_EXIT_TREE: {
+			particle_body = NULL;
+		} break;
 	}
 }
 
 AABB FluidParticles::get_aabb() const {
-	// TODO implement it properly
-	return AABB(Vector3(-9999, -9999, -9999), Vector3(999999, 999999, 999999));
+	return AABB();
 }
 
 PoolVector<Face3> FluidParticles::get_faces(uint32_t p_usage_flags) const {
@@ -55,27 +95,31 @@ PoolVector<Face3> FluidParticles::get_faces(uint32_t p_usage_flags) const {
 }
 
 FluidParticles::FluidParticles() :
-		GeometryInstance() {
+		GeometryInstance(),
+		particle_body(NULL) {
+
 	fluid_particles = VisualServer::get_singleton()->fluid_particles_create();
 	set_base(fluid_particles);
-
-	Vector<Vector3> positions;
-	positions.push_back(Vector3(0, 0, 0));
-	positions.push_back(Vector3(1, 0, 0));
-	positions.push_back(Vector3(0, 1, 0));
-	positions.push_back(Vector3(0, 0, 1));
-
-	VisualServer::get_singleton()->fluid_particles_pre_allocate_memory(
-			fluid_particles,
-			10);
-
-	VisualServer::get_singleton()->fluid_particles_set_positions(
-			fluid_particles,
-			(float *)positions.ptrw(),
-			3,
-			positions.size());
 }
 
 FluidParticles::~FluidParticles() {
 	VS::get_singleton()->free(fluid_particles);
+}
+
+void FluidParticles::update_data(Object *p_cmds) {
+
+	ParticleBodyCommands *cmds = cast_to<ParticleBodyCommands>(p_cmds);
+
+	VisualServer::get_singleton()->fluid_particles_set_aabb(
+			fluid_particles,
+			cmds->get_aabb());
+
+	const float *pbuffer = cmds->get_particle_buffer();
+
+	// TODO please move this to proper method, copy this here is wrong
+	VisualServer::get_singleton()->fluid_particles_set_positions(
+			fluid_particles,
+			pbuffer,
+			cmds->get_particle_buffer_stride(),
+			cmds->get_particle_count());
 }
