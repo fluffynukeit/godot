@@ -55,6 +55,8 @@ public:
 	FlexPrimitiveShape();
 	~FlexPrimitiveShape();
 
+	static Basis base_alignment;
+
 	const AABB &get_aabb() const { return aabb; }
 
 	void add_owner(FlexPrimitiveBody *p_owner);
@@ -67,7 +69,7 @@ public:
 	virtual void set_data(const Variant &p_data) = 0;
 	virtual Variant get_data() const = 0;
 	virtual bool need_alignment() const { return false; }
-	virtual const Basis &get_alignment_basis() const { return Basis(); }
+	virtual const Basis &get_alignment_basis() const { return base_alignment; }
 };
 
 class FlexPrimitiveBoxShape : public FlexPrimitiveShape {

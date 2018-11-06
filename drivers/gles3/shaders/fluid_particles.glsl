@@ -69,7 +69,6 @@ void main(){
 
     gl_PointSize = point_scale * (particle_radius / gl_Position.w);
 
-
     out_color = vec4(color, 1);
 }
 
@@ -81,5 +80,12 @@ out vec4 FragColor;
 
 void main() {
 
-    FragColor = color;
+    vec3 normal;
+    normal.xy = gl_PointCoord*vec2(2.0, -2.0) + vec2(-1.0, 1.0);
+    float mag = dot(normal.xy, normal.xy);
+    if (mag > 1.0)
+        discard;
+    normal.z = sqrt(1.0 - mag);
+
+    FragColor = color * vec4(normal.z * 0.5);
 }

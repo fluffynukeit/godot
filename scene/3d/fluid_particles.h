@@ -33,10 +33,13 @@
 
 #include "scene/3d/visual_instance.h"
 
+class ParticleBody;
+
 class FluidParticles : public GeometryInstance {
 	GDCLASS(FluidParticles, GeometryInstance);
 
 	RID fluid_particles;
+	ParticleBody *particle_body;
 
 protected:
 	static void _bind_methods();
@@ -49,6 +52,9 @@ public:
 public:
 	FluidParticles();
 	~FluidParticles();
+
+private:
+	void update_data(Object *p_cmds);
 };
 
 #endif

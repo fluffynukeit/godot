@@ -66,6 +66,10 @@ const FlVector4 &ParticlesMemory::get_particle(const MemoryChunk *p_chunk, Parti
 	return particles[index];
 }
 
+const FlVector4 *ParticlesMemory::get_particles_buffers(const MemoryChunk *p_chunk) {
+	return particles.mappedPtr + p_chunk->get_begin_index();
+}
+
 void ParticlesMemory::set_velocity(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, Vector3 p_velocity) {
 	make_memory_index(p_chunk, p_particle_index);
 	velocities[index] = p_velocity;

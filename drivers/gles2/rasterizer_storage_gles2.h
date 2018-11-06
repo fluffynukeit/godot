@@ -1122,11 +1122,14 @@ public:
 	virtual RID fluid_particles_create() { return RID(); }
 
 	virtual AABB fluid_particles_get_aabb(RID p_fluid_particles) const { return AABB(); }
+	virtual void fluid_particles_set_aabb(
+			RID p_fluid_particles,
+			const AABB &p_aabb) {}
 
 	virtual void fluid_particles_pre_allocate_memory(RID p_particles, int p_size) {}
 	virtual void fluid_particles_set_positions(
 			RID p_particles,
-			float *p_positions,
+			const float *p_positions,
 			int p_stride,
 			int p_amount) {}
 

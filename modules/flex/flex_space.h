@@ -40,8 +40,8 @@
 #include "flex_memory_allocator.h"
 #include "flex_utility.h"
 
-class NvFlexLibrary;
-class NvFlexSolver;
+struct NvFlexLibrary;
+struct NvFlexSolver;
 class FlexParticleBody;
 class FlexParticleBodyConstraint;
 class FlexPrimitiveBody;
