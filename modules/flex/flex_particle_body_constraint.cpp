@@ -77,7 +77,3 @@ void FlexParticleBodyConstraint::dispatch_sync_callback() {
 	const Variant *p = FlexParticlePhysicsServer::singleton->get_particle_body_constraint_commands_variant(this);
 	sync_callback.receiver->call(sync_callback.method, &p, 1, error);
 }
-
-void FlexParticleBodyConstraint::clear_delayed_commands() {
-	//delayed_commands.springs_to_remove.clear();
-}

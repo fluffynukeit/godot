@@ -695,11 +695,14 @@ uint32_t FlexParticlePhysicsServer::body_get_collision_primitive_mask(RID p_body
 	return body->get_collision_primitive_mask();
 }
 
-void FlexParticlePhysicsServer::body_remove_particle(RID p_body, int p_particle_index) {
+void FlexParticlePhysicsServer::body_remove_particle(RID p_body, int p_particle_index, bool p_unactive) {
 	FlexParticleBody *body = body_owner.get(p_body);
 	ERR_FAIL_COND(!body);
 
-	body->remove_particle(p_particle_index);
+	if (p_unactive)
+		body->unactive_particle(p_particle_index);
+	else
+		body->remove_particle(p_particle_index);
 }
 
 void FlexParticlePhysicsServer::body_remove_rigid(RID p_body, int p_rigid_index) {

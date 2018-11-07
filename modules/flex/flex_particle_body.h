@@ -80,6 +80,7 @@ class FlexParticleBody : public RIDFlex {
 	FlexCallBackData primitive_contact_callback;
 
 	struct {
+		Vector<ParticleIndex> particles_to_unactive;
 		Vector<ParticleIndex> particles_to_remove;
 		Vector<SpringIndex> springs_to_remove;
 		Vector<TriangleIndex> triangles_to_remove;
@@ -148,6 +149,7 @@ public:
 	void set_monitoring_primitives_contacts(bool p_monitoring);
 	_FORCE_INLINE_ bool is_monitoring_primitives_contacts() const { return _is_monitoring_primitives_contacts; }
 
+	void unactive_particle(ParticleIndex p_particle);
 	void remove_particle(ParticleIndex p_particle);
 	void remove_spring(SpringIndex p_spring_index);
 	void remove_triangle(const TriangleIndex p_triangle_index);
@@ -196,7 +198,6 @@ public:
 
 	// Internals
 	void clear_changed_params();
-	void clear_delayed_commands();
 	void dispatch_sync_callback();
 	void particle_index_changed(ParticleIndex p_old_particle_index, ParticleIndex p_new_particle_index);
 	void spring_index_changed(SpringIndex p_old_spring_index, SpringIndex p_new_spring_index);

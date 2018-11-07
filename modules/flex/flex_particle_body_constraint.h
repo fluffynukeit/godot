@@ -75,7 +75,6 @@ public:
 
 private:
 	void dispatch_sync_callback();
-	void clear_delayed_commands();
 };
 
 #endif // FLEX_PARTICLE_BODY_CONSTRAINT_H
