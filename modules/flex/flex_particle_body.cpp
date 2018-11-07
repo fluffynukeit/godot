@@ -172,6 +172,12 @@ void FlexParticleBody::set_monitoring_primitives_contacts(bool p_monitoring) {
 	_is_monitoring_primitives_contacts = p_monitoring;
 }
 
+void FlexParticleBody::unactive_particle(ParticleIndex p_particle) {
+	ERR_FAIL_COND(!is_owner_of_particle(p_particle));
+	if (-1 == delayed_commands.particles_to_unactive.find(p_particle))
+		delayed_commands.particles_to_unactive.push_back(p_particle);
+}
+
 void FlexParticleBody::remove_particle(ParticleIndex p_particle) {
 	ERR_FAIL_COND(!is_owner_of_particle(p_particle));
 	if (-1 == delayed_commands.particles_to_remove.find(p_particle))
@@ -357,14 +363,6 @@ bool FlexParticleBody::is_owner_of_rigid_component(RigidComponentIndex p_rigid_c
 
 void FlexParticleBody::clear_changed_params() {
 	changed_parameters = 0;
-}
-
-void FlexParticleBody::clear_delayed_commands() {
-	delayed_commands.particles_to_remove.clear();
-	delayed_commands.springs_to_remove.clear();
-	delayed_commands.triangles_to_remove.clear();
-	delayed_commands.rigids_to_remove.clear();
-	delayed_commands.rigids_components_to_remove.clear();
 }
 
 void FlexParticleBody::dispatch_sync_callback() {

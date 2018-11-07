@@ -86,6 +86,7 @@ public:
 	void set_update_spatial_transform(bool p_update);
 	bool get_update_spatial_transform() const;
 
+	void unactive_particle(int p_particle_index);
 	void remove_particle(int p_particle_index);
 	void remove_rigid(int p_rigid_index);
 

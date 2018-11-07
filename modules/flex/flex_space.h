@@ -192,9 +192,16 @@ protected:
 	FlexMemoryAllocator *allocator;
 	MemoryChunk *&mchunk;
 	Vector<FlexChunkIndex> &indices_to_remove;
+	const bool reallocate_memory;
+	const FlexBufferIndex custom_chunk_end_buffer_index;
 
 public:
-	FlexMemorySweeperFast(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove);
+	FlexMemorySweeperFast(
+			FlexMemoryAllocator *p_allocator,
+			MemoryChunk *&r_rigids_components_mchunk,
+			Vector<FlexChunkIndex> &r_indices_to_remove,
+			bool p_reallocate_memory,
+			FlexBufferIndex p_custom_chunk_end_buffer_index = -1);
 
 	virtual void on_element_removed(FlexBufferIndex on_element_removed) {} // Just after removal
 	virtual void on_element_index_changed(FlexBufferIndex old_element_index, FlexBufferIndex new_element_index) {}
@@ -207,7 +214,14 @@ class ParticlesMemorySweeper : public FlexMemorySweeperFast {
 	FlexParticleBody *body;
 
 public:
-	ParticlesMemorySweeper(FlexSpace *p_space, FlexParticleBody *p_body, FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove);
+	ParticlesMemorySweeper(
+			FlexSpace *p_space,
+			FlexParticleBody *p_body,
+			FlexMemoryAllocator *p_allocator,
+			MemoryChunk *&r_rigids_components_mchunk,
+			Vector<FlexChunkIndex> &r_indices_to_remove,
+			bool p_reallocate_memory,
+			FlexBufferIndex p_custom_chunk_end_buffer_index = -1);
 
 	virtual void on_element_removed(FlexBufferIndex on_element_removed);
 	virtual void on_element_index_changed(FlexBufferIndex old_element_index, FlexBufferIndex new_element_index);

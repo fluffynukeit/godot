@@ -49,6 +49,7 @@ void ParticleBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_update_spatial_transform", "update"), &ParticleBody::set_update_spatial_transform);
 	ClassDB::bind_method(D_METHOD("get_update_spatial_transform"), &ParticleBody::get_update_spatial_transform);
 
+	ClassDB::bind_method(D_METHOD("unactive_particle", "particle_index"), &ParticleBody::unactive_particle);
 	ClassDB::bind_method(D_METHOD("remove_particle", "particle_index"), &ParticleBody::remove_particle);
 	ClassDB::bind_method(D_METHOD("remove_rigid", "rigid_index"), &ParticleBody::remove_rigid);
 
@@ -206,8 +207,18 @@ Ref<ParticleBodyModel> ParticleBody::get_particle_body_model() const {
 	return particle_body_model;
 }
 
+void ParticleBody::unactive_particle(int p_particle_index) {
+	ParticlePhysicsServer::get_singleton()->body_remove_particle(
+			rid,
+			p_particle_index,
+			true);
+}
+
 void ParticleBody::remove_particle(int p_particle_index) {
-	ParticlePhysicsServer::get_singleton()->body_remove_particle(rid, p_particle_index);
+	ParticlePhysicsServer::get_singleton()->body_remove_particle(
+			rid,
+			p_particle_index,
+			false);
 }
 
 void ParticleBody::remove_rigid(int p_rigid_index) {

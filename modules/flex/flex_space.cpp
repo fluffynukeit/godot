@@ -412,13 +412,6 @@ void FlexSpace::step(real_t p_delta_time) {
 	NvFlexUpdateSolver(solver, p_delta_time, substep, enable_timer);
 
 	commands_read_buffer();
-
-	// Clear commands
-	for (int i(particle_bodies.size() - 1); 0 <= i; --i)
-		particle_bodies[i]->clear_delayed_commands();
-
-	for (int i(constraints.size() - 1); 0 <= i; --i)
-		constraints[i]->clear_delayed_commands();
 }
 
 bool FlexSpace::can_commands_be_executed() const {
@@ -883,7 +876,14 @@ void FlexSpace::dispatch_callback_contacts() {
 		if (!intersect)
 			continue;
 
-		for (int particle_buffer_index(particle_body->particles_mchunk->get_begin_index()); particle_buffer_index <= particle_body->particles_mchunk->get_end_index(); ++particle_buffer_index) {
+		FlexBufferIndex end_index =
+				particle_body->particles_mchunk->get_buffer_index(
+						particle_body->get_particle_count());
+
+		for (int particle_buffer_index =
+						particle_body->particles_mchunk->get_begin_index();
+				particle_buffer_index <= end_index;
+				++particle_buffer_index) {
 
 			const int contact_index(contacts_buffers->indices[particle_buffer_index]);
 			const uint32_t particle_contact_count(contacts_buffers->counts[contact_index]);
@@ -932,31 +932,80 @@ void FlexSpace::dispatch_callbacks() {
 void FlexSpace::execute_delayed_commands() {
 
 	int particles_count = 0;
-	for (int body_index(particle_bodies.size() - 1); 0 <= body_index; --body_index) {
+	for (
+			int body_index(particle_bodies.size() - 1);
+			0 <= body_index;
+			--body_index) {
 
 		FlexParticleBody *body = particle_bodies[body_index];
 
+		if (body->delayed_commands.particles_to_unactive.size()) {
+
+			int particle_count = body->get_particle_count();
+
+			body->set_particle_count(
+					particle_count -
+					body->delayed_commands.particles_to_unactive.size());
+
+			ParticlesMemorySweeper sweeper(
+					this,
+					body,
+					particles_allocator,
+					body->particles_mchunk,
+					body->delayed_commands.particles_to_unactive,
+					false,
+					body->particles_mchunk->get_buffer_index(particle_count - 1));
+			sweeper.exec();
+		}
+
 		if (body->delayed_commands.particles_to_remove.size()) {
 
-			ParticlesMemorySweeper sweeper(this, body, particles_allocator, body->particles_mchunk, body->delayed_commands.particles_to_remove);
+			int particle_count = body->get_particle_count();
+
+			body->set_particle_count(
+					particle_count -
+					body->delayed_commands.particles_to_remove.size());
+
+			ParticlesMemorySweeper sweeper(
+					this,
+					body,
+					particles_allocator,
+					body->particles_mchunk,
+					body->delayed_commands.particles_to_remove,
+					true,
+					body->particles_mchunk->get_buffer_index(particle_count - 1));
 			sweeper.exec();
 		}
 
 		if (body->delayed_commands.springs_to_remove.size()) {
 
-			SpringsMemorySweeper sweeper(body, springs_allocator, body->springs_mchunk, body->delayed_commands.springs_to_remove);
+			SpringsMemorySweeper sweeper(
+					body,
+					springs_allocator,
+					body->springs_mchunk,
+					body->delayed_commands.springs_to_remove);
 			sweeper.exec();
 		}
 
 		if (body->delayed_commands.triangles_to_remove.size()) {
 
-			TrianglesMemorySweeper sweeper(body, triangles_allocator, body->triangles_mchunk, body->delayed_commands.triangles_to_remove);
+			TrianglesMemorySweeper sweeper(
+					body,
+					triangles_allocator,
+					body->triangles_mchunk,
+					body->delayed_commands.triangles_to_remove);
 			sweeper.exec();
 		}
 
 		if (body->delayed_commands.rigids_components_to_remove.size()) {
 
-			RigidsComponentsMemorySweeper sweeper(rigids_components_allocator, body->rigids_components_mchunk, body->delayed_commands.rigids_components_to_remove, rigids_memory, body->rigids_mchunk);
+			RigidsComponentsMemorySweeper sweeper(
+					rigids_components_allocator,
+					body->rigids_components_mchunk,
+					body->delayed_commands.rigids_components_to_remove,
+					rigids_memory,
+					body->rigids_mchunk);
+
 			sweeper.exec();
 			body->reload_rigids_COM();
 
@@ -1003,13 +1052,21 @@ void FlexSpace::execute_delayed_commands() {
 		particles_count += body->get_particle_count();
 	}
 
-	for (int constraint_index(constraints.size() - 1); 0 <= constraint_index; --constraint_index) {
+	for (
+			int constraint_index(constraints.size() - 1);
+			0 <= constraint_index;
+			--constraint_index) {
 
 		FlexParticleBodyConstraint *constraint = constraints[constraint_index];
 
 		if (constraint->delayed_commands.springs_to_remove.size()) {
 
-			FlexMemorySweeperFast sweeper(springs_allocator, constraint->springs_mchunk, constraint->delayed_commands.springs_to_remove);
+			FlexMemorySweeperFast sweeper(
+					springs_allocator,
+					constraint->springs_mchunk,
+					constraint->delayed_commands.springs_to_remove,
+					true);
+
 			sweeper.exec();
 			springs_memory->notify_change();
 		}
@@ -1195,9 +1252,15 @@ void FlexSpace::commands_write_buffer() {
 				if (changed_params & eChangedBodyParamVelocity)
 					NvFlexSetVelocities(solver, particles_memory->velocities.buffer, &copy_desc);
 				if (changed_params & eChangedBodyParamNormal)
-					NvFlexSetNormals(solver, particles_memory->normals.buffer, &copy_desc);
+					NvFlexSetNormals(
+							solver,
+							particles_memory->normals.buffer,
+							&copy_desc);
 				if (changed_params & (eChangedBodyParamPhase | eChangedBodyParamPhaseSingle))
-					NvFlexSetPhases(solver, particles_memory->phases.buffer, &copy_desc);
+					NvFlexSetPhases(
+							solver,
+							particles_memory->phases.buffer,
+							&copy_desc);
 				//if(changed_params & eChangedBodyRestParticles)
 				//	NvFlexSetRestParticles(solver, )
 			}
@@ -1240,7 +1303,15 @@ void FlexSpace::commands_write_buffer() {
 				rigids_components_allocator->get_last_used_index() + 1);
 
 	if (force_buffer_write || geometries_memory->was_changed())
-		NvFlexSetShapes(solver, geometries_memory->collision_shapes.buffer, geometries_memory->positions.buffer, geometries_memory->rotations.buffer, geometries_memory->positions_prev.buffer, geometries_memory->rotations_prev.buffer, geometries_memory->flags.buffer, geometries_allocator->get_last_used_index() + 1);
+		NvFlexSetShapes(
+				solver,
+				geometries_memory->collision_shapes.buffer,
+				geometries_memory->positions.buffer,
+				geometries_memory->rotations.buffer,
+				geometries_memory->positions_prev.buffer,
+				geometries_memory->rotations_prev.buffer,
+				geometries_memory->flags.buffer,
+				geometries_allocator->get_last_used_index() + 1);
 
 	active_particles_memory->changes_synced();
 	springs_memory->changes_synced();
@@ -1270,7 +1341,12 @@ void FlexSpace::commands_read_buffer() {
 			rigids_memory->rotation.buffer,
 			rigids_memory->position.buffer);
 
-	NvFlexGetContacts(solver, contacts_buffers->normals.buffer, contacts_buffers->velocities_prim_indices.buffer, contacts_buffers->indices.buffer, contacts_buffers->counts.buffer);
+	NvFlexGetContacts(
+			solver,
+			contacts_buffers->normals.buffer,
+			contacts_buffers->velocities_prim_indices.buffer,
+			contacts_buffers->indices.buffer,
+			contacts_buffers->counts.buffer);
 }
 
 void FlexSpace::on_particle_removed(FlexParticleBody *p_body, ParticleBufferIndex p_index) {
@@ -1347,9 +1423,17 @@ void FlexSpace::on_particle_index_changed(FlexParticleBody *p_body, ParticleBuff
 	const int chunk_index_old(p_body->particles_mchunk->get_chunk_index(p_index_old));
 	const int chunk_index_new(p_body->particles_mchunk->get_chunk_index(p_index_new));
 
-	const int pos = p_body->delayed_commands.particles_to_remove.find(chunk_index_old);
-	if (0 <= pos)
-		p_body->delayed_commands.particles_to_remove.write[pos] = chunk_index_new;
+	{
+		const int pos = p_body->delayed_commands.particles_to_remove.find(chunk_index_old);
+		if (0 <= pos)
+			p_body->delayed_commands.particles_to_remove.write[pos] = chunk_index_new;
+	}
+
+	{
+		const int pos = p_body->delayed_commands.particles_to_unactive.find(chunk_index_old);
+		if (0 <= pos)
+			p_body->delayed_commands.particles_to_unactive.write[pos] = chunk_index_new;
+	}
 }
 
 void FlexSpace::rebuild_inflatables_indices() {
@@ -1375,7 +1459,8 @@ void FlexSpace::rebuild_inflatables_indices() {
 
 FlexParticleBody *FlexSpace::find_particle_body(ParticleBufferIndex p_index) const {
 	for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
-		if (p_index >= particle_bodies[i]->particles_mchunk->get_begin_index() && p_index <= particle_bodies[i]->particles_mchunk->get_end_index()) {
+		if (p_index >= particle_bodies[i]->particles_mchunk->get_begin_index() &&
+				p_index <= particle_bodies[i]->particles_mchunk->get_end_index()) {
 			return particle_bodies[i];
 		}
 	}
@@ -1392,28 +1477,49 @@ FlexPrimitiveBody *FlexSpace::find_primitive_body(GeometryBufferIndex p_index, b
 	return NULL;
 }
 
-FlexMemorySweeperFast::FlexMemorySweeperFast(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove) :
+FlexMemorySweeperFast::FlexMemorySweeperFast(
+		FlexMemoryAllocator *p_allocator,
+		MemoryChunk *&r_mchunk,
+		Vector<FlexChunkIndex> &r_indices_to_remove,
+		bool p_reallocate_memory,
+		FlexBufferIndex p_custom_chunk_end_buffer_index) :
 		allocator(p_allocator),
 		mchunk(r_mchunk),
-		indices_to_remove(r_indices_to_remove) {}
+		indices_to_remove(r_indices_to_remove),
+		reallocate_memory(p_reallocate_memory),
+		custom_chunk_end_buffer_index(p_custom_chunk_end_buffer_index) {}
 
 void FlexMemorySweeperFast::exec() {
 
-	FlexBufferIndex chunk_end_buffer_index(mchunk->get_end_index());
+	FlexBufferIndex chunk_end_buffer_index(
+			-1 == custom_chunk_end_buffer_index ?
+					mchunk->get_end_index() :
+					custom_chunk_end_buffer_index);
+
 	const int rem_indices_count(indices_to_remove.size());
 
 	for (int i = 0; i < rem_indices_count; ++i) {
 
 		const FlexChunkIndex index_to_remove(indices_to_remove[i]);
-		const FlexBufferIndex buffer_index_to_remove(mchunk->get_buffer_index(index_to_remove));
+		const FlexBufferIndex buffer_index_to_remove(
+				mchunk->get_buffer_index(index_to_remove));
 
 		on_element_removed(buffer_index_to_remove);
 		if (chunk_end_buffer_index != buffer_index_to_remove) {
-			allocator->get_memory()->copy(buffer_index_to_remove, 1, chunk_end_buffer_index);
-			on_element_index_changed(chunk_end_buffer_index, buffer_index_to_remove);
+
+			allocator->get_memory()->copy(
+					buffer_index_to_remove,
+					1,
+					chunk_end_buffer_index);
+
+			on_element_index_changed(
+					chunk_end_buffer_index,
+					buffer_index_to_remove);
 		}
 
-		const FlexChunkIndex old_chunk_index(mchunk->get_chunk_index(chunk_end_buffer_index));
+		const FlexChunkIndex old_chunk_index(
+				mchunk->get_chunk_index(chunk_end_buffer_index));
+
 		// Change the index from the next elements to remove
 		if ((i + 1) < rem_indices_count)
 			for (int b(i + 1); b < rem_indices_count; ++b) {
@@ -1424,12 +1530,29 @@ void FlexMemorySweeperFast::exec() {
 
 		--chunk_end_buffer_index;
 	}
-	allocator->resize_chunk(mchunk, chunk_end_buffer_index - mchunk->get_begin_index() + 1);
+
+	if (reallocate_memory)
+		allocator->resize_chunk(
+				mchunk,
+				chunk_end_buffer_index - mchunk->get_begin_index() + 1);
+
 	indices_to_remove.clear(); // This clear is here to be sure that this vector not used anymore
 }
 
-ParticlesMemorySweeper::ParticlesMemorySweeper(FlexSpace *p_space, FlexParticleBody *p_body, FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove) :
-		FlexMemorySweeperFast(p_allocator, r_rigids_components_mchunk, r_indices_to_remove),
+ParticlesMemorySweeper::ParticlesMemorySweeper(
+		FlexSpace *p_space,
+		FlexParticleBody *p_body,
+		FlexMemoryAllocator *p_allocator,
+		MemoryChunk *&r_rigids_components_mchunk,
+		Vector<FlexChunkIndex> &r_indices_to_remove,
+		bool p_reallocate_memory,
+		FlexBufferIndex p_custom_chunk_end_buffer_index) :
+		FlexMemorySweeperFast(
+				p_allocator,
+				r_rigids_components_mchunk,
+				r_indices_to_remove,
+				p_reallocate_memory,
+				p_custom_chunk_end_buffer_index),
 		space(p_space),
 		body(p_body) {
 }
@@ -1444,7 +1567,11 @@ void ParticlesMemorySweeper::on_element_index_changed(FlexBufferIndex old_elemen
 }
 
 SpringsMemorySweeper::SpringsMemorySweeper(FlexParticleBody *p_body, FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove) :
-		FlexMemorySweeperFast(p_allocator, r_rigids_components_mchunk, r_indices_to_remove),
+		FlexMemorySweeperFast(
+				p_allocator,
+				r_rigids_components_mchunk,
+				r_indices_to_remove,
+				true),
 		body(p_body) {
 }
 
@@ -1453,7 +1580,11 @@ void SpringsMemorySweeper::on_element_index_changed(FlexBufferIndex old_element_
 }
 
 TrianglesMemorySweeper::TrianglesMemorySweeper(FlexParticleBody *p_body, FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove) :
-		FlexMemorySweeperFast(p_allocator, r_rigids_components_mchunk, r_indices_to_remove),
+		FlexMemorySweeperFast(
+				p_allocator,
+				r_rigids_components_mchunk,
+				r_indices_to_remove,
+				true),
 		body(p_body) {
 }
 
