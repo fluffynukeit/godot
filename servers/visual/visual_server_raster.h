@@ -426,9 +426,10 @@ public:
 	BIND0R(RID, fluid_particles_create)
 	BIND1RC(AABB, fluid_particles_get_aabb, RID)
 	BIND2(fluid_particles_set_aabb, RID, const AABB &)
-	BIND2(fluid_particles_pre_allocate_memory, RID, int)
-	BIND4(fluid_particles_set_positions, RID, const float *, int, int)
+	BIND3(fluid_particles_pre_allocate_memory, RID, int, int)
+	BIND5(fluid_particles_set_data, RID, int, const float *, const float *, int)
 	BIND2(fluid_particles_set_radius, RID, float)
+	BIND2(fluid_particles_set_drop_thickness_factor, RID, float)
 
 #undef BINDBASE
 //from now on, calls forwarded to this singleton

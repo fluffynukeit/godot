@@ -34,7 +34,26 @@
 #include "scene/resources/world.h"
 
 void FluidParticles::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("update_data", "cmds"), &FluidParticles::update_data);
+
+	ClassDB::bind_method(
+			D_METHOD("update_data", "cmds"),
+			&FluidParticles::update_data);
+
+	ClassDB::bind_method(
+			D_METHOD("set_drop_thickness_factor", "factor"),
+			&FluidParticles::set_drop_thickness_factor);
+	ClassDB::bind_method(
+			D_METHOD("get_drop_thickness_factor"),
+			&FluidParticles::get_drop_thickness_factor);
+
+	ADD_PROPERTY(
+			PropertyInfo(
+					Variant::REAL,
+					"drop_thickness_factor",
+					PROPERTY_HINT_RANGE,
+					"0,1,0.0001"),
+			"set_drop_thickness_factor",
+			"get_drop_thickness_factor");
 }
 
 void FluidParticles::_notification(int p_what) {
@@ -91,7 +110,8 @@ PoolVector<Face3> FluidParticles::get_faces(uint32_t p_usage_flags) const {
 
 FluidParticles::FluidParticles() :
 		GeometryInstance(),
-		particle_body(NULL) {
+		particle_body(NULL),
+		drop_thickness_factor(0.01) {
 
 	fluid_particles = VisualServer::get_singleton()->fluid_particles_create();
 	set_base(fluid_particles);
@@ -101,12 +121,22 @@ FluidParticles::~FluidParticles() {
 	VS::get_singleton()->free(fluid_particles);
 }
 
+void FluidParticles::set_drop_thickness_factor(real_t p_factor) {
+
+	drop_thickness_factor = p_factor;
+
+	VisualServer::get_singleton()->fluid_particles_set_drop_thickness_factor(
+			fluid_particles,
+			drop_thickness_factor);
+}
+
 void FluidParticles::update_data(Object *p_cmds) {
 
 	ParticleBodyCommands *cmds = cast_to<ParticleBodyCommands>(p_cmds);
 
 	const AABB aabb = cmds->get_aabb();
 	const float *pbuffer = cmds->get_particle_buffer();
+	const float *vbuffer = cmds->get_particle_velocities_buffer();
 	const int count = cmds->get_particle_count();
 
 	VisualServer::get_singleton()->fluid_particles_set_aabb(
@@ -115,10 +145,11 @@ void FluidParticles::update_data(Object *p_cmds) {
 
 	// TODO please move this to proper method, copy this here is wrong.
 	// See how ParticleBody update its mesh
-	VisualServer::get_singleton()->fluid_particles_set_positions(
+	VisualServer::get_singleton()->fluid_particles_set_data(
 			fluid_particles,
-			pbuffer,
 			cmds->get_particle_buffer_stride(),
+			pbuffer,
+			vbuffer,
 			count);
 
 	if (get_world().is_valid())

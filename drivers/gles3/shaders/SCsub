@@ -21,4 +21,5 @@ if 'GLES3_GLSL' in env['BUILDERS']:
     env.GLES3_GLSL('tonemap.glsl');
     env.GLES3_GLSL('particles.glsl');
     env.GLES3_GLSL('lens_distorted.glsl');
-    env.GLES3_GLSL('fluid_particles.glsl');
+    env.GLES3_GLSL('fluid_particles_first_pass.glsl');
+    env.GLES3_GLSL('fluid_particles_second_pass.glsl');

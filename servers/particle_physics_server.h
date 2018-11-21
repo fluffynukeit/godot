@@ -35,6 +35,8 @@ public:
 	virtual int get_particle_count() const = 0;
 	virtual int get_particle_buffer_stride() const = 0;
 	virtual const float *get_particle_buffer() const = 0;
+	virtual int get_particle_velocities_buffer_stride() const = 0;
+	virtual const float *get_particle_velocities_buffer() const = 0;
 
 	virtual void set_particle_position(int p_particle_index, const Vector3 &p_position) = 0;
 	virtual Vector3 get_particle_position(int p_particle_index) const = 0;

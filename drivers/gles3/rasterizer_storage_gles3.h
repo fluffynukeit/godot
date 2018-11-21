@@ -41,7 +41,6 @@
 #include "shaders/canvas.glsl.gen.h"
 #include "shaders/copy.glsl.gen.h"
 #include "shaders/cubemap_filter.glsl.gen.h"
-#include "shaders/fluid_particles.glsl.gen.h"
 #include "shaders/particles.glsl.gen.h"
 
 // WebGL 2.0 has no MapBufferRange/UnmapBuffer, but offers a non-ES style BufferSubData API instead.
@@ -1270,19 +1269,31 @@ public:
 		GLuint vertex_buffer;
 		GLuint vertex_array;
 
+		GLuint velocities_tex;
+
 		int vertex_buffer_size;
 
 		int vertex_stride;
 		int amount;
 		AABB aabb;
 		real_t radius;
+		real_t drop_thickness_factor;
 
 		FluidParticles() :
 				amount(1),
-				aabb(AABB()) {
+				aabb(AABB()),
+				radius(0.1),
+				drop_thickness_factor(0.01) {
 
 			glGenBuffers(1, &vertex_buffer);
 			glGenVertexArrays(1, &vertex_array);
+			glGenTextures(1, &velocities_tex);
+		}
+
+		~FluidParticles() {
+			glDeleteBuffers(1, &vertex_buffer);
+			glDeleteVertexArrays(1, &vertex_array);
+			glDeleteTextures(1, &velocities_tex);
 		}
 	};
 
@@ -1295,16 +1306,24 @@ public:
 			RID p_fluid_particles,
 			const AABB &p_aabb);
 
-	virtual void fluid_particles_pre_allocate_memory(RID p_fluid_particles, int p_size);
-	virtual void fluid_particles_set_positions(
+	virtual void fluid_particles_pre_allocate_memory(
 			RID p_fluid_particles,
+			int p_vertex_size,
+			int p_velocities_count);
+	virtual void fluid_particles_set_data(
+			RID p_fluid_particles,
+			int p_positions_stride,
 			const float *p_positions,
-			int p_stride,
+			const float *p_velocities,
 			int p_amount);
 
 	virtual void fluid_particles_set_radius(
 			RID p_fluid_particles,
 			float p_radius);
+
+	virtual void fluid_particles_set_drop_thickness_factor(
+			RID p_fluid_particles,
+			float p_factor);
 
 	/* INSTANCE */
 
@@ -1416,6 +1435,13 @@ public:
 			buffers.active = false;
 			buffers.effects_active = false;
 		}
+
+		struct Fluid {
+			GLuint first_pass_fbo;
+			GLuint normal_depth_tex;
+			GLuint second_pass_fbo;
+			GLuint thickness_tex;
+		} fluid;
 	};
 
 	mutable RID_Owner<RenderTarget> render_target_owner;

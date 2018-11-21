@@ -160,8 +160,8 @@ public:
 	virtual void gi_probe_instance_set_transform_to_data(RID p_probe, const Transform &p_xform) = 0;
 	virtual void gi_probe_instance_set_bounds(RID p_probe, const Vector3 &p_bounds) = 0;
 
-	virtual void render_scene(const Transform &p_cam_transform, const CameraMatrix &p_cam_projection, bool p_cam_ortogonal, InstanceBase **p_cull_result, int p_cull_count, RID *p_light_cull_result, int p_light_cull_count, RID *p_reflection_probe_cull_result, int p_reflection_probe_cull_count, RID p_environment, RID p_shadow_atlas, RID p_reflection_atlas, RID p_reflection_probe, int p_reflection_probe_pass, const Size2 &p_viewport_size, real_t p_fov) = 0;
-	virtual void render_shadow(RID p_light, RID p_shadow_atlas, int p_pass, InstanceBase **p_cull_result, int p_cull_count, const Size2 &p_viewport_size, real_t p_fov) = 0;
+	virtual void render_scene(const Transform &p_cam_transform, const CameraMatrix &p_cam_projection, bool p_cam_ortogonal, InstanceBase **p_cull_result, int p_cull_count, RID *p_light_cull_result, int p_light_cull_count, RID *p_reflection_probe_cull_result, int p_reflection_probe_cull_count, RID p_environment, RID p_shadow_atlas, RID p_reflection_atlas, RID p_reflection_probe, int p_reflection_probe_pass, real_t p_fov) = 0;
+	virtual void render_shadow(RID p_light, RID p_shadow_atlas, int p_pass, InstanceBase **p_cull_result, int p_cull_count, real_t p_fov) = 0;
 
 	virtual void set_scene_pass(uint64_t p_pass) = 0;
 	virtual void set_debug_draw_mode(VS::ViewportDebugDraw p_debug_draw) = 0;
@@ -547,16 +547,24 @@ public:
 			RID p_fluid_particles,
 			const AABB &p_aabb) = 0;
 
-	virtual void fluid_particles_pre_allocate_memory(RID p_particles, int p_size) = 0;
-	virtual void fluid_particles_set_positions(
+	virtual void fluid_particles_pre_allocate_memory(
 			RID p_particles,
+			int p_vertex_size,
+			int p_particles_ubo_size) = 0;
+	virtual void fluid_particles_set_data(
+			RID p_fluid_particles,
+			int p_positions_stride,
 			const float *p_positions,
-			int p_stride,
+			const float *p_velocities,
 			int p_amount) = 0;
 
 	virtual void fluid_particles_set_radius(
 			RID p_fluid_particles,
 			float p_radius) = 0;
+
+	virtual void fluid_particles_set_drop_thickness_factor(
+			RID p_fluid_particles,
+			float p_factor) = 0;
 
 	/* RENDER TARGET */
 

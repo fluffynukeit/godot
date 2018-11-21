@@ -360,9 +360,10 @@ public:
 	FUNCRID(fluid_particles)
 	FUNC1RC(AABB, fluid_particles_get_aabb, RID)
 	FUNC2(fluid_particles_set_aabb, RID, const AABB &)
-	FUNC2(fluid_particles_pre_allocate_memory, RID, int)
-	FUNC4(fluid_particles_set_positions, RID, const float *, int, int)
+	FUNC3(fluid_particles_pre_allocate_memory, RID, int, int)
+	FUNC5(fluid_particles_set_data, RID, int, const float *, const float *, int)
 	FUNC2(fluid_particles_set_radius, RID, float)
+	FUNC2(fluid_particles_set_drop_thickness_factor, RID, float)
 
 	/* CAMERA API */
 

@@ -844,6 +844,11 @@ ShaderCompilerGLES3::ShaderCompilerGLES3() {
 	actions[VS::SHADER_SPATIAL].renames["COLOR"] = "color_interp";
 	actions[VS::SHADER_SPATIAL].renames["POINT_SIZE"] = "gl_PointSize";
 	actions[VS::SHADER_SPATIAL].renames["INSTANCE_ID"] = "gl_InstanceID";
+	actions[VS::SHADER_SPATIAL].renames["FLUID_NORMAL_DEPTH_TEXTURE"] = "fluid_normal_depth_buffer";
+	actions[VS::SHADER_SPATIAL].renames["FLUID_THICKNESS_TEXTURE"] = "fluid_thickness_buffer";
+	actions[VS::SHADER_SPATIAL].renames["FLUID_NORMAL"] = "fluid_normal";
+	actions[VS::SHADER_SPATIAL].renames["FLUID_DEPTH"] = "fluid_depth";
+	actions[VS::SHADER_SPATIAL].renames["FLUID_THICKNESS"] = "fluid_thickness";
 
 	//builtins
 

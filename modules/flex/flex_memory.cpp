@@ -80,6 +80,10 @@ const Vector3 &ParticlesMemory::get_velocity(const MemoryChunk *p_chunk, Particl
 	return velocities[index];
 }
 
+const Vector3 *ParticlesMemory::get_velocities_buffer(const MemoryChunk *p_chunk) {
+	return velocities.mappedPtr + p_chunk->get_begin_index();
+}
+
 void ParticlesMemory::set_phase(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, int p_phase) {
 	make_memory_index(p_chunk, p_particle_index);
 	phases[index] = p_phase;

@@ -182,7 +182,6 @@ public:
 		SHADER_SPATIAL,
 		SHADER_CANVAS_ITEM,
 		SHADER_PARTICLES,
-		SHADER_FLUID_PARTICLES,
 		SHADER_MAX
 	};
 
@@ -580,7 +579,7 @@ public:
 
 	virtual void particles_set_emission_transform(RID p_particles, const Transform &p_transform) = 0; //this is only used for 2D, in 3D it's automatic
 
-	/* FLUID */
+	/* FLUID storge */
 
 	virtual RID fluid_particles_create() = 0;
 	virtual AABB fluid_particles_get_aabb(RID p_fluid_particles) const = 0;
@@ -588,16 +587,24 @@ public:
 			RID p_fluid_particles,
 			const AABB &p_aabb) = 0;
 
-	virtual void fluid_particles_pre_allocate_memory(RID p_particles, int p_size) = 0;
-	virtual void fluid_particles_set_positions(
+	virtual void fluid_particles_pre_allocate_memory(
 			RID p_particles,
+			int p_vertex_size,
+			int p_particles_ubo_size) = 0;
+	virtual void fluid_particles_set_data(
+			RID p_fluid_particles,
+			int p_positions_stride,
 			const float *p_positions,
-			int p_stride,
+			const float *p_velocities,
 			int p_amount) = 0;
 
 	virtual void fluid_particles_set_radius(
 			RID p_fluid_particles,
 			float p_radius) = 0;
+
+	virtual void fluid_particles_set_drop_thickness_factor(
+			RID p_fluid_particles,
+			float p_factor) = 0;
 
 	/* CAMERA API */
 
