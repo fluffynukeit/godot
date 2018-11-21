@@ -1126,16 +1126,24 @@ public:
 			RID p_fluid_particles,
 			const AABB &p_aabb) {}
 
-	virtual void fluid_particles_pre_allocate_memory(RID p_particles, int p_size) {}
-	virtual void fluid_particles_set_positions(
+	virtual void fluid_particles_pre_allocate_memory(
 			RID p_particles,
+			int p_vertex_size,
+			int p_particles_ubo_size) {}
+	virtual void fluid_particles_set_data(
+			RID p_fluid_particles,
+			int p_positions_stride,
 			const float *p_positions,
-			int p_stride,
+			const float *p_velocities,
 			int p_amount) {}
 
 	virtual void fluid_particles_set_radius(
 			RID p_fluid_particles,
 			float p_radius) {}
+
+	virtual void fluid_particles_set_drop_thickness_factor(
+			RID p_fluid_particles,
+			float p_factor) {}
 
 	/* INSTANCE */
 

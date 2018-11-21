@@ -2011,8 +2011,6 @@ void RasterizerStorageGLES3::shader_set_code(RID p_shader, const String &p_code)
 		mode = VS::SHADER_CANVAS_ITEM;
 	else if (mode_string == "particles")
 		mode = VS::SHADER_PARTICLES;
-	else if (mode_string == "fluid_particles")
-		mode = VS::SHADER_FLUID_PARTICLES;
 	else
 		mode = VS::SHADER_SPATIAL;
 
@@ -6654,49 +6652,70 @@ void RasterizerStorageGLES3::fluid_particles_set_aabb(
 
 void RasterizerStorageGLES3::fluid_particles_pre_allocate_memory(
 		RID p_fluid_particles,
-		int p_size) {
+		int p_vertex_size,
+		int p_velocities_count) {
 
 	FluidParticles *fp = fluid_particles_owner.getornull(p_fluid_particles);
 	ERR_FAIL_COND(!fp);
 
-	if (fp->vertex_buffer_size == p_size)
+	if (fp->vertex_buffer_size == p_vertex_size)
 		return;
 
-	fp->vertex_buffer_size = p_size;
+	fp->vertex_buffer_size = p_vertex_size;
 
 	glBindBuffer(GL_ARRAY_BUFFER, fp->vertex_buffer);
 	glBufferData(
 			GL_ARRAY_BUFFER,
-			p_size,
+			p_vertex_size,
 			NULL,
 			GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	//glBindTexture(GL_TEXTURE_RECTANGLE, fp->velocities_tex);
+	//// For some reason Image1D doesn't work, so use Image 2D with 1 dimension
+	//glTexImage2D(
+	//		GL_TEXTURE_RECTANGLE,
+	//		0,
+	//		GL_RGBA16F,
+	//		p_velocities_count,
+	//		1, // Height
+	//		0,
+	//		GL_RGBA,
+	//		GL_FLOAT,
+	//		NULL);
+	//glBindTexture(GL_TEXTURE_RECTANGLE, 0);
 }
 
-void RasterizerStorageGLES3::fluid_particles_set_positions(
+void RasterizerStorageGLES3::fluid_particles_set_data(
 		RID p_fluid_particles,
+		int p_positions_stride,
 		const float *p_positions,
-		int p_stride,
+		const float *p_velocities,
 		int p_amount) {
 
 	FluidParticles *fp = fluid_particles_owner.getornull(p_fluid_particles);
 	ERR_FAIL_COND(!fp);
 
-	int new_vertex_buffer_size = sizeof(float) * p_stride * p_amount;
+	const int new_vertex_buffer_size = sizeof(float) * p_positions_stride * p_amount;
 
 	float ratio(0);
-	if (fp->vertex_buffer_size)
-		ratio = float(new_vertex_buffer_size) / float(fp->vertex_buffer_size);
+	if (fp->amount >= p_amount && fp->amount)
+		ratio = float(p_amount) / float(fp->amount);
 
 	if (ratio <= 0.7 || ratio > 1.0) {
 		// Resize only if the new size is 30% smaller or bigger
-		fluid_particles_pre_allocate_memory(p_fluid_particles, new_vertex_buffer_size);
+		fluid_particles_pre_allocate_memory(
+				p_fluid_particles,
+				new_vertex_buffer_size,
+				p_amount);
 	}
 
-	fp->vertex_stride = p_stride;
+	fp->vertex_stride = p_positions_stride;
 	fp->amount = p_amount;
 
 	glBindVertexArray(fp->vertex_array);
+
+	// Fill positions texture
 
 	glBindBuffer(GL_ARRAY_BUFFER, fp->vertex_buffer);
 	glBufferSubData(
@@ -6710,12 +6729,26 @@ void RasterizerStorageGLES3::fluid_particles_set_positions(
 			3,
 			GL_FLOAT,
 			GL_FALSE,
-			p_stride * sizeof(float),
+			p_positions_stride * sizeof(float),
 			(void *)0);
 	glEnableVertexAttribArray(0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
+
+	// Fill velocities texture
+	//glBindTexture(GL_TEXTURE_RECTANGLE, fp->velocities_tex);
+	//glTexSubImage2D(
+	//		GL_TEXTURE_RECTANGLE,
+	//		0,
+	//		0,
+	//		0,
+	//		p_amount,
+	//		1, // Height
+	//		GL_RGB,
+	//		GL_FLOAT,
+	//		p_velocities);
+	//glBindTexture(GL_TEXTURE_RECTANGLE, 0);
 }
 
 void RasterizerStorageGLES3::fluid_particles_set_radius(
@@ -6726,6 +6759,16 @@ void RasterizerStorageGLES3::fluid_particles_set_radius(
 	ERR_FAIL_COND(!fp);
 
 	fp->radius = p_radius;
+}
+
+void RasterizerStorageGLES3::fluid_particles_set_drop_thickness_factor(
+		RID p_fluid_particles,
+		float p_factor) {
+
+	FluidParticles *fp = fluid_particles_owner.getornull(p_fluid_particles);
+	ERR_FAIL_COND(!fp);
+
+	fp->drop_thickness_factor = p_factor;
 }
 
 ////////
@@ -6930,6 +6973,12 @@ void RasterizerStorageGLES3::_render_target_clear(RenderTarget *rt) {
 
 	}
 */
+	{ // Fluid
+		glDeleteFramebuffers(1, &rt->fluid.first_pass_fbo);
+		glDeleteTextures(1, &rt->fluid.normal_depth_tex);
+		glDeleteFramebuffers(1, &rt->fluid.second_pass_fbo);
+		glDeleteTextures(1, &rt->fluid.thickness_tex);
+	}
 }
 
 void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
@@ -7304,6 +7353,97 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		}
+	}
+
+	{
+		// Inizialize Fluid Frame buffer.
+
+		GLenum draw_buffers[] = {
+			GL_COLOR_ATTACHMENT0,
+			GL_COLOR_ATTACHMENT1,
+			GL_COLOR_ATTACHMENT2,
+			GL_COLOR_ATTACHMENT3
+		};
+
+		glGenFramebuffers(1, &rt->fluid.first_pass_fbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, rt->fluid.first_pass_fbo);
+
+		// Depth renderbuffer
+		/// Just bind the Godot framebuffer
+		glFramebufferRenderbuffer(
+				GL_FRAMEBUFFER,
+				GL_DEPTH_ATTACHMENT,
+				GL_RENDERBUFFER,
+				rt->buffers.depth);
+
+		// Allocate textures
+
+		glGenTextures(1, &rt->fluid.normal_depth_tex);
+		glBindTexture(GL_TEXTURE_RECTANGLE, rt->fluid.normal_depth_tex);
+		glTexImage2D(
+				GL_TEXTURE_RECTANGLE,
+				0,
+				GL_RGBA16F,
+				rt->width,
+				rt->height,
+				0,
+				GL_RGBA,
+				GL_FLOAT,
+				NULL);
+		glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glFramebufferTexture2D(
+				GL_FRAMEBUFFER,
+				GL_COLOR_ATTACHMENT0,
+				GL_TEXTURE_RECTANGLE,
+				rt->fluid.normal_depth_tex,
+				0);
+
+		glDrawBuffers(1, draw_buffers);
+
+		CRASH_COND(
+				glCheckFramebufferStatus(GL_FRAMEBUFFER) !=
+				GL_FRAMEBUFFER_COMPLETE);
+
+		glGenFramebuffers(1, &rt->fluid.second_pass_fbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, rt->fluid.second_pass_fbo);
+
+		// Depth renderbuffer
+		/// Just bind the Godot framebuffer
+		glFramebufferRenderbuffer(
+				GL_FRAMEBUFFER,
+				GL_DEPTH_ATTACHMENT,
+				GL_RENDERBUFFER,
+				rt->buffers.depth);
+
+		glGenTextures(1, &rt->fluid.thickness_tex);
+		glBindTexture(GL_TEXTURE_RECTANGLE, rt->fluid.thickness_tex);
+		glTexImage2D(
+				GL_TEXTURE_RECTANGLE,
+				0,
+				GL_RGBA16F,
+				rt->width,
+				rt->height,
+				0,
+				GL_RGBA,
+				GL_FLOAT,
+				NULL);
+		glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glFramebufferTexture2D(
+				GL_FRAMEBUFFER,
+				GL_COLOR_ATTACHMENT0,
+				GL_TEXTURE_RECTANGLE,
+				rt->fluid.thickness_tex,
+				0);
+
+		glDrawBuffers(1, draw_buffers);
+
+		CRASH_COND(
+				glCheckFramebufferStatus(GL_FRAMEBUFFER) !=
+				GL_FRAMEBUFFER_COMPLETE);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 }
 

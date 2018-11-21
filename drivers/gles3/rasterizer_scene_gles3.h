@@ -37,6 +37,8 @@
 #include "drivers/gles3/shaders/cube_to_dp.glsl.gen.h"
 #include "drivers/gles3/shaders/effect_blur.glsl.gen.h"
 #include "drivers/gles3/shaders/exposure.glsl.gen.h"
+#include "drivers/gles3/shaders/fluid_particles_first_pass.glsl.gen.h"
+#include "drivers/gles3/shaders/fluid_particles_second_pass.glsl.gen.h"
 #include "drivers/gles3/shaders/resolve.glsl.gen.h"
 #include "drivers/gles3/shaders/scene.glsl.gen.h"
 #include "drivers/gles3/shaders/screen_space_reflection.glsl.gen.h"
@@ -112,7 +114,8 @@ public:
 		SsaoBlurShaderGLES3 ssao_blur_shader;
 		ExposureShaderGLES3 exposure_shader;
 		TonemapShaderGLES3 tonemap_shader;
-		FluidParticlesShaderGLES3 fluid_particles;
+		FluidParticlesFirstPassShaderGLES3 fluid_particles_first_pass;
+		FluidParticlesSecondPassShaderGLES3 fluid_particles_second_pass;
 
 		struct SceneDataUBO {
 			//this is a std140 compatible struct. Please read the OpenGL 3.3 Specification spec before doing any changes
@@ -654,6 +657,10 @@ public:
 	virtual void gi_probe_instance_set_transform_to_data(RID p_probe, const Transform &p_xform);
 	virtual void gi_probe_instance_set_bounds(RID p_probe, const Vector3 &p_bounds);
 
+	/* FLUID PARTICLES */
+
+	void pre_render_fluid(RasterizerStorageGLES3::FluidParticles *p_fluid_particles);
+
 	/* RENDER LIST */
 
 	struct RenderList {
@@ -823,11 +830,12 @@ public:
 	_FORCE_INLINE_ void _set_cull(bool p_front, bool p_disabled, bool p_reverse_cull);
 
 	_FORCE_INLINE_ bool _setup_material(RasterizerStorageGLES3::Material *p_material, bool p_alpha_pass);
-	_FORCE_INLINE_ void _setup_geometry(RenderList::Element *e, const Transform &p_view_transform);
-	_FORCE_INLINE_ void _render_geometry(RenderList::Element *e, const Size2 &p_viewport_size, real_t p_fov);
+	_FORCE_INLINE_ void _setup_geometry(RenderList::Element *e, const Transform &p_view_transform, const real_t p_fov);
+	_FORCE_INLINE_ void _render_geometry(RenderList::Element *e);
 	_FORCE_INLINE_ void _setup_light(RenderList::Element *e, const Transform &p_view_transform);
 
-	void _render_list(RenderList::Element **p_elements, int p_element_count, const Transform &p_view_transform, const CameraMatrix &p_projection, GLuint p_base_env, bool p_reverse_cull, bool p_alpha_pass, bool p_shadow, bool p_directional_add, bool p_directional_shadows, const Size2 &p_viewport_size, real_t p_fov);
+	void _pre_render_fluids(InstanceBase **p_cull_result, int p_cull_count, const Transform &p_view_transform, const CameraMatrix &p_projection, real_t p_fov);
+	void _render_list(RenderList::Element **p_elements, int p_element_count, const Transform &p_view_transform, const CameraMatrix &p_projection, GLuint p_base_env, bool p_reverse_cull, bool p_alpha_pass, bool p_shadow, bool p_directional_add, bool p_directional_shadows, real_t p_fov);
 
 	_FORCE_INLINE_ void _add_geometry(RasterizerStorageGLES3::Geometry *p_geometry, InstanceBase *p_instance, RasterizerStorageGLES3::GeometryOwner *p_owner, int p_material, bool p_depth_pass, bool p_shadow_pass);
 
@@ -849,8 +857,8 @@ public:
 	void _render_mrts(Environment *env, const CameraMatrix &p_cam_projection);
 	void _post_process(Environment *env, const CameraMatrix &p_cam_projection);
 
-	virtual void render_scene(const Transform &p_cam_transform, const CameraMatrix &p_cam_projection, bool p_cam_ortogonal, InstanceBase **p_cull_result, int p_cull_count, RID *p_light_cull_result, int p_light_cull_count, RID *p_reflection_probe_cull_result, int p_reflection_probe_cull_count, RID p_environment, RID p_shadow_atlas, RID p_reflection_atlas, RID p_reflection_probe, int p_reflection_probe_pass, const Size2 &p_viewport_size, real_t p_fov);
-	virtual void render_shadow(RID p_light, RID p_shadow_atlas, int p_pass, InstanceBase **p_cull_result, int p_cull_count, const Size2 &p_viewport_size, real_t p_fov);
+	virtual void render_scene(const Transform &p_cam_transform, const CameraMatrix &p_cam_projection, bool p_cam_ortogonal, InstanceBase **p_cull_result, int p_cull_count, RID *p_light_cull_result, int p_light_cull_count, RID *p_reflection_probe_cull_result, int p_reflection_probe_cull_count, RID p_environment, RID p_shadow_atlas, RID p_reflection_atlas, RID p_reflection_probe, int p_reflection_probe_pass, real_t p_fov);
+	virtual void render_shadow(RID p_light, RID p_shadow_atlas, int p_pass, InstanceBase **p_cull_result, int p_cull_count, real_t p_fov);
 	virtual bool free(RID p_rid);
 
 	virtual void set_scene_pass(uint64_t p_pass);

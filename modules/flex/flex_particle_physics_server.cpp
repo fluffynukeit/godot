@@ -283,8 +283,19 @@ int FlexParticleBodyCommands::get_particle_buffer_stride() const {
 }
 
 const float *FlexParticleBodyCommands::get_particle_buffer() const {
-	return (const float *)body->space->particles_memory->get_particles_buffers(
-			body->particles_mchunk);
+	return (const float *)
+			body->space->particles_memory->get_particles_buffers(
+					body->particles_mchunk);
+}
+
+int FlexParticleBodyCommands::get_particle_velocities_buffer_stride() const {
+	return 3;
+}
+
+const float *FlexParticleBodyCommands::get_particle_velocities_buffer() const {
+	return (const float *)
+			body->space->particles_memory->get_velocities_buffer(
+					body->particles_mchunk);
 }
 
 void FlexParticleBodyCommands::set_particle_position(int p_particle_index, const Vector3 &p_position) {

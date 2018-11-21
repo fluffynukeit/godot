@@ -115,6 +115,11 @@ ShaderTypes::ShaderTypes() {
 	shader_modes[VS::SHADER_SPATIAL].functions["fragment"].built_ins["SCREEN_UV"] = ShaderLanguage::TYPE_VEC2;
 	shader_modes[VS::SHADER_SPATIAL].functions["fragment"].built_ins["POINT_COORD"] = constt(ShaderLanguage::TYPE_VEC2);
 	shader_modes[VS::SHADER_SPATIAL].functions["fragment"].built_ins["ALPHA_SCISSOR"] = ShaderLanguage::TYPE_FLOAT;
+	shader_modes[VS::SHADER_SPATIAL].functions["fragment"].built_ins["FLUID_NORMAL_DEPTH_TEXTURE"] = constt(ShaderLanguage::TYPE_SAMPLER2D);
+	shader_modes[VS::SHADER_SPATIAL].functions["fragment"].built_ins["FLUID_THICKNESS_TEXTURE"] = constt(ShaderLanguage::TYPE_SAMPLER2D);
+	shader_modes[VS::SHADER_SPATIAL].functions["fragment"].built_ins["FLUID_NORMAL"] = constt(ShaderLanguage::TYPE_VEC3);
+	shader_modes[VS::SHADER_SPATIAL].functions["fragment"].built_ins["FLUID_DEPTH"] = constt(ShaderLanguage::TYPE_FLOAT);
+	shader_modes[VS::SHADER_SPATIAL].functions["fragment"].built_ins["FLUID_THICKNESS"] = constt(ShaderLanguage::TYPE_FLOAT);
 
 	shader_modes[VS::SHADER_SPATIAL].functions["fragment"].built_ins["OUTPUT_IS_SRGB"] = constt(ShaderLanguage::TYPE_BOOL);
 

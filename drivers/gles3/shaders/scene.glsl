@@ -306,6 +306,11 @@ uniform highp mat4 skeleton_transform;
 uniform bool skeleton_in_world_coords;
 #endif
 
+#ifdef RENDER_FLUID
+uniform float point_scale;
+uniform float particle_radius;
+#endif
+
 out highp vec4 position_interp;
 
 // FIXME: This triggers a Mesa bug that breaks rendering, so disabled for now.
@@ -575,6 +580,16 @@ VERTEX_SHADER_CODE
 #endif //USE_LIGHT_DIRECTIONAL
 
 #endif // USE_VERTEX_LIGHTING
+
+#ifdef RENDER_FLUID
+
+        highp vec4 clip_space_pos =
+                projection_matrix *
+                vec4(vertex_interp, 1.0);
+
+        gl_PointSize = point_scale * (particle_radius / clip_space_pos.w);
+
+#endif // RENDER_FLUID
 }
 
 /* clang-format off */
@@ -696,6 +711,13 @@ MATERIAL_UNIFORMS
 /* clang-format on */
 
 #endif
+
+#ifdef RENDER_FLUID
+
+uniform mediump sampler2DRect fluid_normal_depth_buffer; //texunit:-11
+uniform mediump sampler2DRect fluid_thickness_buffer; //texunit:-12
+
+#endif // RENDER_FLUID
 
 /* clang-format off */
 
@@ -1696,6 +1718,20 @@ void main() {
 #if defined(ENABLE_SSS)
 	float sss_strength = 0.0;
 #endif
+
+#ifdef RENDER_FLUID
+
+        vec4 fluid_normal_depth = texture2DRect(fluid_normal_depth_buffer, gl_FragCoord.xy);
+
+        // Depth = -1 mean discarded
+        if( fluid_normal_depth.w < 0 )
+            discard;
+
+        vec3 fluid_normal = fluid_normal_depth.xyz;
+        float fluid_depth = fluid_normal_depth.w;
+        float fluid_thickness = texture2DRect(fluid_thickness_buffer, gl_FragCoord.xy).r;
+
+#endif // RENDER_FLUID
 
 	{
 		/* clang-format off */
