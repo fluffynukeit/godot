@@ -2060,6 +2060,9 @@ void RasterizerSceneGLES3::_pre_render_fluids(
 		const CameraMatrix &p_projection,
 		real_t p_fov) {
 
+	if (!storage->frame.current_rt)
+		return;
+
 	// The W compoenent is -1 because
 	// depth < 0 mean discarded
 	float zero[4] = { 0.0, 0.0, 0.0, -1.0 };
