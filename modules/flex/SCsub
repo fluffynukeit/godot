@@ -41,14 +41,11 @@ flex_core = flex_base + "/core"
 # TODO change according to realease and debug version of godot
 FLEX_LIBS = ["NvFlexDebugCUDA_x64", "NvFlexDeviceDebug_x64", "NvFlexExtDebugCUDA_x64"]
 
-# TODO This is necessary in order to compile after Godot PR #20380
-# Make sure to remove it and compile it correctly
-env["LIBSUFFIXES"] = ""
+env.Append(LIBS=["cudart"])
 
 # TODO make platform agnostic
-env.Prepend(LIBS=["cudart"])
-env.Prepend(LIBS=["-l:" + file_name + ".a" for file_name in FLEX_LIBS])
-env.Prepend(LIBPATH=[flex_lib + "/linux64", cuda_lib])
+env.Append(LIBPATH=[flex_lib + "/linux64", cuda_lib])
+env.Append(LIBS=[file_name for file_name in FLEX_LIBS])
 
 if cuda_lib != "":
     env.Prepend(LIBPATH=[cuda_lib])
