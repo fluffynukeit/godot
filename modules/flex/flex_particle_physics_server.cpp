@@ -894,6 +894,27 @@ void FlexParticlePhysicsServer::primitive_body_set_object_instance(RID p_body, O
 	body->set_object_instance(p_object);
 }
 
+void FlexParticlePhysicsServer::primitive_body_set_use_custom_friction(RID p_body, bool p_use) {
+	FlexPrimitiveBody *body = primitive_body_owner.get(p_body);
+	ERR_FAIL_COND(!body);
+
+	body->set_use_custom_friction(p_use);
+}
+
+void FlexParticlePhysicsServer::primitive_body_set_custom_friction(RID p_body, real_t p_friction) {
+	FlexPrimitiveBody *body = primitive_body_owner.get(p_body);
+	ERR_FAIL_COND(!body);
+
+	body->set_custom_friction(p_friction);
+}
+
+void FlexParticlePhysicsServer::primitive_body_set_custom_friction_threshold(RID p_body, real_t p_threshold) {
+	FlexPrimitiveBody *body = primitive_body_owner.get(p_body);
+	ERR_FAIL_COND(!body);
+
+	body->set_custom_friction_threshold(p_threshold);
+}
+
 void FlexParticlePhysicsServer::primitive_body_set_transform(RID p_body, const Transform &p_transf, bool p_teleport) {
 
 	FlexPrimitiveBody *body = primitive_body_owner.get(p_body);

@@ -1861,14 +1861,14 @@ bool Main::iteration() {
 
 		uint64_t physics_begin = OS::get_singleton()->get_ticks_usec();
 
+		ParticlePhysicsServer::get_singleton()->sync();
+		ParticlePhysicsServer::get_singleton()->flush_queries();
+
 		PhysicsServer::get_singleton()->sync();
 		PhysicsServer::get_singleton()->flush_queries();
 
 		Physics2DServer::get_singleton()->sync();
 		Physics2DServer::get_singleton()->flush_queries();
-
-		ParticlePhysicsServer::get_singleton()->sync();
-		ParticlePhysicsServer::get_singleton()->flush_queries();
 
 		if (OS::get_singleton()->get_main_loop()->iteration(frame_slice * time_scale)) {
 			exit = true;

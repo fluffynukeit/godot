@@ -44,6 +44,15 @@ void ParticlePrimitiveBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_shape", "shape"), &ParticlePrimitiveBody::set_shape);
 	ClassDB::bind_method(D_METHOD("get_shape"), &ParticlePrimitiveBody::get_shape);
 
+	ClassDB::bind_method(D_METHOD("set_use_custom_friction", "use"), &ParticlePrimitiveBody::set_use_custom_friction);
+	ClassDB::bind_method(D_METHOD("is_using_custom_friction"), &ParticlePrimitiveBody::is_using_custom_friction);
+
+	ClassDB::bind_method(D_METHOD("set_custom_friction", "friction"), &ParticlePrimitiveBody::set_custom_friction);
+	ClassDB::bind_method(D_METHOD("get_custom_friction"), &ParticlePrimitiveBody::get_custom_friction);
+
+	ClassDB::bind_method(D_METHOD("set_custom_friction_threshold", "threshold"), &ParticlePrimitiveBody::set_custom_friction_threshold);
+	ClassDB::bind_method(D_METHOD("get_custom_friction_threshold"), &ParticlePrimitiveBody::get_custom_friction_threshold);
+
 	ClassDB::bind_method(D_METHOD("set_kinematic", "kinematic"), &ParticlePrimitiveBody::set_kinematic);
 	ClassDB::bind_method(D_METHOD("is_kinematic"), &ParticlePrimitiveBody::is_kinematic);
 
@@ -64,6 +73,10 @@ void ParticlePrimitiveBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("resource_changed", "resource"), &ParticlePrimitiveBody::resource_changed);
 
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "shape", PROPERTY_HINT_RESOURCE_TYPE, "Shape"), "set_shape", "get_shape");
+
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_custom_friction"), "set_use_custom_friction", "is_using_custom_friction");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "custom_friction", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_custom_friction", "get_custom_friction");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "custom_friction_threshold", PROPERTY_HINT_RANGE, "0,0.2,0.0001"), "set_custom_friction_threshold", "get_custom_friction_threshold");
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "kinematic"), "set_kinematic", "is_kinematic");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "monitoring_particles_contacts"), "set_monitoring_particles_contacts", "is_monitoring_particles_contacts");
@@ -98,7 +111,10 @@ void ParticlePrimitiveBody::_notification(int p_what) {
 ParticlePrimitiveBody::ParticlePrimitiveBody() :
 		ParticleObject(ParticlePhysicsServer::get_singleton()->primitive_body_create()),
 		collision_layer(1),
-		debug_shape(NULL) {
+		debug_shape(NULL),
+		use_custom_friction(false),
+		custom_friction(0),
+		custom_friction_threshold(0) {
 
 	ParticlePhysicsServer::get_singleton()->primitive_body_set_object_instance(rid, this);
 	set_notify_transform(true);
@@ -141,6 +157,30 @@ void ParticlePrimitiveBody::set_shape(const Ref<Shape> &p_shape) {
 
 Ref<Shape> ParticlePrimitiveBody::get_shape() const {
 	return shape;
+}
+
+void ParticlePrimitiveBody::set_use_custom_friction(bool p_use) {
+	use_custom_friction = p_use;
+
+	ParticlePhysicsServer::get_singleton()->primitive_body_set_use_custom_friction(
+			rid,
+			p_use);
+}
+
+void ParticlePrimitiveBody::set_custom_friction(real_t p_friction) {
+	custom_friction = p_friction;
+
+	ParticlePhysicsServer::get_singleton()->primitive_body_set_custom_friction(
+			rid,
+			p_friction);
+}
+
+void ParticlePrimitiveBody::set_custom_friction_threshold(real_t p_threshold) {
+	custom_friction_threshold = p_threshold;
+
+	ParticlePhysicsServer::get_singleton()->primitive_body_set_custom_friction_threshold(
+			rid,
+			p_threshold);
 }
 
 void ParticlePrimitiveBody::set_kinematic(bool p_kinematic) {

@@ -81,7 +81,8 @@ FlexSpace::FlexSpace() :
 		contacts_buffers(NULL),
 		compute_aabb_callback(NULL),
 		compute_friction_callback(NULL),
-		force_buffer_write(false) {
+		force_buffer_write(false),
+		particle_radius(0.0) {
 	init();
 }
 
@@ -191,10 +192,10 @@ void FlexSpace::init_solver() {
 		compute_aabb_callback = NULL;
 	}
 
-	//if (compute_friction_callback) {
-	//	GdFlexExtDestroyComputeFrictionCallback(compute_friction_callback);
-	//	compute_friction_callback = NULL;
-	//}
+	if (compute_friction_callback) {
+		GdFlexExtDestroyComputeFrictionCallback(compute_friction_callback);
+		compute_friction_callback = NULL;
+	}
 
 	NvFlexSolverDesc solver_desc;
 
@@ -211,7 +212,7 @@ void FlexSpace::init_solver() {
 	CRASH_COND(has_error());
 
 	compute_aabb_callback = GdFlexExtCreateComputeAABBCallback(solver);
-	//compute_friction_callback = GdFlexExtCreateComputeFrictionCallback(solver);
+	compute_friction_callback = GdFlexExtCreateComputeFrictionCallback(solver);
 
 	force_buffer_write = true;
 }
@@ -328,7 +329,9 @@ void FlexSpace::terminate_solver() {
 	}
 }
 
-void FlexSpace::sync() {
+void FlexSpace::sync() {}
+
+void FlexSpace::_sync() {
 
 	///
 	/// Map phase
@@ -405,6 +408,10 @@ void FlexSpace::sync() {
 }
 
 void FlexSpace::step(real_t p_delta_time) {
+
+	// I'm forced to move the synchronization here to be sure that all
+	// nodes notifications (like transform change) are already executed
+	_sync();
 
 	// Step solver (command)
 	const int substep = 1;
@@ -491,6 +498,8 @@ void FlexSpace::add_primitive_body(FlexPrimitiveBody *p_body) {
 	p_body->geometry_mchunk = geometries_allocator->allocate_chunk(0);
 	primitive_bodies.push_back(p_body);
 	primitive_body_sync_cmonitoring(p_body);
+
+	update_custom_friction_primitive_body(p_body);
 }
 
 void FlexSpace::remove_primitive_body(FlexPrimitiveBody *p_body) {
@@ -502,6 +511,8 @@ void FlexSpace::remove_primitive_body(FlexPrimitiveBody *p_body) {
 	p_body->space = NULL;
 	primitive_bodies.erase(p_body);
 	primitive_bodies_contact_monitoring.erase(p_body);
+
+	update_custom_friction_primitive_body(p_body);
 }
 
 void FlexSpace::primitive_body_sync_cmonitoring(FlexPrimitiveBody *p_body) {
@@ -531,6 +542,7 @@ bool FlexSpace::set_param(const StringName &p_name, const Variant &p_property) {
 	} else if (FlexParticlePhysicsServer::singleton->solver_param_solidRestDistance == p_name) {
 
 		params.solidRestDistance = p_property;
+		particle_radius = p_property;
 	} else if (FlexParticlePhysicsServer::singleton->solver_param_fluidRestDistance == p_name) {
 
 		params.fluidRestDistance = p_property;
@@ -777,11 +789,7 @@ bool FlexSpace::get_param(const StringName &p_name, Variant &r_property) const {
 }
 
 real_t FlexSpace::get_particle_radius() const {
-	Variant v;
-	if (get_param(FlexParticlePhysicsServer::singleton->solver_param_solidRestDistance, v)) {
-		return v;
-	}
-	return 0;
+	return particle_radius;
 }
 
 void FlexSpace::reset_params_to_defaults() {
@@ -799,8 +807,13 @@ bool FlexSpace::is_using_default_params() const {
 
 void FlexSpace::set_custom_flex_callback() {
 
+	///
+	/// AABB
+	///
+
 	const int particle_body_count = particle_bodies.size();
 
+	// TODO this should happens only when a particle is added / or removed
 	for (int i = 0; i < particle_body_count; ++i) {
 
 		const FlexParticleBody *pb = particle_bodies[i];
@@ -826,37 +839,24 @@ void FlexSpace::set_custom_flex_callback() {
 			particle_bodies_pindices.ptrw(),
 			(float *)particle_bodies_aabb.ptrw());
 
-	//const int size = primitive_bodies.size();
-	//
-	//Vector<AABB> aabbs;
-	//Vector<Transform> transforms;
-	//Vector<Vector3> lvelocities;
-	//Vector<Vector3> avelocities;
-	//Vector<Vector3> extents;
-	//
-	//for (int i = 0; i < size; ++i) {
-	//	FlexPrimitiveBody *pb = primitive_bodies[i];
-	//	if (!pb->get_shape())
-	//		continue;
-	//
-	//	if (pb->get_shape()->get_type() != eNvFlexShapeBox)
-	//		continue;
-	//
-	//	aabbs.push_back(primitive_bodies[i]->get_aabb());
-	//	transforms.push_back(primitive_bodies[i]->get_transform().inverse());
-	//	lvelocities.push_back(Vector3());
-	//	avelocities.push_back(Vector3());
-	//	extents.push_back(pb->get_shape()->get_data());
-	//}
-	//
-	//GdFlexExtSetComputeFrictionCallback(
-	//		compute_friction_callback,
-	//		aabbs.size(),
-	//		(float *)transforms.ptrw(),
-	//		(float *)lvelocities.ptrw(),
-	//		(float *)avelocities.ptrw(),
-	//		(float *)aabbs.ptrw(),
-	//		(float *)extents.ptrw());
+	///
+	/// FRICTION
+	///
+
+	GdFlexExtSetComputeFrictionCallback(
+			compute_friction_callback,
+			primitive_bodies_cf_prev_transform.size(),
+			(const float *)primitive_bodies_cf_prev_transform.ptr(),
+			(const float *)primitive_bodies_cf_prev_inv_transform.ptr(),
+			(const float *)primitive_bodies_cf_curr_inv_transform.ptr(),
+			(const float *)primitive_bodies_cf_motion.ptr(),
+			(const float *)primitive_bodies_cf_extent.ptr(),
+			primitive_bodies_cf_friction.ptr(),
+			primitive_bodies_cf_friction_2_threshold.ptr(),
+			0.0035, // Margin
+			particles_memory->particles.size(),
+			(const float *)particles_memory->particles.mappedPtr,
+			get_particle_radius());
 }
 
 void FlexSpace::dispatch_callback_contacts() {
@@ -1164,6 +1164,55 @@ void FlexSpace::rebuild_rigids_offsets() {
 }
 
 void FlexSpace::execute_geometries_commands() {
+
+	///
+	/// CUSTOM FRICTION PRIMITIVE UPDATE
+	////////////////////////////////////
+
+	for (int i = 0; i < primitive_bodies_cf.size(); ++i) {
+
+		FlexPrimitiveBody *pb = primitive_bodies_cf[i];
+
+		if (!(pb->changed_parameters & eChangedPrimitiveBodyParamTransform))
+			continue;
+
+		if (pb->changed_parameters & eChangedPrimitiveBodyParamTransformIsMotion) {
+
+			// Is motion
+
+			primitive_bodies_cf_prev_transform.write[i] =
+					primitive_bodies_cf_curr_transform[i];
+
+			primitive_bodies_cf_prev_inv_transform.write[i] =
+					primitive_bodies_cf_curr_inv_transform[i];
+
+			primitive_bodies_cf_curr_transform.write[i] = pb->get_transform();
+			primitive_bodies_cf_curr_inv_transform.write[i] = pb->get_transform().inverse();
+
+			primitive_bodies_cf_motion.write[i] =
+					primitive_bodies_cf_prev_inv_transform[i] *
+					primitive_bodies_cf_curr_transform[i];
+
+		} else {
+
+			// Is Teleport
+			primitive_bodies_cf_curr_transform.write[i] = pb->get_transform();
+			primitive_bodies_cf_curr_inv_transform.write[i] = pb->get_transform().inverse();
+
+			primitive_bodies_cf_prev_transform.write[i] =
+					primitive_bodies_cf_curr_transform[i];
+
+			primitive_bodies_cf_prev_inv_transform.write[i] =
+					primitive_bodies_cf_curr_inv_transform[i];
+
+			primitive_bodies_cf_motion.write[i] = Transform();
+		}
+	}
+
+	///
+	/// Primitive body process
+	////////////////////////////////////
+
 	for (int i(primitive_bodies.size() - 1); 0 <= i; --i) {
 
 		FlexPrimitiveBody *body = primitive_bodies[i];
@@ -1475,6 +1524,107 @@ FlexPrimitiveBody *FlexSpace::find_primitive_body(GeometryBufferIndex p_index, b
 		}
 	}
 	return NULL;
+}
+
+void FlexSpace::update_custom_friction_primitive_body(
+		FlexPrimitiveBody *p_body) {
+
+	if (!p_body->space && 0 <= p_body->_custom_friction_id) {
+
+		// Remove phase
+
+		ERR_FAIL_COND(primitive_bodies_cf[p_body->_custom_friction_id] != p_body);
+
+		// Swap (to prevent reindex everything)
+		const int new_size(primitive_bodies_cf.size() - 1);
+
+		const int new_id(p_body->_custom_friction_id);
+		const int old_id(new_size);
+
+		primitive_bodies_cf[old_id]->_custom_friction_id = new_id;
+
+		primitive_bodies_cf.write[new_id] = primitive_bodies_cf[old_id];
+		primitive_bodies_cf.resize(new_size);
+
+		primitive_bodies_cf_prev_transform.resize(new_size);
+
+		primitive_bodies_cf_prev_inv_transform.resize(new_size);
+
+		primitive_bodies_cf_curr_transform.write[new_id] =
+				primitive_bodies_cf_curr_transform[old_id];
+		primitive_bodies_cf_curr_transform.resize(new_size);
+
+		primitive_bodies_cf_curr_inv_transform.write[new_id] =
+				primitive_bodies_cf_curr_inv_transform[old_id];
+		primitive_bodies_cf_curr_inv_transform.resize(new_size);
+
+		primitive_bodies_cf_motion.resize(new_size);
+
+		primitive_bodies_cf_extent.write[new_id] =
+				primitive_bodies_cf_extent[old_id];
+		primitive_bodies_cf_extent.resize(new_size);
+
+		primitive_bodies_cf_friction.write[new_id] =
+				primitive_bodies_cf_friction[old_id];
+		primitive_bodies_cf_friction.resize(new_size);
+
+		primitive_bodies_cf_friction_2_threshold.write[new_id] =
+				primitive_bodies_cf_friction_2_threshold[old_id];
+		primitive_bodies_cf_friction_2_threshold.resize(new_size);
+
+		p_body->_custom_friction_id = -1;
+
+	} else {
+
+		if (!p_body->is_using_custom_friction())
+			return;
+
+		ERR_FAIL_COND(p_body->space != this);
+
+		int id = p_body->_custom_friction_id;
+
+		if (0 > id) {
+
+			// Add phase
+
+			id = primitive_bodies_cf.size();
+			const int new_size(id + 1);
+
+			primitive_bodies_cf.resize(new_size);
+			primitive_bodies_cf_prev_transform.resize(new_size);
+			primitive_bodies_cf_prev_inv_transform.resize(new_size);
+			primitive_bodies_cf_curr_transform.resize(new_size);
+			primitive_bodies_cf_curr_inv_transform.resize(new_size);
+			primitive_bodies_cf_motion.resize(new_size);
+			primitive_bodies_cf_extent.resize(new_size);
+			primitive_bodies_cf_friction.resize(new_size);
+			primitive_bodies_cf_friction_2_threshold.resize(new_size);
+
+			p_body->_custom_friction_id = id;
+		} else {
+
+			ERR_FAIL_COND(primitive_bodies_cf[id] != p_body);
+		}
+
+		// Update phase
+
+		primitive_bodies_cf.write[id] = p_body;
+
+		primitive_bodies_cf_curr_transform.write[id] = p_body->get_transform();
+
+		primitive_bodies_cf_curr_inv_transform.write[id] =
+				p_body->get_transform().inverse();
+
+		primitive_bodies_cf_extent.write[id] =
+				p_body->get_shape() && p_body->get_shape()->get_type() == eNvFlexShapeBox ?
+						static_cast<FlexPrimitiveBoxShape *>(p_body->get_shape())->get_extends() :
+						Vector3();
+
+		primitive_bodies_cf_friction.write[id] = p_body->get_custom_friction();
+		primitive_bodies_cf_friction_2_threshold.write[id] =
+				p_body->get_custom_friction_threshold() *
+				p_body->get_custom_friction_threshold();
+	}
 }
 
 FlexMemorySweeperFast::FlexMemorySweeperFast(

@@ -93,12 +93,29 @@ void GdFlexExtSetComputeAABBCallback(GdFlexExtComputeAABBCallback *p_callback, i
  */
 struct GdFlexExtComputeFrictionCallback;
 
-GdFlexExtComputeFrictionCallback *GdFlexExtCreateComputeFrictionCallback(NvFlexSolver *p_solver);
+GdFlexExtComputeFrictionCallback *GdFlexExtCreateComputeFrictionCallback(
+		NvFlexSolver *p_solver);
 
-void GdFlexExtDestroyComputeFrictionCallback(GdFlexExtComputeFrictionCallback *p_callback);
+void GdFlexExtDestroyComputeFrictionCallback(
+		GdFlexExtComputeFrictionCallback *p_callback);
 
-void ComputeFrictionCallback(NvFlexSolverCallbackParams p_params);
+void ComputeFrictionCallback(
+		NvFlexSolverCallbackParams p_params);
 
-void GdFlexExtSetComputeFrictionCallback(GdFlexExtComputeFrictionCallback *p_callback, int p_primitive_body_count, float *p_primitive_transform, float *p_primitive_lvelocity, float *p_primitive_avelocity, float *p_primitive_aabbs, float *p_primitive_extent);
+void GdFlexExtSetComputeFrictionCallback(
+		GdFlexExtComputeFrictionCallback *p_callback,
+		const int p_primitive_body_count,
+		const float *p_primitive_prev_transfs,
+		const float *p_primitive_inv_prev_transfs,
+		const float *p_primitive_inv_curr_transfs,
+		const float *p_primitive_motion_transfs,
+		//const float *p_primitive_aabbs,
+		const float *p_primitive_extents,
+		const float *p_primitive_frictions,
+		const float *p_primitive_friction_2_thresholds,
+		const float p_primitive_margin,
+		const int p_particle_count,
+		const float *p_prev_particles_position_mass,
+		const float p_particle_radius);
 
 #endif // GODOT_FLEX_EXT_H

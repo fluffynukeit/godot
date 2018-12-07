@@ -45,6 +45,10 @@ class ParticlePrimitiveBody : public ParticleObject {
 
 	Ref<Shape> shape;
 
+	bool use_custom_friction;
+	real_t custom_friction;
+	real_t custom_friction_threshold;
+
 	uint32_t collision_layer;
 
 protected:
@@ -64,6 +68,21 @@ public:
 
 	void set_shape(const Ref<Shape> &p_shape);
 	Ref<Shape> get_shape() const;
+
+	void set_use_custom_friction(bool p_use);
+	bool is_using_custom_friction() const {
+		return use_custom_friction;
+	}
+
+	void set_custom_friction(real_t p_friction);
+	real_t get_custom_friction() const {
+		return custom_friction;
+	}
+
+	void set_custom_friction_threshold(real_t p_friction);
+	real_t get_custom_friction_threshold() const {
+		return custom_friction_threshold;
+	}
 
 	void set_kinematic(bool p_kinematic);
 	bool is_kinematic() const;

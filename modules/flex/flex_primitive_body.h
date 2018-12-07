@@ -48,7 +48,10 @@ enum ChangedPrimitiveBodyParameter {
 	eChangedPrimitiveBodyParamTransformIsMotion = 1 << 2, // This is applied in addition to the Transform to tell that change is a movement and not a teleport
 	eChangedPrimitiveBodyParamFlags = 1 << 3,
 
-	eChangedPrimitiveBodyParamAll = eChangedPrimitiveBodyParamShape | eChangedPrimitiveBodyParamTransform | eChangedPrimitiveBodyParamFlags
+	eChangedPrimitiveBodyParamAll =
+			eChangedPrimitiveBodyParamShape |
+			eChangedPrimitiveBodyParamTransform |
+			eChangedPrimitiveBodyParamFlags
 };
 
 class FlexPrimitiveBody : public RIDFlex {
@@ -66,6 +69,11 @@ class FlexPrimitiveBody : public RIDFlex {
 	FlexPrimitiveShape *shape;
 
 	AABB aabb;
+
+	bool use_custom_friction;
+	real_t custom_friction;
+	real_t custom_friction_threshold;
+
 	Transform transf;
 
 	// allow only first 7 bit (max 7 channel)
@@ -74,6 +82,8 @@ class FlexPrimitiveBody : public RIDFlex {
 	bool _is_area;
 
 	bool _is_monitoring_particles_contacts;
+
+	int _custom_friction_id;
 
 public:
 	FlexPrimitiveBody();
@@ -93,6 +103,22 @@ public:
 
 	void update_aabb();
 	const AABB &get_aabb() { return aabb; }
+
+	void set_use_custom_friction(bool p_use);
+	bool is_using_custom_friction() const {
+		return use_custom_friction;
+	}
+
+	void set_custom_friction(real_t p_friction);
+	real_t get_custom_friction() const {
+		return custom_friction;
+	}
+
+	void set_custom_friction_threshold(real_t p_threshold);
+	real_t get_custom_friction_threshold() const {
+		return custom_friction_threshold;
+	}
+
 	void set_transform(const Transform &p_transf, bool p_is_teleport);
 	const Transform &get_transform() const { return transf; }
 

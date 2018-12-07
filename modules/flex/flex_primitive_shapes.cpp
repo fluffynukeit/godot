@@ -75,6 +75,7 @@ void FlexPrimitiveBoxShape::get_shape(FlexSpace *p_space, NvFlexCollisionGeometr
 
 void FlexPrimitiveBoxShape::set_data(const Variant &p_data) {
 	set_extends(p_data);
+	notify_change();
 }
 
 Variant FlexPrimitiveBoxShape::get_data() const {
@@ -107,6 +108,7 @@ void FlexPrimitiveCapsuleShape::set_data(const Variant &p_data) {
 	radius = d["radius"];
 	const Vector3 extent(radius + half_height, radius, radius);
 	aabb = AABB(extent * -1, extent * 2);
+	notify_change();
 }
 
 Variant FlexPrimitiveCapsuleShape::get_data() const {
@@ -131,6 +133,7 @@ void FlexPrimitiveSphereShape::set_data(const Variant &p_data) {
 	radius = p_data;
 	const Vector3 extent(radius, radius, radius);
 	aabb = AABB(extent * -1, extent * 2);
+	notify_change();
 }
 
 Variant FlexPrimitiveSphereShape::get_data() const {
@@ -163,6 +166,7 @@ void FlexPrimitiveConvexShape::get_shape(FlexSpace *p_space, NvFlexCollisionGeom
 
 void FlexPrimitiveConvexShape::set_data(const Variant &p_data) {
 	setup(p_data);
+	notify_change();
 }
 
 Variant FlexPrimitiveConvexShape::get_data() const {
@@ -252,6 +256,7 @@ void FlexPrimitiveTriangleShape::get_shape(FlexSpace *p_space, NvFlexCollisionGe
 
 void FlexPrimitiveTriangleShape::set_data(const Variant &p_data) {
 	setup(p_data);
+	notify_change();
 }
 
 Variant FlexPrimitiveTriangleShape::get_data() const {
