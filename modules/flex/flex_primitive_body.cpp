@@ -45,10 +45,14 @@ FlexPrimitiveBody::FlexPrimitiveBody() :
 		space(NULL),
 		object_instance(NULL),
 		shape(NULL),
+		use_custom_friction(false),
+		custom_friction(0),
 		_is_kinematic(false),
 		_is_area(false),
 		layer(1),
-		_is_monitoring_particles_contacts(false) {
+		_is_monitoring_particles_contacts(false),
+		_custom_friction_id(-1),
+		custom_friction_threshold(0) {
 }
 
 FlexPrimitiveBody::~FlexPrimitiveBody() {
@@ -95,6 +99,9 @@ void FlexPrimitiveBody::set_shape(FlexPrimitiveShape *p_shape) {
 	changed_parameters |= eChangedPrimitiveBodyParamShape;
 	if (shape)
 		shape->add_owner(this);
+
+	if (space)
+		space->update_custom_friction_primitive_body(this);
 }
 
 FlexPrimitiveShape *FlexPrimitiveBody::get_shape() const {
@@ -103,6 +110,9 @@ FlexPrimitiveShape *FlexPrimitiveBody::get_shape() const {
 
 void FlexPrimitiveBody::notify_shape_changed() {
 	changed_parameters |= eChangedPrimitiveBodyParamShape;
+
+	if (space)
+		space->update_custom_friction_primitive_body(this);
 }
 
 void FlexPrimitiveBody::update_aabb() {
@@ -110,6 +120,24 @@ void FlexPrimitiveBody::update_aabb() {
 		aabb = transf.xform(shape->get_aabb());
 	else
 		aabb = AABB();
+}
+
+void FlexPrimitiveBody::set_use_custom_friction(bool p_use) {
+	use_custom_friction = p_use;
+}
+
+void FlexPrimitiveBody::set_custom_friction(real_t p_friction) {
+	custom_friction = p_friction;
+
+	if (space)
+		space->update_custom_friction_primitive_body(this);
+}
+
+void FlexPrimitiveBody::set_custom_friction_threshold(real_t p_threshold) {
+	custom_friction_threshold = p_threshold;
+
+	if (space)
+		space->update_custom_friction_primitive_body(this);
 }
 
 void FlexPrimitiveBody::set_transform(const Transform &p_transf, bool p_is_teleport) {

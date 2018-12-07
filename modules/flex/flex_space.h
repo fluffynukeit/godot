@@ -102,6 +102,16 @@ class FlexSpace : public RIDFlex {
 	Vector<FlexPrimitiveBody *> primitive_bodies;
 	Vector<FlexPrimitiveBody *> primitive_bodies_contact_monitoring;
 
+	Vector<FlexPrimitiveBody *> primitive_bodies_cf;
+	Vector<Transform> primitive_bodies_cf_prev_transform;
+	Vector<Transform> primitive_bodies_cf_prev_inv_transform;
+	Vector<Transform> primitive_bodies_cf_curr_transform;
+	Vector<Transform> primitive_bodies_cf_curr_inv_transform;
+	Vector<Transform> primitive_bodies_cf_motion;
+	Vector<Vector3> primitive_bodies_cf_extent;
+	Vector<real_t> primitive_bodies_cf_friction;
+	Vector<real_t> primitive_bodies_cf_friction_2_threshold;
+
 	bool _is_using_default_params;
 
 	/// Custom kernels
@@ -114,6 +124,7 @@ class FlexSpace : public RIDFlex {
 	GdFlexExtComputeFrictionCallback *compute_friction_callback;
 
 	bool force_buffer_write;
+	float particle_radius;
 
 public:
 	FlexSpace();
@@ -134,6 +145,7 @@ private:
 
 public:
 	void sync();
+	void _sync();
 	void step(real_t p_delta_time);
 
 	_FORCE_INLINE_ FlexMemoryAllocator *get_particles_allocator() { return particles_allocator; }
@@ -181,6 +193,9 @@ public:
 
 	FlexParticleBody *find_particle_body(ParticleBufferIndex p_index) const;
 	FlexPrimitiveBody *find_primitive_body(GeometryBufferIndex p_index, bool p_contact_monitoring_only) const;
+
+	void update_custom_friction_primitive_body(
+			FlexPrimitiveBody *p_body);
 };
 
 class FlexMemorySweeper : public FlexMemoryModificator {

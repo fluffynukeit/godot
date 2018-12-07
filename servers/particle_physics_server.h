@@ -176,6 +176,10 @@ public:
 	virtual void primitive_body_set_callback(RID p_body, ParticlePrimitiveBodyCallback p_callback_type, Object *p_receiver, const StringName &p_method) = 0;
 	virtual void primitive_body_set_object_instance(RID p_body, Object *p_object) = 0;
 
+	virtual void primitive_body_set_use_custom_friction(RID p_body, bool p_use) = 0;
+	virtual void primitive_body_set_custom_friction(RID p_body, real_t p_friction) = 0;
+	virtual void primitive_body_set_custom_friction_threshold(RID p_body, real_t p_threshold) = 0;
+
 	virtual void primitive_body_set_transform(RID p_body, const Transform &p_transf, bool p_teleport) = 0;
 
 	virtual void primitive_body_set_collision_layer(RID p_body, uint32_t p_layer) = 0;
