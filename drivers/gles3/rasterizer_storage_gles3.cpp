@@ -7401,7 +7401,7 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 
 		glDrawBuffers(1, draw_buffers);
 
-		CRASH_COND(
+		ERR_FAIL_COND(
 				glCheckFramebufferStatus(GL_FRAMEBUFFER) !=
 				GL_FRAMEBUFFER_COMPLETE);
 
@@ -7439,7 +7439,7 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 
 		glDrawBuffers(1, draw_buffers);
 
-		CRASH_COND(
+		ERR_FAIL_COND(
 				glCheckFramebufferStatus(GL_FRAMEBUFFER) !=
 				GL_FRAMEBUFFER_COMPLETE);
 
