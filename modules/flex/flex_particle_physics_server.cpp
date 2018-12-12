@@ -458,7 +458,20 @@ void FlexParticleBodyConstraintCommands::set_spring(int p_index, int p_body0_par
 }
 
 real_t FlexParticleBodyConstraintCommands::get_distance(int p_body0_particle, int p_body1_particle) const {
-	return (constraint->body0->get_particle_position(p_body0_particle) - constraint->body1->get_particle_position(p_body1_particle)).length();
+	return (
+			constraint->body1->get_particle_position(p_body1_particle) -
+			constraint->body0->get_particle_position(p_body0_particle))
+			.length();
+}
+
+void FlexParticleBodyConstraintCommands::get_spring_positions(
+		int p_body0_particle,
+		int p_body1_particle,
+		Vector3 &r_begin,
+		Vector3 &r_end) const {
+
+	r_begin = constraint->body0->get_particle_position(p_body0_particle);
+	r_end = constraint->body1->get_particle_position(p_body1_particle);
 }
 
 FlexParticlePhysicsServer *FlexParticlePhysicsServer::singleton = NULL;

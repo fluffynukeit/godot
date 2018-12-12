@@ -35,6 +35,7 @@
 #include "physics_particle_body_constraint.h"
 
 #include "core/engine.h"
+#include "immediate_geometry.h"
 #include "physics_particle_body.h"
 #include "scene/main/viewport.h"
 #include "servers/particle_physics_server.h"
@@ -186,7 +187,8 @@ void ParticleBodyConstraint::_notification(int p_what) {
 ParticleBodyConstraint::ParticleBodyConstraint() :
 		Node(),
 		particle_body0(NULL),
-		particle_body1(NULL) {
+		particle_body1(NULL),
+		debug_ig(NULL) {
 }
 
 ParticleBodyConstraint::~ParticleBodyConstraint() {
@@ -407,9 +409,57 @@ void ParticleBodyConstraint::on_sync(Object *p_cmds) {
 
 	constraints.resize(size);
 
+	update_debug(cmds);
+
 	if (!get_script().is_null() && has_method("_commands_process")) {
+
 		call("_commands_process", p_cmds);
-	} else {
+
+	} else if (!get_tree()->is_debugging_collisions_hint()) {
+
+		// Doesn't need to process, so unregister the callback
 		ParticlePhysicsServer::get_singleton()->constraint_set_callback(rid, NULL, "");
 	}
+}
+
+void ParticleBodyConstraint::update_debug(ParticleBodyConstraintCommands *p_cmds) {
+
+	if (!get_tree()->is_debugging_collisions_hint())
+		return;
+
+	if (!debug_ig) {
+
+		debug_material.instance();
+		debug_material->set_flag(SpatialMaterial::FLAG_UNSHADED, true);
+		debug_material->set_feature(SpatialMaterial::FEATURE_TRANSPARENT, false);
+		debug_material->set_albedo(Color(1, 0, 0));
+
+		debug_ig = new ImmediateGeometry;
+
+		add_child(debug_ig);
+		debug_ig->set_as_toplevel(true);
+		debug_ig->set_global_transform(Transform());
+		debug_ig->set_material_override(debug_material);
+	}
+
+	debug_ig->clear();
+	debug_ig->begin(Mesh::PRIMITIVE_LINES);
+
+	for (int i(constraints.size() - 1); 0 <= i; --i) {
+		Constraint &constraint(constraints.write[i]);
+
+		Vector3 begin;
+		Vector3 end;
+
+		p_cmds->get_spring_positions(
+				constraint.body0_particle_index,
+				constraint.body1_particle_index,
+				begin,
+				end);
+
+		debug_ig->add_vertex(begin);
+		debug_ig->add_vertex(end);
+	}
+
+	debug_ig->end();
 }
