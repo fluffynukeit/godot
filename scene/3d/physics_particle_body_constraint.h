@@ -70,6 +70,9 @@ class ParticleBodyConstraint : public Node {
 
 	Vector<Constraint> constraints;
 
+	class ImmediateGeometry *debug_ig;
+	Ref<SpatialMaterial> debug_material;
+
 	bool _set(const StringName &p_name, const Variant &p_property);
 	bool _get(const StringName &p_name, Variant &r_property) const;
 	void _get_property_list(List<PropertyInfo> *p_list) const;
@@ -114,6 +117,8 @@ private:
 	void _destroy();
 	void addition();
 	void on_sync(Object *p_cmds);
+
+	void update_debug(ParticleBodyConstraintCommands *cmds);
 };
 
 #endif // PHYSICS_PARTICLE_BODY_CONSTRAINT_H

@@ -135,6 +135,7 @@ private:
 	void debug_initialize_resource();
 	void debug_resize_particle_visual_instance(int new_size);
 	void debug_update(ParticleBodyCommands *p_cmds);
+	void debug_color_change();
 	void debug_reset_particle_positions();
 };
 

@@ -227,6 +227,8 @@ void ParticleBody::remove_rigid(int p_rigid_index) {
 
 void ParticleBody::set_collision_group(uint32_t p_group) {
 	ParticlePhysicsServer::get_singleton()->body_set_collision_group(rid, p_group);
+
+	debug_color_change();
 }
 
 uint32_t ParticleBody::get_collision_group() const {
@@ -445,12 +447,16 @@ void ParticleBody::debug_initialize_resource() {
 	debug_particle_material = Ref<SpatialMaterial>(memnew(SpatialMaterial));
 	debug_particle_material->set_flag(SpatialMaterial::FLAG_UNSHADED, true);
 	debug_particle_material->set_feature(SpatialMaterial::FEATURE_TRANSPARENT, false);
-	debug_particle_material->set_albedo(Color(0.0, 0.6, 0.7, 0.5));
+
+	debug_color_change();
 
 	debug_particle_mesh.instance();
 	debug_particle_mesh->set_radial_segments(4);
 	debug_particle_mesh->set_rings(2);
 	debug_particle_mesh->set_material(debug_particle_material);
+
+	debug_particle_mesh->set_radius(0);
+	debug_particle_mesh->set_height(0);
 
 	multi_mesh.instance();
 	multi_mesh->set_mesh(debug_particle_mesh);
@@ -487,7 +493,9 @@ void ParticleBody::debug_update(ParticleBodyCommands *p_cmds) {
 	const int particle_count = ParticlePhysicsServer::get_singleton()->body_get_particle_count(rid);
 	debug_resize_particle_visual_instance(particle_count);
 
-	const real_t radius = ParticlePhysicsServer::get_singleton()->space_get_particle_radius(get_world()->get_particle_space());
+	const real_t radius =
+			ParticlePhysicsServer::get_singleton()->space_get_particle_radius(
+					get_world()->get_particle_space());
 
 	debug_particle_mesh->set_radius(radius);
 	debug_particle_mesh->set_height(radius * 2);
@@ -500,6 +508,29 @@ void ParticleBody::debug_update(ParticleBodyCommands *p_cmds) {
 				i,
 				transf);
 	}
+}
+
+void ParticleBody::debug_color_change() {
+
+	if (debug_particle_material.is_null())
+		return;
+
+	// Generate a color based on the current group
+
+	RandomPCG random(get_collision_group());
+
+	real_t red = random.random(0.0, 1.0);
+	real_t green = random.random(0.0, 1.0);
+	real_t blue = random.random(0.0, 1.0);
+
+	Color generated(red, green, blue);
+
+	// Mix the generated color with white to increase light
+
+	Color white(1, 1, 1);
+	generated = (generated + white) / 2.0;
+
+	debug_particle_material->set_albedo(generated);
 }
 
 void ParticleBody::debug_reset_particle_positions() {
@@ -577,7 +608,7 @@ void SoftParticleBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_plastic_creep"), &SoftParticleBody::get_plastic_creep);
 
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/radius"), "set_radius", "get_radius");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/global_stiffness"), "set_global_stiffness", "get_global_stiffness");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/global_stiffness", PROPERTY_HINT_RANGE, "0,100,0.000001"), "set_global_stiffness", "get_global_stiffness");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "model/internal_sample"), "set_internal_sample", "get_internal_sample");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/particle_spacing"), "set_particle_spacing", "get_particle_spacing");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/sampling"), "set_sampling", "get_sampling");
