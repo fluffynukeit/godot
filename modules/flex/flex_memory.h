@@ -43,9 +43,9 @@
 
 #define FLEXBUFFERCLASS_1(clazz, type0, name0) \
 	friend class FlexSpace;                    \
-											   \
+                                               \
 	NvFlexVector<type0> name0;                 \
-											   \
+                                               \
 public:                                        \
 	clazz(NvFlexLibrary *p_flex_lib) :         \
 			name0(p_flex_lib) {                \
@@ -54,10 +54,10 @@ public:                                        \
 
 #define FLEXBUFFERCLASS_2(clazz, type0, name0, type1, name1) \
 	friend class FlexSpace;                                  \
-															 \
+                                                             \
 	NvFlexVector<type0> name0;                               \
 	NvFlexVector<type1> name1;                               \
-															 \
+                                                             \
 public:                                                      \
 	clazz(NvFlexLibrary *p_flex_lib) :                       \
 			name0(p_flex_lib),                               \
@@ -68,11 +68,11 @@ public:                                                      \
 
 #define FLEXBUFFERCLASS_3(clazz, type0, name0, type1, name1, type2, name2) \
 	friend class FlexSpace;                                                \
-																		   \
+                                                                           \
 	NvFlexVector<type0> name0;                                             \
 	NvFlexVector<type1> name1;                                             \
 	NvFlexVector<type2> name2;                                             \
-																		   \
+                                                                           \
 public:                                                                    \
 	clazz(NvFlexLibrary *p_flex_lib) :                                     \
 			name0(p_flex_lib),                                             \
@@ -85,12 +85,12 @@ public:                                                                    \
 
 #define FLEXBUFFERCLASS_4(clazz, type0, name0, type1, name1, type2, name2, type3, name3) \
 	friend class FlexSpace;                                                              \
-																						 \
+                                                                                         \
 	NvFlexVector<type0> name0;                                                           \
 	NvFlexVector<type1> name1;                                                           \
 	NvFlexVector<type2> name2;                                                           \
 	NvFlexVector<type3> name3;                                                           \
-																						 \
+                                                                                         \
 public:                                                                                  \
 	clazz(NvFlexLibrary *p_flex_lib) :                                                   \
 			name0(p_flex_lib),                                                           \
@@ -105,13 +105,13 @@ public:                                                                         
 
 #define FLEXBUFFERCLASS_5(clazz, type0, name0, type1, name1, type2, name2, type3, name3, type4, name4) \
 	friend class FlexSpace;                                                                            \
-																									   \
+                                                                                                       \
 	NvFlexVector<type0> name0;                                                                         \
 	NvFlexVector<type1> name1;                                                                         \
 	NvFlexVector<type2> name2;                                                                         \
 	NvFlexVector<type3> name3;                                                                         \
 	NvFlexVector<type4> name4;                                                                         \
-																									   \
+                                                                                                       \
 public:                                                                                                \
 	clazz(NvFlexLibrary *p_flex_lib) :                                                                 \
 			name0(p_flex_lib),                                                                         \
@@ -128,14 +128,14 @@ public:                                                                         
 
 #define FLEXBUFFERCLASS_6(clazz, type0, name0, type1, name1, type2, name2, type3, name3, type4, name4, type5, name5) \
 	friend class FlexSpace;                                                                                          \
-																													 \
+                                                                                                                     \
 	NvFlexVector<type0> name0;                                                                                       \
 	NvFlexVector<type1> name1;                                                                                       \
 	NvFlexVector<type2> name2;                                                                                       \
 	NvFlexVector<type3> name3;                                                                                       \
 	NvFlexVector<type4> name4;                                                                                       \
 	NvFlexVector<type5> name5;                                                                                       \
-																													 \
+                                                                                                                     \
 public:                                                                                                              \
 	clazz(NvFlexLibrary *p_flex_lib) :                                                                               \
 			name0(p_flex_lib),                                                                                       \
@@ -395,6 +395,7 @@ class ParticlesMemory : public FlexBufferMemory {
 
 	void set_particle(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, FlVector4 p_particle);
 	const FlVector4 &get_particle(const MemoryChunk *p_chunk, ParticleIndex p_particle_index) const;
+	const FlVector4 &get_particle(ParticleBufferIndex p_particle_index) const;
 	const FlVector4 *get_particles_buffers(const MemoryChunk *p_chunk);
 
 	void set_velocity(const MemoryChunk *p_chunk, ParticleIndex p_particle_index, Vector3 p_velocity);

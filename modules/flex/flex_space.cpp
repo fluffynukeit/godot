@@ -351,6 +351,7 @@ void FlexSpace::_sync() {
 	dispatch_callbacks();
 	execute_delayed_commands();
 	execute_geometries_commands();
+	execute_tearing();
 
 	///
 	/// Emit server sync
@@ -442,6 +443,8 @@ void FlexSpace::add_particle_body(FlexParticleBody *p_body) {
 	p_body->inflatable_mchunk = inflatables_allocator->allocate_chunk(0);
 	p_body->rigids_mchunk = rigids_allocator->allocate_chunk(0);
 	p_body->rigids_components_mchunk = rigids_components_allocator->allocate_chunk(0);
+
+	update_particle_body_tearing_state(p_body);
 }
 
 void FlexSpace::remove_particle_body(FlexParticleBody *p_body) {
@@ -471,7 +474,26 @@ void FlexSpace::remove_particle_body(FlexParticleBody *p_body) {
 		particle_bodies[i]->id = i;
 	}
 
+	update_particle_body_tearing_state(p_body);
+
 	// TODO Show a warning and remove body constraint associated to this body
+}
+
+void FlexSpace::update_particle_body_tearing_state(FlexParticleBody *p_body) {
+
+	const bool id = particle_bodies_tearing.find(p_body);
+
+	if (id > -1) {
+		// Found
+		if (!p_body->is_tearing_active() || this != p_body->space) {
+			particle_bodies_tearing.remove(id);
+		}
+	} else {
+		// Not found
+		if (p_body->is_tearing_active() && this == p_body->space) {
+			particle_bodies_tearing.push_back(p_body);
+		}
+	}
 }
 
 void FlexSpace::add_particle_body_constraint(FlexParticleBodyConstraint *p_constraint) {
@@ -1269,6 +1291,20 @@ void FlexSpace::execute_geometries_commands() {
 		}
 
 		body->set_clean();
+	}
+}
+
+void FlexSpace::execute_tearing() {
+
+	for (int i(particle_bodies_tearing.size() - 1); 0 <= i; --i) {
+		FlexParticleBody *pb = particle_bodies_tearing[i];
+
+		for (int s(pb->get_spring_count() - 1); 0 <= s; --s) {
+			if (pb->is_spring_overtension(s)) {
+				//
+				print_line("Tearing spring id: " + String::num(s));
+			}
+		}
 	}
 }
 

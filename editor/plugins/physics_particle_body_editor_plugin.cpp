@@ -119,7 +119,8 @@ void ParticleBodyEditor::_create_cloth() {
 			cloth_dialog.bend_stiffness_input->get_value(),
 			cloth_dialog.tether_stiffness_input->get_value(),
 			cloth_dialog.tether_give_input->get_value(),
-			cloth_dialog.pressure_input->get_value());
+			cloth_dialog.pressure_input->get_value(),
+			false);
 
 	UndoRedo *ur = EditorNode::get_singleton()->get_undo_redo();
 
@@ -198,7 +199,8 @@ void ParticleBodyEditor::_bake_model() {
 				cpb->get_bend_stiffness(),
 				cpb->get_tether_stiffness(),
 				cpb->get_tether_give(),
-				cpb->get_rest_pressure());
+				cpb->get_rest_pressure(),
+				cpb->get_allow_tearing());
 	}
 
 	if (model.is_null())

@@ -756,20 +756,28 @@ ClothParticleBody::ClothParticleBody() :
 		bend_stiffness(0.8),
 		tether_stiffness(0.8),
 		tether_give(0.8),
-		rest_pressure(1) {}
+		rest_pressure(1),
+		allow_tearing(false) {}
 
 void ClothParticleBody::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("set_stretch_stiffness", "value"), &ClothParticleBody::set_stretch_stiffness);
 	ClassDB::bind_method(D_METHOD("get_stretch_stiffness"), &ClothParticleBody::get_stretch_stiffness);
+
 	ClassDB::bind_method(D_METHOD("set_bend_stiffness", "value"), &ClothParticleBody::set_bend_stiffness);
 	ClassDB::bind_method(D_METHOD("get_bend_stiffness"), &ClothParticleBody::get_bend_stiffness);
+
 	ClassDB::bind_method(D_METHOD("set_tether_stiffness", "value"), &ClothParticleBody::set_tether_stiffness);
 	ClassDB::bind_method(D_METHOD("get_tether_stiffness"), &ClothParticleBody::get_tether_stiffness);
+
 	ClassDB::bind_method(D_METHOD("set_tether_give", "value"), &ClothParticleBody::set_tether_give);
 	ClassDB::bind_method(D_METHOD("get_tether_give"), &ClothParticleBody::get_tether_give);
+
 	ClassDB::bind_method(D_METHOD("set_rest_pressure", "value"), &ClothParticleBody::set_rest_pressure);
 	ClassDB::bind_method(D_METHOD("get_rest_pressure"), &ClothParticleBody::get_rest_pressure);
+
+	ClassDB::bind_method(D_METHOD("set_allow_tearing", "allow"), &ClothParticleBody::set_allow_tearing);
+	ClassDB::bind_method(D_METHOD("get_allow_tearing"), &ClothParticleBody::get_allow_tearing);
 
 	ClassDB::bind_method(D_METHOD("set_pressure", "pressure"), &ClothParticleBody::set_pressure);
 	ClassDB::bind_method(D_METHOD("get_pressure"), &ClothParticleBody::get_pressure);
@@ -779,6 +787,7 @@ void ClothParticleBody::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/tether_stiffness"), "set_tether_stiffness", "get_tether_stiffness");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/tether_give"), "set_tether_give", "get_tether_give");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/rest_pressure"), "set_rest_pressure", "get_rest_pressure");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "model/allow_tearing"), "set_allow_tearing", "get_allow_tearing");
 
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "pressure"), "set_pressure", "get_pressure");
 }
@@ -821,6 +830,14 @@ void ClothParticleBody::set_rest_pressure(real_t p_value) {
 
 real_t ClothParticleBody::get_rest_pressure() const {
 	return rest_pressure;
+}
+
+void ClothParticleBody::set_allow_tearing(bool p_allow) {
+	allow_tearing = p_allow;
+}
+
+real_t ClothParticleBody::get_allow_tearing() const {
+	return allow_tearing;
 }
 
 void ClothParticleBody::set_pressure(real_t p_pressure) {

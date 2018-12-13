@@ -216,6 +216,8 @@ protected:
 	real_t bend_stiffness;
 	real_t tether_stiffness;
 	real_t tether_give;
+	bool allow_tearing;
+
 	real_t rest_pressure;
 
 public:
@@ -235,6 +237,9 @@ public:
 
 	void set_rest_pressure(real_t p_value);
 	real_t get_rest_pressure() const;
+
+	void set_allow_tearing(bool p_allow);
+	real_t get_allow_tearing() const;
 
 	void set_pressure(real_t p_pressure);
 	real_t get_pressure() const;

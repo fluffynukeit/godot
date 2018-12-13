@@ -315,7 +315,7 @@ public:
 
 	// This should be on physics server
 	virtual Ref<ParticleBodyModel> create_soft_particle_body_model(Ref<TriangleMesh> p_mesh, float p_radius, float p_global_stiffness, bool p_internal_sample, float p_particle_spacing, float p_sampling, float p_clusterSpacing, float p_clusterRadius, float p_clusterStiffness, float p_linkRadius, float p_linkStiffness, float p_plastic_threshold, float p_plastic_creep);
-	virtual Ref<ParticleBodyModel> create_cloth_particle_body_model(Ref<TriangleMesh> p_mesh, float p_stretch_stiffness, float p_bend_stiffness, float p_tether_stiffness, float p_tether_give, float p_pressure);
+	virtual Ref<ParticleBodyModel> create_cloth_particle_body_model(Ref<TriangleMesh> p_mesh, float p_stretch_stiffness, float p_bend_stiffness, float p_tether_stiffness, float p_tether_give, float p_pressure, bool p_allow_tearing);
 	virtual Ref<ParticleBodyModel> create_rigid_particle_body_model(Ref<TriangleMesh> p_mesh, float p_radius, float p_expand);
 	virtual Ref<ParticleBodyModel> create_thread_particle_body_model(real_t p_particle_radius, real_t p_extent, real_t p_spacing, real_t p_link_stiffness, int p_cluster_size, real_t p_cluster_stiffness, int p_attach_to_particle, Ref<ParticleBodyModel> p_current_model);
 	Ref<ParticleBodyModel> make_model(class NvFlexExtAsset *p_asset);

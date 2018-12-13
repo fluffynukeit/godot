@@ -65,6 +65,7 @@ private:
 	bool want_inflatable;
 	float rest_volume;
 	float constraint_scale;
+	bool allow_tearing;
 
 public:
 	ParticleBodyModel();
@@ -121,6 +122,9 @@ public:
 
 	void set_constraint_scale(float p_constraint_scale);
 	float get_constraint_scale() const { return constraint_scale; }
+
+	void set_allow_tearing(bool p_allow);
+	real_t get_allow_tearing() const;
 };
 
 #endif // PARTICLE_BODY_MODEL_H

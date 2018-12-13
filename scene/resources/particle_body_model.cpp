@@ -77,6 +77,9 @@ void ParticleBodyModel::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_constraint_scale", "constraint_scale"), &ParticleBodyModel::set_constraint_scale);
 	ClassDB::bind_method(D_METHOD("get_constraint_scale"), &ParticleBodyModel::get_constraint_scale);
 
+	ClassDB::bind_method(D_METHOD("set_allow_tearing", "allow"), &ParticleBodyModel::set_allow_tearing);
+	ClassDB::bind_method(D_METHOD("get_allow_tearing"), &ParticleBodyModel::get_allow_tearing);
+
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_VECTOR3_ARRAY, "particles"), "set_particles", "get_particles");
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_REAL_ARRAY, "masses"), "set_masses", "get_masses");
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_INT_ARRAY, "constraints_indexes"), "set_constraints_indexes", "get_constraints_indexes");
@@ -94,10 +97,16 @@ void ParticleBodyModel::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "want_inflatable"), "set_want_inflatable", "get_want_inflatable");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "rest_volume"), "set_rest_volume", "get_rest_volume");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "constraint_scale"), "set_constraint_scale", "get_constraint_scale");
+
+	ADD_PROPERTY(
+			PropertyInfo(Variant::BOOL, "allow_tearing"),
+			"set_allow_tearing",
+			"get_allow_tearing");
 }
 
 ParticleBodyModel::ParticleBodyModel() :
-		want_inflatable(false) {}
+		want_inflatable(false),
+		allow_tearing(false) {}
 
 void ParticleBodyModel::set_particles(PoolVector<Vector3> p_particles) {
 	particles = p_particles;
@@ -167,4 +176,12 @@ void ParticleBodyModel::set_rest_volume(float p_rest_volume) {
 void ParticleBodyModel::set_constraint_scale(float p_constraint_scale) {
 	constraint_scale = p_constraint_scale;
 	notify_change_to_owners();
+}
+
+void ParticleBodyModel::set_allow_tearing(bool p_allow) {
+	allow_tearing = p_allow;
+}
+
+real_t ParticleBodyModel::get_allow_tearing() const {
+	return allow_tearing;
 }

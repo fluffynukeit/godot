@@ -111,6 +111,11 @@ class FlexParticleBody : public RIDFlex {
 	bool _is_monitorable;
 	bool _is_monitoring_primitives_contacts;
 
+	bool tearing_active;
+	real_t tearing_max_extension; // Normalized percetage
+	// Filled and used only if a tearable model is filled
+	Vector<real_t> spring_rest_lengths_2;
+
 public:
 	FlexParticleBody();
 
@@ -163,6 +168,9 @@ public:
 	void set_particle_count(int p_particle_count);
 	int get_particle_count() const;
 
+	void set_tearing_active(bool active);
+	bool is_tearing_active() const;
+
 	// CMD
 	void reset_spring(SpringIndex p_spring, ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness);
 
@@ -188,6 +196,9 @@ public:
 
 	void reload_rigids_COM();
 	void reload_rigid_COM(RigidIndex p_rigid);
+
+	real_t get_spring_extension_squared(int spring_index) const;
+	bool is_spring_overtension(int spring_index) const;
 	// ~CMD
 
 	bool is_owner_of_particle(ParticleIndex p_particle) const;
