@@ -96,6 +96,7 @@ class FlexSpace : public RIDFlex {
 	GeometryMemory *geometries_memory;
 
 	Vector<FlexParticleBody *> particle_bodies;
+	Vector<FlexParticleBody *> particle_bodies_tearing;
 
 	Vector<FlexParticleBodyConstraint *> constraints;
 
@@ -161,6 +162,7 @@ public:
 
 	void add_particle_body(FlexParticleBody *p_body);
 	void remove_particle_body(FlexParticleBody *p_body);
+	void update_particle_body_tearing_state(FlexParticleBody *p_body);
 
 	void add_particle_body_constraint(FlexParticleBodyConstraint *p_constraint);
 	void remove_particle_body_constraint(FlexParticleBodyConstraint *p_constraint);
@@ -182,6 +184,7 @@ public:
 	void execute_delayed_commands();
 	void rebuild_rigids_offsets();
 	void execute_geometries_commands();
+	void execute_tearing();
 
 	void commands_write_buffer();
 	void commands_read_buffer();

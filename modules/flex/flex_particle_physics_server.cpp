@@ -39,7 +39,7 @@
 #include "scene/3d/physics_particle_body_mesh_instance.h"
 
 /**
-	@author AndreaCatania
+@author AndreaCatania
 */
 
 #define CreateThenReturnRID(owner, rid_data) \
@@ -81,7 +81,7 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 
 		for (int i(0); i < resource_s_count; ++i) {
 			set_spring(i,
-					p_model->get_constraints_indexes_ref().get(i * 2),
+					p_model->get_constraints_indexes_ref().get(i * 2 + 0),
 					p_model->get_constraints_indexes_ref().get(i * 2 + 1),
 					p_model->get_constraints_info_ref().get(i).x,
 					p_model->get_constraints_info_ref().get(i).y);
@@ -146,6 +146,22 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 			}
 
 			set_rigid_component(i, body->particles_mchunk->get_buffer_index(indices_r[i]), particle_positions_r[indices_r[i]] - cluster_position);
+		}
+	}
+
+	{ // Tearing
+		if (p_model->get_allow_tearing()) {
+			body->set_tearing_active(p_model->get_allow_tearing());
+
+			body->spring_rest_lengths_2.resize(body->get_spring_count());
+
+			for (int i = body->get_spring_count() - 1; 0 <= i; --i) {
+				const int p1 = p_model->get_constraints_indexes_ref().get(i * 2 + 0);
+				const int p2 = p_model->get_constraints_indexes_ref().get(i * 2 + 1);
+
+				body->spring_rest_lengths_2.write[i] =
+						(particle_positions_r[p2] - particle_positions_r[p1]).length_squared();
+			}
 		}
 	}
 }
@@ -1108,7 +1124,15 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_soft_particle_body_mode
 	return model;
 }
 
-Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_cloth_particle_body_model(Ref<TriangleMesh> p_mesh, float p_stretch_stiffness, float p_bend_stiffness, float p_tether_stiffness, float p_tether_give, float p_pressure) {
+Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_cloth_particle_body_model(
+		Ref<TriangleMesh> p_mesh,
+		float p_stretch_stiffness,
+		float p_bend_stiffness,
+		float p_tether_stiffness,
+		float p_tether_give,
+		float p_pressure,
+		bool p_allow_tearing) {
+
 	ERR_FAIL_COND_V(p_mesh.is_null(), Ref<ParticleBodyModel>());
 
 	PoolVector<FlVector4> welded_particles_positions;
@@ -1171,20 +1195,37 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_cloth_particle_body_mod
 	PoolVector<FlVector4>::Read vertices_particles_r = welded_particles_positions.read();
 	PoolVector<int>::Read vertices_to_particles_r = welded_particles_indices.read();
 
-	NvFlexExtAsset *generated_assets = NvFlexExtCreateClothFromMesh(
-			(float *)vertices_particles_r.ptr(),
-			welded_particles_positions.size(),
-			vertices_to_particles_r.ptr(),
-			welded_particles_indices.size() / 3,
-			p_stretch_stiffness,
-			p_bend_stiffness,
-			p_tether_stiffness,
-			p_tether_give,
-			p_pressure);
+	NvFlexExtAsset *generated_assets;
+	if (p_allow_tearing) {
+
+		generated_assets = NvFlexExtCreateClothFromMesh(
+				(float *)vertices_particles_r.ptr(),
+				welded_particles_positions.size(),
+				vertices_to_particles_r.ptr(),
+				welded_particles_indices.size() / 3,
+				p_stretch_stiffness,
+				p_bend_stiffness,
+				p_tether_stiffness,
+				p_tether_give,
+				p_pressure);
+	} else {
+
+		generated_assets = NvFlexExtCreateTearingClothFromMesh(
+				(float *)vertices_particles_r.ptr(),
+				welded_particles_positions.size(),
+				welded_particles_positions.size() * 3,
+				vertices_to_particles_r.ptr(),
+				welded_particles_indices.size() / 3,
+				p_stretch_stiffness,
+				p_bend_stiffness,
+				p_pressure);
+	}
 
 	ERR_FAIL_COND_V(!generated_assets, Ref<ParticleBodyModel>());
 
 	Ref<ParticleBodyModel> model = make_model(generated_assets);
+
+	model->set_allow_tearing(p_allow_tearing);
 
 	NvFlexExtDestroyAsset(generated_assets);
 	generated_assets = NULL;

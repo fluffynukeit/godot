@@ -66,6 +66,10 @@ const FlVector4 &ParticlesMemory::get_particle(const MemoryChunk *p_chunk, Parti
 	return particles[index];
 }
 
+const FlVector4 &ParticlesMemory::get_particle(ParticleBufferIndex p_particle_index) const {
+	return particles[p_particle_index];
+}
+
 const FlVector4 *ParticlesMemory::get_particles_buffers(const MemoryChunk *p_chunk) {
 	return particles.mappedPtr + p_chunk->get_begin_index();
 }
