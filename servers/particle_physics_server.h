@@ -127,6 +127,31 @@ public:
 		PARTICLE_COLLISION_FLAG_FLUID
 	};
 
+	struct Triangle {
+		union {
+			struct {
+				int a;
+				int b;
+				int c;
+			};
+
+			int indices[3];
+		};
+
+		Triangle() {}
+		Triangle(int p_a, int p_b, int p_c) :
+				a(p_a),
+				b(p_b),
+				c(p_c) {}
+	};
+
+	struct TearingData {
+		// Filled and used only if a tearable model is filled
+		Vector<real_t> spring_rest_lengths_2;
+		Vector<Triangle> triangles;
+		Vector<Vector3> vertices;
+	};
+
 	/* BODY */
 	virtual RID body_create() = 0;
 	virtual void body_set_space(RID p_body, RID p_space) = 0;
@@ -165,6 +190,8 @@ public:
 
 	virtual void body_set_monitoring_primitives_contacts(RID p_body, bool p_monitoring) = 0;
 	virtual bool body_is_monitoring_primitives_contacts(RID p_body) const = 0;
+
+	virtual const TearingData *body_get_tearing_data(RID p_body) const = 0;
 
 	/* BODY CONSTRAINT */
 	virtual RID constraint_create(RID p_body0, RID p_body1) = 0;

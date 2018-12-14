@@ -197,22 +197,60 @@ void ParticleBodyMeshInstance::update_mesh(ParticleBodyCommands *p_cmds) {
 
 void ParticleBodyMeshInstance::update_mesh_pvparticles(ParticleBodyCommands *p_cmds) {
 
-	PoolVector<int>::Read pb_indices_r = particle_body->get_particle_body_model()->get_dynamic_triangles_indices().read();
-	visual_server_handler->open();
+	const ParticlePhysicsServer::TearingData *tearing_data =
+			ParticlePhysicsServer::get_singleton()->body_get_tearing_data(
+					particle_body->get_rid());
 
-	PoolVector<int>::Read mesh_indices_r = visual_server_handler->get_mesh_indices().read();
-	Vector3 v;
-	for (int i(visual_server_handler->get_mesh_indices().size() - 1); 0 <= i; --i) {
+	if (tearing_data) {
 
-		v = p_cmds->get_particle_position(pb_indices_r[i]);
-		visual_server_handler->set_vertex(mesh_indices_r[i], reinterpret_cast<void *>(&v));
-		v = p_cmds->get_particle_normal(pb_indices_r[i]) * -1;
-		visual_server_handler->set_normal(mesh_indices_r[i], reinterpret_cast<void *>(&v));
+		// TODO Perform here vertex copy in needed
+
+		PoolVector<int>::Read mesh_indices_r = visual_server_handler->get_mesh_indices().read();
+
+		visual_server_handler->open();
+		for (int i(tearing_data->triangles.size() - 1); 0 <= i; --i) {
+			for (int e(0); e < 3; ++e) {
+
+				const int triangle_vertex_index(
+						tearing_data->triangles[i].indices[e]);
+
+				const Vector3 v =
+						p_cmds->get_particle_position(triangle_vertex_index);
+
+				const Vector3 n =
+						p_cmds->get_particle_normal(triangle_vertex_index) * -1;
+
+				visual_server_handler->set_vertex(
+						mesh_indices_r[triangle_vertex_index],
+						reinterpret_cast<const void *>(&v));
+
+				visual_server_handler->set_normal(
+						mesh_indices_r[triangle_vertex_index],
+						reinterpret_cast<const void *>(&n));
+			}
+		}
+		visual_server_handler->close();
+
+	} else {
+
+		// Not tearable cloth
+		PoolVector<int>::Read pb_indices_r = particle_body->get_particle_body_model()->get_dynamic_triangles_indices().read();
+		visual_server_handler->open();
+
+		PoolVector<int>::Read mesh_indices_r = visual_server_handler->get_mesh_indices().read();
+		Vector3 v;
+		for (int i(visual_server_handler->get_mesh_indices().size() - 1); 0 <= i; --i) {
+
+			v = p_cmds->get_particle_position(pb_indices_r[i]);
+			visual_server_handler->set_vertex(mesh_indices_r[i], reinterpret_cast<void *>(&v));
+			v = p_cmds->get_particle_normal(pb_indices_r[i]) * -1;
+			visual_server_handler->set_normal(mesh_indices_r[i], reinterpret_cast<void *>(&v));
+		}
+
+		visual_server_handler->close();
 	}
 
 	visual_server_handler->set_aabb(p_cmds->get_aabb());
-
-	visual_server_handler->close();
 }
 
 void ParticleBodyMeshInstance::_draw_mesh_pvparticles() {

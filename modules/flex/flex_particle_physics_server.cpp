@@ -151,16 +151,45 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 
 	{ // Tearing
 		if (p_model->get_allow_tearing()) {
+
 			body->set_tearing_active(p_model->get_allow_tearing());
 
-			body->spring_rest_lengths_2.resize(body->get_spring_count());
+			body->tearing_data->spring_rest_lengths_2.resize(
+					body->get_spring_count());
 
 			for (int i = body->get_spring_count() - 1; 0 <= i; --i) {
-				const int p1 = p_model->get_constraints_indexes_ref().get(i * 2 + 0);
-				const int p2 = p_model->get_constraints_indexes_ref().get(i * 2 + 1);
+				const int p1 =
+						p_model->get_constraints_indexes_ref().get(i * 2 + 0);
+				const int p2 =
+						p_model->get_constraints_indexes_ref().get(i * 2 + 1);
 
-				body->spring_rest_lengths_2.write[i] =
-						(particle_positions_r[p2] - particle_positions_r[p1]).length_squared();
+				body->tearing_data->spring_rest_lengths_2.write[i] =
+						(particle_positions_r[p2] - particle_positions_r[p1])
+								.length_squared();
+			}
+
+			{ // Load dynamic triangles
+				const int triangle_count(p_model->get_dynamic_triangles_indices().size() / 3);
+				body->tearing_data->triangles.resize(triangle_count);
+
+				PoolVector<int>::Read triangles_indices_r(p_model->get_dynamic_triangles_indices().read());
+				for (int t(0); t < triangle_count; ++t) {
+					body->tearing_data->triangles.write[t] =
+							ParticlePhysicsServer::Triangle(
+									triangles_indices_r[t * 3 + 0],
+									triangles_indices_r[t * 3 + 1],
+									triangles_indices_r[t * 3 + 2]);
+				}
+			}
+
+			{ // Load vertices
+				const int vertex_count(p_model->get_particles().size());
+				body->tearing_data->vertices.resize(vertex_count);
+
+				for (int i(0); i < vertex_count; ++i) {
+					body->tearing_data->vertices.write[i] =
+							particle_positions_r[i];
+				}
 			}
 		}
 	}
@@ -829,6 +858,13 @@ bool FlexParticlePhysicsServer::body_is_monitoring_primitives_contacts(RID p_bod
 	return body->is_monitoring_primitives_contacts();
 }
 
+const ParticlePhysicsServer::TearingData *FlexParticlePhysicsServer::body_get_tearing_data(RID p_body) const {
+	const FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND_V(!body, NULL);
+
+	return body->get_tearing_data();
+}
+
 RID FlexParticlePhysicsServer::constraint_create(RID p_body0, RID p_body1) {
 	FlexParticleBody *body0 = body_owner.get(p_body0);
 	ERR_FAIL_COND_V(!body0, RID());
@@ -1168,6 +1204,10 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_cloth_particle_body_mod
 					0.00005);
 		}
 
+		// In this way I don't need to edit the mesh resource
+		ERR_EXPLAIN("Please provide a mesh with no duplicate vertices");
+		ERR_FAIL_COND_V(unique_vertices != mesh_vertex_count, Ref<ParticleBodyModel>());
+
 		PoolVector<int>::Read mesh_indices_r = mesh_indices.read();
 		PoolVector<int>::Read welded_vertex_indices_r = welded_vertex_indices.read();
 		PoolVector<int>::Read original_to_unique_r = original_to_unique.read();
@@ -1186,8 +1226,8 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_cloth_particle_body_mod
 			}
 
 			for (int i(0); i < mesh_index_count; ++i) {
-				// int vertex = mesh_indices_r[i];
-				welded_particles_indices_w[i] = welded_vertex_indices_r[original_to_unique_r[mesh_indices_r[i]]];
+				welded_particles_indices_w[i] =
+						welded_vertex_indices_r[original_to_unique_r[mesh_indices_r[i]]];
 			}
 		}
 	}

@@ -38,6 +38,7 @@
 #include "flex_particle_physics_server.h"
 #include "flex_utility.h"
 #include "rid_flex.h"
+#include <memory>
 
 class FlexParticleBody;
 class FlexSpace;
@@ -113,8 +114,7 @@ class FlexParticleBody : public RIDFlex {
 
 	bool tearing_active;
 	real_t tearing_max_extension; // Normalized percetage
-	// Filled and used only if a tearable model is filled
-	Vector<real_t> spring_rest_lengths_2;
+	std::shared_ptr<ParticlePhysicsServer::TearingData> tearing_data;
 
 public:
 	FlexParticleBody();
@@ -153,6 +153,10 @@ public:
 
 	void set_monitoring_primitives_contacts(bool p_monitoring);
 	_FORCE_INLINE_ bool is_monitoring_primitives_contacts() const { return _is_monitoring_primitives_contacts; }
+
+	const ParticlePhysicsServer::TearingData *get_tearing_data() const {
+		return tearing_data.get();
+	}
 
 	void unactive_particle(ParticleIndex p_particle);
 	void remove_particle(ParticleIndex p_particle);
@@ -197,8 +201,7 @@ public:
 	void reload_rigids_COM();
 	void reload_rigid_COM(RigidIndex p_rigid);
 
-	real_t get_spring_extension_squared(int spring_index) const;
-	bool is_spring_overtension(int spring_index) const;
+	real_t get_spring_extension(int spring_index) const;
 	// ~CMD
 
 	bool is_owner_of_particle(ParticleIndex p_particle) const;
