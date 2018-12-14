@@ -270,6 +270,8 @@ public:
 	virtual void body_set_monitoring_primitives_contacts(RID p_body, bool p_monitoring);
 	virtual bool body_is_monitoring_primitives_contacts(RID p_body) const;
 
+	virtual const TearingData *body_get_tearing_data(RID p_body) const;
+
 	/* BODY CONSTRAINT */
 	virtual RID constraint_create(RID p_body0, RID p_body1);
 

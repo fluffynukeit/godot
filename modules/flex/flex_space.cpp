@@ -481,9 +481,9 @@ void FlexSpace::remove_particle_body(FlexParticleBody *p_body) {
 
 void FlexSpace::update_particle_body_tearing_state(FlexParticleBody *p_body) {
 
-	const bool id = particle_bodies_tearing.find(p_body);
+	const int id = particle_bodies_tearing.find(p_body);
 
-	if (id > -1) {
+	if (-1 < id) {
 		// Found
 		if (!p_body->is_tearing_active() || this != p_body->space) {
 			particle_bodies_tearing.remove(id);
@@ -1296,13 +1296,52 @@ void FlexSpace::execute_geometries_commands() {
 
 void FlexSpace::execute_tearing() {
 
+	const int max_copies = 10;
+	int copies = 0;
+
 	for (int i(particle_bodies_tearing.size() - 1); 0 <= i; --i) {
 		FlexParticleBody *pb = particle_bodies_tearing[i];
 
-		for (int s(pb->get_spring_count() - 1); 0 <= s; --s) {
-			if (pb->is_spring_overtension(s)) {
-				//
-				print_line("Tearing spring id: " + String::num(s));
+		for (
+				int spring_index(pb->get_spring_count() - 1);
+				0 <= spring_index;
+				--spring_index) {
+
+			const Spring &s = springs_memory->get_spring(
+					pb->springs_mchunk,
+					spring_index);
+
+			const FlVector4 &p0 = particles_memory->get_particle(s.index0);
+			if (0 == p0.w)
+				continue;
+
+			const FlVector4 &p1 = particles_memory->get_particle(s.index1);
+			if (0 == p1.w)
+				continue;
+
+			const real_t extension_2 = extract_position((p1 - p0)).length_squared();
+			const real_t rest_length_2 = pb->tearing_data->spring_rest_lengths_2[spring_index];
+			if (extension_2 < rest_length_2 * pb->tearing_max_extension)
+				continue;
+
+			// Perform the copy
+			++copies;
+
+			// Instead of a random selection, choose always the first particle
+			// to copy
+			const ParticleIndex particle_to_copy =
+					pb->particles_mchunk->get_chunk_index(s.index0);
+
+			const Vector3 split_plane(vec3_from_flvec4((p1 - p0)).normalized());
+
+			// Duplicate particle
+
+			// Duplicate dynamic triangle
+
+			// Duplicate mesh vertex
+
+			if (max_copies <= copies) {
+				return;
 			}
 		}
 	}
@@ -1367,7 +1406,11 @@ void FlexSpace::commands_write_buffer() {
 		NvFlexSetSprings(solver, springs_memory->springs.buffer, springs_memory->lengths.buffer, springs_memory->stiffness.buffer, springs_allocator->get_last_used_index() + 1);
 
 	if (force_buffer_write || triangles_memory->was_changed())
-		NvFlexSetDynamicTriangles(solver, triangles_memory->triangles.buffer, NULL, triangles_allocator->get_last_used_index() + 1);
+		NvFlexSetDynamicTriangles(
+				solver,
+				triangles_memory->triangles.buffer,
+				NULL,
+				triangles_allocator->get_last_used_index() + 1);
 
 	if (force_buffer_write || inflatables_memory->was_changed())
 		NvFlexSetInflatables(solver, inflatables_memory->start_triangle_indices.buffer, inflatables_memory->triangle_counts.buffer, inflatables_memory->rest_volumes.buffer, inflatables_memory->pressures.buffer, inflatables_memory->constraint_scales.buffer, inflatables_allocator->get_last_used_index() + 1);

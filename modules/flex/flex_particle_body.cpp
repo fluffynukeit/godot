@@ -59,7 +59,8 @@ FlexParticleBody::FlexParticleBody() :
 		_is_monitorable(false),
 		_is_monitoring_primitives_contacts(false),
 		tearing_active(false),
-		tearing_max_extension(2.0) {
+		tearing_max_extension(1.2),
+		tearing_data(NULL) {
 	sync_callback.receiver = NULL;
 }
 
@@ -236,8 +237,15 @@ int FlexParticleBody::get_particle_count() const {
 	return particle_count;
 }
 
-void FlexParticleBody::set_tearing_active(bool active) {
-	tearing_active = active;
+void FlexParticleBody::set_tearing_active(bool p_active) {
+	tearing_active = p_active;
+
+	if (p_active) {
+		if (!tearing_data)
+			tearing_data = std::make_shared<ParticlePhysicsServer::TearingData>();
+	} else {
+		tearing_data.reset();
+	}
 
 	if (space) {
 		space->update_particle_body_tearing_state(this);
@@ -355,7 +363,7 @@ void FlexParticleBody::reload_rigid_COM(RigidIndex p_rigid) {
 	space->get_rigids_memory()->set_position(rigids_mchunk, p_rigid, center);
 }
 
-real_t FlexParticleBody::get_spring_extension_squared(int spring_index) const {
+real_t FlexParticleBody::get_spring_extension(int spring_index) const {
 	const Spring &s = space->get_springs_memory()->get_spring(
 			springs_mchunk,
 			spring_index);
@@ -363,13 +371,7 @@ real_t FlexParticleBody::get_spring_extension_squared(int spring_index) const {
 	const FlVector4 &p0 = space->get_particles_memory()->get_particle(s.index0);
 	const FlVector4 &p1 = space->get_particles_memory()->get_particle(s.index1);
 
-	return extract_position((p1 - p0)).length_squared();
-}
-
-bool FlexParticleBody::is_spring_overtension(int spring_index) const {
-	const real_t extension_2 = get_spring_extension_squared(spring_index);
-	const real_t rest_length_2 = spring_rest_lengths_2[spring_index];
-	return extension_2 > rest_length_2 * tearing_max_extension;
+	return extract_position((p1 - p0)).length();
 }
 
 bool FlexParticleBody::is_owner_of_particle(ParticleIndex p_particle) const {

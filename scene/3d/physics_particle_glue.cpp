@@ -344,6 +344,9 @@ void PhysicsParticleGlue::_compute_offsets() {
 
 	for (int i(glued_particles.size() - 1); 0 <= i; --i) {
 
+		if (particle_body->get_particle_body_model()->get_particles().size() <= glued_particles[i])
+			continue;
+
 		glued_particles_offsets.write[i] = get_global_transform().xform_inv(particle_body->get_global_transform().xform(particles_r[glued_particles[i]]));
 	}
 }
