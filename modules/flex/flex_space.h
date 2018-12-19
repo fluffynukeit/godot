@@ -144,6 +144,14 @@ public:
 private:
 	void terminate_solver();
 
+	static void particle_chunk_resize(
+			void *data,
+			void *owner,
+			int p_old_begin_index,
+			int p_old_size,
+			int p_new_begin_index,
+			int p_new_size);
+
 public:
 	void sync();
 	void _sync();
