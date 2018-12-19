@@ -35,8 +35,6 @@
 #include "flex_memory_allocator.h"
 #include "core/print_string.h"
 
-MemoryChunk FlexMemoryAllocator::zero_memory_chunk(0, -1, false);
-
 void FlexMemory::copy(FlexBufferIndex p_to_begin_index, FlexUnit p_size, FlexBufferIndex p_from_begin_index) {
 	for (int i(0); i < p_size; ++i) {
 		copy_unit(p_to_begin_index + i, p_from_begin_index + i);
@@ -82,13 +80,25 @@ bool FlexMemoryAllocator::resize_memory(FlexUnit p_size) {
 		// just increase memory space
 
 		if (memory_table.size() <= 0) {
-			create_chunk()->set(memory_size, p_size - 1, true);
+			create_chunk()->set(
+					memory_size,
+					p_size - 1,
+					true,
+					NULL);
 		} else {
 			MemoryChunk *last_chunk = memory_table[memory_table.size() - 1];
 			if (last_chunk->is_free) {
-				last_chunk->set(last_chunk->begin_index, p_size - 1, true);
+				last_chunk->set(
+						last_chunk->begin_index,
+						p_size - 1,
+						true,
+						NULL);
 			} else {
-				create_chunk()->set(last_chunk->end_index + 1, p_size - 1, true);
+				create_chunk()->set(
+						last_chunk->end_index + 1,
+						p_size - 1,
+						true,
+						NULL);
 			}
 		}
 	}
@@ -113,7 +123,11 @@ void FlexMemoryAllocator::sanitize(bool p_want_update_cache, bool p_trim) {
 		if (memory_table[next_i]->is_free) {
 
 			// MERGE
-			memory_table[i]->set(memory_table[i]->begin_index, memory_table[next_i]->end_index, true);
+			memory_table[i]->set(
+					memory_table[i]->begin_index,
+					memory_table[next_i]->end_index,
+					true,
+					NULL);
 			delete_chunk(next_i);
 			msize = memory_table.size();
 			--i; // This is required in order to refetch this chunk.
@@ -126,15 +140,29 @@ void FlexMemoryAllocator::sanitize(bool p_want_update_cache, bool p_trim) {
 			const MemoryChunk i_chunk_cpy(*memory_table[i]);
 			const MemoryChunk next_i_chunk_cpy(*memory_table[next_i]);
 
-			memory_table[next_i]->set(i_chunk_cpy.begin_index, i_chunk_cpy.begin_index + next_i_chunk_cpy.size - 1, false);
-			memory_table[i]->set(memory_table[next_i]->end_index + 1, next_i_chunk_cpy.end_index, true);
+			memory_table[next_i]->set(
+					i_chunk_cpy.begin_index,
+					i_chunk_cpy.begin_index + next_i_chunk_cpy.size - 1,
+					false,
+					next_i_chunk_cpy.owner);
+
+			memory_table[i]->set(
+					memory_table[next_i]->end_index + 1,
+					next_i_chunk_cpy.end_index,
+					true,
+					NULL);
 
 			MemoryChunk *i_chunk = memory_table[i];
 			memory_table.write[i] = memory_table[next_i];
 			memory_table.write[next_i] = i_chunk;
 
-			// Shift back data, even if the chunks collides it will work because the copy is performed incrementally (in the opposite way of the swap [free space] <- [data])
-			memory->copy(memory_table[i]->begin_index, next_i_chunk_cpy.size, next_i_chunk_cpy.begin_index);
+			// Shift back data, even if the chunks collides it will work
+			// because the copy is performed incrementally
+			// (in the opposite way of the swap [free space] <- [data])
+			memory->copy(
+					memory_table[i]->begin_index,
+					next_i_chunk_cpy.size,
+					next_i_chunk_cpy.begin_index);
 		}
 	}
 
@@ -142,13 +170,13 @@ void FlexMemoryAllocator::sanitize(bool p_want_update_cache, bool p_trim) {
 		find_biggest_chunk_size();
 }
 
-MemoryChunk *FlexMemoryAllocator::allocate_chunk(FlexUnit p_size) {
+MemoryChunk *FlexMemoryAllocator::allocate_chunk(FlexUnit p_size, void *p_owner) {
 
-	if (p_size == 898)
-		int a = 0;
-
-	if (0 >= p_size)
-		return &zero_memory_chunk;
+	if (0 >= p_size) {
+		MemoryChunk *zero_memory_chunk = new MemoryChunk;
+		zero_memory_chunk->zero(p_owner);
+		return zero_memory_chunk;
+	}
 
 	bool space_available = false;
 	if (p_size <= cache.biggest_free_chunk_size) {
@@ -164,7 +192,7 @@ MemoryChunk *FlexMemoryAllocator::allocate_chunk(FlexUnit p_size) {
 
 	if (!space_available) {
 		if (reallocation_extra_size > -1 && resize_memory(memory_size + p_size + reallocation_extra_size)) {
-			return allocate_chunk(p_size);
+			return allocate_chunk(p_size, p_owner);
 		} else {
 			ERR_PRINT("No space available in this memory!");
 			return NULL;
@@ -178,9 +206,17 @@ MemoryChunk *FlexMemoryAllocator::allocate_chunk(FlexUnit p_size) {
 
 		if (memory_table[i]->size != p_size) {
 			// Perform split of current chunk
-			insert_chunk(i + 1)->set(memory_table[i]->begin_index + p_size, memory_table[i]->end_index, true);
+			insert_chunk(i + 1)->set(
+					memory_table[i]->begin_index + p_size,
+					memory_table[i]->end_index,
+					true,
+					NULL);
 		}
-		memory_table[i]->set(memory_table[i]->begin_index, memory_table[i]->begin_index + p_size - 1, false);
+		memory_table[i]->set(
+				memory_table[i]->begin_index,
+				memory_table[i]->begin_index + p_size - 1,
+				false,
+				p_owner);
 		cache.occupied_memory += memory_table[i]->size;
 		find_biggest_chunk_size();
 		return memory_table[i];
@@ -192,14 +228,21 @@ MemoryChunk *FlexMemoryAllocator::allocate_chunk(FlexUnit p_size) {
 
 void FlexMemoryAllocator::deallocate_chunk(MemoryChunk *&r_chunk) {
 
-	if (!r_chunk || r_chunk == (&zero_memory_chunk))
+	if (!r_chunk)
 		return;
+
+	if (r_chunk->is_zero()) {
+		delete r_chunk;
+		r_chunk = NULL;
+		return;
+	}
 
 #ifdef DEBUG_ENABLED
 	ERR_FAIL_COND(r_chunk->owner_memory_allocator != this);
 #endif
 
 	r_chunk->is_free = true;
+	r_chunk->owner = NULL;
 	cache.occupied_memory -= r_chunk->size;
 
 	// update cache
@@ -212,7 +255,10 @@ void FlexMemoryAllocator::deallocate_chunk(MemoryChunk *&r_chunk) {
 	sanitize(false, false); // Merge only, no cache update, no trim
 }
 
-void FlexMemoryAllocator::resize_chunk(MemoryChunk *&r_chunk, FlexUnit p_size, bool p_keep_data) {
+void FlexMemoryAllocator::resize_chunk(
+		MemoryChunk *&r_chunk,
+		FlexUnit p_size,
+		bool p_keep_data) {
 
 	ERR_FAIL_COND(p_size < 0);
 
@@ -220,14 +266,20 @@ void FlexMemoryAllocator::resize_chunk(MemoryChunk *&r_chunk, FlexUnit p_size, b
 		return;
 
 #ifdef DEBUG_ENABLED
-	if (r_chunk != (&zero_memory_chunk))
+	if (!r_chunk->is_zero())
 		ERR_FAIL_COND(r_chunk->owner_memory_allocator != this);
 #endif
+
+	void *owner = r_chunk->owner;
+	int old_begin_index = r_chunk->get_begin_index();
+	int old_size = r_chunk->get_size();
+	int new_begin_index;
+	int new_size;
 
 	if (0 >= p_size) {
 
 		deallocate_chunk(r_chunk);
-		r_chunk = &zero_memory_chunk;
+		r_chunk = allocate_chunk(0, owner);
 
 	} else if (r_chunk->size > p_size) {
 
@@ -238,37 +290,59 @@ void FlexMemoryAllocator::resize_chunk(MemoryChunk *&r_chunk, FlexUnit p_size, b
 
 		FlexUnit new_chunk_size = r_chunk->size - p_size;
 		MemoryChunk *new_chunk = insert_chunk(chunk_index + 1);
-		new_chunk->set(r_chunk->end_index - new_chunk_size + 1, r_chunk->end_index, true);
+		new_chunk->set(
+				r_chunk->end_index - new_chunk_size + 1,
+				r_chunk->end_index,
+				true,
+				NULL);
 
 		// 2. Redux
-		r_chunk->set(r_chunk->begin_index, new_chunk->begin_index - 1, false);
+		r_chunk->set(
+				r_chunk->begin_index,
+				new_chunk->begin_index - 1,
+				false,
+				owner);
 
 	} else {
 
 		if (p_keep_data) {
 			// Re allocate all chunk
-			MemoryChunk *new_chunk = allocate_chunk(p_size);
+			MemoryChunk *new_chunk = allocate_chunk(p_size, owner);
 			copy_chunk(new_chunk, r_chunk);
 			deallocate_chunk(r_chunk);
 			r_chunk = new_chunk;
 		} else {
 			deallocate_chunk(r_chunk);
-			r_chunk = allocate_chunk(p_size);
+			r_chunk = allocate_chunk(p_size, owner);
 		}
+	}
+
+	new_begin_index = r_chunk->get_begin_index();
+	new_size = r_chunk->get_size();
+
+	if (resizechunk_callback.func) {
+		(*resizechunk_callback.func)(
+				resizechunk_callback.data,
+				owner,
+				old_begin_index,
+				old_size,
+				new_begin_index,
+				new_size);
 	}
 }
 
 void FlexMemoryAllocator::copy_chunk(MemoryChunk *p_to, MemoryChunk *p_from) {
 
 #ifdef DEBUG_ENABLED
-	if (p_to != (&zero_memory_chunk))
+	if (!p_to->is_zero())
 		ERR_FAIL_COND(p_to->owner_memory_allocator != this);
 
-	if (p_from != (&zero_memory_chunk))
+	if (!p_from->is_zero())
 		ERR_FAIL_COND(p_from->owner_memory_allocator != this);
 #endif
 
-	const FlexUnit copy_size = MIN(p_from->size, p_to->size); // Avoid to copy more then the destination size
+	// Avoid to copy more then the destination size
+	const FlexUnit copy_size = MIN(p_from->size, p_to->size);
 	memory->copy(p_to->begin_index, copy_size, p_from->begin_index);
 }
 
@@ -289,6 +363,14 @@ MemoryChunk *FlexMemoryAllocator::get_chunk(FlexUnit i) const {
 	return memory_table.get(i);
 }
 
+void FlexMemoryAllocator::register_resizechunk_callback(
+		void *p_data,
+		ResizechunkCallbackFunc p_func) {
+
+	resizechunk_callback.data = p_data;
+	resizechunk_callback.func = p_func;
+}
+
 bool FlexMemoryAllocator::redux_memory(FlexUnit p_size) {
 	if (memory_table.size() > 0) {
 		const FlexUnit last_chunk_index = memory_table.size() - 1;
@@ -301,7 +383,11 @@ bool FlexMemoryAllocator::redux_memory(FlexUnit p_size) {
 				delete_chunk(last_chunk_index);
 			} else {
 				// When the last chunk begin is less then new size, space is available
-				last_chunk->set(last_chunk->begin_index, p_size - 1, true);
+				last_chunk->set(
+						last_chunk->begin_index,
+						p_size - 1,
+						true,
+						NULL);
 			}
 			memory_size = p_size;
 			memory->resize_memory(p_size);

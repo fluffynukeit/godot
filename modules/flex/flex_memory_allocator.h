@@ -38,6 +38,23 @@
 #include "core/vector.h"
 #include "flex_utility.h"
 
+typedef void (*ResizechunkCallbackFunc)(
+		void *data,
+		void *owner,
+		int p_old_begin_index,
+		int p_old_size,
+		int p_new_begin_index,
+		int p_new_size);
+
+struct FMACResizechunkCallback {
+	void *data;
+	ResizechunkCallbackFunc func;
+
+	FMACResizechunkCallback() :
+			data(NULL),
+			func(NULL) {}
+};
+
 class FlexMemoryAllocator;
 
 class FlexMemory {
@@ -64,12 +81,14 @@ private:
 	FlexBufferIndex end_index;
 	bool is_free;
 	FlexUnit size;
+	void *owner;
 
 	MemoryChunk() :
 			begin_index(0),
 			end_index(0),
 			is_free(true),
-			size(0) {}
+			size(0),
+			owner(NULL) {}
 
 	MemoryChunk(FlexBufferIndex p_begin_index, FlexBufferIndex p_end_index, bool p_is_free) :
 			begin_index(p_begin_index),
@@ -84,11 +103,29 @@ private:
 			is_free(other.is_free),
 			size(other.size) {}
 
-	void set(FlexBufferIndex p_begin_index, FlexBufferIndex p_end_index, bool p_is_free) {
+	void set(
+			FlexBufferIndex p_begin_index,
+			FlexBufferIndex p_end_index,
+			bool p_is_free,
+			void *p_owner) {
 		begin_index = p_begin_index;
 		end_index = p_end_index;
 		is_free = p_is_free;
 		size = 1 + p_end_index - p_begin_index;
+
+		if (is_free) {
+			owner = NULL;
+		} else {
+			owner = p_owner;
+		}
+	}
+
+	void zero(void *p_owner) {
+		set(-1, -2, false, p_owner);
+	}
+
+	bool is_zero() const {
+		return 0 > begin_index;
 	}
 
 public:
@@ -130,8 +167,6 @@ public:
 ///
 class FlexMemoryAllocator {
 
-	static MemoryChunk zero_memory_chunk; // Special MemoryChunk that is used when the chunk has 0 size
-
 	Vector<MemoryChunk *> memory_table;
 	FlexUnit memory_size;
 	FlexUnit reallocation_extra_size;
@@ -143,6 +178,8 @@ class FlexMemoryAllocator {
 	} cache;
 
 	FlexMemory *memory;
+
+	FMACResizechunkCallback resizechunk_callback;
 
 public:
 	FlexMemoryAllocator(
@@ -159,7 +196,7 @@ public:
 	FlexMemory *get_memory() { return memory; }
 
 	/// Allocate memory, return null if no more space available
-	MemoryChunk *allocate_chunk(FlexUnit p_size);
+	MemoryChunk *allocate_chunk(FlexUnit p_size, void *p_owner);
 	void deallocate_chunk(MemoryChunk *&r_chunk);
 	void resize_chunk(MemoryChunk *&r_chunk, FlexUnit p_size, bool p_keep_data = true);
 
@@ -170,6 +207,8 @@ public:
 
 	FlexUnit get_chunk_count() const;
 	MemoryChunk *get_chunk(FlexUnit i) const;
+
+	void register_resizechunk_callback(void *p_data, ResizechunkCallbackFunc p_func);
 
 private:
 	bool redux_memory(FlexUnit p_size);
