@@ -131,6 +131,9 @@ void FlexSpace::init_buffers() {
 			10000,
 			5000,
 			-1));
+	particles_allocator->register_resizechunk_callback(
+			this,
+			&FlexSpace::update_particle_buffer_index);
 
 	particles_memory->unmap(); // *1
 
@@ -140,7 +143,7 @@ void FlexSpace::init_buffers() {
 	active_particles_allocator = memnew(FlexMemoryAllocator(active_particles_memory, particles_allocator->get_memory_size(), 1000, -1));
 	active_particles_memory->unmap(); // *1
 
-	active_particles_mchunk = active_particles_allocator->allocate_chunk(0);
+	active_particles_mchunk = active_particles_allocator->allocate_chunk(0, this);
 
 	CRASH_COND(contacts_buffers);
 	contacts_buffers = memnew(ContactsBuffers(flex_lib)); // This is resized when the solver is initialized
@@ -329,7 +332,7 @@ void FlexSpace::terminate_solver() {
 	}
 }
 
-void FlexSpace::particle_chunk_resize(
+void FlexSpace::update_particle_buffer_index(
 		void *data,
 		void *owner,
 		int p_old_begin_index,
@@ -401,6 +404,8 @@ void FlexSpace::particle_chunk_resize(
 				i,
 				p);
 	}
+
+	space->is_active_particles_buffer_dirty = true;
 }
 
 void FlexSpace::sync() {}
@@ -511,12 +516,12 @@ void FlexSpace::add_particle_body(FlexParticleBody *p_body) {
 
 	p_body->id = particle_body_id;
 	p_body->changed_parameters = eChangedBodyParamALL;
-	p_body->particles_mchunk = particles_allocator->allocate_chunk(0);
-	p_body->springs_mchunk = springs_allocator->allocate_chunk(0);
-	p_body->triangles_mchunk = triangles_allocator->allocate_chunk(0);
-	p_body->inflatable_mchunk = inflatables_allocator->allocate_chunk(0);
-	p_body->rigids_mchunk = rigids_allocator->allocate_chunk(0);
-	p_body->rigids_components_mchunk = rigids_components_allocator->allocate_chunk(0);
+	p_body->particles_mchunk = particles_allocator->allocate_chunk(0, p_body);
+	p_body->springs_mchunk = springs_allocator->allocate_chunk(0, p_body);
+	p_body->triangles_mchunk = triangles_allocator->allocate_chunk(0, p_body);
+	p_body->inflatable_mchunk = inflatables_allocator->allocate_chunk(0, p_body);
+	p_body->rigids_mchunk = rigids_allocator->allocate_chunk(0, p_body);
+	p_body->rigids_components_mchunk = rigids_components_allocator->allocate_chunk(0, p_body);
 
 	update_particle_body_tearing_state(p_body);
 }
@@ -575,7 +580,7 @@ void FlexSpace::add_particle_body_constraint(FlexParticleBodyConstraint *p_const
 	p_constraint->space = this;
 	constraints.push_back(p_constraint);
 
-	p_constraint->springs_mchunk = springs_allocator->allocate_chunk(0);
+	p_constraint->springs_mchunk = springs_allocator->allocate_chunk(0, p_constraint);
 }
 
 void FlexSpace::remove_particle_body_constraint(FlexParticleBodyConstraint *p_constraint) {
@@ -591,7 +596,7 @@ void FlexSpace::add_primitive_body(FlexPrimitiveBody *p_body) {
 	ERR_FAIL_COND(p_body->space);
 	p_body->space = this;
 	p_body->changed_parameters = eChangedPrimitiveBodyParamAll;
-	p_body->geometry_mchunk = geometries_allocator->allocate_chunk(0);
+	p_body->geometry_mchunk = geometries_allocator->allocate_chunk(0, p_body);
 	primitive_bodies.push_back(p_body);
 	primitive_body_sync_cmonitoring(p_body);
 
@@ -1168,7 +1173,12 @@ void FlexSpace::execute_delayed_commands() {
 		}
 	}
 
-	if (active_particles_mchunk->get_size() != particles_count) {
+	if (active_particles_mchunk->get_size() != particles_count)
+		is_active_particles_buffer_dirty = true;
+
+	if (is_active_particles_buffer_dirty) {
+
+		is_active_particles_buffer_dirty = false;
 
 		active_particles_allocator->resize_chunk(active_particles_mchunk, particles_count, false);
 		ERR_FAIL_COND(active_particles_mchunk->get_begin_index() != 0);
@@ -1220,7 +1230,7 @@ void FlexSpace::rebuild_rigids_offsets() {
 	// Inverse Heap Sort
 	const int chunks_size(rigids_allocator->get_chunk_count());
 
-	MemoryChunk *swap_area = rigids_allocator->allocate_chunk(1);
+	MemoryChunk *swap_area = rigids_allocator->allocate_chunk(1, NULL);
 
 	for (int chunk_i(0); chunk_i < chunks_size; ++chunk_i) {
 
@@ -1368,17 +1378,33 @@ void FlexSpace::execute_geometries_commands() {
 	}
 }
 
+struct TearingSplit {
+	SpringIndex spring_index;
+	ParticleBufferIndex particle_index;
+	Vector3 split_plane;
+	//Vector<TriangleIndex> triangles;
+};
+
 void FlexSpace::execute_tearing() {
 
 	const int max_copies = 10;
-	int copies = 0;
+	int split_count = 0;
+
+	// TODO please cache this
+	Vector<TearingSplit> splits;
+	splits.resize(max_copies);
+
+	Vector<TriangleIndex> adjacent_triangle;
+	Vector<bool> adjacent_triangle_sides;
 
 	for (int i(particle_bodies_tearing.size() - 1); 0 <= i; --i) {
 		FlexParticleBody *pb = particle_bodies_tearing[i];
 
+		split_count = 0;
+
 		for (
 				int spring_index(pb->get_spring_count() - 1);
-				0 <= spring_index;
+				0 <= spring_index && max_copies > split_count;
 				--spring_index) {
 
 			const Spring &s = springs_memory->get_spring(
@@ -1398,25 +1424,130 @@ void FlexSpace::execute_tearing() {
 			if (extension_2 < rest_length_2 * pb->tearing_max_extension)
 				continue;
 
+			const ParticleBufferIndex particle_to_split =
+					Math::random(0, 1) > 0.5 ? s.index0 : s.index1;
+
+			// Split the same particle one time per check
+			bool split_in_progress = false;
+			for (int x(0); x < split_count; ++x) {
+				if (splits[x].particle_index == particle_to_split) {
+					split_in_progress = true;
+					break;
+				}
+			}
+
+			if (split_in_progress)
+				continue;
+
+			// Prepare for split
+
 			// Perform the copy
-			++copies;
+			const int split_index = split_count;
+			++split_count;
+
+			splits.write[split_index].spring_index = SpringIndex(spring_index);
 
 			// Instead of a random selection, choose always the first particle
 			// to copy
-			const ParticleIndex particle_to_copy =
-					pb->particles_mchunk->get_chunk_index(s.index0);
+			splits.write[split_index].particle_index = particle_to_split;
 
-			const Vector3 split_plane(vec3_from_flvec4((p1 - p0)).normalized());
+			const FlVector4 n(p1 - p0);
+			splits.write[split_index].split_plane = vec3_from_flvec4(n);
+			splits.write[split_index].split_plane.normalize();
+		}
+
+		if (!split_count)
+			continue;
+
+		// This avoid too much reallocation, and at the same time is possible
+		// to decide later if a particle should added or not
+		pb->add_unactive_particles(split_count);
+
+		for (
+				int split_index(0);
+				split_index < split_count;
+				++split_index) {
+
+			adjacent_triangle.clear();
+			adjacent_triangle_sides.clear();
+			bool has_top(false);
+			bool has_bottom(false);
+
+			// This is used to understand in which side the triangle is
+			const real_t w(
+					splits[split_index].split_plane.dot(
+							vec3_from_flvec4(get_particles_memory()->get_particle(
+									splits[split_index].particle_index))));
+
+			for (TriangleIndex t(pb->get_triangle_count() - 1); 0 <= t; --t) {
+
+				const DynamicTriangle &tri = pb->get_triangle(t);
+
+				if (tri.contains(splits[split_index].particle_index)) {
+
+					const FlVector4 fl_centroid =
+							(get_particles_memory()->get_particle(tri.index0) +
+									get_particles_memory()->get_particle(tri.index1) +
+									get_particles_memory()->get_particle(tri.index2)) /
+							3.0;
+
+					const Vector3 centroid(vec3_from_flvec4(fl_centroid));
+
+					adjacent_triangle.push_back(t);
+
+					if (splits[split_index].split_plane.dot(centroid) > w) {
+						// Top
+						adjacent_triangle_sides.push_back(true);
+						has_top = true;
+					} else {
+						// Bottom
+						adjacent_triangle_sides.push_back(false);
+						has_bottom = true;
+					}
+				}
+			}
+
+			if (!has_top || !has_bottom)
+				continue;
+
+			ParticleIndex added_particle = pb->add_particles(1);
 
 			// Duplicate particle
+			pb->copy_particle(
+					added_particle,
+					pb->particles_mchunk->get_chunk_index(
+							splits[split_index].particle_index));
 
-			// Duplicate dynamic triangle
+			for (int g(adjacent_triangle.size() - 1); 0 <= g; --g) {
+				if (adjacent_triangle_sides[g]) {
+					// Is on top side
+				} else {
+
+					// Is on bottom side
+					TriangleIndex t(adjacent_triangle[g]);
+
+					// Update springs
+					// TODO
+
+					// Update triangles
+					DynamicTriangle tri = pb->get_triangle(t);
+					if (tri.index0 == splits[split_index].particle_index) {
+
+						tri.index0 = added_particle;
+
+					} else if (tri.index1 == splits[split_index].particle_index) {
+
+						tri.index1 = added_particle;
+
+					} else {
+
+						tri.index2 = added_particle;
+					}
+				}
+			}
 
 			// Duplicate mesh vertex
-
-			if (max_copies <= copies) {
-				return;
-			}
+			// TODO
 		}
 	}
 }

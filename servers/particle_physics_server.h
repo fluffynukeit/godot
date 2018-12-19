@@ -143,6 +143,10 @@ public:
 				a(p_a),
 				b(p_b),
 				c(p_c) {}
+
+		bool contains(const int index) const {
+			return a == index || b == index || c == index;
+		}
 	};
 
 	struct TearingData {

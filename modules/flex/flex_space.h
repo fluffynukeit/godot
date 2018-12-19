@@ -127,6 +127,8 @@ class FlexSpace : public RIDFlex {
 	bool force_buffer_write;
 	float particle_radius;
 
+	bool is_active_particles_buffer_dirty;
+
 public:
 	FlexSpace();
 	~FlexSpace();
@@ -144,7 +146,7 @@ public:
 private:
 	void terminate_solver();
 
-	static void particle_chunk_resize(
+	static void update_particle_buffer_index(
 			void *data,
 			void *owner,
 			int p_old_begin_index,
