@@ -196,32 +196,11 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 }
 
 void FlexParticleBodyCommands::add_unactive_particles(int p_particle_count) {
-	ERR_FAIL_COND(p_particle_count < 1);
-
-	const int previous_size = body->get_particle_count();
-	const int new_size = previous_size + p_particle_count;
-
-	body->space->particles_allocator->resize_chunk(
-			body->particles_mchunk,
-			new_size);
+	body->add_unactive_particles(p_particle_count);
 }
 
 int FlexParticleBodyCommands::add_particles(int p_particle_count) {
-	ERR_FAIL_COND_V(p_particle_count < 1, -1);
-
-	const int previous_size = body->get_particle_count();
-	const int new_size = previous_size + p_particle_count;
-
-	if (new_size > body->particles_mchunk->get_size()) {
-		// Require resize
-		body->space->particles_allocator->resize_chunk(
-				body->particles_mchunk,
-				new_size);
-	}
-
-	body->set_particle_count(new_size);
-
-	return previous_size;
+	return body->add_particles(p_particle_count);
 }
 
 void FlexParticleBodyCommands::initialize_particle(int p_index, const Vector3 &p_global_position, real_t p_mass) {

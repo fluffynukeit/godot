@@ -178,6 +178,16 @@ public:
 	// CMD
 	void reset_spring(SpringIndex p_spring, ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness);
 
+	void add_unactive_particles(int p_particle_count);
+
+	/// Returns the ID of first new particle
+	ParticleIndex add_particles(int p_particle_count);
+
+	void copy_particle(ParticleIndex p_to, ParticleIndex p_from);
+
+	void set_particle(ParticleIndex p_particle, const FlVector4 &p_position_mass);
+	const FlVector4 &get_particle(ParticleIndex p_particle) const;
+
 	void set_particle_position_mass(ParticleIndex p_particle, const Vector3 &p_position, real_t p_mass);
 
 	void set_particle_position(ParticleIndex p_particle, const Vector3 &p_position);
@@ -192,6 +202,7 @@ public:
 
 	const FlVector4 &get_particle_normal(ParticleIndex p_particle) const;
 	void set_particle_normal(ParticleIndex p_particle_index, const Vector3 &p_normal);
+	void set_particle_normal(ParticleIndex p_particle_index, const FlVector4 &p_normal);
 
 	const DynamicTriangle &get_triangle(TriangleIndex p_triangle_index) const;
 
