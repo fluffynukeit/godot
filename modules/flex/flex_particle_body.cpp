@@ -59,7 +59,7 @@ FlexParticleBody::FlexParticleBody() :
 		_is_monitorable(false),
 		_is_monitoring_primitives_contacts(false),
 		tearing_active(false),
-		tearing_max_extension(1.2),
+		tearing_max_extension(1.1),
 		tearing_data(NULL) {
 	sync_callback.receiver = NULL;
 }
@@ -262,6 +262,54 @@ void FlexParticleBody::reset_spring(SpringIndex p_spring, ParticleIndex p_partic
 	space->get_springs_memory()->set_stiffness(springs_mchunk, p_spring, p_stiffness);
 }
 
+void FlexParticleBody::add_unactive_particles(int p_particle_count) {
+	ERR_FAIL_COND(p_particle_count < 1);
+
+	const int previous_size = get_particle_count();
+	const int new_size = previous_size + p_particle_count;
+
+	space->get_particles_allocator()->resize_chunk(
+			particles_mchunk,
+			new_size);
+}
+
+ParticleIndex FlexParticleBody::add_particles(int p_particle_count) {
+	ERR_FAIL_COND_V(p_particle_count < 1, -1);
+
+	const int previous_size = get_particle_count();
+	const int new_size = previous_size + p_particle_count;
+
+	if (new_size > particles_mchunk->get_size()) {
+		// Require resize
+		space->get_particles_allocator()->resize_chunk(
+				particles_mchunk,
+				new_size);
+	}
+
+	set_particle_count(new_size);
+
+	return previous_size;
+}
+
+void FlexParticleBody::copy_particle(ParticleIndex p_to, ParticleIndex p_from) {
+	set_particle(p_to, get_particle(p_from));
+	set_particle_velocity(p_to, get_particle_velocity(p_from));
+	set_particle_normal(p_to, get_particle_normal(p_from));
+}
+
+void FlexParticleBody::set_particle(ParticleIndex p_particle_index, const FlVector4 &p_particle) {
+	space->get_particles_memory()->set_particle(
+			particles_mchunk,
+			p_particle_index,
+			p_particle);
+}
+
+const FlVector4 &FlexParticleBody::get_particle(ParticleIndex p_particle_index) const {
+	return space->get_particles_memory()->get_particle(
+			particles_mchunk,
+			p_particle_index);
+}
+
 void FlexParticleBody::set_particle_position_mass(ParticleIndex p_particle_index, const Vector3 &p_position, real_t p_mass) {
 	space->get_particles_memory()->set_particle(particles_mchunk, p_particle_index, make_particle(p_position, p_mass));
 	changed_parameters |= eChangedBodyParamPositionMass;
@@ -305,6 +353,11 @@ const FlVector4 &FlexParticleBody::get_particle_normal(ParticleIndex p_particle_
 
 void FlexParticleBody::set_particle_normal(ParticleIndex p_particle_index, const Vector3 &p_normal) {
 	space->get_particles_memory()->set_normal(particles_mchunk, p_particle_index, flvec4_from_vec3(p_normal));
+	changed_parameters |= eChangedBodyParamNormal;
+}
+
+void FlexParticleBody::set_particle_normal(ParticleIndex p_particle_index, const FlVector4 &p_normal) {
+	space->get_particles_memory()->set_normal(particles_mchunk, p_particle_index, p_normal);
 	changed_parameters |= eChangedBodyParamNormal;
 }
 
