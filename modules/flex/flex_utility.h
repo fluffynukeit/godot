@@ -238,6 +238,12 @@ struct DynamicTriangle {
 			index0(p_index0),
 			index1(p_index1),
 			index2(p_index2) {}
+
+	bool contains(const ParticleBufferIndex p_index) const {
+		return p_index == index0 ||
+			   p_index == index1 ||
+			   p_index == index2;
+	}
 };
 
 struct FlexCallBackData {

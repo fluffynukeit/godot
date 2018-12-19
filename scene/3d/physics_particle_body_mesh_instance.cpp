@@ -201,31 +201,37 @@ void ParticleBodyMeshInstance::update_mesh_pvparticles(ParticleBodyCommands *p_c
 			ParticlePhysicsServer::get_singleton()->body_get_tearing_data(
 					particle_body->get_rid());
 
+	PoolVector<int>::Read mesh_indices_r = visual_server_handler->get_mesh_indices().read();
+
 	if (tearing_data) {
 
-		// TODO Perform here vertex copy in needed
+		// TODO Perform here the vertex copy when required
 
-		PoolVector<int>::Read mesh_indices_r = visual_server_handler->get_mesh_indices().read();
-
+		// Tearable cloth rendering
+		// The rendering process is different because the tearable cloth doesn't
+		// use the model data to avoid edit that resource.
 		visual_server_handler->open();
 		for (int i(tearing_data->triangles.size() - 1); 0 <= i; --i) {
 			for (int e(0); e < 3; ++e) {
 
 				const int triangle_vertex_index(
+						mesh_indices_r[i * 3 + e]);
+
+				const int particle_index(
 						tearing_data->triangles[i].indices[e]);
 
 				const Vector3 v =
-						p_cmds->get_particle_position(triangle_vertex_index);
+						p_cmds->get_particle_position(particle_index);
 
 				const Vector3 n =
-						p_cmds->get_particle_normal(triangle_vertex_index) * -1;
+						p_cmds->get_particle_normal(particle_index) * -1;
 
 				visual_server_handler->set_vertex(
-						mesh_indices_r[triangle_vertex_index],
+						triangle_vertex_index,
 						reinterpret_cast<const void *>(&v));
 
 				visual_server_handler->set_normal(
-						mesh_indices_r[triangle_vertex_index],
+						triangle_vertex_index,
 						reinterpret_cast<const void *>(&n));
 			}
 		}
@@ -237,12 +243,12 @@ void ParticleBodyMeshInstance::update_mesh_pvparticles(ParticleBodyCommands *p_c
 		PoolVector<int>::Read pb_indices_r = particle_body->get_particle_body_model()->get_dynamic_triangles_indices().read();
 		visual_server_handler->open();
 
-		PoolVector<int>::Read mesh_indices_r = visual_server_handler->get_mesh_indices().read();
 		Vector3 v;
 		for (int i(visual_server_handler->get_mesh_indices().size() - 1); 0 <= i; --i) {
 
 			v = p_cmds->get_particle_position(pb_indices_r[i]);
 			visual_server_handler->set_vertex(mesh_indices_r[i], reinterpret_cast<void *>(&v));
+
 			v = p_cmds->get_particle_normal(pb_indices_r[i]) * -1;
 			visual_server_handler->set_normal(mesh_indices_r[i], reinterpret_cast<void *>(&v));
 		}
