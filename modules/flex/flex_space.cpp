@@ -329,6 +329,80 @@ void FlexSpace::terminate_solver() {
 	}
 }
 
+void FlexSpace::particle_chunk_resize(
+		void *data,
+		void *owner,
+		int p_old_begin_index,
+		int p_old_size,
+		int p_new_begin_index,
+		int p_new_size) {
+
+	if (!p_old_size)
+		return;
+
+	if (!p_new_size)
+		return;
+
+	FlexSpace *space = static_cast<FlexSpace *>(data);
+	FlexParticleBody *particle_body = static_cast<FlexParticleBody *>(owner);
+
+	const int shift = p_new_begin_index - p_old_begin_index;
+
+	for (
+			SpringIndex i(particle_body->get_spring_count() - 1);
+			0 <= i;
+			--i) {
+
+		Spring s = space->get_springs_memory()->get_spring(
+				particle_body->springs_mchunk,
+				i);
+
+		s.index0 += shift;
+		s.index1 += shift;
+
+		space->get_springs_memory()->set_spring(
+				particle_body->springs_mchunk,
+				i,
+				s);
+	}
+
+	for (
+			TriangleIndex i(particle_body->get_triangle_count() - 1);
+			0 <= i;
+			--i) {
+
+		DynamicTriangle t = space->get_triangles_memory()->get_triangle(
+				particle_body->triangles_mchunk,
+				i);
+
+		t.index0 += shift;
+		t.index1 += shift;
+		t.index2 += shift;
+
+		space->get_triangles_memory()->set_triangle(
+				particle_body->triangles_mchunk,
+				i,
+				t);
+	}
+
+	for (
+			RigidComponentIndex i(particle_body->rigids_components_mchunk->get_size() - 1);
+			0 <= i;
+			--i) {
+
+		ParticleBufferIndex p = space->get_rigids_components_memory()->get_index(
+				particle_body->rigids_components_mchunk,
+				i);
+
+		p += shift;
+
+		space->get_rigids_components_memory()->set_index(
+				particle_body->rigids_components_mchunk,
+				i,
+				p);
+	}
+}
+
 void FlexSpace::sync() {}
 
 void FlexSpace::_sync() {
