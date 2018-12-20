@@ -416,10 +416,14 @@ void FlexParticleBody::reload_rigid_COM(RigidIndex p_rigid) {
 	space->get_rigids_memory()->set_position(rigids_mchunk, p_rigid, center);
 }
 
-real_t FlexParticleBody::get_spring_extension(int spring_index) const {
-	const Spring &s = space->get_springs_memory()->get_spring(
+const Spring &FlexParticleBody::get_spring(SpringIndex spring_index) const {
+	return space->get_springs_memory()->get_spring(
 			springs_mchunk,
 			spring_index);
+}
+
+real_t FlexParticleBody::get_spring_extension(SpringIndex spring_index) const {
+	const Spring &s = get_spring(spring_index);
 
 	const FlVector4 &p0 = space->get_particles_memory()->get_particle(s.index0);
 	const FlVector4 &p1 = space->get_particles_memory()->get_particle(s.index1);

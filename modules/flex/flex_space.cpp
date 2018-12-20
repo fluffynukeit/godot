@@ -1382,7 +1382,6 @@ struct TearingSplit {
 	SpringIndex spring_index;
 	ParticleBufferIndex particle_index;
 	Vector3 split_plane;
-	//Vector<TriangleIndex> triangles;
 };
 
 void FlexSpace::execute_tearing() {

@@ -212,7 +212,8 @@ public:
 	void reload_rigids_COM();
 	void reload_rigid_COM(RigidIndex p_rigid);
 
-	real_t get_spring_extension(int spring_index) const;
+	const Spring &get_spring(SpringIndex spring_index) const;
+	real_t get_spring_extension(SpringIndex spring_index) const;
 	// ~CMD
 
 	bool is_owner_of_particle(ParticleIndex p_particle) const;
