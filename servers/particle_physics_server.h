@@ -127,6 +127,21 @@ public:
 		PARTICLE_COLLISION_FLAG_FLUID
 	};
 
+	struct Edge {
+		int particle_index0;
+		int particle_index1;
+
+		int adjacent_triangle_index;
+
+		int bending_spring_index;
+
+		Edge() :
+				particle_index0(-1),
+				particle_index1(-1),
+				adjacent_triangle_index(-1),
+				bending_spring_index(-1) {}
+	};
+
 	struct Triangle {
 		union {
 			struct {
@@ -138,6 +153,9 @@ public:
 			int indices[3];
 		};
 
+		int springs[3];
+		Edge edges[3];
+
 		Triangle() {}
 		Triangle(int p_a, int p_b, int p_c) :
 				a(p_a),
@@ -146,6 +164,29 @@ public:
 
 		bool contains(const int index) const {
 			return a == index || b == index || c == index;
+		}
+
+		/// Returns the Adjacent edge or null
+		Edge *find_adjacent(const Triangle &p_other) {
+
+			for (int i = 2; 0 <= i; --i)
+				for (int y = 2; 0 <= y; --y) {
+					if (
+							(edges[i].particle_index0 == p_other.edges[y].particle_index0 && edges[i].particle_index1 == p_other.edges[y].particle_index1) ||
+							(edges[i].particle_index1 == p_other.edges[y].particle_index0 && edges[i].particle_index0 == p_other.edges[y].particle_index1)) {
+						return edges + i;
+					}
+				}
+
+			return NULL;
+		}
+
+		int get_opposit_vertex(Edge *p_edge) const {
+
+			for (int i = 2; 0 <= i; --i)
+				if (p_edge->particle_index0 != indices[i] && p_edge->particle_index1 != indices[i])
+					return indices[i];
+			return -1;
 		}
 	};
 

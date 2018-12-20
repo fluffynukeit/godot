@@ -158,6 +158,7 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 					body->get_spring_count());
 
 			for (int i = body->get_spring_count() - 1; 0 <= i; --i) {
+
 				const int p1 =
 						p_model->get_constraints_indexes_ref().get(i * 2 + 0);
 				const int p2 =
@@ -172,13 +173,81 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 				const int triangle_count(p_model->get_dynamic_triangles_indices().size() / 3);
 				body->tearing_data->triangles.resize(triangle_count);
 
-				PoolVector<int>::Read triangles_indices_r(p_model->get_dynamic_triangles_indices().read());
+				PoolVector<int>::Read triangles_indices_r(
+						p_model->get_dynamic_triangles_indices().read());
+
+				VectorWriteProxy<ParticlePhysicsServer::Triangle> triangles =
+						body->tearing_data->triangles.write;
+
+				// Step 1 build triangle and edges
 				for (int t(0); t < triangle_count; ++t) {
-					body->tearing_data->triangles.write[t] =
+
+					triangles[t] =
 							ParticlePhysicsServer::Triangle(
 									triangles_indices_r[t * 3 + 0],
 									triangles_indices_r[t * 3 + 1],
 									triangles_indices_r[t * 3 + 2]);
+
+					triangles[t].edges[0].particle_index0 = triangles_indices_r[t * 3 + 0];
+					triangles[t].edges[0].particle_index1 = triangles_indices_r[t * 3 + 1];
+
+					triangles[t].edges[1].particle_index0 = triangles_indices_r[t * 3 + 1];
+					triangles[t].edges[1].particle_index1 = triangles_indices_r[t * 3 + 2];
+
+					triangles[t].edges[2].particle_index0 = triangles_indices_r[t * 3 + 2];
+					triangles[t].edges[2].particle_index1 = triangles_indices_r[t * 3 + 0];
+
+					// Find springs
+					for (int j = 2; 0 <= j; --j) {
+						int particle0 = triangles[t].edges[j].particle_index0;
+						int particle1 = triangles[t].edges[j].particle_index1;
+
+						for (int x = body->get_spring_count() - 1; 0 <= x; --x) {
+
+							const int p0 =
+									p_model->get_constraints_indexes_ref().get(x * 2 + 0);
+							const int p1 =
+									p_model->get_constraints_indexes_ref().get(x * 2 + 1);
+
+							if ((p0 == particle0 && p1 == particle1) &&
+									(p0 == particle1 && p1 == particle0)) {
+
+								triangles[t].springs[j] = x;
+								break;
+							}
+						}
+					}
+				}
+
+				// Step 2 Finalize edges
+
+				for (int t0(0); t0 < triangle_count; ++t0) {
+
+					for (int t1(0); t1 < triangle_count; ++t1) {
+						ParticlePhysicsServer::Edge *edge =
+								triangles[t0].find_adjacent(triangles[t1]);
+						if (edge) {
+							edge->adjacent_triangle_index = t1;
+
+							int bending_particle0 = triangles[t0].get_opposit_vertex(edge);
+							int bending_particle1 = triangles[t1].get_opposit_vertex(edge);
+
+							for (int x = body->get_spring_count() - 1; 0 <= x; --x) {
+
+								const int p0 =
+										p_model->get_constraints_indexes_ref().get(x * 2 + 0);
+								const int p1 =
+										p_model->get_constraints_indexes_ref().get(x * 2 + 1);
+
+								if ((p0 == bending_particle0 && p1 == bending_particle1) &&
+										(p0 == bending_particle1 && p1 == bending_particle0)) {
+
+									edge->bending_spring_index = x;
+									break;
+								}
+							}
+						}
+					}
 				}
 			}
 
@@ -1215,7 +1284,7 @@ Ref<ParticleBodyModel> FlexParticlePhysicsServer::create_cloth_particle_body_mod
 	PoolVector<int>::Read vertices_to_particles_r = welded_particles_indices.read();
 
 	NvFlexExtAsset *generated_assets;
-	if (p_allow_tearing) {
+	if (!p_allow_tearing) {
 
 		generated_assets = NvFlexExtCreateClothFromMesh(
 				(float *)vertices_particles_r.ptr(),
