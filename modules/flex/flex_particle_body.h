@@ -176,7 +176,6 @@ public:
 	bool is_tearing_active() const;
 
 	// CMD
-	void reset_spring(SpringIndex p_spring, ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness);
 
 	void add_unactive_particles(int p_particle_count);
 
@@ -204,6 +203,7 @@ public:
 	void set_particle_normal(ParticleIndex p_particle_index, const Vector3 &p_normal);
 	void set_particle_normal(ParticleIndex p_particle_index, const FlVector4 &p_normal);
 
+	void set_triangle(TriangleIndex p_triangle_index, const DynamicTriangle &p_triangle);
 	const DynamicTriangle &get_triangle(TriangleIndex p_triangle_index) const;
 
 	const Vector3 &get_rigid_position(RigidIndex p_rigid_index) const;
@@ -212,7 +212,27 @@ public:
 	void reload_rigids_COM();
 	void reload_rigid_COM(RigidIndex p_rigid);
 
-	const Spring &get_spring(SpringIndex spring_index) const;
+	void set_spring(
+			SpringIndex p_index,
+			ParticleIndex p_particle_0,
+			ParticleIndex p_particle_1,
+			float p_length,
+			float p_stiffness);
+
+	const Spring &get_spring_indices(SpringIndex spring_index) const;
+	void set_spring_indices(SpringIndex spring_index, const Spring &p_spring);
+
+	SpringIndex add_spring(
+			ParticleIndex p_particle_0,
+			ParticleIndex p_particle_1,
+			float p_length,
+			float p_stiffness);
+
+	SpringIndex add_spring();
+
+	void copy_spring(SpringIndex p_to, SpringIndex p_from);
+	SpringIndex duplicate_spring(SpringIndex p_other_spring);
+
 	real_t get_spring_extension(SpringIndex spring_index) const;
 	// ~CMD
 

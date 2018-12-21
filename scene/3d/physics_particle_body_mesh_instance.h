@@ -64,6 +64,7 @@ private:
 	void open();
 	void close();
 	void commit_changes();
+	int duplicate_vertex(int p_vertex);
 
 public:
 	void set_vertex(int p_vertex_id, const void *p_vector3);

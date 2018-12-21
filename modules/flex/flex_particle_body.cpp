@@ -256,12 +256,6 @@ bool FlexParticleBody::is_tearing_active() const {
 	return tearing_active;
 }
 
-void FlexParticleBody::reset_spring(SpringIndex p_spring, ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness) {
-	space->get_springs_memory()->set_spring(springs_mchunk, p_spring, Spring(particles_mchunk->get_buffer_index(p_particle_0), particles_mchunk->get_buffer_index(p_particle_1)));
-	space->get_springs_memory()->set_length(springs_mchunk, p_spring, p_length);
-	space->get_springs_memory()->set_stiffness(springs_mchunk, p_spring, p_stiffness);
-}
-
 void FlexParticleBody::add_unactive_particles(int p_particle_count) {
 	ERR_FAIL_COND(p_particle_count < 1);
 
@@ -361,6 +355,15 @@ void FlexParticleBody::set_particle_normal(ParticleIndex p_particle_index, const
 	changed_parameters |= eChangedBodyParamNormal;
 }
 
+void FlexParticleBody::set_triangle(
+		TriangleIndex p_triangle_index,
+		const DynamicTriangle &p_triangle) {
+
+	space->get_triangles_memory()->set_triangle(
+			triangles_mchunk,
+			p_triangle_index,
+			p_triangle);
+}
 const DynamicTriangle &FlexParticleBody::get_triangle(TriangleIndex p_triangle_index) const {
 	return space->get_triangles_memory()->get_triangle(triangles_mchunk, p_triangle_index);
 }
@@ -416,14 +419,99 @@ void FlexParticleBody::reload_rigid_COM(RigidIndex p_rigid) {
 	space->get_rigids_memory()->set_position(rigids_mchunk, p_rigid, center);
 }
 
-const Spring &FlexParticleBody::get_spring(SpringIndex spring_index) const {
+void FlexParticleBody::set_spring(
+		SpringIndex p_index,
+		ParticleIndex p_particle_0,
+		ParticleIndex p_particle_1,
+		float p_length,
+		float p_stiffness) {
+
+	ERR_FAIL_COND(!is_owner_of_spring(p_index));
+
+	space->get_springs_memory()->set_spring(
+			springs_mchunk,
+			p_index,
+			Spring(
+					particles_mchunk->get_buffer_index(p_particle_0),
+					particles_mchunk->get_buffer_index(p_particle_1)));
+
+	space->get_springs_memory()->set_length(
+			springs_mchunk,
+			p_index,
+			p_length);
+
+	space->get_springs_memory()->set_stiffness(
+			springs_mchunk,
+			p_index,
+			p_stiffness);
+}
+
+const Spring &FlexParticleBody::get_spring_indices(SpringIndex spring_index) const {
 	return space->get_springs_memory()->get_spring(
 			springs_mchunk,
 			spring_index);
 }
 
+void FlexParticleBody::set_spring_indices(SpringIndex spring_index, const Spring &p_spring) {
+	space->get_springs_memory()->set_spring(
+			springs_mchunk,
+			spring_index,
+			p_spring);
+}
+
+SpringIndex FlexParticleBody::add_spring(
+		ParticleIndex p_particle_0,
+		ParticleIndex p_particle_1,
+		float p_length,
+		float p_stiffness) {
+
+	const SpringIndex new_index = add_spring();
+	set_spring(
+			new_index,
+			p_particle_0,
+			p_particle_1,
+			p_length,
+			p_stiffness);
+	return new_index;
+}
+
+SpringIndex FlexParticleBody::add_spring() {
+	const int previous_size = get_spring_count();
+	space->get_springs_allocator()->resize_chunk(springs_mchunk, previous_size + 1);
+	return previous_size;
+}
+
+void FlexParticleBody::copy_spring(SpringIndex p_to, SpringIndex p_from) {
+	const Spring &s = get_spring_indices(p_from);
+	const real_t length = space->get_springs_memory()->get_length(springs_mchunk, p_from);
+	const real_t stiffness = space->get_springs_memory()->get_stiffness(springs_mchunk, p_from);
+
+	space->get_springs_memory()->set_spring(
+			springs_mchunk,
+			p_to,
+			Spring(
+					s.index0,
+					s.index1));
+
+	space->get_springs_memory()->set_length(
+			springs_mchunk,
+			p_to,
+			length);
+
+	space->get_springs_memory()->set_stiffness(
+			springs_mchunk,
+			p_to,
+			stiffness);
+}
+
+SpringIndex FlexParticleBody::duplicate_spring(SpringIndex p_other_spring) {
+	SpringIndex index = add_spring();
+	copy_spring(index, p_other_spring);
+	return index;
+}
+
 real_t FlexParticleBody::get_spring_extension(SpringIndex spring_index) const {
-	const Spring &s = get_spring(spring_index);
+	const Spring &s = get_spring_indices(spring_index);
 
 	const FlVector4 &p0 = space->get_particles_memory()->get_particle(s.index0);
 	const FlVector4 &p1 = space->get_particles_memory()->get_particle(s.index1);
