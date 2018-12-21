@@ -128,10 +128,12 @@ public:
 	};
 
 	struct Edge {
+		// TODO Tri to remove this
 		int particle_index0;
 		int particle_index1;
 
 		int adjacent_triangle_index;
+		int adjacent_edge_index;
 
 		int bending_spring_index;
 
@@ -139,10 +141,12 @@ public:
 				particle_index0(-1),
 				particle_index1(-1),
 				adjacent_triangle_index(-1),
+				adjacent_edge_index(-1),
 				bending_spring_index(-1) {}
 	};
 
 	struct Triangle {
+		// TODO try to see if can be removed
 		union {
 			struct {
 				int a;
@@ -153,6 +157,7 @@ public:
 			int indices[3];
 		};
 
+		// TODO Try to put this inside the edge
 		int springs[3];
 		Edge edges[3];
 
@@ -167,17 +172,20 @@ public:
 		}
 
 		/// Returns the Adjacent edge or null
-		Edge *find_adjacent(const Triangle &p_other) {
+		Edge *find_adjacent(const Triangle &p_other, int &r_other_edge_id) {
 
 			for (int i = 2; 0 <= i; --i)
 				for (int y = 2; 0 <= y; --y) {
 					if (
 							(edges[i].particle_index0 == p_other.edges[y].particle_index0 && edges[i].particle_index1 == p_other.edges[y].particle_index1) ||
 							(edges[i].particle_index1 == p_other.edges[y].particle_index0 && edges[i].particle_index0 == p_other.edges[y].particle_index1)) {
+
+						r_other_edge_id = y;
 						return edges + i;
 					}
 				}
 
+			r_other_edge_id = -1;
 			return NULL;
 		}
 
@@ -194,7 +202,6 @@ public:
 		// Filled and used only if a tearable model is filled
 		Vector<real_t> spring_rest_lengths_2;
 		Vector<Triangle> triangles;
-		Vector<Vector3> vertices;
 	};
 
 	/* BODY */

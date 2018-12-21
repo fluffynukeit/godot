@@ -77,7 +77,9 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 
 	{ // Spring
 		const int resource_s_count(p_model->get_constraints_indexes_ref().size() / 2);
-		body->space->springs_allocator->resize_chunk(body->springs_mchunk, resource_s_count);
+		body->space->springs_allocator->resize_chunk(
+				body->springs_mchunk,
+				resource_s_count);
 
 		for (int i(0); i < resource_s_count; ++i) {
 			set_spring(i,
@@ -209,7 +211,7 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 							const int p1 =
 									p_model->get_constraints_indexes_ref().get(x * 2 + 1);
 
-							if ((p0 == particle0 && p1 == particle1) &&
+							if ((p0 == particle0 && p1 == particle1) ||
 									(p0 == particle1 && p1 == particle0)) {
 
 								triangles[t].springs[j] = x;
@@ -224,10 +226,19 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 				for (int t0(0); t0 < triangle_count; ++t0) {
 
 					for (int t1(0); t1 < triangle_count; ++t1) {
+
+						if (t0 == t1)
+							continue;
+
+						int other_edge_id;
 						ParticlePhysicsServer::Edge *edge =
-								triangles[t0].find_adjacent(triangles[t1]);
+								triangles[t0].find_adjacent(
+										triangles[t1],
+										other_edge_id);
+
 						if (edge) {
 							edge->adjacent_triangle_index = t1;
+							edge->adjacent_edge_index = other_edge_id;
 
 							int bending_particle0 = triangles[t0].get_opposit_vertex(edge);
 							int bending_particle1 = triangles[t1].get_opposit_vertex(edge);
@@ -239,7 +250,7 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 								const int p1 =
 										p_model->get_constraints_indexes_ref().get(x * 2 + 1);
 
-								if ((p0 == bending_particle0 && p1 == bending_particle1) &&
+								if ((p0 == bending_particle0 && p1 == bending_particle1) ||
 										(p0 == bending_particle1 && p1 == bending_particle0)) {
 
 									edge->bending_spring_index = x;
@@ -248,16 +259,6 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 							}
 						}
 					}
-				}
-			}
-
-			{ // Load vertices
-				const int vertex_count(p_model->get_particles().size());
-				body->tearing_data->vertices.resize(vertex_count);
-
-				for (int i(0); i < vertex_count; ++i) {
-					body->tearing_data->vertices.write[i] =
-							particle_positions_r[i];
 				}
 			}
 		}
@@ -298,18 +299,11 @@ void FlexParticleBodyCommands::initialize_particle(int p_index, const Vector3 &p
 }
 
 void FlexParticleBodyCommands::add_spring(int p_particle_0, int p_particle_1, float p_length, float p_stiffness) {
-	const int previous_size = body->get_spring_count();
-	body->space->springs_allocator->resize_chunk(body->springs_mchunk, previous_size + 1);
-	set_spring(previous_size, p_particle_0, p_particle_1, p_length, p_stiffness);
+	body->add_spring(p_particle_0, p_particle_1, p_length, p_stiffness);
 }
 
 void FlexParticleBodyCommands::set_spring(SpringIndex p_index, ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness) {
-
-	ERR_FAIL_COND(!body->is_owner_of_spring(p_index));
-
-	body->space->get_springs_memory()->set_spring(body->springs_mchunk, p_index, Spring(body->particles_mchunk->get_buffer_index(p_particle_0), body->particles_mchunk->get_buffer_index(p_particle_1)));
-	body->space->get_springs_memory()->set_length(body->springs_mchunk, p_index, p_length);
-	body->space->get_springs_memory()->set_stiffness(body->springs_mchunk, p_index, p_stiffness);
+	body->set_spring(p_index, p_particle_0, p_particle_1, p_length, p_stiffness);
 }
 
 void FlexParticleBodyCommands::triangles_set_count(int p_count) {

@@ -82,6 +82,12 @@ void ParticleClothVisualServerHandler::commit_changes() {
 	VS::get_singleton()->mesh_surface_update_region(mesh, surface, 0, buffer);
 }
 
+int ParticleClothVisualServerHandler::duplicate_vertex(int p_vertex) {
+	ERR_FAIL_COND_V(write_buffer.ptr(), -1);
+
+	//buffer.
+}
+
 void ParticleClothVisualServerHandler::set_vertex(int p_vertex, const void *p_vector3) {
 	copymem(&write_buffer[p_vertex * stride + offset_vertices], p_vector3, sizeof(float) * 3);
 }
@@ -203,14 +209,18 @@ void ParticleBodyMeshInstance::update_mesh_pvparticles(ParticleBodyCommands *p_c
 
 	PoolVector<int>::Read mesh_indices_r = visual_server_handler->get_mesh_indices().read();
 
+	// TODO remove this please
+	const int s(visual_server_handler->get_mesh_indices().size());
+
 	if (tearing_data) {
 
 		// TODO Perform here the vertex copy when required
+		visual_server_handler->
 
-		// Tearable cloth rendering
-		// The rendering process is different because the tearable cloth doesn't
-		// use the model data to avoid edit that resource.
-		visual_server_handler->open();
+				// Tearable cloth rendering
+				// The rendering process is different because the tearable cloth doesn't
+				// use the model data to avoid edit that resource.
+				visual_server_handler->open();
 		for (int i(tearing_data->triangles.size() - 1); 0 <= i; --i) {
 			for (int e(0); e < 3; ++e) {
 
