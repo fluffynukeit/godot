@@ -172,7 +172,9 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 			}
 
 			{ // Load dynamic triangles
-				const int triangle_count(p_model->get_dynamic_triangles_indices().size() / 3);
+
+				const int triangle_count(
+						p_model->get_dynamic_triangles_indices().size() / 3);
 				body->tearing_data->triangles.resize(triangle_count);
 
 				PoolVector<int>::Read triangles_indices_r(

@@ -82,12 +82,6 @@ void ParticleClothVisualServerHandler::commit_changes() {
 	VS::get_singleton()->mesh_surface_update_region(mesh, surface, 0, buffer);
 }
 
-int ParticleClothVisualServerHandler::duplicate_vertex(int p_vertex) {
-	ERR_FAIL_COND_V(write_buffer.ptr(), -1);
-
-	//buffer.
-}
-
 void ParticleClothVisualServerHandler::set_vertex(int p_vertex, const void *p_vector3) {
 	copymem(&write_buffer[p_vertex * stride + offset_vertices], p_vector3, sizeof(float) * 3);
 }
@@ -207,64 +201,180 @@ void ParticleBodyMeshInstance::update_mesh_pvparticles(ParticleBodyCommands *p_c
 			ParticlePhysicsServer::get_singleton()->body_get_tearing_data(
 					particle_body->get_rid());
 
-	PoolVector<int>::Read mesh_indices_r = visual_server_handler->get_mesh_indices().read();
+	const int split_count = tearing_data->splits.size();
+	if (tearing_data && split_count) {
 
-	// TODO remove this please
-	const int s(visual_server_handler->get_mesh_indices().size());
+		Ref<Material> material(get_surface_material(0));
 
-	if (tearing_data) {
+		Array surface_arrays = get_mesh()->surface_get_arrays(0);
+		Array surface_blend_arrays = get_mesh()->surface_get_blend_shape_arrays(0);
+		uint32_t surface_format = get_mesh()->surface_get_format(0);
 
-		// TODO Perform here the vertex copy when required
-		visual_server_handler->
+		// Recreate the mesh with new vertices
 
-				// Tearable cloth rendering
-				// The rendering process is different because the tearable cloth doesn't
-				// use the model data to avoid edit that resource.
-				visual_server_handler->open();
-		for (int i(tearing_data->triangles.size() - 1); 0 <= i; --i) {
-			for (int e(0); e < 3; ++e) {
+		PoolVector<Vector3> vertices = surface_arrays[VS::ARRAY_VERTEX];
+		PoolVector<Vector3> normals = surface_arrays[VS::ARRAY_NORMAL];
+		PoolVector<real_t> tangents = surface_arrays[VS::ARRAY_TANGENT];
+		PoolVector<Color> colors = surface_arrays[VS::ARRAY_COLOR];
+		PoolVector<Vector3> uvs = surface_arrays[VS::ARRAY_TEX_UV];
+		PoolVector<Vector3> uvs2 = surface_arrays[VS::ARRAY_TEX_UV2];
+		PoolVector<int> indices = surface_arrays[VS::ARRAY_INDEX];
 
-				const int triangle_vertex_index(
-						mesh_indices_r[i * 3 + e]);
+		const int ini_size_v = vertices.size();
+		const int ini_size_n = normals.size();
+		const int ini_size_t = tangents.size();
+		const int ini_size_c = colors.size();
+		const int ini_size_u = uvs.size();
+		const int ini_size_u2 = uvs2.size();
 
-				const int particle_index(
-						tearing_data->triangles[i].indices[e]);
+		if (ini_size_v)
+			vertices.resize(ini_size_v + split_count);
 
-				const Vector3 v =
-						p_cmds->get_particle_position(particle_index);
+		if (ini_size_n)
+			normals.resize(ini_size_n + split_count);
 
-				const Vector3 n =
-						p_cmds->get_particle_normal(particle_index) * -1;
+		if (ini_size_t)
+			tangents.resize(ini_size_t + split_count * 4);
 
-				visual_server_handler->set_vertex(
-						triangle_vertex_index,
-						reinterpret_cast<const void *>(&v));
+		if (ini_size_c)
+			colors.resize(ini_size_c + split_count);
 
-				visual_server_handler->set_normal(
-						triangle_vertex_index,
-						reinterpret_cast<const void *>(&n));
+		if (ini_size_u)
+			uvs.resize(ini_size_u + split_count);
+
+		if (ini_size_u2)
+			uvs2.resize(ini_size_u2 + split_count);
+
+		{
+			PoolVector<Vector3>::Write vertices_w = vertices.write();
+			PoolVector<Vector3>::Write normals_w = normals.write();
+			PoolVector<real_t>::Write tangents_w = tangents.write();
+			PoolVector<Color>::Write colors_w = colors.write();
+			PoolVector<Vector3>::Write uvs_w = uvs.write();
+			PoolVector<Vector3>::Write uvs2_w = uvs2.write();
+			PoolVector<int>::Write indices_w = indices.write();
+
+			PoolVector<Vector3>::Read vertices_r = vertices.read();
+			PoolVector<Vector3>::Read normals_r = normals.read();
+			PoolVector<real_t>::Read tangents_r = tangents.read();
+			PoolVector<Color>::Read colors_r = colors.read();
+			PoolVector<Vector3>::Read uvs_r = uvs.read();
+			PoolVector<Vector3>::Read uvs2_r = uvs2.read();
+
+			// Duplicate phase
+			for (
+					int s(split_count - 1), new_vertex(ini_size_v);
+					0 <= s;
+					--s, ++new_vertex) {
+
+				int old_vertex(-1);
+
+				// Find old vertex index
+				for (int x(pv_mapped_particle_indices.size() - 1); 0 <= x; --x) {
+					if (pv_mapped_particle_indices[x] == tearing_data->splits[s].previous_p_index) {
+						old_vertex = x;
+						break;
+					}
+				}
+
+				ERR_FAIL_COND(-1 == old_vertex);
+
+				if (ini_size_v)
+					vertices_w[new_vertex] = vertices_r[old_vertex];
+
+				if (ini_size_n)
+					normals_w[new_vertex] = normals_r[old_vertex];
+
+				if (ini_size_t) {
+					tangents_w[new_vertex * 4 + 0] = tangents_r[old_vertex * 4 + 0];
+					tangents_w[new_vertex * 4 + 1] = tangents_r[old_vertex * 4 + 1];
+					tangents_w[new_vertex * 4 + 2] = tangents_r[old_vertex * 4 + 2];
+					tangents_w[new_vertex * 4 + 3] = tangents_r[old_vertex * 4 + 3];
+				}
+
+				if (ini_size_c)
+					colors_w[new_vertex] = colors_r[old_vertex];
+
+				if (ini_size_u)
+					uvs_w[new_vertex] = uvs_r[old_vertex];
+
+				if (ini_size_u2)
+					uvs2_w[new_vertex] = uvs2_r[old_vertex];
+
+				// Reindex
+
+				for (int t(tearing_data->triangles.size() - 1); 0 <= t; --t) {
+					if (tearing_data->triangles[t].a == tearing_data->splits[s].new_p_index) {
+						indices_w[t * 3 + 0] = new_vertex;
+						continue;
+					}
+
+					if (tearing_data->triangles[t].b == tearing_data->splits[s].new_p_index) {
+						indices_w[t * 3 + 1] = new_vertex;
+						continue;
+					}
+
+					if (tearing_data->triangles[t].c == tearing_data->splits[s].new_p_index) {
+						indices_w[t * 3 + 2] = new_vertex;
+						continue;
+					}
+				}
+
+				pv_mapped_particle_indices.push_back(
+						tearing_data->splits[s].new_p_index);
 			}
 		}
-		visual_server_handler->close();
 
-	} else {
+		surface_arrays[VS::ARRAY_VERTEX] = vertices;
+		surface_arrays[VS::ARRAY_NORMAL] = normals;
+		surface_arrays[VS::ARRAY_TANGENT] = tangents;
 
-		// Not tearable cloth
-		PoolVector<int>::Read pb_indices_r = particle_body->get_particle_body_model()->get_dynamic_triangles_indices().read();
-		visual_server_handler->open();
+		if (colors.size())
+			surface_arrays[VS::ARRAY_COLOR] = colors;
+		else
+			surface_arrays[VS::ARRAY_COLOR] = Variant();
 
-		Vector3 v;
-		for (int i(visual_server_handler->get_mesh_indices().size() - 1); 0 <= i; --i) {
+		surface_arrays[VS::ARRAY_TEX_UV] = uvs;
 
-			v = p_cmds->get_particle_position(pb_indices_r[i]);
-			visual_server_handler->set_vertex(mesh_indices_r[i], reinterpret_cast<void *>(&v));
+		if (uvs2.size())
+			surface_arrays[VS::ARRAY_TEX_UV2] = uvs2;
+		else
+			surface_arrays[VS::ARRAY_TEX_UV2] = Variant();
 
-			v = p_cmds->get_particle_normal(pb_indices_r[i]) * -1;
-			visual_server_handler->set_normal(mesh_indices_r[i], reinterpret_cast<void *>(&v));
-		}
+		surface_arrays[VS::ARRAY_INDEX] = indices;
+		surface_arrays[VS::ARRAY_BONES] = Variant();
+		surface_arrays[VS::ARRAY_WEIGHTS] = Variant();
 
-		visual_server_handler->close();
+		Ref<ArrayMesh> soft_mesh;
+		soft_mesh.instance();
+		soft_mesh->add_surface_from_arrays(
+				Mesh::PRIMITIVE_TRIANGLES,
+				surface_arrays,
+				surface_blend_arrays,
+				surface_format);
+
+		soft_mesh->surface_set_material(0, get_mesh()->surface_get_material(0));
+
+		set_mesh(soft_mesh);
+
+		set_surface_material(0, material);
+
+		visual_server_handler->prepare(soft_mesh->get_rid(), 0, surface_arrays);
 	}
+
+	visual_server_handler->open();
+
+	Vector3 v;
+	for (int i(pv_mapped_particle_indices.size() - 1); 0 <= i; --i) {
+
+		v = p_cmds->get_particle_position(pv_mapped_particle_indices[i]);
+		visual_server_handler->set_vertex(i, reinterpret_cast<void *>(&v));
+
+		v = p_cmds->get_particle_normal(pv_mapped_particle_indices[i]) * -1;
+		visual_server_handler->set_normal(i, reinterpret_cast<void *>(&v));
+	}
+
+	visual_server_handler->close();
 
 	visual_server_handler->set_aabb(p_cmds->get_aabb());
 }
@@ -350,7 +460,12 @@ void ParticleBodyMeshInstance::prepare_mesh_for_pvparticles() {
 
 	Ref<ArrayMesh> soft_mesh;
 	soft_mesh.instance();
-	soft_mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, surface_arrays, surface_blend_arrays, surface_format);
+	soft_mesh->add_surface_from_arrays(
+			Mesh::PRIMITIVE_TRIANGLES,
+			surface_arrays,
+			surface_blend_arrays,
+			surface_format);
+
 	soft_mesh->surface_set_material(0, get_mesh()->surface_get_material(0));
 
 	set_mesh(soft_mesh);
@@ -368,6 +483,22 @@ void ParticleBodyMeshInstance::prepare_mesh_for_pvparticles() {
 	call_deferred("set_transform", Transform());
 
 	VS::get_singleton()->connect("frame_pre_draw", this, "_draw_mesh_pvparticles");
+
+	// Map indices
+	PoolVector<int>::Read mesh_indices_r = visual_server_handler->get_mesh_indices().read();
+
+	PoolVector<int>::Read pb_indices_r = particle_body->get_particle_body_model()->get_dynamic_triangles_indices().read();
+
+	int biggest_mesh_index(-1);
+	for (int i(visual_server_handler->get_mesh_indices().size() - 1); 0 <= i; --i) {
+		if (biggest_mesh_index < mesh_indices_r[i])
+			biggest_mesh_index = mesh_indices_r[i];
+	}
+
+	pv_mapped_particle_indices.resize(biggest_mesh_index + 1);
+	for (int i(visual_server_handler->get_mesh_indices().size() - 1); 0 <= i; --i) {
+		pv_mapped_particle_indices.write[mesh_indices_r[i]] = pb_indices_r[i];
+	}
 }
 
 void ParticleBodyMeshInstance::prepare_mesh_skeleton_deformation() {
