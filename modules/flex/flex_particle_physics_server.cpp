@@ -300,65 +300,6 @@ void FlexParticleBodyCommands::initialize_particle(int p_index, const Vector3 &p
 	body->changed_parameters |= eChangedBodyParamParticleJustAdded;
 }
 
-void FlexParticleBodyCommands::add_spring(int p_particle_0, int p_particle_1, float p_length, float p_stiffness) {
-	body->add_spring(p_particle_0, p_particle_1, p_length, p_stiffness);
-}
-
-void FlexParticleBodyCommands::set_spring(SpringIndex p_index, ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness) {
-	body->set_spring(p_index, p_particle_0, p_particle_1, p_length, p_stiffness);
-}
-
-void FlexParticleBodyCommands::triangles_set_count(int p_count) {
-	body->space->triangles_allocator->resize_chunk(body->triangles_mchunk, p_count);
-}
-
-void FlexParticleBodyCommands::add_triangle(ParticleIndex p_particle_0, ParticleIndex p_particle_1, ParticleIndex p_particle_2) {
-	const int previous_size(body->get_triangle_count());
-	triangles_set_count(previous_size + 1);
-	set_triangle(previous_size, p_particle_0, p_particle_1, p_particle_2);
-}
-
-void FlexParticleBodyCommands::set_triangle(TriangleIndex p_index, ParticleIndex p_particle_0, ParticleIndex p_particle_1, ParticleIndex p_particle_2) {
-
-	ERR_FAIL_COND(!body->is_owner_of_triangle(p_index));
-
-	body->space->triangles_memory->set_triangle(body->triangles_mchunk, p_index, DynamicTriangle(body->particles_mchunk->get_buffer_index(p_particle_0), body->particles_mchunk->get_buffer_index(p_particle_1), body->particles_mchunk->get_buffer_index(p_particle_2)));
-}
-
-void FlexParticleBodyCommands::add_rigid(const Transform &p_transform, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, RigidComponentIndex p_offset) {
-	const int previous_size(body->get_rigid_count());
-	body->space->rigids_allocator->resize_chunk(body->rigids_mchunk, previous_size + 1);
-	set_rigid(previous_size, p_transform, p_stiffness, p_plastic_threshold, p_plastic_creep, p_offset);
-}
-
-void FlexParticleBodyCommands::set_rigid(RigidIndex p_index, const Transform &p_transform, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, RigidComponentIndex p_offset) {
-
-	ERR_FAIL_COND(!body->is_owner_of_rigid(p_index));
-
-	FlexSpace *space(body->space);
-
-	space->rigids_memory->set_position(body->rigids_mchunk, p_index, p_transform.origin);
-	space->rigids_memory->set_rotation(body->rigids_mchunk, p_index, p_transform.basis.get_quat());
-	space->rigids_memory->set_stiffness(body->rigids_mchunk, p_index, p_stiffness);
-	space->rigids_memory->set_threshold(body->rigids_mchunk, p_index, p_plastic_threshold);
-	space->rigids_memory->set_creep(body->rigids_mchunk, p_index, p_plastic_creep);
-	space->rigids_memory->set_offset(body->rigids_mchunk, p_index, p_offset);
-}
-
-void FlexParticleBodyCommands::add_rigid_component(ParticleBufferIndex p_particle_index, const Vector3 &p_rest) {
-	const int previous_size(body->rigids_components_mchunk->get_size());
-	body->space->rigids_components_allocator->resize_chunk(body->rigids_components_mchunk, previous_size + 1);
-	set_rigid_component(previous_size, p_particle_index, p_rest);
-}
-
-void FlexParticleBodyCommands::set_rigid_component(RigidComponentIndex p_index, ParticleBufferIndex p_particle_index, const Vector3 &p_rest) {
-
-	ERR_FAIL_COND(!body->is_owner_of_rigid_component(p_index));
-
-	body->space->rigids_components_memory->set_index(body->rigids_components_mchunk, p_index, p_particle_index);
-	body->space->rigids_components_memory->set_rest(body->rigids_components_mchunk, p_index, p_rest);
-}
-
 void FlexParticleBodyCommands::set_particle_position_mass(int p_particle_index, const Vector3 &p_position, real_t p_mass) {
 	body->set_particle_position_mass(p_particle_index, p_position, p_mass);
 }
@@ -524,6 +465,82 @@ int FlexParticleBodyCommands::get_particle_group(int p_particle_index) const {
 			body->particles_mchunk,
 			p_particle_index);
 	return phase & eNvFlexPhaseGroupMask;
+}
+
+void FlexParticleBodyCommands::add_spring(int p_particle_0, int p_particle_1, float p_length, float p_stiffness) {
+	body->add_spring(p_particle_0, p_particle_1, p_length, p_stiffness);
+}
+
+void FlexParticleBodyCommands::set_spring(SpringIndex p_index, ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness) {
+	body->set_spring(p_index, p_particle_0, p_particle_1, p_length, p_stiffness);
+}
+
+int FlexParticleBodyCommands::get_spring_count() const {
+	return body->get_spring_count();
+}
+
+void FlexParticleBodyCommands::get_spring_positions(
+		int p_spring_index,
+		Vector3 &r_begin,
+		Vector3 &r_end) const {
+
+	const Spring &s = body->get_spring_indices(p_spring_index);
+	const FlVector4 &begin = body->space->get_particles_memory()->get_particle(s.index0);
+	const FlVector4 &end = body->space->get_particles_memory()->get_particle(s.index1);
+
+	r_begin = vec3_from_flvec4(begin);
+	r_end = vec3_from_flvec4(end);
+}
+
+void FlexParticleBodyCommands::triangles_set_count(int p_count) {
+	body->space->triangles_allocator->resize_chunk(body->triangles_mchunk, p_count);
+}
+
+void FlexParticleBodyCommands::add_triangle(ParticleIndex p_particle_0, ParticleIndex p_particle_1, ParticleIndex p_particle_2) {
+	const int previous_size(body->get_triangle_count());
+	triangles_set_count(previous_size + 1);
+	set_triangle(previous_size, p_particle_0, p_particle_1, p_particle_2);
+}
+
+void FlexParticleBodyCommands::set_triangle(TriangleIndex p_index, ParticleIndex p_particle_0, ParticleIndex p_particle_1, ParticleIndex p_particle_2) {
+
+	ERR_FAIL_COND(!body->is_owner_of_triangle(p_index));
+
+	body->space->triangles_memory->set_triangle(body->triangles_mchunk, p_index, DynamicTriangle(body->particles_mchunk->get_buffer_index(p_particle_0), body->particles_mchunk->get_buffer_index(p_particle_1), body->particles_mchunk->get_buffer_index(p_particle_2)));
+}
+
+void FlexParticleBodyCommands::add_rigid(const Transform &p_transform, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, RigidComponentIndex p_offset) {
+	const int previous_size(body->get_rigid_count());
+	body->space->rigids_allocator->resize_chunk(body->rigids_mchunk, previous_size + 1);
+	set_rigid(previous_size, p_transform, p_stiffness, p_plastic_threshold, p_plastic_creep, p_offset);
+}
+
+void FlexParticleBodyCommands::set_rigid(RigidIndex p_index, const Transform &p_transform, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, RigidComponentIndex p_offset) {
+
+	ERR_FAIL_COND(!body->is_owner_of_rigid(p_index));
+
+	FlexSpace *space(body->space);
+
+	space->rigids_memory->set_position(body->rigids_mchunk, p_index, p_transform.origin);
+	space->rigids_memory->set_rotation(body->rigids_mchunk, p_index, p_transform.basis.get_quat());
+	space->rigids_memory->set_stiffness(body->rigids_mchunk, p_index, p_stiffness);
+	space->rigids_memory->set_threshold(body->rigids_mchunk, p_index, p_plastic_threshold);
+	space->rigids_memory->set_creep(body->rigids_mchunk, p_index, p_plastic_creep);
+	space->rigids_memory->set_offset(body->rigids_mchunk, p_index, p_offset);
+}
+
+void FlexParticleBodyCommands::add_rigid_component(ParticleBufferIndex p_particle_index, const Vector3 &p_rest) {
+	const int previous_size(body->rigids_components_mchunk->get_size());
+	body->space->rigids_components_allocator->resize_chunk(body->rigids_components_mchunk, previous_size + 1);
+	set_rigid_component(previous_size, p_particle_index, p_rest);
+}
+
+void FlexParticleBodyCommands::set_rigid_component(RigidComponentIndex p_index, ParticleBufferIndex p_particle_index, const Vector3 &p_rest) {
+
+	ERR_FAIL_COND(!body->is_owner_of_rigid_component(p_index));
+
+	body->space->rigids_components_memory->set_index(body->rigids_components_mchunk, p_index, p_particle_index);
+	body->space->rigids_components_memory->set_rest(body->rigids_components_mchunk, p_index, p_rest);
 }
 
 int FlexParticleBodyConstraintCommands::get_spring_count() const {

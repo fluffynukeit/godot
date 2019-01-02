@@ -24,12 +24,6 @@ public:
 			const Vector3 &p_local_position,
 			real_t p_mass) = 0;
 
-	virtual void add_spring(
-			int p_particle_0,
-			int p_particle_1,
-			float p_length,
-			float p_stiffness) = 0;
-
 	virtual void set_particle_position_mass(int p_particle_index, const Vector3 &p_position, real_t p_mass) = 0;
 
 	virtual int get_particle_count() const = 0;
@@ -63,6 +57,19 @@ public:
 
 	virtual void set_particle_group(int p_particle_index, int p_group) = 0;
 	virtual int get_particle_group(int p_particle_index) const = 0;
+
+	virtual void add_spring(
+			int p_particle_0,
+			int p_particle_1,
+			float p_length,
+			float p_stiffness) = 0;
+
+	virtual int get_spring_count() const = 0;
+
+	virtual void get_spring_positions(
+			int p_spring_index,
+			Vector3 &r_begin,
+			Vector3 &r_end) const = 0;
 };
 
 class ParticleBodyConstraintCommands : public Object {
