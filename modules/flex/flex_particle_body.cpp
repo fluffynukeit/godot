@@ -59,7 +59,7 @@ FlexParticleBody::FlexParticleBody() :
 		_is_monitorable(false),
 		_is_monitoring_primitives_contacts(false),
 		tearing_active(false),
-		tearing_max_extension(1.1),
+		tearing_max_extension(2.0),
 		tearing_data(NULL) {
 	sync_callback.receiver = NULL;
 }

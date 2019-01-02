@@ -64,7 +64,6 @@ private:
 	void open();
 	void close();
 	void commit_changes();
-	int duplicate_vertex(int p_vertex);
 
 public:
 	void set_vertex(int p_vertex_id, const void *p_vector3);
@@ -93,6 +92,8 @@ class ParticleBodyMeshInstance : public MeshInstance {
 	Skeleton *skeleton;
 
 	RenderingUpdateApproach rendering_approach;
+
+	Vector<int> pv_mapped_particle_indices;
 
 	static void _bind_methods();
 	virtual void _notification(int p_what);

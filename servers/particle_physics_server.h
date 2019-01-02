@@ -198,10 +198,16 @@ public:
 		}
 	};
 
+	struct Split {
+		int previous_p_index;
+		int new_p_index;
+	};
+
 	struct TearingData {
 		// Filled and used only if a tearable model is filled
 		Vector<real_t> spring_rest_lengths_2;
 		Vector<Triangle> triangles;
+		Vector<Split> splits;
 	};
 
 	/* BODY */

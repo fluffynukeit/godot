@@ -1385,7 +1385,7 @@ struct TearingSplit {
 
 void FlexSpace::execute_tearing() {
 
-	// TODo please make this customizable
+	// TODO please make this customizable
 	const int max_copies = 10;
 	int split_count = 0;
 
@@ -1499,6 +1499,8 @@ void FlexSpace::execute_tearing() {
 
 			splits.write[split_index].split_plane = split_plane;
 		}
+
+		pb->tearing_data->splits.resize(split_count);
 
 		if (!split_count)
 			continue;
@@ -1630,8 +1632,11 @@ void FlexSpace::execute_tearing() {
 				}
 			}
 
-			// Duplicate mesh vertex
-			// TODO
+			pb->tearing_data->splits.write[split_index].previous_p_index =
+					splits[split_index].particle_to_split;
+
+			pb->tearing_data->splits.write[split_index].new_p_index =
+					added_particle;
 		}
 	}
 }
