@@ -36,6 +36,7 @@
 #define PARTICLE_BODY_H
 
 #include "physics_particle_object.h"
+#include "scene/3d/immediate_geometry.h"
 #include "scene/resources/multimesh.h"
 #include "scene/resources/particle_body_model.h"
 #include "scene/resources/primitive_meshes.h"
@@ -59,6 +60,8 @@ class ParticleBody : public ParticleObject {
 	Ref<MultiMesh> multi_mesh;
 	Ref<SphereMesh> debug_particle_mesh;
 	Ref<SpatialMaterial> debug_particle_material;
+	ImmediateGeometry *debug_spring_mesh;
+	Ref<SpatialMaterial> debug_spring_material;
 
 #ifdef TOOLS_ENABLED
 public:

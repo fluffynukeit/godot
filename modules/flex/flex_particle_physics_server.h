@@ -61,19 +61,6 @@ public:
 			const Vector3 &p_local_position,
 			real_t p_mass);
 
-	virtual void add_spring(int p_particle_0, int p_particle_1, float p_length, float p_stiffness);
-	virtual void set_spring(SpringIndex p_index, ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness);
-
-	virtual void triangles_set_count(int p_count);
-	virtual void add_triangle(ParticleIndex p_particle_0, ParticleIndex p_particle_1, ParticleIndex p_particle_2);
-	virtual void set_triangle(TriangleIndex p_index, ParticleIndex p_particle_0, ParticleIndex p_particle_1, ParticleIndex p_particle_2);
-
-	virtual void add_rigid(const Transform &p_transform, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, RigidComponentIndex p_offset);
-	virtual void set_rigid(RigidIndex p_index, const Transform &p_transform, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, RigidComponentIndex p_offset);
-
-	virtual void add_rigid_component(ParticleBufferIndex p_particle_index, const Vector3 &p_rest);
-	virtual void set_rigid_component(RigidComponentIndex p_index, ParticleBufferIndex p_particle_index, const Vector3 &p_rest);
-
 	virtual void set_particle_position_mass(int p_particle_index, const Vector3 &p_position, real_t p_mass);
 
 	virtual int get_particle_count() const;
@@ -108,6 +95,26 @@ public:
 
 	virtual void set_particle_group(int p_particle_index, int group);
 	virtual int get_particle_group(int p_particle_index) const;
+
+	virtual void add_spring(int p_particle_0, int p_particle_1, float p_length, float p_stiffness);
+	virtual void set_spring(SpringIndex p_index, ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness);
+
+	virtual int get_spring_count() const;
+
+	virtual void get_spring_positions(
+			int p_spring_index,
+			Vector3 &r_begin,
+			Vector3 &r_end) const;
+
+	virtual void triangles_set_count(int p_count);
+	virtual void add_triangle(ParticleIndex p_particle_0, ParticleIndex p_particle_1, ParticleIndex p_particle_2);
+	virtual void set_triangle(TriangleIndex p_index, ParticleIndex p_particle_0, ParticleIndex p_particle_1, ParticleIndex p_particle_2);
+
+	virtual void add_rigid(const Transform &p_transform, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, RigidComponentIndex p_offset);
+	virtual void set_rigid(RigidIndex p_index, const Transform &p_transform, float p_stiffness, float p_plastic_threshold, float p_plastic_creep, RigidComponentIndex p_offset);
+
+	virtual void add_rigid_component(ParticleBufferIndex p_particle_index, const Vector3 &p_rest);
+	virtual void set_rigid_component(RigidComponentIndex p_index, ParticleBufferIndex p_particle_index, const Vector3 &p_rest);
 };
 
 class FlexParticleBodyConstraintCommands : public ParticleBodyConstraintCommands {

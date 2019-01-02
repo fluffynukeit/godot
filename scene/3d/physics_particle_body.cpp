@@ -444,7 +444,7 @@ void ParticleBody::debug_initialize_resource() {
 	if (!is_inside_tree() || !get_tree()->is_debugging_collisions_hint())
 		return;
 
-	debug_particle_material = Ref<SpatialMaterial>(memnew(SpatialMaterial));
+	debug_particle_material.instance();
 	debug_particle_material->set_flag(SpatialMaterial::FLAG_UNSHADED, true);
 	debug_particle_material->set_feature(SpatialMaterial::FEATURE_TRANSPARENT, false);
 
@@ -473,6 +473,17 @@ void ParticleBody::debug_initialize_resource() {
 			particle_body_model.is_valid() ?
 					particle_body_model->get_particles_ref().size() :
 					0;
+
+	debug_spring_material.instance();
+	debug_spring_material->set_flag(SpatialMaterial::FLAG_UNSHADED, true);
+	debug_spring_material->set_feature(SpatialMaterial::FEATURE_TRANSPARENT, false);
+	debug_spring_material->set_albedo(Color(1, 0, 0, 1));
+
+	debug_spring_mesh = memnew(ImmediateGeometry);
+	debug_spring_mesh->set_material_override(debug_spring_material);
+	debug_spring_mesh->set_as_toplevel(true);
+	add_child(debug_spring_mesh);
+	debug_spring_mesh->set_global_transform(Transform());
 
 	debug_resize_particle_visual_instance(particle_count);
 	debug_reset_particle_positions();
@@ -508,6 +519,17 @@ void ParticleBody::debug_update(ParticleBodyCommands *p_cmds) {
 				i,
 				transf);
 	}
+
+	debug_spring_mesh->clear();
+	debug_spring_mesh->begin(Mesh::PRIMITIVE_LINES);
+	for (int i = p_cmds->get_spring_count() - 1; 0 <= i; --i) {
+		Vector3 begin;
+		Vector3 end;
+		p_cmds->get_spring_positions(i, begin, end);
+		debug_spring_mesh->add_vertex(begin);
+		debug_spring_mesh->add_vertex(end);
+	}
+	debug_spring_mesh->end();
 }
 
 void ParticleBody::debug_color_change() {
