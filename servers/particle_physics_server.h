@@ -167,12 +167,16 @@ public:
 		// TODO Try to put this inside the edge
 		int springs[3];
 		Edge edges[3];
+		uint32_t hash_check; // Used to know who did the last check
 
-		Triangle() {}
+		Triangle() :
+				hash_check(0) {}
+
 		Triangle(int p_a, int p_b, int p_c) :
 				a(p_a),
 				b(p_b),
-				c(p_c) {}
+				c(p_c),
+				hash_check(0) {}
 
 		bool contains(const int index) const {
 			return a == index || b == index || c == index;

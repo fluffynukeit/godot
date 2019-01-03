@@ -1383,6 +1383,69 @@ struct TearingSplit {
 	Vector3 split_plane;
 };
 
+// This function return true immediately when the has_top and has_bottom are both  true
+// Also it use a triangle as starting point to avoid to check all triangles of mesh
+bool can_split_particle(
+		const FlexParticleBody *pb,
+		const ParticleIndex p_particle,
+		ParticlePhysicsServer::Triangle &p_triangle,
+		const uint32_t hash_check,
+		const Vector3 &split_plane,
+		const real_t w,
+		bool &r_has_top,
+		bool &r_has_bottom) {
+
+	const FlVector4 fl_centroid =
+			(pb->get_particle(p_triangle.a) +
+					pb->get_particle(p_triangle.b) +
+					pb->get_particle(p_triangle.c)) /
+			3.0;
+
+	const Vector3 centroid(vec3_from_flvec4(fl_centroid));
+
+	if (split_plane.dot(centroid) > w) {
+		// Top
+		r_has_top = true;
+	} else {
+		// Bottom
+		r_has_bottom = true;
+	}
+
+	if (r_has_top && r_has_bottom)
+		return true;
+
+	p_triangle.hash_check = hash_check;
+
+	// Otherwise check adjacent triangle
+	for (int e(2); 0 <= e; --e) {
+
+		if (0 > p_triangle.edges[e].adjacent_triangle_index)
+			continue;
+
+		ParticlePhysicsServer::Triangle &other_tri(
+				pb->get_tearing_data()->triangles.write[p_triangle.edges[e].adjacent_triangle_index]);
+
+		if (hash_check == other_tri.hash_check)
+			continue; // Already checked by this run
+
+		if (!other_tri.contains(p_particle))
+			continue;
+
+		if (can_split_particle(
+					pb,
+					p_particle,
+					other_tri,
+					hash_check,
+					split_plane,
+					w,
+					r_has_top,
+					r_has_bottom))
+			return true;
+	}
+
+	return false;
+}
+
 void FlexSpace::execute_tearing() {
 
 	// TODO please make this customizable
@@ -1424,7 +1487,11 @@ void FlexSpace::execute_tearing() {
 				continue;
 
 			const ParticleBufferIndex particle_buffer_to_split =
-					Math::random(0, 1) > 0.5 ? s.index0 : s.index1;
+					Math::random(0.0, 1.0) > 0.5 ? s.index0 : s.index1;
+
+			const ParticleIndex particle_to_split =
+					pb->particles_mchunk->get_chunk_index(
+							particle_buffer_to_split);
 
 			// Split the same particle one time per check
 			bool split_in_progress = false;
@@ -1444,11 +1511,13 @@ void FlexSpace::execute_tearing() {
 			Vector3 split_plane = vec3_from_flvec4(n);
 			split_plane.normalize();
 
+			const FlVector4 pts_pos =
+					get_particles_memory()->get_particle(
+							particle_buffer_to_split);
+
 			const real_t w(
 					split_plane.dot(
-							vec3_from_flvec4(
-									get_particles_memory()->get_particle(
-											particle_buffer_to_split))));
+							vec3_from_flvec4(pts_pos)));
 
 			// TODO this is completelly wrong here because the info doesn't arrive
 			// Correctly to the other phase
@@ -1459,9 +1528,39 @@ void FlexSpace::execute_tearing() {
 			bool has_top(false);
 			bool has_bottom(false);
 
-			for (TriangleIndex t(pb->get_triangle_count() - 1); 0 <= t; --t) {
+			// Find involved triangle
+			int involved_triangle_id(-1);
+			for (int t(pb->tearing_data->triangles.size() - 1); 0 <= t; --t) {
 
-				const DynamicTriangle &tri = pb->get_triangle(t);
+				const ParticlePhysicsServer::Triangle &tri =
+						pb->tearing_data->triangles[t];
+
+				if (tri.contains(particle_to_split)) {
+					involved_triangle_id = t;
+				}
+			}
+
+			ERR_FAIL_COND(0 > involved_triangle_id); // Impossible
+
+			ParticlePhysicsServer::Triangle &involved_triangle =
+					pb->tearing_data->triangles.write[involved_triangle_id];
+
+			// Continue only if has_top and has_bottom are true
+			if (can_split_particle(
+						pb,
+						particle_to_split,
+						involved_triangle,
+						Math::rand(),
+						split_plane,
+						w,
+						has_top,
+						has_bottom))
+				continue;
+
+			/*
+			for (int t(pb->tearing_data->triangles.size() - 1); 0 <= t; --t) {
+
+				const ParticlePhysicsServer::Triangle &tri = pb->tearing_data->triangles[t];
 
 				if (tri.contains(particle_buffer_to_split)) {
 
@@ -1486,9 +1585,7 @@ void FlexSpace::execute_tearing() {
 					}
 				}
 			}
-
-			if (!has_top || !has_bottom)
-				continue;
+			*/
 
 			/// Prepare for split
 
@@ -1496,8 +1593,7 @@ void FlexSpace::execute_tearing() {
 			const int split_index = split_count;
 			++split_count;
 
-			splits.write[split_index].particle_to_split =
-					pb->particles_mchunk->get_chunk_index(particle_buffer_to_split);
+			splits.write[split_index].particle_to_split = particle_to_split;
 
 			splits.write[split_index].split_plane = split_plane;
 		}
