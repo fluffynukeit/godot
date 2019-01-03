@@ -1450,6 +1450,10 @@ void FlexSpace::execute_tearing() {
 									get_particles_memory()->get_particle(
 											particle_buffer_to_split))));
 
+			// TODO this is completelly wrong here because the info doesn't arrive
+			// Correctly to the other phase
+			// TODO Avoid to compute here this array
+			// TODO Avoid check all triangles, but check on near triangles using the pre computed data
 			adjacent_triangles.clear();
 			adjacent_triangle_sides.clear();
 			bool has_top(false);
@@ -1492,8 +1496,6 @@ void FlexSpace::execute_tearing() {
 			const int split_index = split_count;
 			++split_count;
 
-			// Instead of a random selection, choose always the first particle
-			// to copy
 			splits.write[split_index].particle_to_split =
 					pb->particles_mchunk->get_chunk_index(particle_buffer_to_split);
 
@@ -1517,11 +1519,16 @@ void FlexSpace::execute_tearing() {
 			const ParticleBufferIndex added_particle_buffer =
 					pb->particles_mchunk->get_buffer_index(added_particle);
 
+			const ParticleBufferIndex particle_buffer_to_split(
+					pb->particles_mchunk->get_buffer_index(
+							splits[split_index].particle_to_split));
+
 			// Duplicate particle
 			pb->copy_particle(
 					added_particle,
 					splits[split_index].particle_to_split);
 
+			// Update the spring
 			for (int g(adjacent_triangles.size() - 1); 0 <= g; --g) {
 				if (adjacent_triangle_sides[g]) {
 					// Is on top side
@@ -1531,57 +1538,66 @@ void FlexSpace::execute_tearing() {
 					TriangleIndex t(adjacent_triangles[g]);
 					ParticlePhysicsServer::Triangle &triangle(pb->tearing_data->triangles.write[t]);
 
+					// Update spring
 					for (int e(2); 0 <= e; --e) {
 
-						const int at_i = adjacent_triangles.find(
-								triangle.edges[e].adjacent_triangle_index);
-
-						if (0 > at_i)
-							continue;
-
-						if (!adjacent_triangle_sides[at_i])
-							continue;
-
-						SpringIndex index;
-						// This edge is attached with a triangle that is on
-						// the other side of the split plane
-						if (0 <= triangle.edges[e].bending_spring_index) {
-
-							// Convert the bending spring to streaching spring
-							// bending is no more required, so reuse it
-							pb->copy_spring(
-									triangle.edges[e].bending_spring_index,
-									triangle.springs[e]);
-
-							index = triangle.edges[e].bending_spring_index;
-							triangle.edges[e].bending_spring_index = -1;
-
-							// Reset bending spring index on the adjacent triangle
-							pb->tearing_data->triangles.write[triangle.edges[e].adjacent_triangle_index].edges[triangle.edges[e].adjacent_edge_index].bending_spring_index = -1;
-
-						} else {
-
-							// No bending springs so create new spring
-							index = pb->duplicate_spring(triangle.springs[e]);
-							pb->tearing_data->spring_rest_lengths_2.push_back(0);
+						int at_i = -1;
+						if (0 <= triangle.edges[e].adjacent_triangle_index) {
+							at_i = adjacent_triangles.find(
+									triangle.edges[e].adjacent_triangle_index);
 						}
 
-						pb->tearing_data->spring_rest_lengths_2.write[index] =
-								pb->tearing_data->spring_rest_lengths_2[triangle.springs[e]];
+						if (
+								0 <= at_i &&
+								adjacent_triangle_sides[at_i]) {
 
-						triangle.springs[e] = index;
-					}
+							// Split phase
 
-					// Update springs
+							SpringIndex index;
+							// This edge is attached with a triangle that is on
+							// the other side of the split plane
+							if (0 <= triangle.edges[e].bending_spring_index) {
 
-					ParticleBufferIndex particle_buffer_to_split(
-							pb->particles_mchunk->get_buffer_index(
-									splits[split_index].particle_to_split));
+								// Convert the bending spring to streaching spring
+								// bending is no more required, so reuse it
 
-					for (int s(2); 0 <= s; --s) {
+								index = triangle.edges[e].bending_spring_index;
+								triangle.edges[e].bending_spring_index = -1;
 
-						// Update stretching spring
-						Spring spring(pb->get_spring_indices(triangle.springs[s]));
+								// Reset bending spring index on the adjacent triangle
+								pb->tearing_data->triangles.write[triangle.edges[e].adjacent_triangle_index].edges[triangle.edges[e].adjacent_edge_index].bending_spring_index = -1;
+
+								pb->copy_spring(
+										index,
+										triangle.springs[e]);
+
+							} else {
+
+								// No bending springs so create new spring
+								index = pb->duplicate_spring(triangle.springs[e]);
+								pb->tearing_data->spring_rest_lengths_2.push_back(0);
+							}
+
+							pb->tearing_data->spring_rest_lengths_2.write[index] =
+									pb->tearing_data->spring_rest_lengths_2[triangle.springs[e]];
+
+							triangle.springs[e] = index;
+
+							// Reset adjacent edges for the edge
+							{
+								ParticlePhysicsServer::Edge &other_triangle_edge(
+										pb->tearing_data->triangles.write[triangle.edges[e].adjacent_triangle_index].edges[triangle.edges[e].adjacent_edge_index]);
+
+								other_triangle_edge.adjacent_edge_index = -1;
+								other_triangle_edge.adjacent_triangle_index = -1;
+
+								triangle.edges[e].adjacent_edge_index = -1;
+								triangle.edges[e].adjacent_triangle_index = -1;
+							}
+						}
+
+						// Update particle ID
+						Spring spring = pb->get_spring_indices(triangle.springs[e]);
 
 						if (particle_buffer_to_split == spring.index0) {
 							spring.index0 = added_particle_buffer;
@@ -1589,13 +1605,15 @@ void FlexSpace::execute_tearing() {
 							spring.index1 = added_particle_buffer;
 						}
 
-						pb->set_spring_indices(triangle.springs[s], spring);
+						pb->set_spring_indices(
+								triangle.springs[e],
+								spring);
 
 						// Update bending spring
-						if (0 <= triangle.edges[s].bending_spring_index) {
+						if (0 <= triangle.edges[e].bending_spring_index) {
 
-							spring = pb->get_spring_indices(
-									triangle.edges[s].bending_spring_index);
+							Spring spring = pb->get_spring_indices(
+									triangle.edges[e].bending_spring_index);
 
 							if (particle_buffer_to_split == spring.index0) {
 								spring.index0 = added_particle_buffer;
@@ -1604,7 +1622,7 @@ void FlexSpace::execute_tearing() {
 							}
 
 							pb->set_spring_indices(
-									triangle.edges[s].bending_spring_index,
+									triangle.edges[e].bending_spring_index,
 									spring);
 						}
 					}
