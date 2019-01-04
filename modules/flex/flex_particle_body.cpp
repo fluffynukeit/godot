@@ -59,7 +59,7 @@ FlexParticleBody::FlexParticleBody() :
 		_is_monitorable(false),
 		_is_monitoring_primitives_contacts(false),
 		tearing_active(false),
-		tearing_max_extension(2.0),
+		tearing_max_extension(2),
 		tearing_data(NULL) {
 	sync_callback.receiver = NULL;
 }
@@ -242,7 +242,7 @@ void FlexParticleBody::set_tearing_active(bool p_active) {
 
 	if (p_active) {
 		if (!tearing_data)
-			tearing_data = std::make_shared<ParticlePhysicsServer::TearingData>();
+			tearing_data = std::make_shared<FlexTearingData>();
 	} else {
 		tearing_data.reset();
 	}

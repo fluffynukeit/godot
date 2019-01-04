@@ -59,6 +59,10 @@ enum ChangedBodyParameter {
 	eChangedBodyParamALL = eChangedBodyParamParticleJustAdded | eChangedBodyParamPositionMass | eChangedBodyParamVelocity | eChangedBodyParamPhase | eChangedBodyParamInflatable | eChangedBodyRestParticles
 };
 
+struct FlexTearingData : public ParticlePhysicsServer::TearingData {
+	Vector<bool> sides;
+};
+
 /// This class represent a group of particles that are constrained each other and form a body.
 /// This body can be rigid or soft.
 ///
@@ -114,7 +118,7 @@ class FlexParticleBody : public RIDFlex {
 
 	bool tearing_active;
 	real_t tearing_max_extension; // Normalized percetage
-	std::shared_ptr<ParticlePhysicsServer::TearingData> tearing_data;
+	std::shared_ptr<FlexTearingData> tearing_data;
 
 public:
 	FlexParticleBody();
@@ -154,7 +158,7 @@ public:
 	void set_monitoring_primitives_contacts(bool p_monitoring);
 	_FORCE_INLINE_ bool is_monitoring_primitives_contacts() const { return _is_monitoring_primitives_contacts; }
 
-	const ParticlePhysicsServer::TearingData *get_tearing_data() const {
+	FlexTearingData *get_tearing_data() const {
 		return tearing_data.get();
 	}
 

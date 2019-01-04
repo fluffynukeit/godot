@@ -201,8 +201,8 @@ void ParticleBodyMeshInstance::update_mesh_pvparticles(ParticleBodyCommands *p_c
 			ParticlePhysicsServer::get_singleton()->body_get_tearing_data(
 					particle_body->get_rid());
 
-	const int split_count = tearing_data->splits.size();
-	if (tearing_data && split_count) {
+	if (tearing_data && tearing_data->splits.size()) {
+		const int split_count = tearing_data->splits.size();
 
 		Ref<Material> material(get_surface_material(0));
 

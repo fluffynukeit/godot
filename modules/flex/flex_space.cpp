@@ -1380,13 +1380,16 @@ void FlexSpace::execute_geometries_commands() {
 
 struct TearingSplit {
 	ParticleIndex particle_to_split;
+	ParticleIndex other_particle;
+	int involved_triangle_id;
+	real_t w;
 	Vector3 split_plane;
 };
 
 // This function return true immediately when the has_top and has_bottom are both  true
 // Also it use a triangle as starting point to avoid to check all triangles of mesh
 bool can_split_particle(
-		const FlexParticleBody *pb,
+		FlexParticleBody *pb,
 		const ParticleIndex p_particle,
 		ParticlePhysicsServer::Triangle &p_triangle,
 		const uint32_t hash_check,
@@ -1446,23 +1449,88 @@ bool can_split_particle(
 	return false;
 }
 
+// This function understand if the triangle is on top or bottom side of the split plane
+// Also it doesn't check all triangles but only the near triangles.
+void get_near_triangles(
+		FlexParticleBody *pb,
+		const ParticleIndex p_particle,
+		ParticlePhysicsServer::Triangle &p_triangle,
+		const uint32_t hash_check,
+		const Vector3 &split_plane,
+		const real_t w,
+		Vector<int> &adjacent_triangles) {
+
+	const FlVector4 fl_centroid =
+			(pb->get_particle(p_triangle.a) +
+					pb->get_particle(p_triangle.b) +
+					pb->get_particle(p_triangle.c)) /
+			3.0;
+
+	const Vector3 centroid(vec3_from_flvec4(fl_centroid));
+
+	if (split_plane.dot(centroid) > w) {
+		// Top
+		pb->get_tearing_data()->sides.write[p_triangle.self_id] = true;
+	} else {
+		// Bottom
+		pb->get_tearing_data()->sides.write[p_triangle.self_id] = false;
+	}
+
+	adjacent_triangles.push_back(p_triangle.self_id);
+	p_triangle.hash_check = hash_check;
+
+	// Otherwise check adjacent triangle
+	for (int e(2); 0 <= e; --e) {
+
+		if (0 > p_triangle.edges[e].adjacent_triangle_index)
+			continue;
+
+		ParticlePhysicsServer::Triangle &other_tri(
+				pb->get_tearing_data()->triangles.write[p_triangle.edges[e].adjacent_triangle_index]);
+
+		if (hash_check == other_tri.hash_check)
+			continue; // Already checked by this run
+
+		if (!other_tri.contains(p_particle))
+			continue;
+
+		get_near_triangles(
+				pb,
+				p_particle,
+				other_tri,
+				hash_check,
+				split_plane,
+				w,
+				adjacent_triangles);
+	}
+}
+
 void FlexSpace::execute_tearing() {
 
 	// TODO please make this customizable
-	const int max_copies = 10;
-	int split_count = 0;
+	const int max_copies = 500;
 
 	// TODO please cache this
 	Vector<TearingSplit> splits;
 	splits.resize(max_copies);
 
-	Vector<TriangleIndex> adjacent_triangles;
-	Vector<bool> adjacent_triangle_sides;
+	Vector<int> adjacent_triangles;
+
+	// TODO a test
+	static bool a = true;
+	Vector<int> remove_springs;
+	if (a) {
+
+		remove_springs.push_back(4);
+		remove_springs.push_back(6);
+		remove_springs.push_back(12);
+		a = false;
+	}
 
 	for (int i(particle_bodies_tearing.size() - 1); 0 <= i; --i) {
 		FlexParticleBody *pb = particle_bodies_tearing[i];
 
-		split_count = 0;
+		int split_count = 0;
 
 		for (
 				int spring_index(pb->get_spring_count() - 1);
@@ -1483,20 +1551,55 @@ void FlexSpace::execute_tearing() {
 
 			const real_t extension_2 = extract_position((p1 - p0)).length_squared();
 			const real_t rest_length_2 = pb->tearing_data->spring_rest_lengths_2[spring_index];
+
+			//if (0 > remove_springs.find(spring_index)) // TODO remove this please
 			if (extension_2 < rest_length_2 * pb->tearing_max_extension)
 				continue;
 
+			const ParticleIndex spring_p_index_0 =
+					pb->particles_mchunk->get_chunk_index(
+							s.index0);
+
+			const ParticleIndex spring_p_index_1 =
+					pb->particles_mchunk->get_chunk_index(
+							s.index1);
+
+			const real_t rand(Math::random(0.0, 1.0));
+
 			const ParticleBufferIndex particle_buffer_to_split =
-					Math::random(0.0, 1.0) > 0.5 ? s.index0 : s.index1;
+					rand > 0.5 ? s.index0 : s.index1;
 
 			const ParticleIndex particle_to_split =
-					pb->particles_mchunk->get_chunk_index(
-							particle_buffer_to_split);
+					rand > 0.5 ? spring_p_index_0 : spring_p_index_1;
 
-			// Split the same particle one time per check
+			const ParticleIndex other_particle =
+					rand > 0.5 ? spring_p_index_1 : spring_p_index_0;
+
+			// Find involved triangle
+			int involved_triangle_id(-1);
+			for (int t(pb->tearing_data->triangles.size() - 1); 0 <= t; --t) {
+
+				const ParticlePhysicsServer::Triangle &tri =
+						pb->tearing_data->triangles[t];
+
+				if (tri.contains(particle_to_split)) {
+					involved_triangle_id = t;
+					break;
+				}
+			}
+
+			ERR_FAIL_COND(0 > involved_triangle_id); // Impossible
+
+			// Split the same spring and same triangle one time per frame
 			bool split_in_progress = false;
 			for (int x(0); x < split_count; ++x) {
-				if (splits[x].particle_to_split == particle_buffer_to_split) {
+				// TODO try to reduce this check
+				if (
+						splits[x].particle_to_split == particle_to_split ||
+						splits[x].particle_to_split == other_particle ||
+						splits[x].other_particle == particle_to_split ||
+						splits[x].other_particle == other_particle ||
+						splits[x].involved_triangle_id == involved_triangle_id) {
 					split_in_progress = true;
 					break;
 				}
@@ -1504,6 +1607,9 @@ void FlexSpace::execute_tearing() {
 
 			if (split_in_progress)
 				continue;
+
+			ParticlePhysicsServer::Triangle &involved_triangle =
+					pb->tearing_data->triangles.write[involved_triangle_id];
 
 			// This section understand in which side the triangle is
 
@@ -1519,34 +1625,11 @@ void FlexSpace::execute_tearing() {
 					split_plane.dot(
 							vec3_from_flvec4(pts_pos)));
 
-			// TODO this is completelly wrong here because the info doesn't arrive
-			// Correctly to the other phase
-			// TODO Avoid to compute here this array
-			// TODO Avoid check all triangles, but check on near triangles using the pre computed data
-			adjacent_triangles.clear();
-			adjacent_triangle_sides.clear();
 			bool has_top(false);
 			bool has_bottom(false);
 
-			// Find involved triangle
-			int involved_triangle_id(-1);
-			for (int t(pb->tearing_data->triangles.size() - 1); 0 <= t; --t) {
-
-				const ParticlePhysicsServer::Triangle &tri =
-						pb->tearing_data->triangles[t];
-
-				if (tri.contains(particle_to_split)) {
-					involved_triangle_id = t;
-				}
-			}
-
-			ERR_FAIL_COND(0 > involved_triangle_id); // Impossible
-
-			ParticlePhysicsServer::Triangle &involved_triangle =
-					pb->tearing_data->triangles.write[involved_triangle_id];
-
 			// Continue only if has_top and has_bottom are true
-			if (can_split_particle(
+			if (!can_split_particle(
 						pb,
 						particle_to_split,
 						involved_triangle,
@@ -1557,44 +1640,15 @@ void FlexSpace::execute_tearing() {
 						has_bottom))
 				continue;
 
-			/*
-			for (int t(pb->tearing_data->triangles.size() - 1); 0 <= t; --t) {
-
-				const ParticlePhysicsServer::Triangle &tri = pb->tearing_data->triangles[t];
-
-				if (tri.contains(particle_buffer_to_split)) {
-
-					const FlVector4 fl_centroid =
-							(get_particles_memory()->get_particle(tri.index0) +
-									get_particles_memory()->get_particle(tri.index1) +
-									get_particles_memory()->get_particle(tri.index2)) /
-							3.0;
-
-					const Vector3 centroid(vec3_from_flvec4(fl_centroid));
-
-					adjacent_triangles.push_back(t);
-
-					if (split_plane.dot(centroid) > w) {
-						// Top
-						adjacent_triangle_sides.push_back(true);
-						has_top = true;
-					} else {
-						// Bottom
-						adjacent_triangle_sides.push_back(false);
-						has_bottom = true;
-					}
-				}
-			}
-			*/
-
 			/// Prepare for split
 
 			// Perform the copy
-			const int split_index = split_count;
-			++split_count;
+			const int split_index = split_count++;
 
 			splits.write[split_index].particle_to_split = particle_to_split;
-
+			splits.write[split_index].other_particle = other_particle;
+			splits.write[split_index].involved_triangle_id = involved_triangle_id;
+			splits.write[split_index].w = w;
 			splits.write[split_index].split_plane = split_plane;
 		}
 
@@ -1624,28 +1678,40 @@ void FlexSpace::execute_tearing() {
 					added_particle,
 					splits[split_index].particle_to_split);
 
+			const int hash_check(Math::rand());
+
+			adjacent_triangles.clear();
+			get_near_triangles(
+					pb,
+					splits[split_index].particle_to_split,
+					pb->tearing_data->triangles.write[splits[split_index].involved_triangle_id],
+					hash_check,
+					splits[split_index].split_plane,
+					splits[split_index].w,
+					adjacent_triangles);
+
+			ERR_FAIL_COND(!adjacent_triangles.size());
+
 			// Update the spring
 			for (int g(adjacent_triangles.size() - 1); 0 <= g; --g) {
-				if (adjacent_triangle_sides[g]) {
+
+				const int t(adjacent_triangles[g]);
+				ParticlePhysicsServer::Triangle &triangle(pb->tearing_data->triangles.write[t]);
+
+				if (pb->tearing_data->sides[t]) {
 					// Is on top side
 				} else {
 
 					// Is on bottom side
-					TriangleIndex t(adjacent_triangles[g]);
-					ParticlePhysicsServer::Triangle &triangle(pb->tearing_data->triangles.write[t]);
 
 					// Update spring
 					for (int e(2); 0 <= e; --e) {
 
-						int at_i = -1;
-						if (0 <= triangle.edges[e].adjacent_triangle_index) {
-							at_i = adjacent_triangles.find(
-									triangle.edges[e].adjacent_triangle_index);
-						}
-
+						bool update_adjacent = false;
 						if (
-								0 <= at_i &&
-								adjacent_triangle_sides[at_i]) {
+								0 <= triangle.edges[e].adjacent_triangle_index &&
+								pb->tearing_data->triangles[triangle.edges[e].adjacent_triangle_index].hash_check == hash_check && // To be sure that this triangle is near
+								pb->tearing_data->sides[triangle.edges[e].adjacent_triangle_index]) {
 
 							// Split phase
 
@@ -1667,29 +1733,12 @@ void FlexSpace::execute_tearing() {
 										index,
 										triangle.springs[e]);
 
-							} else {
+								pb->tearing_data->spring_rest_lengths_2.write[index] =
+										pb->tearing_data->spring_rest_lengths_2[triangle.springs[e]];
 
-								// No bending springs so create new spring
-								index = pb->duplicate_spring(triangle.springs[e]);
-								pb->tearing_data->spring_rest_lengths_2.push_back(0);
+								triangle.springs[e] = index;
 							}
-
-							pb->tearing_data->spring_rest_lengths_2.write[index] =
-									pb->tearing_data->spring_rest_lengths_2[triangle.springs[e]];
-
-							triangle.springs[e] = index;
-
-							// Reset adjacent edges for the edge
-							{
-								ParticlePhysicsServer::Edge &other_triangle_edge(
-										pb->tearing_data->triangles.write[triangle.edges[e].adjacent_triangle_index].edges[triangle.edges[e].adjacent_edge_index]);
-
-								other_triangle_edge.adjacent_edge_index = -1;
-								other_triangle_edge.adjacent_triangle_index = -1;
-
-								triangle.edges[e].adjacent_edge_index = -1;
-								triangle.edges[e].adjacent_triangle_index = -1;
-							}
+							update_adjacent = true;
 						}
 
 						// Update particle ID
@@ -1708,18 +1757,42 @@ void FlexSpace::execute_tearing() {
 						// Update bending spring
 						if (0 <= triangle.edges[e].bending_spring_index) {
 
-							Spring spring = pb->get_spring_indices(
+							Spring spring_bend = pb->get_spring_indices(
 									triangle.edges[e].bending_spring_index);
 
-							if (particle_buffer_to_split == spring.index0) {
-								spring.index0 = added_particle_buffer;
-							} else if (particle_buffer_to_split == spring.index1) {
-								spring.index1 = added_particle_buffer;
+							if (particle_buffer_to_split == spring_bend.index0) {
+								spring_bend.index0 = added_particle_buffer;
+							} else if (particle_buffer_to_split == spring_bend.index1) {
+								spring_bend.index1 = added_particle_buffer;
 							}
 
 							pb->set_spring_indices(
 									triangle.edges[e].bending_spring_index,
-									spring);
+									spring_bend);
+						}
+
+						if (update_adjacent) {
+
+							const int other_spring_id(pb->tearing_data->triangles.write[triangle.edges[e].adjacent_triangle_index].springs[triangle.edges[e].adjacent_edge_index]);
+
+							const Spring &other_spring(pb->get_spring_indices(other_spring_id));
+
+							// Crossed check
+							if (
+									(other_spring.index0 != spring.index0 && other_spring.index1 != spring.index1) &&
+									(other_spring.index1 != spring.index0 && other_spring.index0 != spring.index1)) {
+
+								// The two triangles are no more attached
+
+								ParticlePhysicsServer::Edge &other_triangle_edge(
+										pb->tearing_data->triangles.write[triangle.edges[e].adjacent_triangle_index].edges[triangle.edges[e].adjacent_edge_index]);
+
+								other_triangle_edge.adjacent_edge_index = -1;
+								other_triangle_edge.adjacent_triangle_index = -1;
+
+								triangle.edges[e].adjacent_edge_index = -1;
+								triangle.edges[e].adjacent_triangle_index = -1;
+							}
 						}
 					}
 
