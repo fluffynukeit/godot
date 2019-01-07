@@ -181,7 +181,7 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 				PoolVector<int>::Read triangles_indices_r(
 						p_model->get_dynamic_triangles_indices().read());
 
-				VectorWriteProxy<ParticlePhysicsServer::Triangle> triangles =
+				VectorWriteProxy<ParticlePhysicsServer::Triangle> &triangles =
 						body->tearing_data->triangles.write;
 
 				// Step 1 build triangle and edges
