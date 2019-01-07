@@ -779,7 +779,8 @@ ClothParticleBody::ClothParticleBody() :
 		tether_stiffness(0.8),
 		tether_give(0.8),
 		rest_pressure(1),
-		allow_tearing(false) {}
+		allow_tearing(false),
+		tearing_max_extension(4.0) {}
 
 void ClothParticleBody::_bind_methods() {
 
@@ -804,6 +805,9 @@ void ClothParticleBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_pressure", "pressure"), &ClothParticleBody::set_pressure);
 	ClassDB::bind_method(D_METHOD("get_pressure"), &ClothParticleBody::get_pressure);
 
+	ClassDB::bind_method(D_METHOD("set_tearing_max_extension", "tearing_max_extension"), &ClothParticleBody::set_tearing_max_extension);
+	ClassDB::bind_method(D_METHOD("get_tearing_max_extension"), &ClothParticleBody::get_tearing_max_extension);
+
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/stretch_stiffness"), "set_stretch_stiffness", "get_stretch_stiffness");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/bend_stiffness"), "set_bend_stiffness", "get_bend_stiffness");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/tether_stiffness"), "set_tether_stiffness", "get_tether_stiffness");
@@ -812,6 +816,7 @@ void ClothParticleBody::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "model/allow_tearing"), "set_allow_tearing", "get_allow_tearing");
 
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "pressure"), "set_pressure", "get_pressure");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "tearing_max_extension", PROPERTY_HINT_RANGE, "1.1,1000,0.01,1"), "set_tearing_max_extension", "get_tearing_max_extension");
 }
 
 void ClothParticleBody::set_stretch_stiffness(real_t p_value) {
@@ -868,4 +873,15 @@ void ClothParticleBody::set_pressure(real_t p_pressure) {
 
 real_t ClothParticleBody::get_pressure() const {
 	return ParticlePhysicsServer::get_singleton()->body_get_pressure(rid);
+}
+
+void ClothParticleBody::set_tearing_max_extension(real_t p_tearing_factor) {
+	tearing_max_extension = p_tearing_factor;
+	ParticlePhysicsServer::get_singleton()->body_set_tearing_max_extension(
+			get_rid(),
+			tearing_max_extension);
+}
+
+real_t ClothParticleBody::get_tearing_max_extension() const {
+	return tearing_max_extension;
 }

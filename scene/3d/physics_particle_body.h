@@ -222,6 +222,7 @@ protected:
 	bool allow_tearing;
 
 	real_t rest_pressure;
+	real_t tearing_max_extension;
 
 public:
 	ClothParticleBody();
@@ -246,6 +247,9 @@ public:
 
 	void set_pressure(real_t p_pressure);
 	real_t get_pressure() const;
+
+	void set_tearing_max_extension(real_t p_tearing_max_extension);
+	real_t get_tearing_max_extension() const;
 };
 
 #endif // PARTICLE_BODY_H

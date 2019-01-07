@@ -61,6 +61,10 @@ enum ChangedBodyParameter {
 
 struct FlexTearingData : public ParticlePhysicsServer::TearingData {
 	Vector<bool> sides;
+	int check_stopped; // used to delay the check
+
+	FlexTearingData() :
+			check_stopped(-1) {}
 };
 
 /// This class represent a group of particles that are constrained each other and form a body.
@@ -178,6 +182,9 @@ public:
 
 	void set_tearing_active(bool active);
 	bool is_tearing_active() const;
+
+	void set_tearing_max_extension(real_t p_tearing_max_extension);
+	real_t get_tearing_max_extension() const;
 
 	// CMD
 
