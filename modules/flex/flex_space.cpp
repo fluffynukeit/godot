@@ -81,6 +81,8 @@ FlexSpace::FlexSpace() :
 		contacts_buffers(NULL),
 		compute_aabb_callback(NULL),
 		compute_friction_callback(NULL),
+		tearing_max_splits(100),
+		tearing_max_spring_checks(200),
 		force_buffer_write(false),
 		particle_radius(0.0) {
 	init();
@@ -752,6 +754,12 @@ bool FlexSpace::set_param(const StringName &p_name, const Variant &p_property) {
 	} else if (FlexParticlePhysicsServer::singleton->solver_param_relaxationFactor == p_name) {
 
 		params.relaxationFactor = p_property;
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_tearing_max_splits == p_name) {
+
+		tearing_max_splits = p_property;
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_tearing_max_spring_checks == p_name) {
+
+		tearing_max_spring_checks = p_property;
 	} else {
 		return false;
 	}
@@ -882,6 +890,12 @@ bool FlexSpace::get_param(const StringName &p_name, Variant &r_property) const {
 	} else if (FlexParticlePhysicsServer::singleton->solver_param_relaxationFactor == p_name) {
 
 		r_property = params.relaxationFactor;
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_tearing_max_splits == p_name) {
+
+		r_property = tearing_max_splits;
+	} else if (FlexParticlePhysicsServer::singleton->solver_param_tearing_max_spring_checks == p_name) {
+
+		r_property = tearing_max_spring_checks;
 	} else {
 		return false;
 	}
@@ -1378,14 +1392,6 @@ void FlexSpace::execute_geometries_commands() {
 	}
 }
 
-struct TearingSplit {
-	ParticleIndex particle_to_split;
-	ParticleIndex other_particle;
-	int involved_triangle_id;
-	real_t w;
-	Vector3 split_plane;
-};
-
 // This function return true immediately when the has_top and has_bottom are both  true
 // Also it use a triangle as starting point to avoid to check all triangles of mesh
 bool can_split_particle(
@@ -1507,35 +1513,27 @@ void get_near_triangles(
 
 void FlexSpace::execute_tearing() {
 
-	// TODO please make this customizable
-	const int max_copies = 500;
-
-	// TODO please cache this
-	Vector<TearingSplit> splits;
-	splits.resize(max_copies);
+	_tearing_splits.resize(tearing_max_splits);
 
 	Vector<int> adjacent_triangles;
-
-	// TODO a test
-	static bool a = true;
-	Vector<int> remove_springs;
-	if (a) {
-
-		remove_springs.push_back(4);
-		remove_springs.push_back(6);
-		remove_springs.push_back(12);
-		a = false;
-	}
 
 	for (int i(particle_bodies_tearing.size() - 1); 0 <= i; --i) {
 		FlexParticleBody *pb = particle_bodies_tearing[i];
 
 		int split_count = 0;
 
+		const int spring_count(pb->get_spring_count());
+		int spring_index(pb->tearing_data->check_stopped + 1);
+		int pb_max_spring_checks = tearing_max_spring_checks > spring_count ? spring_count : tearing_max_spring_checks;
+
 		for (
-				int spring_index(pb->get_spring_count() - 1);
-				0 <= spring_index && max_copies > split_count;
-				--spring_index) {
+				int check_index(0);
+				pb_max_spring_checks > check_index && tearing_max_splits > split_count;
+				++check_index, ++spring_index) {
+
+			// Reset
+			if (spring_count <= spring_index)
+				spring_index = 0;
 
 			const Spring &s = springs_memory->get_spring(
 					pb->springs_mchunk,
@@ -1552,28 +1550,27 @@ void FlexSpace::execute_tearing() {
 			const real_t extension_2 = extract_position((p1 - p0)).length_squared();
 			const real_t rest_length_2 = pb->tearing_data->spring_rest_lengths_2[spring_index];
 
-			//if (0 > remove_springs.find(spring_index)) // TODO remove this please
 			if (extension_2 < rest_length_2 * pb->tearing_max_extension)
 				continue;
 
-			const ParticleIndex spring_p_index_0 =
-					pb->particles_mchunk->get_chunk_index(
-							s.index0);
-
-			const ParticleIndex spring_p_index_1 =
-					pb->particles_mchunk->get_chunk_index(
-							s.index1);
-
-			const real_t rand(Math::random(0.0, 1.0));
-
 			const ParticleBufferIndex particle_buffer_to_split =
-					rand > 0.5 ? s.index0 : s.index1;
+					Math::random(0.0, 1.0) > 0.5 ? s.index0 : s.index1;
 
 			const ParticleIndex particle_to_split =
-					rand > 0.5 ? spring_p_index_0 : spring_p_index_1;
+					pb->particles_mchunk->get_chunk_index(
+							particle_buffer_to_split);
 
-			const ParticleIndex other_particle =
-					rand > 0.5 ? spring_p_index_1 : spring_p_index_0;
+			// Split the same spring and same triangle one time per frame
+			bool split_in_progress = false;
+			for (int x(0); x < split_count; ++x) {
+				if (_tearing_splits[x].particle_to_split == particle_to_split) {
+					split_in_progress = true;
+					break;
+				}
+			}
+
+			if (split_in_progress)
+				continue;
 
 			// Find involved triangle
 			int involved_triangle_id(-1);
@@ -1589,24 +1586,6 @@ void FlexSpace::execute_tearing() {
 			}
 
 			ERR_FAIL_COND(0 > involved_triangle_id); // Impossible
-
-			// Split the same spring and same triangle one time per frame
-			bool split_in_progress = false;
-			for (int x(0); x < split_count; ++x) {
-				// TODO try to reduce this check
-				if (
-						splits[x].particle_to_split == particle_to_split ||
-						splits[x].particle_to_split == other_particle ||
-						splits[x].other_particle == particle_to_split ||
-						splits[x].other_particle == other_particle ||
-						splits[x].involved_triangle_id == involved_triangle_id) {
-					split_in_progress = true;
-					break;
-				}
-			}
-
-			if (split_in_progress)
-				continue;
 
 			ParticlePhysicsServer::Triangle &involved_triangle =
 					pb->tearing_data->triangles.write[involved_triangle_id];
@@ -1645,13 +1624,13 @@ void FlexSpace::execute_tearing() {
 			// Perform the copy
 			const int split_index = split_count++;
 
-			splits.write[split_index].particle_to_split = particle_to_split;
-			splits.write[split_index].other_particle = other_particle;
-			splits.write[split_index].involved_triangle_id = involved_triangle_id;
-			splits.write[split_index].w = w;
-			splits.write[split_index].split_plane = split_plane;
+			_tearing_splits.write[split_index].particle_to_split = particle_to_split;
+			_tearing_splits.write[split_index].involved_triangle_id = involved_triangle_id;
+			_tearing_splits.write[split_index].w = w;
+			_tearing_splits.write[split_index].split_plane = split_plane;
 		}
 
+		pb->tearing_data->check_stopped = spring_index;
 		pb->tearing_data->splits.resize(split_count);
 
 		if (!split_count)
@@ -1671,23 +1650,23 @@ void FlexSpace::execute_tearing() {
 
 			const ParticleBufferIndex particle_buffer_to_split(
 					pb->particles_mchunk->get_buffer_index(
-							splits[split_index].particle_to_split));
+							_tearing_splits[split_index].particle_to_split));
 
 			// Duplicate particle
 			pb->copy_particle(
 					added_particle,
-					splits[split_index].particle_to_split);
+					_tearing_splits[split_index].particle_to_split);
 
 			const int hash_check(Math::rand());
 
 			adjacent_triangles.clear();
 			get_near_triangles(
 					pb,
-					splits[split_index].particle_to_split,
-					pb->tearing_data->triangles.write[splits[split_index].involved_triangle_id],
+					_tearing_splits[split_index].particle_to_split,
+					pb->tearing_data->triangles.write[_tearing_splits[split_index].involved_triangle_id],
 					hash_check,
-					splits[split_index].split_plane,
-					splits[split_index].w,
+					_tearing_splits[split_index].split_plane,
+					_tearing_splits[split_index].w,
 					adjacent_triangles);
 
 			ERR_FAIL_COND(!adjacent_triangles.size());
@@ -1820,7 +1799,7 @@ void FlexSpace::execute_tearing() {
 			}
 
 			pb->tearing_data->splits.write[split_index].previous_p_index =
-					splits[split_index].particle_to_split;
+					_tearing_splits[split_index].particle_to_split;
 
 			pb->tearing_data->splits.write[split_index].new_p_index =
 					added_particle;

@@ -59,7 +59,7 @@ FlexParticleBody::FlexParticleBody() :
 		_is_monitorable(false),
 		_is_monitoring_primitives_contacts(false),
 		tearing_active(false),
-		tearing_max_extension(2),
+		tearing_max_extension(4.0),
 		tearing_data(NULL) {
 	sync_callback.receiver = NULL;
 }
@@ -254,6 +254,14 @@ void FlexParticleBody::set_tearing_active(bool p_active) {
 
 bool FlexParticleBody::is_tearing_active() const {
 	return tearing_active;
+}
+
+void FlexParticleBody::set_tearing_max_extension(real_t p_tearing_max_extension) {
+	tearing_max_extension = p_tearing_max_extension;
+}
+
+real_t FlexParticleBody::get_tearing_max_extension() const {
+	return tearing_max_extension;
 }
 
 void FlexParticleBody::add_unactive_particles(int p_particle_count) {

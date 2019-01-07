@@ -265,6 +265,9 @@ public:
 
 	virtual const TearingData *body_get_tearing_data(RID p_body) const = 0;
 
+	virtual void body_set_tearing_max_extension(RID p_body, real_t p_tearing_max_extension) = 0;
+	virtual real_t body_get_tearing_max_extension(RID p_body) const = 0;
+
 	/* BODY CONSTRAINT */
 	virtual RID constraint_create(RID p_body0, RID p_body1) = 0;
 

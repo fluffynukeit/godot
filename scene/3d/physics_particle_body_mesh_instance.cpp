@@ -376,7 +376,12 @@ void ParticleBodyMeshInstance::update_mesh_pvparticles(ParticleBodyCommands *p_c
 
 	visual_server_handler->close();
 
-	visual_server_handler->set_aabb(p_cmds->get_aabb());
+	AABB aabb;
+	aabb.set_position(Vector3(-9999, -9999, -9999));
+	aabb.set_size(Vector3(19998, 19998, 19998));
+
+	visual_server_handler->set_aabb(aabb);
+	//visual_server_handler->set_aabb(p_cmds->get_aabb());
 }
 
 void ParticleBodyMeshInstance::_draw_mesh_pvparticles() {

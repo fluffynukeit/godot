@@ -627,6 +627,8 @@ FlexParticlePhysicsServer::FlexParticlePhysicsServer() :
 		solver_param_shapeCollisionMargin("shapeCollisionMargin"),
 		solver_param_relaxationMode("relaxationMode"),
 		solver_param_relaxationFactor("relaxationFactor"),
+		solver_param_tearing_max_splits("tearing_max_splits"),
+		solver_param_tearing_max_spring_checks("tearing_max_spring_checks"),
 		is_active(true),
 		delta_time(0.0),
 		last_space_index(-1) {
@@ -709,6 +711,8 @@ void FlexParticlePhysicsServer::space_get_params_defaults(Map<StringName, Varian
 	(*r_defs)[solver_param_shapeCollisionMargin] = 0.001;
 	(*r_defs)[solver_param_relaxationMode] = "local";
 	(*r_defs)[solver_param_relaxationFactor] = 0.8;
+	(*r_defs)[solver_param_tearing_max_splits] = 100;
+	(*r_defs)[solver_param_tearing_max_spring_checks] = 200;
 }
 
 bool FlexParticlePhysicsServer::space_set_param(RID p_space, const StringName &p_name, const Variant &p_property) {
@@ -927,6 +931,23 @@ const ParticlePhysicsServer::TearingData *FlexParticlePhysicsServer::body_get_te
 	ERR_FAIL_COND_V(!body, NULL);
 
 	return body->get_tearing_data();
+}
+
+void FlexParticlePhysicsServer::body_set_tearing_max_extension(
+		RID p_body,
+		real_t p_tearing_max_extension) {
+
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND(!body);
+
+	return body->set_tearing_max_extension(p_tearing_max_extension);
+}
+
+real_t FlexParticlePhysicsServer::body_get_tearing_max_extension(RID p_body) const {
+	const FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND_V(!body, -1);
+
+	return body->get_tearing_max_extension();
 }
 
 RID FlexParticlePhysicsServer::constraint_create(RID p_body0, RID p_body1) {

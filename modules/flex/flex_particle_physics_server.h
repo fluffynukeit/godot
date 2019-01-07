@@ -180,6 +180,8 @@ public:
 	const StringName solver_param_shapeCollisionMargin;
 	const StringName solver_param_relaxationMode;
 	const StringName solver_param_relaxationFactor;
+	const StringName solver_param_tearing_max_splits;
+	const StringName solver_param_tearing_max_spring_checks;
 
 private:
 	mutable RID_Owner<FlexSpace> space_owner;
@@ -278,6 +280,9 @@ public:
 	virtual bool body_is_monitoring_primitives_contacts(RID p_body) const;
 
 	virtual const TearingData *body_get_tearing_data(RID p_body) const;
+
+	virtual void body_set_tearing_max_extension(RID p_body, real_t p_tearing_max_extension);
+	virtual real_t body_get_tearing_max_extension(RID p_body) const;
 
 	/* BODY CONSTRAINT */
 	virtual RID constraint_create(RID p_body0, RID p_body1);

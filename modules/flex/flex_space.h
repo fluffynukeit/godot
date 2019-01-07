@@ -58,6 +58,13 @@ class ContactsBuffers;
 class GdFlexExtComputeAABBCallback;
 class GdFlexExtComputeFrictionCallback;
 
+struct TearingSplit {
+	ParticleIndex particle_to_split;
+	int involved_triangle_id;
+	real_t w;
+	Vector3 split_plane;
+};
+
 class FlexSpace : public RIDFlex {
 
 	friend class FlexBuffers;
@@ -97,6 +104,9 @@ class FlexSpace : public RIDFlex {
 
 	Vector<FlexParticleBody *> particle_bodies;
 	Vector<FlexParticleBody *> particle_bodies_tearing;
+	Vector<TearingSplit> _tearing_splits;
+	int tearing_max_splits;
+	int tearing_max_spring_checks;
 
 	Vector<FlexParticleBodyConstraint *> constraints;
 
