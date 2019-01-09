@@ -29,7 +29,7 @@
 /*************************************************************************/
 
 /**
-    @author AndreaCatania
+	@author AndreaCatania
 */
 
 #include "flex_space.h"
@@ -1522,7 +1522,7 @@ void FlexSpace::execute_tearing() {
 
 		int split_count = 0;
 
-		Vector<ForceTearing> force_tearings(pb->get_force_tearings());
+		Vector<ForceTearing> &force_tearings(pb->get_force_tearings());
 
 		/// Use another cycle to avoid too much checks and also to
 		/// not delay the cut with delayed check
@@ -1550,7 +1550,10 @@ void FlexSpace::execute_tearing() {
 				}
 			}
 
-			ERR_FAIL_COND(0 > involved_triangle_id); // Impossible
+			if (0 > involved_triangle_id) {
+				ERR_PRINTS("0 > involved_triangle_id, this may be a bug. Particle to split: " + String::num_int64(particle_to_split));
+				continue;
+			}
 
 			ParticlePhysicsServer::Triangle &involved_triangle =
 					pb->tearing_data->triangles.write[involved_triangle_id];

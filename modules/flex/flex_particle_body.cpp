@@ -314,6 +314,7 @@ ParticleIndex FlexParticleBody::add_particles(int p_particle_count) {
 void FlexParticleBody::copy_particle(ParticleIndex p_to, ParticleIndex p_from) {
 	set_particle(p_to, get_particle(p_from));
 	set_particle_velocity(p_to, get_particle_velocity(p_from));
+	set_particle_phase(p_to, get_particle_phase(p_from));
 	set_particle_normal(p_to, get_particle_normal(p_from));
 }
 
@@ -379,6 +380,14 @@ void FlexParticleBody::set_particle_normal(ParticleIndex p_particle_index, const
 void FlexParticleBody::set_particle_normal(ParticleIndex p_particle_index, const FlVector4 &p_normal) {
 	space->get_particles_memory()->set_normal(particles_mchunk, p_particle_index, p_normal);
 	changed_parameters |= eChangedBodyParamNormal;
+}
+
+void FlexParticleBody::set_particle_phase(ParticleIndex p_particle_index, int p_phase) {
+	space->get_particles_memory()->set_phase(particles_mchunk, p_particle_index, p_phase);
+}
+
+int FlexParticleBody::get_particle_phase(ParticleIndex p_particle_index) {
+	return space->get_particles_memory()->get_phase(particles_mchunk, p_particle_index);
 }
 
 void FlexParticleBody::set_triangle(
