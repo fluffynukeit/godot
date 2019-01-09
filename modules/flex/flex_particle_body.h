@@ -223,6 +223,9 @@ public:
 	void set_particle_normal(ParticleIndex p_particle_index, const Vector3 &p_normal);
 	void set_particle_normal(ParticleIndex p_particle_index, const FlVector4 &p_normal);
 
+	void set_particle_phase(ParticleIndex p_particle_index, int p_phase);
+	int get_particle_phase(ParticleIndex p_particle_index);
+
 	void set_triangle(TriangleIndex p_triangle_index, const DynamicTriangle &p_triangle);
 	const DynamicTriangle &get_triangle(TriangleIndex p_triangle_index) const;
 
