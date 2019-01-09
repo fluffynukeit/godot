@@ -264,6 +264,24 @@ real_t FlexParticleBody::get_tearing_max_extension() const {
 	return tearing_max_extension;
 }
 
+void FlexParticleBody::add_force_tearing(ParticleIndex p_particle_index, const Vector3 &p_split_plane) {
+
+	// Check if the particle is already there
+	for (int i(force_tearings.size() - 1); 0 <= i; --i) {
+		if (force_tearings[i].particle_to_split == p_particle_index)
+			return;
+	}
+
+	ForceTearing h;
+	h.particle_to_split = p_particle_index;
+	h.split_plane = p_split_plane;
+	force_tearings.push_back(h);
+}
+
+Vector<ForceTearing> &FlexParticleBody::get_force_tearings() {
+	return force_tearings;
+}
+
 void FlexParticleBody::add_unactive_particles(int p_particle_count) {
 	ERR_FAIL_COND(p_particle_count < 1);
 

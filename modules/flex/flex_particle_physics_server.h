@@ -284,6 +284,8 @@ public:
 	virtual void body_set_tearing_max_extension(RID p_body, real_t p_tearing_max_extension);
 	virtual real_t body_get_tearing_max_extension(RID p_body) const;
 
+	virtual void body_add_force_tearing(RID p_body, int p_particle_index, const Vector3 &p_split_plane);
+
 	/* BODY CONSTRAINT */
 	virtual RID constraint_create(RID p_body0, RID p_body1);
 

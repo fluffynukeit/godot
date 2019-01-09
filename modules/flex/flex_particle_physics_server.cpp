@@ -950,6 +950,17 @@ real_t FlexParticlePhysicsServer::body_get_tearing_max_extension(RID p_body) con
 	return body->get_tearing_max_extension();
 }
 
+void FlexParticlePhysicsServer::body_add_force_tearing(
+		RID p_body,
+		int p_particle_index,
+		const Vector3 &p_split_plane) {
+
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND(!body);
+
+	body->add_force_tearing(p_particle_index, p_split_plane);
+}
+
 RID FlexParticlePhysicsServer::constraint_create(RID p_body0, RID p_body1) {
 	FlexParticleBody *body0 = body_owner.get(p_body0);
 	ERR_FAIL_COND_V(!body0, RID());

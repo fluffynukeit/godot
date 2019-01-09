@@ -808,6 +808,8 @@ void ClothParticleBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_tearing_max_extension", "tearing_max_extension"), &ClothParticleBody::set_tearing_max_extension);
 	ClassDB::bind_method(D_METHOD("get_tearing_max_extension"), &ClothParticleBody::get_tearing_max_extension);
 
+	ClassDB::bind_method(D_METHOD("cut_particle", "particle_index", "split_plane"), &ClothParticleBody::cut_particle);
+
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/stretch_stiffness"), "set_stretch_stiffness", "get_stretch_stiffness");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/bend_stiffness"), "set_bend_stiffness", "get_bend_stiffness");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "model/tether_stiffness"), "set_tether_stiffness", "get_tether_stiffness");
@@ -884,4 +886,14 @@ void ClothParticleBody::set_tearing_max_extension(real_t p_tearing_factor) {
 
 real_t ClothParticleBody::get_tearing_max_extension() const {
 	return tearing_max_extension;
+}
+
+void ClothParticleBody::cut_particle(
+		int p_particle_index,
+		const Vector3 &p_split_plane) {
+
+	ParticlePhysicsServer::get_singleton()->body_add_force_tearing(
+			get_rid(),
+			p_particle_index,
+			p_split_plane);
 }
