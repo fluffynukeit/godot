@@ -1511,30 +1511,25 @@ void get_near_triangles(
 	}
 }
 
-struct ForceTearing {
-	ParticleIndex particle_to_split;
-	Vector3 split_plane;
-};
-
 void FlexSpace::execute_tearing() {
 
 	_tearing_splits.resize(tearing_max_splits);
 
 	Vector<int> adjacent_triangles;
 
-	Vector<ForceTearing> force_tearing; // TODO this must go to FlexParticleBody
-
 	for (int i(particle_bodies_tearing.size() - 1); 0 <= i; --i) {
 		FlexParticleBody *pb = particle_bodies_tearing[i];
 
 		int split_count = 0;
 
+		Vector<ForceTearing> force_tearings(pb->get_force_tearings());
+
 		/// Use another cycle to avoid too much checks and also to
 		/// not delay the cut with delayed check
-		for (int x(force_tearing.size() - 1); 0 <= x; --x) {
+		for (int x(force_tearings.size() - 1); 0 <= x; --x) {
 
-			const ParticleIndex particle_to_split = force_tearing[x].particle_to_split;
-			const Vector3 &split_plane(force_tearing[x].split_plane);
+			const ParticleIndex particle_to_split = force_tearings[x].particle_to_split;
+			const Vector3 &split_plane(force_tearings[x].split_plane);
 
 			const FlVector4 pts_pos = pb->get_particle(particle_to_split);
 
@@ -1583,6 +1578,8 @@ void FlexSpace::execute_tearing() {
 			_tearing_splits.write[split_index].w = w;
 			_tearing_splits.write[split_index].split_plane = split_plane;
 		}
+
+		force_tearings.clear();
 
 		/// Check the prings to see if tearing should occur
 

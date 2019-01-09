@@ -67,6 +67,11 @@ struct FlexTearingData : public ParticlePhysicsServer::TearingData {
 			check_stopped(-1) {}
 };
 
+struct ForceTearing {
+	ParticleIndex particle_to_split;
+	Vector3 split_plane;
+};
+
 /// This class represent a group of particles that are constrained each other and form a body.
 /// This body can be rigid or soft.
 ///
@@ -123,6 +128,7 @@ class FlexParticleBody : public RIDFlex {
 	bool tearing_active;
 	real_t tearing_max_extension; // Normalized percetage
 	std::shared_ptr<FlexTearingData> tearing_data;
+	Vector<ForceTearing> force_tearings;
 
 public:
 	FlexParticleBody();
@@ -185,6 +191,9 @@ public:
 
 	void set_tearing_max_extension(real_t p_tearing_max_extension);
 	real_t get_tearing_max_extension() const;
+
+	void add_force_tearing(ParticleIndex p_particle_index, const Vector3 &p_split_plane);
+	Vector<ForceTearing> &get_force_tearings();
 
 	// CMD
 

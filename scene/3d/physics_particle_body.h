@@ -250,6 +250,8 @@ public:
 
 	void set_tearing_max_extension(real_t p_tearing_max_extension);
 	real_t get_tearing_max_extension() const;
+
+	void cut_particle(int p_particle_index, const Vector3 &p_split_plane);
 };
 
 #endif // PARTICLE_BODY_H
