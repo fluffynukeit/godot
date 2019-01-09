@@ -1511,16 +1511,80 @@ void get_near_triangles(
 	}
 }
 
+struct ForceTearing {
+	ParticleIndex particle_to_split;
+	Vector3 split_plane;
+};
+
 void FlexSpace::execute_tearing() {
 
 	_tearing_splits.resize(tearing_max_splits);
 
 	Vector<int> adjacent_triangles;
 
+	Vector<ForceTearing> force_tearing; // TODO this must go to FlexParticleBody
+
 	for (int i(particle_bodies_tearing.size() - 1); 0 <= i; --i) {
 		FlexParticleBody *pb = particle_bodies_tearing[i];
 
 		int split_count = 0;
+
+		/// Use another cycle to avoid too much checks and also to
+		/// not delay the cut with delayed check
+		for (int x(force_tearing.size() - 1); 0 <= x; --x) {
+
+			const ParticleIndex particle_to_split = force_tearing[x].particle_to_split;
+			const Vector3 &split_plane(force_tearing[x].split_plane);
+
+			const FlVector4 pts_pos = pb->get_particle(particle_to_split);
+
+			const real_t w(
+					split_plane.dot(
+							vec3_from_flvec4(pts_pos)));
+
+			// Find involved triangle
+			int involved_triangle_id(-1);
+			for (int t(pb->tearing_data->triangles.size() - 1); 0 <= t; --t) {
+
+				const ParticlePhysicsServer::Triangle &tri =
+						pb->tearing_data->triangles[t];
+
+				if (tri.contains(particle_to_split)) {
+					involved_triangle_id = t;
+					break;
+				}
+			}
+
+			ERR_FAIL_COND(0 > involved_triangle_id); // Impossible
+
+			ParticlePhysicsServer::Triangle &involved_triangle =
+					pb->tearing_data->triangles.write[involved_triangle_id];
+
+			bool has_top(false);
+			bool has_bottom(false);
+
+			// Continue only if has_top and has_bottom are true
+			if (!can_split_particle(
+						pb,
+						particle_to_split,
+						involved_triangle,
+						Math::rand(),
+						split_plane,
+						w,
+						has_top,
+						has_bottom))
+				continue;
+
+			// Perform the split
+			const int split_index = split_count++;
+
+			_tearing_splits.write[split_index].particle_to_split = particle_to_split;
+			_tearing_splits.write[split_index].involved_triangle_id = involved_triangle_id;
+			_tearing_splits.write[split_index].w = w;
+			_tearing_splits.write[split_index].split_plane = split_plane;
+		}
+
+		/// Check the prings to see if tearing should occur
 
 		const int spring_count(pb->get_spring_count());
 		int spring_index(pb->tearing_data->check_stopped + 1);
@@ -1619,9 +1683,7 @@ void FlexSpace::execute_tearing() {
 						has_bottom))
 				continue;
 
-			/// Prepare for split
-
-			// Perform the copy
+			// Perform the split
 			const int split_index = split_count++;
 
 			_tearing_splits.write[split_index].particle_to_split = particle_to_split;
