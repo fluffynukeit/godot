@@ -714,8 +714,8 @@ MATERIAL_UNIFORMS
 
 #ifdef RENDER_FLUID
 
-uniform mediump sampler2DRect fluid_normal_depth_buffer; //texunit:-11
-uniform mediump sampler2DRect fluid_thickness_buffer; //texunit:-12
+uniform mediump sampler2D fluid_normal_depth_buffer; //texunit:-11
+uniform mediump sampler2D fluid_thickness_buffer; //texunit:-12
 
 #endif // RENDER_FLUID
 
@@ -1721,7 +1721,8 @@ void main() {
 
 #ifdef RENDER_FLUID
 
-        vec4 fluid_normal_depth = texture2DRect(fluid_normal_depth_buffer, gl_FragCoord.xy);
+        vec2 fluid_screen_uv = gl_FragCoord.xy * screen_pixel_size;
+        vec4 fluid_normal_depth = texture(fluid_normal_depth_buffer, fluid_screen_uv);
 
         // Depth = -1 mean discarded
         if( fluid_normal_depth.w < 0 )
@@ -1729,7 +1730,7 @@ void main() {
 
         vec3 fluid_normal = fluid_normal_depth.xyz;
         float fluid_depth = fluid_normal_depth.w;
-        float fluid_thickness = texture2DRect(fluid_thickness_buffer, gl_FragCoord.xy).r;
+        float fluid_thickness = texture(fluid_thickness_buffer, fluid_screen_uv).r;
 
 #endif // RENDER_FLUID
 
