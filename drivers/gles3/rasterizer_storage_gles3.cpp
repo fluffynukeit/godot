@@ -7380,7 +7380,6 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 
 		// Allocate textures
 
-		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		glGenTextures(1, &rt->fluid.normal_depth_tex);
 		glBindTexture(GL_TEXTURE_2D, rt->fluid.normal_depth_tex);
 		glTexImage2D(
@@ -7406,8 +7405,18 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 
 		glDrawBuffers(1, draw_buffers);
 
+#define DEBUG_TEST_ERROR(m_section)                                         \
+	{                                                                       \
+		uint32_t err = glGetError();                                        \
+		if (err) {                                                          \
+			print_line("OpenGL Error #" + itos(err) + " at: " + m_section); \
+		}                                                                   \
+	}
+
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) !=
 				GL_FRAMEBUFFER_COMPLETE) {
+
+			DEBUG_TEST_ERROR("Framebuffer 1");
 			ERR_PRINTS("Fluid framebuffer first prepass initialization failed");
 			rt->fluid.is_valid = false;
 		}
@@ -7423,7 +7432,6 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 				GL_RENDERBUFFER,
 				rt->buffers.depth);
 
-		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		glGenTextures(1, &rt->fluid.thickness_tex);
 		glBindTexture(GL_TEXTURE_2D, rt->fluid.thickness_tex);
 		glTexImage2D(
@@ -7451,6 +7459,7 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) !=
 				GL_FRAMEBUFFER_COMPLETE) {
+			DEBUG_TEST_ERROR("Framebuffer 2");
 			ERR_PRINTS("Fluid framebuffer second prepass initialization failed");
 			rt->fluid.is_valid = false;
 		}
