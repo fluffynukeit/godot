@@ -1441,6 +1441,7 @@ public:
 			GLuint normal_depth_tex;
 			GLuint second_pass_fbo;
 			GLuint thickness_tex;
+			bool is_valid;
 		} fluid;
 	};
 
