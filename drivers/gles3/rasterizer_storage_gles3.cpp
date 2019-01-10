@@ -7390,8 +7390,6 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 				GL_RGBA,
 				GL_FLOAT,
 				NULL);
-		glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glFramebufferTexture2D(
 				GL_FRAMEBUFFER,
 				GL_COLOR_ATTACHMENT0,
