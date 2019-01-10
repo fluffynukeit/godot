@@ -7405,20 +7405,26 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 
 		glDrawBuffers(1, draw_buffers);
 
-#define DEBUG_TEST_ERROR(m_section)                                         \
-	{                                                                       \
-		uint32_t err = glGetError();                                        \
-		if (err) {                                                          \
-			print_line("OpenGL Error #" + itos(err) + " at: " + m_section); \
-		}                                                                   \
-	}
+		const GLenum fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		if (fb_status != GL_FRAMEBUFFER_COMPLETE) {
 
-		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) !=
-				GL_FRAMEBUFFER_COMPLETE) {
-
-			DEBUG_TEST_ERROR("Framebuffer 1");
 			ERR_PRINTS("Fluid framebuffer first prepass initialization failed");
 			rt->fluid.is_valid = false;
+
+			if (fb_status == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT)
+				ERR_PRINTS("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT");
+
+			if (fb_status == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT)
+				ERR_PRINTS("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT");
+
+			//if (fb_status == GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS)
+			//	ERR_PRINTS("GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS");
+
+			if (fb_status == GL_FRAMEBUFFER_UNSUPPORTED)
+				ERR_PRINTS("GL_FRAMEBUFFER_UNSUPPORTED");
+
+			if (fb_status == GL_FRAMEBUFFER_BINDING)
+				ERR_PRINTS("GL_FRAMEBUFFER_BINDING");
 		}
 
 		glGenFramebuffers(1, &rt->fluid.second_pass_fbo);
@@ -7459,7 +7465,6 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) !=
 				GL_FRAMEBUFFER_COMPLETE) {
-			DEBUG_TEST_ERROR("Framebuffer 2");
 			ERR_PRINTS("Fluid framebuffer second prepass initialization failed");
 			rt->fluid.is_valid = false;
 		}
