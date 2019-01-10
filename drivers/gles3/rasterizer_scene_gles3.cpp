@@ -1893,12 +1893,12 @@ void RasterizerSceneGLES3::_render_geometry(RenderList::Element *e) {
 			// Set textures
 			glActiveTexture(GL_TEXTURE0 + storage->config.max_texture_image_units - 11);
 			glBindTexture(
-					GL_TEXTURE_RECTANGLE,
+					GL_TEXTURE_2D,
 					storage->frame.current_rt->fluid.normal_depth_tex);
 
 			glActiveTexture(GL_TEXTURE0 + storage->config.max_texture_image_units - 12);
 			glBindTexture(
-					GL_TEXTURE_RECTANGLE,
+					GL_TEXTURE_2D,
 					storage->frame.current_rt->fluid.thickness_tex);
 
 			// Perform the rendering of fluid

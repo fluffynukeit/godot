@@ -7379,9 +7379,9 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 		// Allocate textures
 
 		glGenTextures(1, &rt->fluid.normal_depth_tex);
-		glBindTexture(GL_TEXTURE_RECTANGLE, rt->fluid.normal_depth_tex);
+		glBindTexture(GL_TEXTURE_2D, rt->fluid.normal_depth_tex);
 		glTexImage2D(
-				GL_TEXTURE_RECTANGLE,
+				GL_TEXTURE_2D,
 				0,
 				GL_RGBA16F,
 				rt->width,
@@ -7390,10 +7390,12 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 				GL_RGBA,
 				GL_FLOAT,
 				NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glFramebufferTexture2D(
 				GL_FRAMEBUFFER,
 				GL_COLOR_ATTACHMENT0,
-				GL_TEXTURE_RECTANGLE,
+				GL_TEXTURE_2D,
 				rt->fluid.normal_depth_tex,
 				0);
 
@@ -7415,9 +7417,9 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 				rt->buffers.depth);
 
 		glGenTextures(1, &rt->fluid.thickness_tex);
-		glBindTexture(GL_TEXTURE_RECTANGLE, rt->fluid.thickness_tex);
+		glBindTexture(GL_TEXTURE_2D, rt->fluid.thickness_tex);
 		glTexImage2D(
-				GL_TEXTURE_RECTANGLE,
+				GL_TEXTURE_2D,
 				0,
 				GL_RGBA16F,
 				rt->width,
@@ -7426,12 +7428,12 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 				GL_RGBA,
 				GL_FLOAT,
 				NULL);
-		glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glFramebufferTexture2D(
 				GL_FRAMEBUFFER,
 				GL_COLOR_ATTACHMENT0,
-				GL_TEXTURE_RECTANGLE,
+				GL_TEXTURE_2D,
 				rt->fluid.thickness_tex,
 				0);
 
