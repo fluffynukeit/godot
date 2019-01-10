@@ -7358,6 +7358,8 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 	{
 		// Inizialize Fluid Frame buffers.
 
+		static const int msaa_value[] = { 0, 2, 4, 8, 16 };
+		int msaa = msaa_value[rt->msaa];
 		rt->fluid.is_valid = true;
 
 		GLenum draw_buffers[] = {
@@ -7381,31 +7383,54 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 		// Allocate textures
 
 		glGenTextures(1, &rt->fluid.normal_depth_tex);
-		glBindTexture(GL_TEXTURE_2D, rt->fluid.normal_depth_tex);
-		glTexImage2D(
-				GL_TEXTURE_2D,
-				0,
-				GL_RGBA16F,
-				rt->width,
-				rt->height,
-				0,
-				GL_RGBA,
-				GL_FLOAT,
-				NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glFramebufferTexture2D(
-				GL_FRAMEBUFFER,
-				GL_COLOR_ATTACHMENT0,
-				GL_TEXTURE_2D,
-				rt->fluid.normal_depth_tex,
-				0);
+		if (msaa == 0) {
+
+			glBindTexture(GL_TEXTURE_2D, rt->fluid.normal_depth_tex);
+			glTexImage2D(
+					GL_TEXTURE_2D,
+					0,
+					GL_RGBA16F,
+					rt->width,
+					rt->height,
+					0,
+					GL_RGBA,
+					GL_FLOAT,
+					NULL);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glFramebufferTexture2D(
+					GL_FRAMEBUFFER,
+					GL_COLOR_ATTACHMENT0,
+					GL_TEXTURE_2D,
+					rt->fluid.normal_depth_tex,
+					0);
+		} else {
+
+			glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, rt->fluid.normal_depth_tex);
+			glTexImage2DMultisample(
+					GL_TEXTURE_2D_MULTISAMPLE,
+					msaa,
+					GL_RGBA16F,
+					rt->width,
+					rt->height,
+					GL_TRUE);
+			glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameterf(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameterf(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glFramebufferTexture2D(
+					GL_FRAMEBUFFER,
+					GL_COLOR_ATTACHMENT0,
+					GL_TEXTURE_2D_MULTISAMPLE,
+					rt->fluid.normal_depth_tex,
+					0);
+		}
 
 		glDrawBuffers(1, draw_buffers);
 
-		const GLenum fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		GLenum fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if (fb_status != GL_FRAMEBUFFER_COMPLETE) {
 
 			ERR_PRINTS("Fluid framebuffer first prepass initialization failed");
@@ -7417,8 +7442,8 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 			if (fb_status == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT)
 				ERR_PRINTS("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT");
 
-			//if (fb_status == GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS)
-			//	ERR_PRINTS("GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS");
+			if (fb_status == GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE)
+				ERR_PRINTS("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE");
 
 			if (fb_status == GL_FRAMEBUFFER_UNSUPPORTED)
 				ERR_PRINTS("GL_FRAMEBUFFER_UNSUPPORTED");
@@ -7463,10 +7488,26 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 
 		glDrawBuffers(1, draw_buffers);
 
-		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) !=
-				GL_FRAMEBUFFER_COMPLETE) {
+		fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		if (fb_status != GL_FRAMEBUFFER_COMPLETE) {
+
 			ERR_PRINTS("Fluid framebuffer second prepass initialization failed");
 			rt->fluid.is_valid = false;
+
+			if (fb_status == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT)
+				ERR_PRINTS("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT");
+
+			if (fb_status == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT)
+				ERR_PRINTS("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT");
+
+			if (fb_status == GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE)
+				ERR_PRINTS("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE");
+
+			if (fb_status == GL_FRAMEBUFFER_UNSUPPORTED)
+				ERR_PRINTS("GL_FRAMEBUFFER_UNSUPPORTED");
+
+			if (fb_status == GL_FRAMEBUFFER_BINDING)
+				ERR_PRINTS("GL_FRAMEBUFFER_BINDING");
 		}
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
