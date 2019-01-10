@@ -7356,7 +7356,9 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 	}
 
 	{
-		// Inizialize Fluid Frame buffer.
+		// Inizialize Fluid Frame buffers.
+
+		rt->fluid.is_valid = true;
 
 		GLenum draw_buffers[] = {
 			GL_COLOR_ATTACHMENT0,
@@ -7378,6 +7380,7 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 
 		// Allocate textures
 
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		glGenTextures(1, &rt->fluid.normal_depth_tex);
 		glBindTexture(GL_TEXTURE_2D, rt->fluid.normal_depth_tex);
 		glTexImage2D(
@@ -7392,6 +7395,8 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 				NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glFramebufferTexture2D(
 				GL_FRAMEBUFFER,
 				GL_COLOR_ATTACHMENT0,
@@ -7401,9 +7406,11 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 
 		glDrawBuffers(1, draw_buffers);
 
-		ERR_FAIL_COND(
-				glCheckFramebufferStatus(GL_FRAMEBUFFER) !=
-				GL_FRAMEBUFFER_COMPLETE);
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) !=
+				GL_FRAMEBUFFER_COMPLETE) {
+			ERR_PRINTS("Fluid framebuffer first prepass initialization failed");
+			rt->fluid.is_valid = false;
+		}
 
 		glGenFramebuffers(1, &rt->fluid.second_pass_fbo);
 		glBindFramebuffer(GL_FRAMEBUFFER, rt->fluid.second_pass_fbo);
@@ -7416,6 +7423,7 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 				GL_RENDERBUFFER,
 				rt->buffers.depth);
 
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		glGenTextures(1, &rt->fluid.thickness_tex);
 		glBindTexture(GL_TEXTURE_2D, rt->fluid.thickness_tex);
 		glTexImage2D(
@@ -7430,6 +7438,8 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 				NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glFramebufferTexture2D(
 				GL_FRAMEBUFFER,
 				GL_COLOR_ATTACHMENT0,
@@ -7439,9 +7449,11 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 
 		glDrawBuffers(1, draw_buffers);
 
-		ERR_FAIL_COND(
-				glCheckFramebufferStatus(GL_FRAMEBUFFER) !=
-				GL_FRAMEBUFFER_COMPLETE);
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) !=
+				GL_FRAMEBUFFER_COMPLETE) {
+			ERR_PRINTS("Fluid framebuffer second prepass initialization failed");
+			rt->fluid.is_valid = false;
+		}
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
