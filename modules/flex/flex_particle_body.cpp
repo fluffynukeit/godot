@@ -285,12 +285,18 @@ Vector<ForceTearing> &FlexParticleBody::get_force_tearings() {
 void FlexParticleBody::add_unactive_particles(int p_particle_count) {
 	ERR_FAIL_COND(p_particle_count < 1);
 
+	const int prev_begin_index(particles_mchunk->get_begin_index());
+
 	const int previous_size = get_particle_count();
 	const int new_size = previous_size + p_particle_count;
 
 	space->get_particles_allocator()->resize_chunk(
 			particles_mchunk,
 			new_size);
+
+	if (prev_begin_index != particles_mchunk->get_begin_index()) {
+		// Rebuild indices
+	}
 }
 
 ParticleIndex FlexParticleBody::add_particles(int p_particle_count) {

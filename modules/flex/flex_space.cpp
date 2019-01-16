@@ -432,7 +432,6 @@ void FlexSpace::_sync() {
 	dispatch_callbacks();
 	execute_delayed_commands();
 	execute_geometries_commands();
-	execute_tearing();
 
 	///
 	/// Emit server sync
@@ -1187,6 +1186,8 @@ void FlexSpace::execute_delayed_commands() {
 		}
 	}
 
+	particles_count += execute_tearing();
+
 	if (active_particles_mchunk->get_size() != particles_count)
 		is_active_particles_buffer_dirty = true;
 
@@ -1511,8 +1512,9 @@ void get_near_triangles(
 	}
 }
 
-void FlexSpace::execute_tearing() {
+int FlexSpace::execute_tearing() {
 
+	int added_particles(0);
 	_tearing_splits.resize(tearing_max_splits);
 
 	Vector<int> adjacent_triangles;
@@ -1649,7 +1651,7 @@ void FlexSpace::execute_tearing() {
 				}
 			}
 
-			ERR_FAIL_COND(0 > involved_triangle_id); // Impossible
+			ERR_FAIL_COND_V(0 > involved_triangle_id, 0); // Impossible
 
 			ParticlePhysicsServer::Triangle &involved_triangle =
 					pb->tearing_data->triangles.write[involved_triangle_id];
@@ -1700,6 +1702,7 @@ void FlexSpace::execute_tearing() {
 
 		// This avoid too much reallocation
 		pb->add_unactive_particles(split_count);
+		added_particles += split_count;
 
 		for (
 				int split_index(0);
@@ -1731,7 +1734,7 @@ void FlexSpace::execute_tearing() {
 					_tearing_splits[split_index].w,
 					adjacent_triangles);
 
-			ERR_FAIL_COND(!adjacent_triangles.size());
+			ERR_FAIL_COND_V(!adjacent_triangles.size(), 0);
 
 			// Update the spring
 			for (int g(adjacent_triangles.size() - 1); 0 <= g; --g) {
@@ -1867,6 +1870,8 @@ void FlexSpace::execute_tearing() {
 					added_particle;
 		}
 	}
+
+	return added_particles;
 }
 
 void FlexSpace::commands_write_buffer() {

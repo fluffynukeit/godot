@@ -204,7 +204,7 @@ public:
 	void execute_delayed_commands();
 	void rebuild_rigids_offsets();
 	void execute_geometries_commands();
-	void execute_tearing();
+	int execute_tearing();
 
 	void commands_write_buffer();
 	void commands_read_buffer();
