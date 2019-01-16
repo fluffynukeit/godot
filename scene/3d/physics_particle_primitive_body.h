@@ -163,8 +163,9 @@ public:
 	void set_monitor_particles_entering(bool p_monitor);
 	bool get_monitor_particles_entering() const { return monitor_particles_entering; }
 
+	bool is_overlapping_particle_of_body(Object *p_particle_body, int p_particle_index) const;
 	int get_overlapping_body_count() const;
-	int find_overlapping_body_pos(Object *p_particle_body);
+	int find_overlapping_body_pos(Object *p_particle_body) const;
 	Object *get_overlapping_body(int id) const;
 	int get_overlapping_particles_count(int id);
 	int get_overlapping_particle_index(int body_id, int particle_id);

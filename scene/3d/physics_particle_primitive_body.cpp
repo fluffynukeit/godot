@@ -290,6 +290,7 @@ void ParticlePrimitiveArea::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_monitor_particles_entering", "monitor"), &ParticlePrimitiveArea::set_monitor_particles_entering);
 	ClassDB::bind_method(D_METHOD("get_monitor_particles_entering"), &ParticlePrimitiveArea::get_monitor_particles_entering);
 
+	ClassDB::bind_method(D_METHOD("is_overlapping_particle_of_body", "particle_body", "particle_index"), &ParticlePrimitiveArea::is_overlapping_particle_of_body);
 	ClassDB::bind_method(D_METHOD("get_overlapping_body_count"), &ParticlePrimitiveArea::get_overlapping_body_count);
 	ClassDB::bind_method(D_METHOD("find_overlapping_body_pos", "particle_body"), &ParticlePrimitiveArea::find_overlapping_body_pos);
 	ClassDB::bind_method(D_METHOD("get_overlapping_body", "id"), &ParticlePrimitiveArea::get_overlapping_body);
@@ -346,11 +347,20 @@ void ParticlePrimitiveArea::set_monitor_particles_entering(bool p_monitor) {
 		set_callback_sync(monitor_particle_bodies_entering || monitor_particles_entering);
 }
 
+bool ParticlePrimitiveArea::is_overlapping_particle_of_body(Object *p_particle_body, int p_particle_index) const {
+	int pi = find_overlapping_body_pos(p_particle_body);
+	if (0 > pi) {
+		return false;
+	}
+
+	return 0 <= body_contacts[pi].particles.find(ParticleContacts(p_particle_index));
+}
+
 int ParticlePrimitiveArea::get_overlapping_body_count() const {
 	return body_contacts.size();
 }
 
-int ParticlePrimitiveArea::find_overlapping_body_pos(Object *p_particle_body) {
+int ParticlePrimitiveArea::find_overlapping_body_pos(Object *p_particle_body) const {
 	return body_contacts.find(ParticleBodyContacts(p_particle_body));
 }
 
