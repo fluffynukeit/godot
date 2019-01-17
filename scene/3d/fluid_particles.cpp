@@ -134,7 +134,8 @@ void FluidParticles::update_data(Object *p_cmds) {
 
 	ParticleBodyCommands *cmds = cast_to<ParticleBodyCommands>(p_cmds);
 
-	const AABB aabb = cmds->get_aabb();
+	static const AABB aabb(Vector3(-9999, -9999, -9999), Vector3(19998, 19998, 19998));
+	//const AABB aabb = cmds->get_aabb();
 	const float *pbuffer = cmds->get_particle_buffer();
 	const float *vbuffer = cmds->get_particle_velocities_buffer();
 	const int count = cmds->get_particle_count();
