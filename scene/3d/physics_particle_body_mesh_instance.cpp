@@ -376,9 +376,7 @@ void ParticleBodyMeshInstance::update_mesh_pvparticles(ParticleBodyCommands *p_c
 
 	visual_server_handler->close();
 
-	AABB aabb;
-	aabb.set_position(Vector3(-9999, -9999, -9999));
-	aabb.set_size(Vector3(19998, 19998, 19998));
+	static const AABB aabb(Vector3(-9999, -9999, -9999), Vector3(19998, 19998, 19998));
 
 	visual_server_handler->set_aabb(aabb);
 	//visual_server_handler->set_aabb(p_cmds->get_aabb());
@@ -424,7 +422,10 @@ void ParticleBodyMeshInstance::update_mesh_skeleton(ParticleBodyCommands *p_cmds
 		skeleton->set_bone_pose(i, t);
 	}
 
-	VS::get_singleton()->mesh_set_custom_aabb(mesh->get_rid(), p_cmds->get_aabb());
+	static const AABB aabb(Vector3(-9999, -9999, -9999), Vector3(19998, 19998, 19998));
+
+	VS::get_singleton()->mesh_set_custom_aabb(mesh->get_rid(), aabb);
+	//VS::get_singleton()->mesh_set_custom_aabb(mesh->get_rid(), p_cmds->get_aabb());
 }
 
 void ParticleBodyMeshInstance::prepare_mesh_for_rendering() {
