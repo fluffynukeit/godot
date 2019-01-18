@@ -57,6 +57,7 @@ void ParticleClothVisualServerHandler::prepare(RID p_mesh, int p_surface, const 
 	stride = VS::get_singleton()->mesh_surface_make_offsets_from_format(surface_format, surface_vertex_len, surface_index_len, surface_offsets);
 	offset_vertices = surface_offsets[VS::ARRAY_VERTEX];
 	offset_normal = surface_offsets[VS::ARRAY_NORMAL];
+	offset_uv = surface_offsets[VS::ARRAY_TEX_UV];
 
 	mesh_indices = p_mesh_arrays[VS::ARRAY_INDEX];
 }
@@ -92,6 +93,15 @@ void ParticleClothVisualServerHandler::set_normal(int p_vertex, const void *p_ve
 
 void ParticleClothVisualServerHandler::set_aabb(const AABB &p_aabb) {
 	VS::get_singleton()->mesh_set_custom_aabb(mesh, p_aabb);
+}
+
+Vector2 ParticleClothVisualServerHandler::get_uv(int p_vertex_id) {
+	Vector2 uv;
+	copymem(
+			&uv,
+			&write_buffer[p_vertex_id * stride + offset_uv],
+			sizeof(real_t) * 2);
+	return uv;
 }
 
 void ParticleBodyMeshInstance::_bind_methods() {
@@ -216,8 +226,8 @@ void ParticleBodyMeshInstance::update_mesh_pvparticles(ParticleBodyCommands *p_c
 		PoolVector<Vector3> normals = surface_arrays[VS::ARRAY_NORMAL];
 		PoolVector<real_t> tangents = surface_arrays[VS::ARRAY_TANGENT];
 		PoolVector<Color> colors = surface_arrays[VS::ARRAY_COLOR];
-		PoolVector<Vector3> uvs = surface_arrays[VS::ARRAY_TEX_UV];
-		PoolVector<Vector3> uvs2 = surface_arrays[VS::ARRAY_TEX_UV2];
+		PoolVector<Vector2> uvs = surface_arrays[VS::ARRAY_TEX_UV];
+		PoolVector<Vector2> uvs2 = surface_arrays[VS::ARRAY_TEX_UV2];
 		PoolVector<int> indices = surface_arrays[VS::ARRAY_INDEX];
 
 		const int ini_size_v = vertices.size();
@@ -250,16 +260,16 @@ void ParticleBodyMeshInstance::update_mesh_pvparticles(ParticleBodyCommands *p_c
 			PoolVector<Vector3>::Write normals_w = normals.write();
 			PoolVector<real_t>::Write tangents_w = tangents.write();
 			PoolVector<Color>::Write colors_w = colors.write();
-			PoolVector<Vector3>::Write uvs_w = uvs.write();
-			PoolVector<Vector3>::Write uvs2_w = uvs2.write();
+			PoolVector<Vector2>::Write uvs_w = uvs.write();
+			PoolVector<Vector2>::Write uvs2_w = uvs2.write();
 			PoolVector<int>::Write indices_w = indices.write();
 
 			PoolVector<Vector3>::Read vertices_r = vertices.read();
 			PoolVector<Vector3>::Read normals_r = normals.read();
 			PoolVector<real_t>::Read tangents_r = tangents.read();
 			PoolVector<Color>::Read colors_r = colors.read();
-			PoolVector<Vector3>::Read uvs_r = uvs.read();
-			PoolVector<Vector3>::Read uvs2_r = uvs2.read();
+			PoolVector<Vector2>::Read uvs_r = uvs.read();
+			PoolVector<Vector2>::Read uvs2_r = uvs2.read();
 
 			// Duplicate phase
 			for (
@@ -461,7 +471,7 @@ void ParticleBodyMeshInstance::prepare_mesh_for_pvparticles() {
 	Array surface_blend_arrays = get_mesh()->surface_get_blend_shape_arrays(0);
 	uint32_t surface_format = get_mesh()->surface_get_format(0);
 
-	surface_format &= ~(Mesh::ARRAY_COMPRESS_VERTEX | Mesh::ARRAY_COMPRESS_NORMAL);
+	surface_format &= ~(Mesh::ARRAY_COMPRESS_VERTEX | Mesh::ARRAY_COMPRESS_NORMAL | Mesh::ARRAY_COMPRESS_TEX_UV);
 	surface_format |= Mesh::ARRAY_FLAG_USE_DYNAMIC_UPDATE;
 
 	Ref<ArrayMesh> soft_mesh;

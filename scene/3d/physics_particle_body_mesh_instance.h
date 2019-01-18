@@ -51,6 +51,7 @@ class ParticleClothVisualServerHandler {
 	uint32_t stride;
 	uint32_t offset_vertices;
 	uint32_t offset_normal;
+	uint32_t offset_uv;
 
 	PoolVector<int> mesh_indices;
 
@@ -61,14 +62,19 @@ private:
 	bool is_ready() { return mesh.is_valid(); }
 	void prepare(RID p_mesh_rid, int p_surface, const Array &p_mesh_arrays);
 	void clear();
-	void open();
-	void close();
 	void commit_changes();
 
 public:
+	bool is_opened() const {
+		return write_buffer.ptr() != NULL;
+	}
+	void open();
+	void close();
+
 	void set_vertex(int p_vertex_id, const void *p_vector3);
 	void set_normal(int p_vertex_id, const void *p_vector3);
 	void set_aabb(const AABB &p_aabb);
+	Vector2 get_uv(int p_vertex_id);
 
 	PoolVector<int> get_mesh_indices() const { return mesh_indices; }
 };
@@ -118,6 +124,14 @@ public:
 	void update_mesh_pvparticles(ParticleBodyCommands *p_cmds);
 	void _draw_mesh_pvparticles();
 	void update_mesh_skeleton(ParticleBodyCommands *p_cmds);
+
+	Vector<int> get_pv_mapped_particle_indices() const {
+		return pv_mapped_particle_indices;
+	}
+
+	ParticleClothVisualServerHandler *get_visual_server_handler() const {
+		return visual_server_handler;
+	}
 
 private:
 	void prepare_mesh_for_rendering();
