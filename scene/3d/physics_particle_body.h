@@ -48,6 +48,7 @@ class ParticleBodyMeshInstance;
 class ParticleBody : public ParticleObject {
 	GDCLASS(ParticleBody, ParticleObject);
 
+protected:
 	bool update_spatial_transform;
 
 	bool reload_particle_model;
@@ -71,7 +72,6 @@ public:
 private:
 #endif
 
-protected:
 	static void _bind_methods();
 
 public:
