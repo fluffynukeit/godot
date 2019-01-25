@@ -2471,6 +2471,7 @@ void RasterizerSceneGLES3::_render_list(RenderList::Element **p_elements, int p_
 	state.scene_shader.set_conditional(SceneShaderGLES3::USE_CONTACT_SHADOWS, false);
 	state.scene_shader.set_conditional(SceneShaderGLES3::USE_VERTEX_LIGHTING, false);
 	state.scene_shader.set_conditional(SceneShaderGLES3::USE_OPAQUE_PREPASS, false);
+	state.scene_shader.set_conditional(SceneShaderGLES3::RENDER_FLUID, false);
 }
 
 void RasterizerSceneGLES3::_add_geometry(RasterizerStorageGLES3::Geometry *p_geometry, InstanceBase *p_instance, RasterizerStorageGLES3::GeometryOwner *p_owner, int p_material, bool p_depth_pass, bool p_shadow_pass) {
@@ -3436,7 +3437,7 @@ void RasterizerSceneGLES3::_fill_render_list(InstanceBase **p_cull_result, int p
 			case VS::INSTANCE_FLUID_PARTICLES: {
 
 				if (p_depth_pass || p_shadow_pass) {
-					break;
+					continue;
 				}
 
 				RasterizerStorageGLES3::FluidParticles *fp = storage->fluid_particles_owner.getptr(inst->base);
