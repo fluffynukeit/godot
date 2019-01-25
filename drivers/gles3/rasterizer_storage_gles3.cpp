@@ -6973,11 +6973,18 @@ void RasterizerStorageGLES3::_render_target_clear(RenderTarget *rt) {
 
 	}
 */
-	{ // Fluid
+	// Fluid cleaning
+	if (rt->fluid.first_pass_fbo) {
+
 		glDeleteFramebuffers(1, &rt->fluid.first_pass_fbo);
 		glDeleteTextures(1, &rt->fluid.normal_depth_tex);
 		glDeleteFramebuffers(1, &rt->fluid.second_pass_fbo);
 		glDeleteTextures(1, &rt->fluid.thickness_tex);
+
+		rt->fluid.first_pass_fbo = 0;
+		rt->fluid.normal_depth_tex = 0;
+		rt->fluid.second_pass_fbo = 0;
+		rt->fluid.thickness_tex = 0;
 	}
 }
 
