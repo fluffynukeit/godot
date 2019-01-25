@@ -1442,6 +1442,13 @@ public:
 			GLuint second_pass_fbo;
 			GLuint thickness_tex;
 			bool is_valid;
+
+			Fluid() :
+					first_pass_fbo(0),
+					normal_depth_tex(0),
+					second_pass_fbo(0),
+					thickness_tex(0),
+					is_valid(false) {}
 		} fluid;
 	};
 
