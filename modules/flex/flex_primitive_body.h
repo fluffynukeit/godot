@@ -75,6 +75,7 @@ class FlexPrimitiveBody : public RIDFlex {
 	real_t custom_friction_threshold;
 
 	Transform transf;
+	Vector3 scale;
 
 	// allow only first 7 bit (max 7 channel)
 	uint32_t layer;
@@ -121,6 +122,8 @@ public:
 
 	void set_transform(const Transform &p_transf, bool p_is_teleport);
 	const Transform &get_transform() const { return transf; }
+
+	const Vector3 &get_scale() const { return scale; }
 
 	// Accept only the first 7 bit
 	void set_layer(uint32_t p_layer);

@@ -65,7 +65,7 @@ public:
 	void notify_change();
 
 	virtual NvFlexCollisionShapeType get_type() = 0;
-	virtual void get_shape(FlexSpace *p_space, NvFlexCollisionGeometry *r_shape) = 0;
+	virtual void get_shape(FlexSpace *p_space, const Vector3 &p_scale, NvFlexCollisionGeometry *r_shape) = 0;
 	virtual void set_data(const Variant &p_data) = 0;
 	virtual Variant get_data() const = 0;
 	virtual bool need_alignment() const { return false; }
@@ -80,7 +80,7 @@ public:
 	FlexPrimitiveBoxShape();
 
 	virtual NvFlexCollisionShapeType get_type() { return eNvFlexShapeBox; }
-	virtual void get_shape(FlexSpace *p_space, NvFlexCollisionGeometry *r_shape);
+	virtual void get_shape(FlexSpace *p_space, const Vector3 &p_scale, NvFlexCollisionGeometry *r_shape);
 	virtual void set_data(const Variant &p_data);
 	virtual Variant get_data() const;
 
@@ -99,7 +99,7 @@ public:
 	FlexPrimitiveCapsuleShape();
 
 	virtual NvFlexCollisionShapeType get_type() { return eNvFlexShapeCapsule; }
-	virtual void get_shape(FlexSpace *p_space, NvFlexCollisionGeometry *r_shape);
+	virtual void get_shape(FlexSpace *p_space, const Vector3 &p_scale, NvFlexCollisionGeometry *r_shape);
 	virtual void set_data(const Variant &p_data);
 	virtual Variant get_data() const;
 	virtual bool need_alignment() const { return true; }
@@ -114,7 +114,7 @@ public:
 	FlexPrimitiveSphereShape();
 
 	virtual NvFlexCollisionShapeType get_type() { return eNvFlexShapeSphere; }
-	virtual void get_shape(FlexSpace *p_space, NvFlexCollisionGeometry *r_shape);
+	virtual void get_shape(FlexSpace *p_space, const Vector3 &p_scale, NvFlexCollisionGeometry *r_shape);
 	virtual void set_data(const Variant &p_data);
 	virtual Variant get_data() const;
 };
@@ -142,7 +142,7 @@ public:
 	~FlexPrimitiveConvexShape();
 
 	virtual NvFlexCollisionShapeType get_type() { return eNvFlexShapeConvexMesh; }
-	virtual void get_shape(FlexSpace *p_space, NvFlexCollisionGeometry *r_shape);
+	virtual void get_shape(FlexSpace *p_space, const Vector3 &p_scale, NvFlexCollisionGeometry *r_shape);
 	virtual void set_data(const Variant &p_data);
 	virtual Variant get_data() const;
 
@@ -177,7 +177,7 @@ public:
 	~FlexPrimitiveTriangleShape();
 
 	virtual NvFlexCollisionShapeType get_type() { return eNvFlexShapeTriangleMesh; }
-	virtual void get_shape(FlexSpace *p_space, NvFlexCollisionGeometry *r_shape);
+	virtual void get_shape(FlexSpace *p_space, const Vector3 &p_scale, NvFlexCollisionGeometry *r_shape);
 	virtual void set_data(const Variant &p_data);
 	virtual Variant get_data() const;
 

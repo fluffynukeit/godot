@@ -1360,7 +1360,7 @@ void FlexSpace::execute_geometries_commands() {
 
 		if (body->changed_parameters & eChangedPrimitiveBodyParamShape) {
 			NvFlexCollisionGeometry geometry;
-			body->get_shape()->get_shape(this, &geometry);
+			body->get_shape()->get_shape(this, body->get_scale(), &geometry);
 			geometries_memory->set_shape(body->geometry_mchunk, 0, geometry);
 			body->changed_parameters |= eChangedPrimitiveBodyParamFlags;
 		}

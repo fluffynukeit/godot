@@ -67,10 +67,10 @@ void FlexPrimitiveShape::notify_change() {
 	}
 }
 
-void FlexPrimitiveBoxShape::get_shape(FlexSpace *p_space, NvFlexCollisionGeometry *r_shape) {
-	r_shape->box.halfExtents[0] = extends.x;
-	r_shape->box.halfExtents[1] = extends.y;
-	r_shape->box.halfExtents[2] = extends.z;
+void FlexPrimitiveBoxShape::get_shape(FlexSpace *p_space, const Vector3 &p_scale, NvFlexCollisionGeometry *r_shape) {
+	r_shape->box.halfExtents[0] = extends.x * p_scale[0];
+	r_shape->box.halfExtents[1] = extends.y * p_scale[1];
+	r_shape->box.halfExtents[2] = extends.z * p_scale[2];
 }
 
 void FlexPrimitiveBoxShape::set_data(const Variant &p_data) {
@@ -95,9 +95,9 @@ FlexPrimitiveCapsuleShape::FlexPrimitiveCapsuleShape() :
 		radius(1) {
 }
 
-void FlexPrimitiveCapsuleShape::get_shape(FlexSpace *p_space, NvFlexCollisionGeometry *r_shape) {
-	r_shape->capsule.halfHeight = half_height;
-	r_shape->capsule.radius = radius;
+void FlexPrimitiveCapsuleShape::get_shape(FlexSpace *p_space, const Vector3 &p_scale, NvFlexCollisionGeometry *r_shape) {
+	r_shape->capsule.halfHeight = half_height * p_scale[0];
+	r_shape->capsule.radius = radius * p_scale[1];
 }
 
 void FlexPrimitiveCapsuleShape::set_data(const Variant &p_data) {
@@ -125,8 +125,8 @@ const Basis &FlexPrimitiveCapsuleShape::get_alignment_basis() const {
 FlexPrimitiveSphereShape::FlexPrimitiveSphereShape() :
 		radius(1) {}
 
-void FlexPrimitiveSphereShape::get_shape(FlexSpace *p_space, NvFlexCollisionGeometry *r_shape) {
-	r_shape->sphere.radius = radius;
+void FlexPrimitiveSphereShape::get_shape(FlexSpace *p_space, const Vector3 &p_scale, NvFlexCollisionGeometry *r_shape) {
+	r_shape->sphere.radius = radius * p_scale[0];
 }
 
 void FlexPrimitiveSphereShape::set_data(const Variant &p_data) {
@@ -152,15 +152,15 @@ FlexPrimitiveConvexShape::~FlexPrimitiveConvexShape() {
 	}
 }
 
-void FlexPrimitiveConvexShape::get_shape(FlexSpace *p_space, NvFlexCollisionGeometry *r_shape) {
+void FlexPrimitiveConvexShape::get_shape(FlexSpace *p_space, const Vector3 &p_scale, NvFlexCollisionGeometry *r_shape) {
 
 	if (!cache.has(p_space)) {
 		update_space_mesh(p_space);
 	}
 
-	r_shape->convexMesh.scale[0] = 1;
-	r_shape->convexMesh.scale[1] = 1;
-	r_shape->convexMesh.scale[2] = 1;
+	r_shape->convexMesh.scale[0] = p_scale[0];
+	r_shape->convexMesh.scale[1] = p_scale[1];
+	r_shape->convexMesh.scale[2] = p_scale[2];
 	r_shape->convexMesh.mesh = cache[p_space].mesh_id;
 }
 
@@ -242,15 +242,15 @@ FlexPrimitiveTriangleShape::~FlexPrimitiveTriangleShape() {
 	}
 }
 
-void FlexPrimitiveTriangleShape::get_shape(FlexSpace *p_space, NvFlexCollisionGeometry *r_shape) {
+void FlexPrimitiveTriangleShape::get_shape(FlexSpace *p_space, const Vector3 &p_scale, NvFlexCollisionGeometry *r_shape) {
 
 	if (!cache.has(p_space)) {
 		update_space_mesh(p_space);
 	}
 
-	r_shape->triMesh.scale[0] = 1;
-	r_shape->triMesh.scale[1] = 1;
-	r_shape->triMesh.scale[2] = 1;
+	r_shape->triMesh.scale[0] = p_scale[0];
+	r_shape->triMesh.scale[1] = p_scale[1];
+	r_shape->triMesh.scale[2] = p_scale[2];
 	r_shape->triMesh.mesh = cache[p_space].mesh_id;
 }
 
