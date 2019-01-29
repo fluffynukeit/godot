@@ -142,6 +142,9 @@ void FlexPrimitiveBody::set_custom_friction_threshold(real_t p_threshold) {
 
 void FlexPrimitiveBody::set_transform(const Transform &p_transf, bool p_is_teleport) {
 	transf = p_transf;
+	scale = transf.basis.get_scale_abs();
+	transf.basis.scale(Vector3(1.0, 1.0, 1.0) / scale);
+	notify_shape_changed();
 	changed_parameters |= eChangedPrimitiveBodyParamTransform;
 	if (!p_is_teleport)
 		changed_parameters |= eChangedPrimitiveBodyParamTransformIsMotion;
