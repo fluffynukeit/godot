@@ -967,6 +967,7 @@ void FlexSpace::set_custom_flex_callback() {
 			(const float *)primitive_bodies_cf_extent.ptr(),
 			primitive_bodies_cf_friction.ptr(),
 			primitive_bodies_cf_friction_2_threshold.ptr(),
+			primitive_bodies_cf_layers.ptr(),
 			0.0035, // Margin
 			particles_memory->particles.size(),
 			(const float *)particles_memory->particles.mappedPtr,
@@ -2179,6 +2180,10 @@ void FlexSpace::update_custom_friction_primitive_body(
 				primitive_bodies_cf_friction_2_threshold[old_id];
 		primitive_bodies_cf_friction_2_threshold.resize(new_size);
 
+		primitive_bodies_cf_layers.write[new_id] =
+				primitive_bodies_cf_layers[old_id];
+		primitive_bodies_cf_layers.resize(new_size);
+
 		p_body->_custom_friction_id = -1;
 
 	} else {
@@ -2206,6 +2211,7 @@ void FlexSpace::update_custom_friction_primitive_body(
 			primitive_bodies_cf_extent.resize(new_size);
 			primitive_bodies_cf_friction.resize(new_size);
 			primitive_bodies_cf_friction_2_threshold.resize(new_size);
+			primitive_bodies_cf_layers.resize(new_size);
 
 			p_body->_custom_friction_id = id;
 		} else {
@@ -2231,6 +2237,8 @@ void FlexSpace::update_custom_friction_primitive_body(
 		primitive_bodies_cf_friction_2_threshold.write[id] =
 				p_body->get_custom_friction_threshold() *
 				p_body->get_custom_friction_threshold();
+
+		primitive_bodies_cf_layers.write[id] = p_body->get_layer();
 	}
 }
 

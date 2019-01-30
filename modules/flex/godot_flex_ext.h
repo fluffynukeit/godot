@@ -113,6 +113,7 @@ void GdFlexExtSetComputeFrictionCallback(
 		const float *p_primitive_extents,
 		const float *p_primitive_frictions,
 		const float *p_primitive_friction_2_thresholds,
+		const unsigned int *p_primitive_layers,
 		const float p_primitive_margin,
 		const int p_particle_count,
 		const float *p_prev_particles_position_mass,

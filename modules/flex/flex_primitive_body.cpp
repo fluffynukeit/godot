@@ -153,6 +153,9 @@ void FlexPrimitiveBody::set_transform(const Transform &p_transf, bool p_is_telep
 void FlexPrimitiveBody::set_layer(uint32_t p_layer) {
 	layer = p_layer & 0x7f; // Accept only the first 7 bit
 	changed_parameters |= eChangedPrimitiveBodyParamFlags;
+
+	if (space)
+		space->update_custom_friction_primitive_body(this);
 }
 
 void FlexPrimitiveBody::set_kinematic(bool p_kinematic) {

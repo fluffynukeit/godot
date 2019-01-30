@@ -122,6 +122,7 @@ class FlexSpace : public RIDFlex {
 	Vector<Vector3> primitive_bodies_cf_extent;
 	Vector<real_t> primitive_bodies_cf_friction;
 	Vector<real_t> primitive_bodies_cf_friction_2_threshold;
+	Vector<uint32_t> primitive_bodies_cf_layers;
 
 	bool _is_using_default_params;
 
