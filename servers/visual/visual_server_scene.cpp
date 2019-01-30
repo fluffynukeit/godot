@@ -1606,7 +1606,7 @@ bool VisualServerScene::_light_instance_update_shadow(Instance *p_instance, cons
 					}
 
 					VSG::scene_render->light_instance_set_shadow_transform(light->instance, CameraMatrix(), light_transform, radius, 0, i);
-					VSG::scene_render->render_shadow(light->instance, p_shadow_atlas, i, (RasterizerScene::InstanceBase **)instance_shadow_cull_result, cull_count, Size2(), 0);
+					VSG::scene_render->render_shadow(light->instance, p_shadow_atlas, i, (RasterizerScene::InstanceBase **)instance_shadow_cull_result, cull_count, 0);
 				}
 			} else { //shadow cube
 
@@ -1659,7 +1659,7 @@ bool VisualServerScene::_light_instance_update_shadow(Instance *p_instance, cons
 					}
 
 					VSG::scene_render->light_instance_set_shadow_transform(light->instance, cm, xform, radius, 0, i);
-					VSG::scene_render->render_shadow(light->instance, p_shadow_atlas, i, (RasterizerScene::InstanceBase **)instance_shadow_cull_result, cull_count, Size2(), 0);
+					VSG::scene_render->render_shadow(light->instance, p_shadow_atlas, i, (RasterizerScene::InstanceBase **)instance_shadow_cull_result, cull_count, 0);
 				}
 
 				//restore the regular DP matrix
