@@ -201,6 +201,8 @@ private:
 	FlexParticleBodyConstraintCommands *particle_body_constraint_commands;
 	Variant particle_body_constraint_commands_variant;
 
+	NvFlexTimers timers;
+
 public:
 	FlexParticlePhysicsServer();
 	virtual ~FlexParticlePhysicsServer();
@@ -340,9 +342,15 @@ public:
 	virtual void init();
 	virtual void terminate();
 	virtual void set_active(bool p_active);
+	virtual void profile();
 	virtual void sync();
 	virtual void flush_queries();
 	virtual void step(real_t p_delta_time);
+
+	virtual int get_process_info(ProcessInfo p_info);
+
+private:
+	void clear_timers();
 };
 
 #endif // FLEX_PARTICLE_PHYSICS_SERVER_H

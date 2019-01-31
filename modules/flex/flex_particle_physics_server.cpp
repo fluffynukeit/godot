@@ -33,6 +33,7 @@
 #include "flex_memory.h"
 #include "flex_utility.h"
 
+#include "profiler.h"
 #include "thirdparty/flex/include/NvFlex.h"
 #include "thirdparty/flex/include/NvFlexExt.h"
 
@@ -635,6 +636,8 @@ FlexParticlePhysicsServer::FlexParticlePhysicsServer() :
 
 	ERR_FAIL_COND(singleton);
 	singleton = this;
+
+	clear_timers();
 }
 
 FlexParticlePhysicsServer::~FlexParticlePhysicsServer() {
@@ -1671,26 +1674,201 @@ void FlexParticlePhysicsServer::set_active(bool p_active) {
 	is_active = p_active;
 }
 
-void FlexParticlePhysicsServer::sync() {
+void FlexParticlePhysicsServer::profile() {
 
-	if (!is_active)
+#ifdef DEBUG_ENABLED
+	if (!ScriptDebugger::get_singleton() || !ScriptDebugger::get_singleton()->is_profiling())
+		return;
+	{
+		Array values;
+		for (
+				std::map<String, ProfileData>::const_iterator i = Profiler::get_data().begin();
+				i != Profiler::get_data().end();
+				++i) {
+
+			values.push_back(i->first);
+			values.push_back(i->second.get_execution_time_sec());
+		}
+		ScriptDebugger::get_singleton()->add_profiling_frame_data("FlexServer", values);
+		Profiler::clear();
+	}
+
+	{
+		Array values;
+		values.push_back("flex_predict");
+		values.push_back(timers.predict);
+		values.push_back("flex_create_cell_indices");
+		values.push_back(timers.createCellIndices);
+		values.push_back("flex_sort_cell_indices");
+		values.push_back(timers.sortCellIndices);
+		values.push_back("flex_create_grid");
+		values.push_back(timers.createGrid);
+		values.push_back("flex_reorder");
+		values.push_back(timers.reorder);
+		values.push_back("flex_collide_particles");
+		values.push_back(timers.collideParticles);
+		values.push_back("flex_collide_shapes");
+		values.push_back(timers.collideShapes);
+		values.push_back("flex_collide_triangles");
+		values.push_back(timers.collideTriangles);
+		values.push_back("flex_collide_fields");
+		values.push_back(timers.collideFields);
+		values.push_back("flex_calculate_density");
+		values.push_back(timers.calculateDensity);
+		values.push_back("flex_solve_densities");
+		values.push_back(timers.solveDensities);
+		values.push_back("flex_solve_velocities");
+		values.push_back(timers.solveVelocities);
+		values.push_back("flex_solve_shapes");
+		values.push_back(timers.solveShapes);
+		values.push_back("flex_solve_springs");
+		values.push_back(timers.solveSprings);
+		values.push_back("flex_solve_contacts");
+		values.push_back(timers.solveContacts);
+		values.push_back("flex_solve_inflatables");
+		values.push_back(timers.solveInflatables);
+		values.push_back("flex_apply_deltas");
+		values.push_back(timers.applyDeltas);
+		values.push_back("flex_calculate_anisotropy");
+		values.push_back(timers.calculateAnisotropy);
+		values.push_back("flex_update_diffuse");
+		values.push_back(timers.updateDiffuse);
+		values.push_back("flex_update_triangles");
+		values.push_back(timers.updateTriangles);
+		values.push_back("flex_update_normals");
+		values.push_back(timers.updateNormals);
+		values.push_back("flex_finalize");
+		values.push_back(timers.finalize);
+		values.push_back("flex_update_bounds");
+		values.push_back(timers.updateBounds);
+		//values.push_back("flex_total");
+		//values.push_back(timers.total);
+
+		ScriptDebugger::get_singleton()->add_profiling_frame_data("Flex", values);
+
+		clear_timers();
+	}
+#endif // ~DEBUG_ENABLED
+}
+
+void FlexParticlePhysicsServer::sync() {
+	// Deactivated for now so useless
+	//if (!is_active)
+	//	return;
+	//
+	//for (short i = last_space_index; 0 <= i; --i) {
+	//	active_spaces[i]->sync();
+	//}
+}
+
+void FlexParticlePhysicsServer::flush_queries() {
+
+#ifdef DEBUG_ENABLED
+	if (!ScriptDebugger::get_singleton() || !ScriptDebugger::get_singleton()->is_profiling())
 		return;
 
 	for (short i = last_space_index; 0 <= i; --i) {
-		active_spaces[i]->sync();
-	}
-}
+		NvFlexTimers solv_timers;
+		NvFlexGetTimers(active_spaces[i]->get_solver(), &solv_timers);
 
-void FlexParticlePhysicsServer::flush_queries() {}
+		timers.predict += solv_timers.predict / 1000;
+		timers.createCellIndices += solv_timers.createCellIndices / 1000;
+		timers.sortCellIndices += solv_timers.sortCellIndices / 1000;
+		timers.createGrid += solv_timers.createGrid / 1000;
+		timers.reorder += solv_timers.reorder / 1000;
+		timers.collideParticles += solv_timers.collideParticles / 1000;
+		timers.collideShapes += solv_timers.collideShapes / 1000;
+		timers.collideTriangles += solv_timers.collideTriangles / 1000;
+		timers.collideFields += solv_timers.collideFields / 1000;
+		timers.calculateDensity += solv_timers.calculateDensity / 1000;
+		timers.solveDensities += solv_timers.solveDensities / 1000;
+		timers.solveVelocities += solv_timers.solveVelocities / 1000;
+		timers.solveShapes += solv_timers.solveShapes / 1000;
+		timers.solveSprings += solv_timers.solveSprings / 1000;
+		timers.solveContacts += solv_timers.solveContacts / 1000;
+		timers.solveInflatables += solv_timers.solveInflatables / 1000;
+		timers.applyDeltas += solv_timers.applyDeltas / 1000;
+		timers.calculateAnisotropy += solv_timers.calculateAnisotropy / 1000;
+		timers.updateDiffuse += solv_timers.updateDiffuse / 1000;
+		timers.updateTriangles += solv_timers.updateTriangles / 1000;
+		timers.updateNormals += solv_timers.updateNormals / 1000;
+		timers.finalize += solv_timers.finalize / 1000;
+		timers.updateBounds += solv_timers.updateBounds / 1000;
+		//timers.total += solv_timers.total / 1000;
+	}
+#endif // ~DEBUG_ENABLED
+}
 
 void FlexParticlePhysicsServer::step(real_t p_delta_time) {
 
 	if (!is_active)
 		return;
 
+	const bool profiling =
+#ifdef DEBUG_ENABLED
+			ScriptDebugger::get_singleton() &&
+			ScriptDebugger::get_singleton()->is_profiling();
+#else
+			false;
+#endif // ~ DEBUG_ENABLED
+
 	delta_time = p_delta_time;
 
 	for (short i = last_space_index; 0 <= i; --i) {
-		active_spaces[i]->step(p_delta_time);
+		active_spaces[i]->step(p_delta_time, profiling);
 	}
+}
+
+int FlexParticlePhysicsServer::get_process_info(ProcessInfo p_info) {
+	switch (p_info) {
+		case INFO_ACTIVE_PRIMITIVES: {
+			int c(0);
+			for (short i = last_space_index; 0 <= i; --i) {
+				c += active_spaces[i]->get_primitive_body_count();
+			}
+			return c;
+		} break;
+		case INFO_ACTIVE_PARTICLES: {
+			int c(0);
+			for (short i = last_space_index; 0 <= i; --i) {
+				c += active_spaces[i]->get_particle_count();
+			}
+			return c;
+		} break;
+		case INFO_SOLVER_MAX_PARTICLES: {
+			int c(0);
+			for (short i = last_space_index; 0 <= i; --i) {
+				c += active_spaces[i]->get_solver_max_particles();
+			}
+			return c;
+		} break;
+	}
+	ERR_FAIL_V(0);
+}
+
+void FlexParticlePhysicsServer::clear_timers() {
+	timers.predict = 0;
+	timers.createCellIndices = 0;
+	timers.sortCellIndices = 0;
+	timers.createGrid = 0;
+	timers.reorder = 0;
+	timers.collideParticles = 0;
+	timers.collideShapes = 0;
+	timers.collideTriangles = 0;
+	timers.collideFields = 0;
+	timers.calculateDensity = 0;
+	timers.solveDensities = 0;
+	timers.solveVelocities = 0;
+	timers.solveShapes = 0;
+	timers.solveSprings = 0;
+	timers.solveContacts = 0;
+	timers.solveInflatables = 0;
+	timers.applyDeltas = 0;
+	timers.calculateAnisotropy = 0;
+	timers.updateDiffuse = 0;
+	timers.updateTriangles = 0;
+	timers.updateNormals = 0;
+	timers.finalize = 0;
+	timers.updateBounds = 0;
+	timers.total = 0;
 }
