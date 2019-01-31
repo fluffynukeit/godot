@@ -146,6 +146,7 @@ public:
 
 	void init();
 	NvFlexLibrary *get_flex_library();
+	NvFlexSolver *get_solver() { return solver; }
 
 private:
 	void init_buffers();
@@ -168,7 +169,9 @@ private:
 public:
 	void sync();
 	void _sync();
-	void step(real_t p_delta_time);
+	void step(real_t p_delta_time, bool enable_timer);
+
+	int get_solver_max_particles() const { return solver_max_particles; }
 
 	_FORCE_INLINE_ FlexMemoryAllocator *get_particles_allocator() { return particles_allocator; }
 	_FORCE_INLINE_ ParticlesMemory *get_particles_memory() { return particles_memory; }
@@ -184,6 +187,7 @@ public:
 	void add_particle_body(FlexParticleBody *p_body);
 	void remove_particle_body(FlexParticleBody *p_body);
 	void update_particle_body_tearing_state(FlexParticleBody *p_body);
+	int get_particle_count() const;
 
 	void add_particle_body_constraint(FlexParticleBodyConstraint *p_constraint);
 	void remove_particle_body_constraint(FlexParticleBodyConstraint *p_constraint);
@@ -191,6 +195,7 @@ public:
 	void add_primitive_body(FlexPrimitiveBody *p_body);
 	void remove_primitive_body(FlexPrimitiveBody *p_body);
 	void primitive_body_sync_cmonitoring(FlexPrimitiveBody *p_body);
+	int get_primitive_body_count() const;
 
 	bool set_param(const StringName &p_name, const Variant &p_property);
 	bool get_param(const StringName &p_name, Variant &r_property) const;

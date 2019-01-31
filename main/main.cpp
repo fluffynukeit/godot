@@ -1857,6 +1857,8 @@ bool Main::iteration() {
 
 	Engine::get_singleton()->_in_physics = true;
 
+	ParticlePhysicsServer::get_singleton()->profile();
+
 	for (int iters = 0; iters < advance.physics_steps; ++iters) {
 
 		uint64_t physics_begin = OS::get_singleton()->get_ticks_usec();

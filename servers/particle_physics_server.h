@@ -338,9 +338,18 @@ public:
 	virtual void init() = 0;
 	virtual void terminate() = 0;
 	virtual void set_active(bool p_active) = 0;
+	virtual void profile() = 0;
 	virtual void sync() = 0; // Must be called before "step" function in order to wait eventually running tasks
 	virtual void flush_queries() = 0;
 	virtual void step(real_t p_delta_time) = 0;
+
+	enum ProcessInfo {
+		INFO_ACTIVE_PRIMITIVES,
+		INFO_ACTIVE_PARTICLES,
+		INFO_SOLVER_MAX_PARTICLES
+	};
+
+	virtual int get_process_info(ProcessInfo p_info) = 0;
 
 	ParticlePhysicsServer();
 	virtual ~ParticlePhysicsServer();

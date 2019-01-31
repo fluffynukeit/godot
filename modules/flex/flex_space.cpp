@@ -43,6 +43,7 @@
 #include "flex_primitive_body.h"
 #include "flex_primitive_shapes.h"
 #include "godot_flex_ext.h"
+#include "profiler.h"
 
 #define DEVICE_ID 0
 
@@ -414,17 +415,21 @@ void FlexSpace::sync() {}
 
 void FlexSpace::_sync() {
 
-	///
-	/// Map phase
-	particles_memory->map();
-	active_particles_memory->map();
-	springs_memory->map();
-	triangles_memory->map();
-	inflatables_memory->map();
-	rigids_memory->map();
-	rigids_components_memory->map();
-	geometries_memory->map();
-	contacts_buffers->map();
+	{
+		PROFILE("flex_server_mapping")
+
+		///
+		/// Map phase
+		particles_memory->map();
+		active_particles_memory->map();
+		springs_memory->map();
+		triangles_memory->map();
+		inflatables_memory->map();
+		rigids_memory->map();
+		rigids_components_memory->map();
+		geometries_memory->map();
+		contacts_buffers->map();
+	}
 
 	///
 	/// Stepping phase
@@ -443,41 +448,46 @@ void FlexSpace::_sync() {
 
 	///
 	/// Unmap phase
-	particles_memory->unmap();
-
-	active_particles_memory->unmap();
-
-	if (springs_memory->was_changed())
-		springs_allocator->sanitize(); // *1
-	springs_memory->unmap();
-
-	rebuild_inflatables_indices();
-	triangles_memory->unmap();
-	inflatables_memory->unmap();
-
-	rigids_memory->unmap();
-	rigids_components_memory->unmap();
-
-	if (geometries_memory->was_changed())
-		geometries_allocator->sanitize(); // *1
-	geometries_memory->unmap();
-
-	// *1: The memory must be consecutive to correctly write it on GPU
-
 	NvFlexSolver *old_solver = NULL;
-	if (particles_allocator->get_memory_size() != solver_max_particles) {
+	{
+		PROFILE("flex_server_unmapping")
+		particles_memory->unmap();
 
-		NvFlexParams params;
-		NvFlexGetParams(solver, &params);
-		old_solver = solver;
-		solver = NULL;
-		init_solver();
-		NvFlexSetParams(solver, &params);
+		active_particles_memory->unmap();
 
-		contacts_buffers->resize(solver_max_particles);
+		if (springs_memory->was_changed())
+			springs_allocator->sanitize(); // *1
+		springs_memory->unmap();
+
+		rebuild_inflatables_indices();
+		triangles_memory->unmap();
+		inflatables_memory->unmap();
+
+		rigids_memory->unmap();
+		rigids_components_memory->unmap();
+
+		if (geometries_memory->was_changed())
+			geometries_allocator->sanitize(); // *1
+		geometries_memory->unmap();
+
+		// *1: The memory must be consecutive to correctly write it on GPU
+
+		if (particles_allocator->get_memory_size() != solver_max_particles) {
+
+			PROFILE("flex_server_solver_recreation")
+
+			NvFlexParams params;
+			NvFlexGetParams(solver, &params);
+			old_solver = solver;
+			solver = NULL;
+			init_solver();
+			NvFlexSetParams(solver, &params);
+
+			contacts_buffers->resize(solver_max_particles);
+		}
+
+		contacts_buffers->unmap();
 	}
-
-	contacts_buffers->unmap();
 
 	///
 	/// Write phase
@@ -488,7 +498,7 @@ void FlexSpace::_sync() {
 		NvFlexDestroySolver(old_solver);
 }
 
-void FlexSpace::step(real_t p_delta_time) {
+void FlexSpace::step(real_t p_delta_time, bool enable_timer) {
 
 	// I'm forced to move the synchronization here to be sure that all
 	// nodes notifications (like transform change) are already executed
@@ -496,7 +506,6 @@ void FlexSpace::step(real_t p_delta_time) {
 
 	// Step solver (command)
 	const int substep = 1;
-	const bool enable_timer = false; // Used for profiling
 	NvFlexUpdateSolver(solver, p_delta_time, substep, enable_timer);
 
 	commands_read_buffer();
@@ -576,6 +585,10 @@ void FlexSpace::update_particle_body_tearing_state(FlexParticleBody *p_body) {
 	}
 }
 
+int FlexSpace::get_particle_count() const {
+	return active_particles_mchunk->get_size();
+}
+
 void FlexSpace::add_particle_body_constraint(FlexParticleBodyConstraint *p_constraint) {
 	ERR_FAIL_COND(!p_constraint);
 	p_constraint->space = this;
@@ -626,6 +639,10 @@ void FlexSpace::primitive_body_sync_cmonitoring(FlexPrimitiveBody *p_body) {
 	} else {
 		primitive_bodies_contact_monitoring.erase(p_body);
 	}
+}
+
+int FlexSpace::get_primitive_body_count() const {
+	return primitive_bodies.size();
 }
 
 bool FlexSpace::set_param(const StringName &p_name, const Variant &p_property) {
@@ -921,6 +938,7 @@ bool FlexSpace::is_using_default_params() const {
 
 void FlexSpace::set_custom_flex_callback() {
 
+	PROFILE("flex_server_set_custom_flex_callback")
 	///
 	/// AABB
 	///
@@ -975,6 +993,8 @@ void FlexSpace::set_custom_flex_callback() {
 }
 
 void FlexSpace::dispatch_callback_contacts() {
+
+	PROFILE("flex_server_dispatch_callback_contacts")
 
 	for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
 
@@ -1034,6 +1054,9 @@ void FlexSpace::dispatch_callback_contacts() {
 }
 
 void FlexSpace::dispatch_callbacks() {
+
+	PROFILE("flex_server_dispatch_callbacks")
+
 	for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
 		particle_bodies[i]->dispatch_sync_callback();
 	}
@@ -1047,6 +1070,7 @@ void FlexSpace::dispatch_callbacks() {
 
 void FlexSpace::execute_delayed_commands() {
 
+	PROFILE("flex_server_execute_delayed_commands")
 	int particles_count = 0;
 	for (
 			int body_index(particle_bodies.size() - 1);
@@ -1288,6 +1312,7 @@ void FlexSpace::rebuild_rigids_offsets() {
 
 void FlexSpace::execute_geometries_commands() {
 
+	PROFILE("flex_server_execute_geometries_commands")
 	///
 	/// CUSTOM FRICTION PRIMITIVE UPDATE
 	////////////////////////////////////
@@ -1877,6 +1902,9 @@ int FlexSpace::execute_tearing() {
 }
 
 void FlexSpace::commands_write_buffer() {
+
+	PROFILE("flex_server_commands_write_buffer")
+
 	NvFlexCopyDesc copy_desc;
 	for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
 
@@ -1980,6 +2008,8 @@ void FlexSpace::commands_write_buffer() {
 }
 
 void FlexSpace::commands_read_buffer() {
+
+	PROFILE("flex_server_step_read_buffer")
 
 	NvFlexGetParticles(solver, particles_memory->particles.buffer, NULL);
 	NvFlexGetVelocities(solver, particles_memory->velocities.buffer, NULL);

@@ -34,6 +34,7 @@
 #include "core/os/os.h"
 #include "scene/main/scene_tree.h"
 #include "servers/audio_server.h"
+#include "servers/particle_physics_server.h"
 #include "servers/physics_2d_server.h"
 #include "servers/physics_server.h"
 #include "servers/visual_server.h"
@@ -71,6 +72,9 @@ void Performance::_bind_methods() {
 	BIND_ENUM_CONSTANT(PHYSICS_3D_ACTIVE_OBJECTS);
 	BIND_ENUM_CONSTANT(PHYSICS_3D_COLLISION_PAIRS);
 	BIND_ENUM_CONSTANT(PHYSICS_3D_ISLAND_COUNT);
+	BIND_ENUM_CONSTANT(PHYSICS_FLEX_ACTIVE_PRIMITIVES);
+	BIND_ENUM_CONSTANT(PHYSICS_FLEX_ACTIVE_PARTICLES);
+	BIND_ENUM_CONSTANT(PHYSICS_FLEX_MAX_PARTICLES);
 	BIND_ENUM_CONSTANT(AUDIO_OUTPUT_LATENCY);
 
 	BIND_ENUM_CONSTANT(MONITOR_MAX);
@@ -108,6 +112,9 @@ String Performance::get_monitor_name(Monitor p_monitor) const {
 		"physics_3d/active_objects",
 		"physics_3d/collision_pairs",
 		"physics_3d/islands",
+		"physics_flex/active_primitives",
+		"physics_flex/active_particles",
+		"physics_flex/solver_max_particles",
 		"audio/output_latency",
 
 	};
@@ -152,6 +159,9 @@ float Performance::get_monitor(Monitor p_monitor) const {
 		case PHYSICS_3D_ACTIVE_OBJECTS: return PhysicsServer::get_singleton()->get_process_info(PhysicsServer::INFO_ACTIVE_OBJECTS);
 		case PHYSICS_3D_COLLISION_PAIRS: return PhysicsServer::get_singleton()->get_process_info(PhysicsServer::INFO_COLLISION_PAIRS);
 		case PHYSICS_3D_ISLAND_COUNT: return PhysicsServer::get_singleton()->get_process_info(PhysicsServer::INFO_ISLAND_COUNT);
+		case PHYSICS_FLEX_ACTIVE_PRIMITIVES: return ParticlePhysicsServer::get_singleton()->get_process_info(ParticlePhysicsServer::INFO_ACTIVE_PRIMITIVES);
+		case PHYSICS_FLEX_ACTIVE_PARTICLES: return ParticlePhysicsServer::get_singleton()->get_process_info(ParticlePhysicsServer::INFO_ACTIVE_PARTICLES);
+		case PHYSICS_FLEX_MAX_PARTICLES: return ParticlePhysicsServer::get_singleton()->get_process_info(ParticlePhysicsServer::INFO_SOLVER_MAX_PARTICLES);
 		case AUDIO_OUTPUT_LATENCY: return AudioServer::get_singleton()->get_output_latency();
 
 		default: {}
