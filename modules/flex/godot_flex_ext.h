@@ -102,7 +102,7 @@ void GdFlexExtDestroyComputeFrictionCallback(
 void ComputeFrictionCallback(
 		NvFlexSolverCallbackParams p_params);
 
-void GdFlexExtSetComputeFrictionCallback(
+void GdFlexExtUpdateComputeFrictionPrimitives(
 		GdFlexExtComputeFrictionCallback *p_callback,
 		const int p_primitive_body_count,
 		const float *p_primitive_prev_transfs,
@@ -114,9 +114,15 @@ void GdFlexExtSetComputeFrictionCallback(
 		const float *p_primitive_frictions,
 		const float *p_primitive_friction_2_thresholds,
 		const unsigned int *p_primitive_layers,
-		const float p_primitive_margin,
+		const float p_primitive_margin);
+
+void GdFlexExtUpdateComputeFrictionParticles(
+		GdFlexExtComputeFrictionCallback *p_callback,
 		const int p_particle_count,
 		const float *p_prev_particles_position_mass,
 		const float p_particle_radius);
+
+void GdFlexExtSetComputeFrictionCallback(
+		GdFlexExtComputeFrictionCallback *p_callback);
 
 #endif // GODOT_FLEX_EXT_H
