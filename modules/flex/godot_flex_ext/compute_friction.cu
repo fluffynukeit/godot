@@ -42,6 +42,9 @@
 #include "thirdparty/flex/include/NvFlex.h"
 #include "thirdparty/flex/core/maths.h"
 
+#define CPY_CMD cudaMemcpyAsync
+#define CPY_TYPE cudaMemcpyHostToDevice
+
 static const int kNumThreadsPerBlock = 256;
 
 struct GdFlexExtComputeFrictionCallback{
@@ -444,8 +447,6 @@ __global__ void ComputeFriction(
 		/// Step 1
 		/// Check if the particle collide or is escaped from the rough surface
 
-
-
 		if( !compute_collision_box(
 					curr_particle_pos,
 					p_primitive_inv_curr_transfs + p,
@@ -548,22 +549,19 @@ void ComputeFrictionCallback(NvFlexSolverCallbackParams p_params){
 			callback->particle_radius);
 }
 
-void GdFlexExtSetComputeFrictionCallback(
-		GdFlexExtComputeFrictionCallback* p_callback,
+void GdFlexExtUpdateComputeFrictionPrimitives(
+		GdFlexExtComputeFrictionCallback *p_callback,
 		const int p_primitive_body_count,
 		const float *p_primitive_prev_transfs,
 		const float *p_primitive_inv_prev_transfs,
 		const float *p_primitive_inv_curr_transfs,
-		const float *p_primitive_motions,
+		const float *p_primitive_motion_transfs,
 		//const float *p_primitive_aabbs,
 		const float *p_primitive_extents,
 		const float *p_primitive_frictions,
 		const float *p_primitive_friction_2_thresholds,
-		const uint32_t * p_primitive_layers,
-		const float p_primitive_margin,
-		const int p_particle_count,
-		const float *p_prev_particles_position_mass,
-		const float p_particle_radius){
+		const unsigned int *p_primitive_layers,
+		const float p_primitive_margin){
 
 	if( p_callback->primitive_body_count != p_primitive_body_count ){
 
@@ -601,6 +599,63 @@ void GdFlexExtSetComputeFrictionCallback(
 		}
 	}
 
+	if(!p_primitive_body_count)
+		return;
+
+	CPY_CMD(p_callback->primitive_prev_transfs,
+			   p_primitive_prev_transfs,
+			   sizeof(float) * p_primitive_body_count * 12,
+			   CPY_TYPE);
+
+	CPY_CMD(p_callback->primitive_inv_prev_transfs,
+			   p_primitive_inv_prev_transfs,
+			   sizeof(float) * p_primitive_body_count * 12,
+			   CPY_TYPE);
+
+	CPY_CMD(p_callback->primitive_inv_curr_transfs,
+			   p_primitive_inv_curr_transfs,
+			   sizeof(float) * p_primitive_body_count * 12,
+			   CPY_TYPE);
+
+	CPY_CMD(p_callback->primitive_motion_transfs,
+			   p_primitive_motion_transfs,
+			   sizeof(float) * p_primitive_body_count * 12,
+			   CPY_TYPE);
+
+	//CPY_CMD(p_callback->d_primitive_aabbs,
+	//		   p_primitive_aabbs,
+	//		   sizeof(float) * p_primitive_body_count * 6,
+	//		   CPY_TYPE);
+
+	CPY_CMD(p_callback->primitive_extent,
+			   p_primitive_extents,
+			   sizeof(float) * p_primitive_body_count * 3,
+			   CPY_TYPE);
+
+	CPY_CMD(p_callback->primitive_frictions,
+			   p_primitive_frictions,
+			   sizeof(float) * p_primitive_body_count * 1,
+			   CPY_TYPE);
+
+	CPY_CMD(p_callback->primitive_friction_2_thresholds,
+			   p_primitive_friction_2_thresholds,
+			   sizeof(float) * p_primitive_body_count * 1,
+			   CPY_TYPE);
+
+	CPY_CMD(p_callback->primitive_layers,
+			   p_primitive_layers,
+			   sizeof(uint32_t) * p_primitive_body_count * 1,
+			   CPY_TYPE);
+
+	p_callback->primitive_margin = p_primitive_margin;
+}
+
+void GdFlexExtUpdateComputeFrictionParticles(
+		GdFlexExtComputeFrictionCallback *p_callback,
+		const int p_particle_count,
+		const float *p_prev_particles_position_mass,
+		const float p_particle_radius){
+
 	if(p_callback->particle_count != p_particle_count){
 
 		p_callback->free_particles();
@@ -613,65 +668,25 @@ void GdFlexExtSetComputeFrictionCallback(
 		}
 	}
 
-	if(!p_primitive_body_count)
-		return;
-
 	if(!p_particle_count)
 		return;
 
-	cudaMemcpy(p_callback->primitive_prev_transfs,
-			   p_primitive_prev_transfs,
-			   sizeof(float) * p_primitive_body_count * 12,
-			   cudaMemcpyHostToDevice);
-
-	cudaMemcpy(p_callback->primitive_inv_prev_transfs,
-			   p_primitive_inv_prev_transfs,
-			   sizeof(float) * p_primitive_body_count * 12,
-			   cudaMemcpyHostToDevice);
-
-	cudaMemcpy(p_callback->primitive_inv_curr_transfs,
-			   p_primitive_inv_curr_transfs,
-			   sizeof(float) * p_primitive_body_count * 12,
-			   cudaMemcpyHostToDevice);
-
-	cudaMemcpy(p_callback->primitive_motion_transfs,
-			   p_primitive_motions,
-			   sizeof(float) * p_primitive_body_count * 12,
-			   cudaMemcpyHostToDevice);
-
-	//cudaMemcpy(p_callback->d_primitive_aabbs,
-	//		   p_primitive_aabbs,
-	//		   sizeof(float) * p_primitive_body_count * 6,
-	//		   cudaMemcpyHostToDevice);
-
-	cudaMemcpy(p_callback->primitive_extent,
-			   p_primitive_extents,
-			   sizeof(float) * p_primitive_body_count * 3,
-			   cudaMemcpyHostToDevice);
-
-	cudaMemcpy(p_callback->primitive_frictions,
-			   p_primitive_frictions,
-			   sizeof(float) * p_primitive_body_count * 1,
-			   cudaMemcpyHostToDevice);
-
-	cudaMemcpy(p_callback->primitive_friction_2_thresholds,
-			   p_primitive_friction_2_thresholds,
-			   sizeof(float) * p_primitive_body_count * 1,
-			   cudaMemcpyHostToDevice);
-
-	cudaMemcpy(p_callback->primitive_layers,
-			   p_primitive_layers,
-			   sizeof(uint32_t) * p_primitive_body_count * 1,
-			   cudaMemcpyHostToDevice);
-
-	cudaMemcpy(p_callback->prev_particles_position_mass,
+	CPY_CMD(p_callback->prev_particles_position_mass,
 			   p_prev_particles_position_mass,
 			   sizeof(float) * p_particle_count * 4,
-			   cudaMemcpyHostToDevice);
+			   CPY_TYPE);
 
-
-	p_callback->primitive_margin = p_primitive_margin;
 	p_callback->particle_radius = p_particle_radius;
+}
+
+void GdFlexExtSetComputeFrictionCallback(
+		GdFlexExtComputeFrictionCallback* p_callback){
+
+	if(!p_callback->primitive_body_count)
+		return;
+
+	if(!p_callback->particle_count)
+		return;
 
 	NvFlexSolverCallback solver_callback;
 	solver_callback.function = ComputeFrictionCallback;

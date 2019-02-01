@@ -80,6 +80,7 @@ FlexSpace::FlexSpace() :
 		geometries_allocator(NULL),
 		geometries_memory(NULL),
 		contacts_buffers(NULL),
+		are_updated_primitive_bodies_cf(false),
 		compute_aabb_callback(NULL),
 		compute_friction_callback(NULL),
 		tearing_max_splits(100),
@@ -975,21 +976,31 @@ void FlexSpace::set_custom_flex_callback() {
 	/// FRICTION
 	///
 
-	GdFlexExtSetComputeFrictionCallback(
+	if (!are_updated_primitive_bodies_cf) {
+
+		GdFlexExtUpdateComputeFrictionPrimitives(
+				compute_friction_callback,
+				primitive_bodies_cf_prev_transform.size(),
+				(const float *)primitive_bodies_cf_prev_transform.ptr(),
+				(const float *)primitive_bodies_cf_prev_inv_transform.ptr(),
+				(const float *)primitive_bodies_cf_curr_inv_transform.ptr(),
+				(const float *)primitive_bodies_cf_motion.ptr(),
+				(const float *)primitive_bodies_cf_extent.ptr(),
+				primitive_bodies_cf_friction.ptr(),
+				primitive_bodies_cf_friction_2_threshold.ptr(),
+				primitive_bodies_cf_layers.ptr(),
+				0.0035 /*Margin*/);
+		are_updated_primitive_bodies_cf = true;
+	}
+
+	GdFlexExtUpdateComputeFrictionParticles(
 			compute_friction_callback,
-			primitive_bodies_cf_prev_transform.size(),
-			(const float *)primitive_bodies_cf_prev_transform.ptr(),
-			(const float *)primitive_bodies_cf_prev_inv_transform.ptr(),
-			(const float *)primitive_bodies_cf_curr_inv_transform.ptr(),
-			(const float *)primitive_bodies_cf_motion.ptr(),
-			(const float *)primitive_bodies_cf_extent.ptr(),
-			primitive_bodies_cf_friction.ptr(),
-			primitive_bodies_cf_friction_2_threshold.ptr(),
-			primitive_bodies_cf_layers.ptr(),
-			0.0035, // Margin
 			particles_memory->particles.size(),
 			(const float *)particles_memory->particles.mappedPtr,
 			get_particle_radius());
+
+	GdFlexExtSetComputeFrictionCallback(
+			compute_friction_callback);
 }
 
 void FlexSpace::dispatch_callback_contacts() {
@@ -1355,6 +1366,8 @@ void FlexSpace::execute_geometries_commands() {
 
 			primitive_bodies_cf_motion.write[i] = Transform();
 		}
+		if (pb->use_custom_friction)
+			are_updated_primitive_bodies_cf = false;
 	}
 
 	///
