@@ -377,7 +377,7 @@ void FlexParticleBodyCommands::set_particle_normal(int p_index, const Vector3 &p
 }
 
 const AABB &FlexParticleBodyCommands::get_aabb() const {
-	return body->get_space()->particle_bodies_aabb[body->id];
+	return AABB(); //body->get_space()->particle_bodies_aabb[body->id];
 }
 
 const Vector3 &FlexParticleBodyCommands::get_rigid_position(int p_index) const {
@@ -658,7 +658,12 @@ void FlexParticlePhysicsServer::space_set_active(RID p_space, bool p_active) {
 	if (p_active) {
 		active_spaces.push_back(space);
 	} else {
-		active_spaces.erase(space);
+		auto it = std::find(
+				active_spaces.begin(),
+				active_spaces.end(),
+				space);
+		if (it != active_spaces.end())
+			active_spaces.erase(it, it + 1);
 	}
 	last_space_index = static_cast<short>(active_spaces.size() - 1);
 }
@@ -667,7 +672,11 @@ bool FlexParticlePhysicsServer::space_is_active(RID p_space) const {
 	FlexSpace *space = space_owner.get(p_space);
 	ERR_FAIL_COND_V(!space, false);
 
-	return active_spaces.find(space) != -1;
+	auto it = std::find(
+			active_spaces.begin(),
+			active_spaces.end(),
+			space);
+	return it != active_spaces.end();
 }
 
 void FlexParticlePhysicsServer::space_get_params_defaults(Map<StringName, Variant> *r_defs) const {

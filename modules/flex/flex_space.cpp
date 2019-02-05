@@ -185,7 +185,7 @@ void FlexSpace::init_buffers() {
 	CRASH_COND(geometries_allocator);
 	CRASH_COND(geometries_memory);
 	geometries_memory = memnew(GeometryMemory(flex_lib));
-	geometries_allocator = memnew(FlexMemoryAllocator(geometries_memory, 5, 5));
+	geometries_allocator = memnew(FlexMemoryAllocator(geometries_memory, 20, 5));
 	geometries_memory->unmap(); // *1
 
 	// *1: This is mandatory because the FlexMemoryAllocator when resize the memory will leave the buffers mapped
@@ -555,11 +555,14 @@ void FlexSpace::remove_particle_body(FlexParticleBody *p_body) {
 
 	p_body->space = NULL;
 	p_body->id = -1;
-	particle_bodies.erase(p_body);
+	auto it = std::find(particle_bodies.begin(), particle_bodies.end(), p_body);
+	if (it != particle_bodies.end())
+		particle_bodies.erase(it, it + 1);
+
+	//particle_bodies_pindices.resize(particle_bodies_pindices.size() - 2);
+	//particle_bodies_aabb.resize(particle_bodies_aabb.size() - 1);
 
 	// Rebuild ids
-	particle_bodies_pindices.resize(particle_bodies_pindices.size() - 2);
-	//particle_bodies_aabb.resize(particle_bodies_aabb.size() - 1);
 	for (int i = 0; i < particle_bodies.size(); ++i) {
 		particle_bodies[i]->id = i;
 	}
@@ -571,12 +574,15 @@ void FlexSpace::remove_particle_body(FlexParticleBody *p_body) {
 
 void FlexSpace::update_particle_body_tearing_state(FlexParticleBody *p_body) {
 
-	const int id = particle_bodies_tearing.find(p_body);
+	auto it = std::find(
+			particle_bodies_tearing.begin(),
+			particle_bodies_tearing.end(),
+			p_body);
 
-	if (-1 < id) {
+	if (it != particle_bodies_tearing.end()) {
 		// Found
 		if (!p_body->is_tearing_active() || this != p_body->space) {
-			particle_bodies_tearing.remove(id);
+			particle_bodies_tearing.erase(it, it + 1);
 		}
 	} else {
 		// Not found
@@ -604,7 +610,9 @@ void FlexSpace::remove_particle_body_constraint(FlexParticleBodyConstraint *p_co
 
 	p_constraint->space = NULL;
 
-	constraints.erase(p_constraint);
+	auto it = std::find(constraints.begin(), constraints.end(), p_constraint);
+	if (it != constraints.end())
+		constraints.erase(it, it + 1);
 }
 
 void FlexSpace::add_primitive_body(FlexPrimitiveBody *p_body) {
@@ -613,7 +621,6 @@ void FlexSpace::add_primitive_body(FlexPrimitiveBody *p_body) {
 	p_body->changed_parameters = eChangedPrimitiveBodyParamAll;
 	p_body->geometry_mchunk = geometries_allocator->allocate_chunk(0, p_body);
 	primitive_bodies.push_back(p_body);
-	primitive_body_sync_cmonitoring(p_body);
 
 	update_custom_friction_primitive_body(p_body);
 }
@@ -625,21 +632,12 @@ void FlexSpace::remove_primitive_body(FlexPrimitiveBody *p_body) {
 	geometries_memory->notify_change();
 
 	p_body->space = NULL;
-	primitive_bodies.erase(p_body);
-	primitive_bodies_contact_monitoring.erase(p_body);
+
+	auto itpb = std::find(primitive_bodies.begin(), primitive_bodies.end(), p_body);
+	if (itpb != primitive_bodies.end())
+		primitive_bodies.erase(itpb, itpb + 1);
 
 	update_custom_friction_primitive_body(p_body);
-}
-
-void FlexSpace::primitive_body_sync_cmonitoring(FlexPrimitiveBody *p_body) {
-	ERR_FAIL_COND(p_body->space != this);
-
-	if (p_body->is_monitoring_particles_contacts()) {
-		if (primitive_bodies_contact_monitoring.find(p_body) == -1)
-			primitive_bodies_contact_monitoring.push_back(p_body);
-	} else {
-		primitive_bodies_contact_monitoring.erase(p_body);
-	}
 }
 
 int FlexSpace::get_primitive_body_count() const {
@@ -981,14 +979,14 @@ void FlexSpace::set_custom_flex_callback() {
 		GdFlexExtUpdateComputeFrictionPrimitives(
 				compute_friction_callback,
 				primitive_bodies_cf_prev_transform.size(),
-				(const float *)primitive_bodies_cf_prev_transform.ptr(),
-				(const float *)primitive_bodies_cf_prev_inv_transform.ptr(),
-				(const float *)primitive_bodies_cf_curr_inv_transform.ptr(),
-				(const float *)primitive_bodies_cf_motion.ptr(),
-				(const float *)primitive_bodies_cf_extent.ptr(),
-				primitive_bodies_cf_friction.ptr(),
-				primitive_bodies_cf_friction_2_threshold.ptr(),
-				primitive_bodies_cf_layers.ptr(),
+				(const float *)&primitive_bodies_cf_prev_transform[0],
+				(const float *)&primitive_bodies_cf_prev_inv_transform[0],
+				(const float *)&primitive_bodies_cf_curr_inv_transform[0],
+				(const float *)&primitive_bodies_cf_motion[0],
+				(const float *)&primitive_bodies_cf_extent[0],
+				&primitive_bodies_cf_friction[0],
+				&primitive_bodies_cf_friction_2_threshold[0],
+				&primitive_bodies_cf_layers[0],
 				0.0035 /*Margin*/);
 		are_updated_primitive_bodies_cf = true;
 	}
@@ -1012,16 +1010,6 @@ void FlexSpace::dispatch_callback_contacts() {
 		FlexParticleBody *particle_body = particle_bodies[i];
 		if (!particle_body->is_monitorable())
 			continue;
-
-		// AABB Check
-		//bool intersect = false;
-		//for (int y = primitive_bodies_contact_monitoring.size() - 1; 0 <= y; --y) {
-		//	if (primitive_bodies_contact_monitoring[y]->get_aabb().intersects(particle_bodies_aabb[particle_body->id]))
-		//		intersect = true;
-		//}
-		//
-		//if (!intersect)
-		//	continue;
 
 		FlexBufferIndex end_index =
 				particle_body->particles_mchunk->get_buffer_index(
@@ -1049,9 +1037,9 @@ void FlexSpace::dispatch_callback_contacts() {
 				Vector3 normal(vec3_from_flvec4(raw_normal));
 
 				const int primitive_body_index(velocity_and_primitive.w);
-				FlexPrimitiveBody *primitive_body = find_primitive_body(primitive_body_index, true);
+				FlexPrimitiveBody *primitive_body = find_primitive_body(primitive_body_index);
 
-				if (!primitive_body)
+				if (!primitive_body->is_monitoring_particles_contacts())
 					continue;
 
 				if (particle_body->is_monitoring_primitives_contacts())
@@ -1065,17 +1053,25 @@ void FlexSpace::dispatch_callback_contacts() {
 }
 
 void FlexSpace::dispatch_callbacks() {
-
-	PROFILE("flex_server_dispatch_callbacks")
-
-	for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
-		particle_bodies[i]->dispatch_sync_callback();
+	{
+		PROFILE("flex_server_dispatch_callbacks_particle_bodies")
+		for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
+			particle_bodies[i]->dispatch_sync_callback();
+		}
 	}
-	for (int i(constraints.size() - 1); 0 <= i; --i) {
-		constraints[i]->dispatch_sync_callback();
+	{
+
+		PROFILE("flex_server_dispatch_callbacks_constraints")
+		for (int i(constraints.size() - 1); 0 <= i; --i) {
+			constraints[i]->dispatch_sync_callback();
+		}
 	}
-	for (int i(primitive_bodies.size() - 1); 0 <= i; --i) {
-		primitive_bodies[i]->dispatch_sync_callback();
+	{
+
+		PROFILE("flex_server_dispatch_callbacks_primitives")
+		for (int i(primitive_bodies.size() - 1); 0 <= i; --i) {
+			primitive_bodies[i]->dispatch_sync_callback();
+		}
 	}
 }
 
@@ -1339,32 +1335,32 @@ void FlexSpace::execute_geometries_commands() {
 
 			// Is motion
 
-			primitive_bodies_cf_prev_transform.write[i] =
+			primitive_bodies_cf_prev_transform[i] =
 					primitive_bodies_cf_curr_transform[i];
 
-			primitive_bodies_cf_prev_inv_transform.write[i] =
+			primitive_bodies_cf_prev_inv_transform[i] =
 					primitive_bodies_cf_curr_inv_transform[i];
 
-			primitive_bodies_cf_curr_transform.write[i] = pb->get_transform();
-			primitive_bodies_cf_curr_inv_transform.write[i] = pb->get_transform().inverse();
+			primitive_bodies_cf_curr_transform[i] = pb->get_transform();
+			primitive_bodies_cf_curr_inv_transform[i] = pb->get_transform().inverse();
 
-			primitive_bodies_cf_motion.write[i] =
+			primitive_bodies_cf_motion[i] =
 					primitive_bodies_cf_prev_inv_transform[i] *
 					primitive_bodies_cf_curr_transform[i];
 
 		} else {
 
 			// Is Teleport
-			primitive_bodies_cf_curr_transform.write[i] = pb->get_transform();
-			primitive_bodies_cf_curr_inv_transform.write[i] = pb->get_transform().inverse();
+			primitive_bodies_cf_curr_transform[i] = pb->get_transform();
+			primitive_bodies_cf_curr_inv_transform[i] = pb->get_transform().inverse();
 
-			primitive_bodies_cf_prev_transform.write[i] =
+			primitive_bodies_cf_prev_transform[i] =
 					primitive_bodies_cf_curr_transform[i];
 
-			primitive_bodies_cf_prev_inv_transform.write[i] =
+			primitive_bodies_cf_prev_inv_transform[i] =
 					primitive_bodies_cf_curr_inv_transform[i];
 
-			primitive_bodies_cf_motion.write[i] = Transform();
+			primitive_bodies_cf_motion[i] = Transform();
 		}
 		if (pb->use_custom_friction)
 			are_updated_primitive_bodies_cf = false;
@@ -1394,6 +1390,7 @@ void FlexSpace::execute_geometries_commands() {
 
 		if (!body->geometry_mchunk->get_size()) {
 			geometries_allocator->resize_chunk(body->geometry_mchunk, 1);
+			geometries_memory->set_self(body->geometry_mchunk, 0, body);
 			body->changed_parameters = eChangedPrimitiveBodyParamAll;
 		}
 
@@ -1505,7 +1502,7 @@ void get_near_triangles(
 		const uint32_t hash_check,
 		const Vector3 &split_plane,
 		const real_t w,
-		Vector<int> &adjacent_triangles) {
+		std::vector<int> &adjacent_triangles) {
 
 	const FlVector4 fl_centroid =
 			(pb->get_particle(p_triangle.a) +
@@ -1517,10 +1514,10 @@ void get_near_triangles(
 
 	if (split_plane.dot(centroid) > w) {
 		// Top
-		pb->get_tearing_data()->sides.write[p_triangle.self_id] = true;
+		pb->get_tearing_data()->sides[p_triangle.self_id] = true;
 	} else {
 		// Bottom
-		pb->get_tearing_data()->sides.write[p_triangle.self_id] = false;
+		pb->get_tearing_data()->sides[p_triangle.self_id] = false;
 	}
 
 	adjacent_triangles.push_back(p_triangle.self_id);
@@ -1557,14 +1554,14 @@ int FlexSpace::execute_tearing() {
 	int added_particles(0);
 	_tearing_splits.resize(tearing_max_splits);
 
-	Vector<int> adjacent_triangles;
+	std::vector<int> adjacent_triangles;
 
 	for (int i(particle_bodies_tearing.size() - 1); 0 <= i; --i) {
 		FlexParticleBody *pb = particle_bodies_tearing[i];
 
 		int split_count = 0;
 
-		Vector<ForceTearing> &force_tearings(pb->get_force_tearings());
+		std::vector<ForceTearing> &force_tearings(pb->get_force_tearings());
 
 		/// Use another cycle to avoid too much checks and also to
 		/// not delay the cut with delayed check
@@ -1618,10 +1615,10 @@ int FlexSpace::execute_tearing() {
 			// Perform the split
 			const int split_index = split_count++;
 
-			_tearing_splits.write[split_index].particle_to_split = particle_to_split;
-			_tearing_splits.write[split_index].involved_triangle_id = involved_triangle_id;
-			_tearing_splits.write[split_index].w = w;
-			_tearing_splits.write[split_index].split_plane = split_plane;
+			_tearing_splits[split_index].particle_to_split = particle_to_split;
+			_tearing_splits[split_index].involved_triangle_id = involved_triangle_id;
+			_tearing_splits[split_index].w = w;
+			_tearing_splits[split_index].split_plane = split_plane;
 		}
 
 		force_tearings.clear();
@@ -1728,10 +1725,10 @@ int FlexSpace::execute_tearing() {
 			// Perform the split
 			const int split_index = split_count++;
 
-			_tearing_splits.write[split_index].particle_to_split = particle_to_split;
-			_tearing_splits.write[split_index].involved_triangle_id = involved_triangle_id;
-			_tearing_splits.write[split_index].w = w;
-			_tearing_splits.write[split_index].split_plane = split_plane;
+			_tearing_splits[split_index].particle_to_split = particle_to_split;
+			_tearing_splits[split_index].involved_triangle_id = involved_triangle_id;
+			_tearing_splits[split_index].w = w;
+			_tearing_splits[split_index].split_plane = split_plane;
 		}
 
 		pb->tearing_data->check_stopped = spring_index;
@@ -1919,47 +1916,54 @@ void FlexSpace::commands_write_buffer() {
 	PROFILE("flex_server_commands_write_buffer")
 
 	NvFlexCopyDesc copy_desc;
-	for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
 
-		FlexParticleBody *body = particle_bodies[i];
-		if (!body->particles_mchunk)
-			continue;
+	if (force_buffer_write) {
+		NvFlexSetParticles(solver, particles_memory->particles.buffer, NULL);
+		NvFlexSetVelocities(solver, particles_memory->velocities.buffer, NULL);
+		NvFlexSetNormals(solver, particles_memory->normals.buffer, NULL);
+		NvFlexSetPhases(solver, particles_memory->phases.buffer, NULL);
+	} else {
 
-		const uint32_t changed_params(
-				force_buffer_write ?
-						eChangedBodyParamParticleJustAdded :
-						body->get_changed_parameters());
+		for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
 
-		if (changed_params != 0) {
-			copy_desc.srcOffset = body->particles_mchunk->get_begin_index();
-			copy_desc.dstOffset = body->particles_mchunk->get_begin_index();
-			copy_desc.elementCount = body->particles_mchunk->get_size();
+			FlexParticleBody *body = particle_bodies[i];
+			if (!body->particles_mchunk)
+				continue;
 
-			if (changed_params & eChangedBodyParamParticleJustAdded) {
-				NvFlexSetParticles(solver, particles_memory->particles.buffer, &copy_desc);
-				NvFlexSetVelocities(solver, particles_memory->velocities.buffer, &copy_desc);
-				NvFlexSetNormals(solver, particles_memory->normals.buffer, &copy_desc);
-				NvFlexSetPhases(solver, particles_memory->phases.buffer, &copy_desc);
-			} else {
-				if (changed_params & eChangedBodyParamPositionMass)
+			const uint32_t changed_params(
+					body->get_changed_parameters());
+
+			if (changed_params != 0) {
+				copy_desc.srcOffset = body->particles_mchunk->get_begin_index();
+				copy_desc.dstOffset = body->particles_mchunk->get_begin_index();
+				copy_desc.elementCount = body->particles_mchunk->get_size();
+
+				if (changed_params & eChangedBodyParamParticleJustAdded) {
 					NvFlexSetParticles(solver, particles_memory->particles.buffer, &copy_desc);
-				if (changed_params & eChangedBodyParamVelocity)
 					NvFlexSetVelocities(solver, particles_memory->velocities.buffer, &copy_desc);
-				if (changed_params & eChangedBodyParamNormal)
-					NvFlexSetNormals(
-							solver,
-							particles_memory->normals.buffer,
-							&copy_desc);
-				if (changed_params & (eChangedBodyParamPhase | eChangedBodyParamPhaseSingle))
-					NvFlexSetPhases(
-							solver,
-							particles_memory->phases.buffer,
-							&copy_desc);
-				//if(changed_params & eChangedBodyRestParticles)
-				//	NvFlexSetRestParticles(solver, )
-			}
+					NvFlexSetNormals(solver, particles_memory->normals.buffer, &copy_desc);
+					NvFlexSetPhases(solver, particles_memory->phases.buffer, &copy_desc);
+				} else {
+					if (changed_params & eChangedBodyParamPositionMass)
+						NvFlexSetParticles(solver, particles_memory->particles.buffer, &copy_desc);
+					if (changed_params & eChangedBodyParamVelocity)
+						NvFlexSetVelocities(solver, particles_memory->velocities.buffer, &copy_desc);
+					if (changed_params & eChangedBodyParamNormal)
+						NvFlexSetNormals(
+								solver,
+								particles_memory->normals.buffer,
+								&copy_desc);
+					if (changed_params & (eChangedBodyParamPhase | eChangedBodyParamPhaseSingle))
+						NvFlexSetPhases(
+								solver,
+								particles_memory->phases.buffer,
+								&copy_desc);
+					//if(changed_params & eChangedBodyRestParticles)
+					//	NvFlexSetRestParticles(solver, )
+				}
 
-			body->clear_changed_params();
+				body->clear_changed_params();
+			}
 		}
 	}
 
@@ -2018,6 +2022,7 @@ void FlexSpace::commands_write_buffer() {
 	rigids_memory->changes_synced();
 	rigids_components_memory->changes_synced();
 	geometries_memory->changes_synced();
+	force_buffer_write = false;
 }
 
 void FlexSpace::commands_read_buffer() {
@@ -2124,15 +2129,25 @@ void FlexSpace::on_particle_index_changed(FlexParticleBody *p_body, ParticleBuff
 	const int chunk_index_new(p_body->particles_mchunk->get_chunk_index(p_index_new));
 
 	{
-		const int pos = p_body->delayed_commands.particles_to_remove.find(chunk_index_old);
-		if (0 <= pos)
-			p_body->delayed_commands.particles_to_remove.write[pos] = chunk_index_new;
+		auto it = std::find(
+				p_body->delayed_commands.particles_to_remove.begin(),
+				p_body->delayed_commands.particles_to_remove.end(),
+				chunk_index_old);
+		if (it != p_body->delayed_commands.particles_to_remove.end()) {
+			const int pos = it - p_body->delayed_commands.particles_to_remove.begin();
+			p_body->delayed_commands.particles_to_remove[pos] = chunk_index_new;
+		}
 	}
 
 	{
-		const int pos = p_body->delayed_commands.particles_to_unactive.find(chunk_index_old);
-		if (0 <= pos)
-			p_body->delayed_commands.particles_to_unactive.write[pos] = chunk_index_new;
+		auto it = std::find(
+				p_body->delayed_commands.particles_to_unactive.begin(),
+				p_body->delayed_commands.particles_to_unactive.end(),
+				chunk_index_old);
+		if (it != p_body->delayed_commands.particles_to_unactive.end()) {
+			const int pos = it - p_body->delayed_commands.particles_to_unactive.begin();
+			p_body->delayed_commands.particles_to_unactive[pos] = chunk_index_new;
+		}
 	}
 }
 
@@ -2159,7 +2174,8 @@ void FlexSpace::rebuild_inflatables_indices() {
 
 FlexParticleBody *FlexSpace::find_particle_body(ParticleBufferIndex p_index) const {
 	for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
-		if (p_index >= particle_bodies[i]->particles_mchunk->get_begin_index() &&
+		if (
+				p_index >= particle_bodies[i]->particles_mchunk->get_begin_index() &&
 				p_index <= particle_bodies[i]->particles_mchunk->get_end_index()) {
 			return particle_bodies[i];
 		}
@@ -2167,14 +2183,8 @@ FlexParticleBody *FlexSpace::find_particle_body(ParticleBufferIndex p_index) con
 	return NULL;
 }
 
-FlexPrimitiveBody *FlexSpace::find_primitive_body(GeometryBufferIndex p_index, bool p_contact_monitoring_only) const {
-	const Vector<FlexPrimitiveBody *> &search_vector = p_contact_monitoring_only ? primitive_bodies_contact_monitoring : primitive_bodies;
-	for (int i(search_vector.size() - 1); 0 <= i; --i) {
-		if (p_index == search_vector[i]->geometry_mchunk->get_begin_index()) {
-			return search_vector[i];
-		}
-	}
-	return NULL;
+FlexPrimitiveBody *FlexSpace::find_primitive_body(GeometryBufferIndex p_index) const {
+	return geometries_memory->get_self(p_index);
 }
 
 void FlexSpace::update_custom_friction_primitive_body(
@@ -2194,36 +2204,36 @@ void FlexSpace::update_custom_friction_primitive_body(
 
 		primitive_bodies_cf[old_id]->_custom_friction_id = new_id;
 
-		primitive_bodies_cf.write[new_id] = primitive_bodies_cf[old_id];
+		primitive_bodies_cf[new_id] = primitive_bodies_cf[old_id];
 		primitive_bodies_cf.resize(new_size);
 
 		primitive_bodies_cf_prev_transform.resize(new_size);
 
 		primitive_bodies_cf_prev_inv_transform.resize(new_size);
 
-		primitive_bodies_cf_curr_transform.write[new_id] =
+		primitive_bodies_cf_curr_transform[new_id] =
 				primitive_bodies_cf_curr_transform[old_id];
 		primitive_bodies_cf_curr_transform.resize(new_size);
 
-		primitive_bodies_cf_curr_inv_transform.write[new_id] =
+		primitive_bodies_cf_curr_inv_transform[new_id] =
 				primitive_bodies_cf_curr_inv_transform[old_id];
 		primitive_bodies_cf_curr_inv_transform.resize(new_size);
 
 		primitive_bodies_cf_motion.resize(new_size);
 
-		primitive_bodies_cf_extent.write[new_id] =
+		primitive_bodies_cf_extent[new_id] =
 				primitive_bodies_cf_extent[old_id];
 		primitive_bodies_cf_extent.resize(new_size);
 
-		primitive_bodies_cf_friction.write[new_id] =
+		primitive_bodies_cf_friction[new_id] =
 				primitive_bodies_cf_friction[old_id];
 		primitive_bodies_cf_friction.resize(new_size);
 
-		primitive_bodies_cf_friction_2_threshold.write[new_id] =
+		primitive_bodies_cf_friction_2_threshold[new_id] =
 				primitive_bodies_cf_friction_2_threshold[old_id];
 		primitive_bodies_cf_friction_2_threshold.resize(new_size);
 
-		primitive_bodies_cf_layers.write[new_id] =
+		primitive_bodies_cf_layers[new_id] =
 				primitive_bodies_cf_layers[old_id];
 		primitive_bodies_cf_layers.resize(new_size);
 
@@ -2264,31 +2274,31 @@ void FlexSpace::update_custom_friction_primitive_body(
 
 		// Update phase
 
-		primitive_bodies_cf.write[id] = p_body;
+		primitive_bodies_cf[id] = p_body;
 
-		primitive_bodies_cf_curr_transform.write[id] = p_body->get_transform();
+		primitive_bodies_cf_curr_transform[id] = p_body->get_transform();
 
-		primitive_bodies_cf_curr_inv_transform.write[id] =
+		primitive_bodies_cf_curr_inv_transform[id] =
 				p_body->get_transform().inverse();
 
-		primitive_bodies_cf_extent.write[id] =
+		primitive_bodies_cf_extent[id] =
 				p_body->get_shape() && p_body->get_shape()->get_type() == eNvFlexShapeBox ?
 						static_cast<FlexPrimitiveBoxShape *>(p_body->get_shape())->get_extends() :
 						Vector3();
 
-		primitive_bodies_cf_friction.write[id] = p_body->get_custom_friction();
-		primitive_bodies_cf_friction_2_threshold.write[id] =
+		primitive_bodies_cf_friction[id] = p_body->get_custom_friction();
+		primitive_bodies_cf_friction_2_threshold[id] =
 				p_body->get_custom_friction_threshold() *
 				p_body->get_custom_friction_threshold();
 
-		primitive_bodies_cf_layers.write[id] = p_body->get_layer();
+		primitive_bodies_cf_layers[id] = p_body->get_layer();
 	}
 }
 
 FlexMemorySweeperFast::FlexMemorySweeperFast(
 		FlexMemoryAllocator *p_allocator,
 		MemoryChunk *&r_mchunk,
-		Vector<FlexChunkIndex> &r_indices_to_remove,
+		std::vector<FlexChunkIndex> &r_indices_to_remove,
 		bool p_reallocate_memory,
 		FlexBufferIndex p_custom_chunk_end_buffer_index) :
 		allocator(p_allocator),
@@ -2332,7 +2342,7 @@ void FlexMemorySweeperFast::exec() {
 		if ((i + 1) < rem_indices_count)
 			for (int b(i + 1); b < rem_indices_count; ++b) {
 				if (old_chunk_index == indices_to_remove[b]) {
-					indices_to_remove.write[b] = index_to_remove;
+					indices_to_remove[b] = index_to_remove;
 				}
 			}
 
@@ -2352,7 +2362,7 @@ ParticlesMemorySweeper::ParticlesMemorySweeper(
 		FlexParticleBody *p_body,
 		FlexMemoryAllocator *p_allocator,
 		MemoryChunk *&r_rigids_components_mchunk,
-		Vector<FlexChunkIndex> &r_indices_to_remove,
+		std::vector<FlexChunkIndex> &r_indices_to_remove,
 		bool p_reallocate_memory,
 		FlexBufferIndex p_custom_chunk_end_buffer_index) :
 		FlexMemorySweeperFast(
@@ -2374,7 +2384,7 @@ void ParticlesMemorySweeper::on_element_index_changed(FlexBufferIndex old_elemen
 	body->particle_index_changed(mchunk->get_chunk_index(old_element_index), mchunk->get_chunk_index(new_element_index));
 }
 
-SpringsMemorySweeper::SpringsMemorySweeper(FlexParticleBody *p_body, FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove) :
+SpringsMemorySweeper::SpringsMemorySweeper(FlexParticleBody *p_body, FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, std::vector<FlexChunkIndex> &r_indices_to_remove) :
 		FlexMemorySweeperFast(
 				p_allocator,
 				r_rigids_components_mchunk,
@@ -2387,7 +2397,7 @@ void SpringsMemorySweeper::on_element_index_changed(FlexBufferIndex old_element_
 	body->spring_index_changed(mchunk->get_chunk_index(old_element_index), mchunk->get_chunk_index(new_element_index));
 }
 
-TrianglesMemorySweeper::TrianglesMemorySweeper(FlexParticleBody *p_body, FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove) :
+TrianglesMemorySweeper::TrianglesMemorySweeper(FlexParticleBody *p_body, FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, std::vector<FlexChunkIndex> &r_indices_to_remove) :
 		FlexMemorySweeperFast(
 				p_allocator,
 				r_rigids_components_mchunk,
@@ -2400,7 +2410,7 @@ void TrianglesMemorySweeper::on_element_removed(FlexBufferIndex on_element_remov
 	body->reload_inflatables();
 }
 
-FlexMemorySweeperSlow::FlexMemorySweeperSlow(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove) :
+FlexMemorySweeperSlow::FlexMemorySweeperSlow(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_mchunk, std::vector<FlexChunkIndex> &r_indices_to_remove) :
 		allocator(p_allocator),
 		mchunk(r_mchunk),
 		indices_to_remove(r_indices_to_remove) {}
@@ -2426,7 +2436,7 @@ void FlexMemorySweeperSlow::exec() {
 		if ((i + 1) < rem_indices_count)
 			for (int b(i + 1); b < rem_indices_count; ++b) {
 				if (index_to_remove <= indices_to_remove[b]) {
-					indices_to_remove.write[b] -= 1;
+					indices_to_remove[b] -= 1;
 				}
 			}
 
@@ -2436,7 +2446,7 @@ void FlexMemorySweeperSlow::exec() {
 	indices_to_remove.clear(); // This clear is here to be sure that this vector not used anymore
 }
 
-RigidsComponentsMemorySweeper::RigidsComponentsMemorySweeper(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove, RigidsMemory *p_rigids_memory, MemoryChunk *&r_rigids_mchunk) :
+RigidsComponentsMemorySweeper::RigidsComponentsMemorySweeper(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, std::vector<FlexChunkIndex> &r_indices_to_remove, RigidsMemory *p_rigids_memory, MemoryChunk *&r_rigids_mchunk) :
 		FlexMemorySweeperSlow(p_allocator, r_rigids_components_mchunk, r_indices_to_remove),
 		rigids_memory(p_rigids_memory),
 		rigids_mchunk(r_rigids_mchunk) {}
@@ -2453,7 +2463,7 @@ void RigidsComponentsMemorySweeper::on_element_removed(RigidComponentIndex p_rem
 	}
 }
 
-RigidsMemorySweeper::RigidsMemorySweeper(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove, RigidsMemory *p_rigids_memory, FlexMemoryAllocator *p_rigids_components_allocator, RigidsComponentsMemory *p_rigids_components_memory, MemoryChunk *&r_rigids_components_mchunk) :
+RigidsMemorySweeper::RigidsMemorySweeper(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_mchunk, std::vector<FlexChunkIndex> &r_indices_to_remove, RigidsMemory *p_rigids_memory, FlexMemoryAllocator *p_rigids_components_allocator, RigidsComponentsMemory *p_rigids_components_memory, MemoryChunk *&r_rigids_components_mchunk) :
 		FlexMemorySweeperSlow(p_allocator, r_rigids_mchunk, r_indices_to_remove),
 		rigids_memory(p_rigids_memory),
 		rigids_components_allocator(p_rigids_components_allocator),

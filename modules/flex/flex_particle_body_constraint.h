@@ -48,7 +48,7 @@ class FlexParticleBodyConstraint : public RIDFlex {
 	friend class FlexParticleBodyConstraintCommands;
 
 	struct {
-		Vector<SpringIndex> springs_to_remove;
+		std::vector<SpringIndex> springs_to_remove;
 	} delayed_commands;
 
 	FlexCallBackData sync_callback;

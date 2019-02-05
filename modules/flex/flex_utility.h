@@ -66,6 +66,7 @@
 
 typedef int FlexUnit;
 
+#ifdef FLEX_DEBUG_MEMORY
 #define define_flex_integer(clazz_name)                                    \
 	struct clazz_name {                                                    \
 		FlexUnit value;                                                    \
@@ -175,6 +176,10 @@ typedef int FlexUnit;
 
 define_flex_integer(FlexChunkIndex);
 define_flex_integer(FlexBufferIndex);
+#else
+typedef int FlexChunkIndex;
+typedef int FlexBufferIndex;
+#endif
 
 typedef FlexChunkIndex ParticleIndex; // Particle index relative to the memory chunk, can change during time
 typedef FlexBufferIndex ParticleBufferIndex; // Particle global index, can change during time

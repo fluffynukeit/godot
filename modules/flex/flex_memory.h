@@ -38,6 +38,9 @@
 #include "flex_memory_allocator.h"
 #include "flex_utility.h"
 #include "thirdparty/flex/include/NvFlexExt.h"
+#include <vector>
+
+class FlexPrimitiveBody;
 
 #define MAX_PERPARTICLE_CONTACT_COUNT 4
 
@@ -128,14 +131,14 @@ public:                                                                         
 
 #define FLEXBUFFERCLASS_6(clazz, type0, name0, type1, name1, type2, name2, type3, name3, type4, name4, type5, name5) \
 	friend class FlexSpace;                                                                                          \
-                                                                                                                     \
+																													 \
 	NvFlexVector<type0> name0;                                                                                       \
 	NvFlexVector<type1> name1;                                                                                       \
 	NvFlexVector<type2> name2;                                                                                       \
 	NvFlexVector<type3> name3;                                                                                       \
 	NvFlexVector<type4> name4;                                                                                       \
 	NvFlexVector<type5> name5;                                                                                       \
-                                                                                                                     \
+																													 \
 public:                                                                                                              \
 	clazz(NvFlexLibrary *p_flex_lib) :                                                                               \
 			name0(p_flex_lib),                                                                                       \
@@ -152,16 +155,45 @@ public:                                                                         
 		__add_buffer(&name5);                                                                                        \
 	}
 
+#define FLEXBUFFERCLASS_7(clazz, type0, name0, type1, name1, type2, name2, type3, name3, type4, name4, type5, name5, type6, name6) \
+	friend class FlexSpace;                                                                                                        \
+																																   \
+	NvFlexVector<type0> name0;                                                                                                     \
+	NvFlexVector<type1> name1;                                                                                                     \
+	NvFlexVector<type2> name2;                                                                                                     \
+	NvFlexVector<type3> name3;                                                                                                     \
+	NvFlexVector<type4> name4;                                                                                                     \
+	NvFlexVector<type5> name5;                                                                                                     \
+	NvFlexVector<type6> name6;                                                                                                     \
+																																   \
+public:                                                                                                                            \
+	clazz(NvFlexLibrary *p_flex_lib) :                                                                                             \
+			name0(p_flex_lib),                                                                                                     \
+			name1(p_flex_lib),                                                                                                     \
+			name2(p_flex_lib),                                                                                                     \
+			name3(p_flex_lib),                                                                                                     \
+			name4(p_flex_lib),                                                                                                     \
+			name5(p_flex_lib),                                                                                                     \
+			name6(p_flex_lib) {                                                                                                    \
+		__add_buffer(&name0);                                                                                                      \
+		__add_buffer(&name1);                                                                                                      \
+		__add_buffer(&name2);                                                                                                      \
+		__add_buffer(&name3);                                                                                                      \
+		__add_buffer(&name4);                                                                                                      \
+		__add_buffer(&name5);                                                                                                      \
+		__add_buffer(&name6);                                                                                                      \
+	}
+
 class FlexBufferMemory : public FlexMemory {
 
-	Vector<NvFlexVector<int> *> buffers_int;
-	Vector<NvFlexVector<float> *> buffers_float;
-	Vector<NvFlexVector<Quat> *> buffers_quat;
-	Vector<NvFlexVector<Vector3> *> buffers_vec3;
-	Vector<NvFlexVector<Spring> *> buffers_spring;
-	Vector<NvFlexVector<DynamicTriangle> *> buffers_dintriangles;
-	Vector<NvFlexVector<FlVector4> *> buffers_flvec4;
-	Vector<NvFlexVector<NvFlexCollisionGeometry> *> buffers_colgeo;
+	std::vector<NvFlexVector<int> *> buffers_int;
+	std::vector<NvFlexVector<float> *> buffers_float;
+	std::vector<NvFlexVector<Quat> *> buffers_quat;
+	std::vector<NvFlexVector<Vector3> *> buffers_vec3;
+	std::vector<NvFlexVector<Spring> *> buffers_spring;
+	std::vector<NvFlexVector<DynamicTriangle> *> buffers_dintriangles;
+	std::vector<NvFlexVector<FlVector4> *> buffers_flvec4;
+	std::vector<NvFlexVector<NvFlexCollisionGeometry> *> buffers_colgeo;
 
 protected:
 	bool changed;
@@ -488,7 +520,19 @@ class InflatablesMemory : public FlexBufferMemory {
 /// This represent primitive body
 class GeometryMemory : public FlexBufferMemory {
 
-	FLEXBUFFERCLASS_6(GeometryMemory, NvFlexCollisionGeometry, collision_shapes, FlVector4, positions, Quat, rotations, FlVector4, positions_prev, Quat, rotations_prev, int, flags);
+	FLEXBUFFERCLASS_6(
+			GeometryMemory,
+			NvFlexCollisionGeometry, collision_shapes,
+			FlVector4, positions,
+			Quat, rotations,
+			FlVector4, positions_prev,
+			Quat, rotations_prev,
+			int, flags)
+
+	std::vector<FlexPrimitiveBody *> bodies;
+
+	virtual void _on_resized(FlexUnit p_size);
+	virtual void _on_copied_unit(FlexUnit p_to, FlexUnit p_from);
 
 	/// IMPORTANT
 	/// These functions must be called only if the buffers are mapped
@@ -514,6 +558,10 @@ class GeometryMemory : public FlexBufferMemory {
 
 	void set_flags(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index, int p_flags);
 	int get_flags(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index) const;
+
+	void set_self(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index, FlexPrimitiveBody *p_body);
+	FlexPrimitiveBody *get_self(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index) const;
+	FlexPrimitiveBody *get_self(GeometryBufferIndex p_geometry_index) const;
 };
 
 class RawRigidsMemory : public FlexBufferMemory {
@@ -550,7 +598,7 @@ class RigidsMemory : public RawRigidsMemory {
 
 	friend class FlexSpace;
 
-	Vector<FlexIndex> offsets;
+	std::vector<FlexIndex> offsets;
 	NvFlexVector<FlexIndex> buffer_offsets;
 
 public:

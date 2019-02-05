@@ -170,9 +170,6 @@ void FlexPrimitiveBody::set_area(bool p_area) {
 
 void FlexPrimitiveBody::set_monitoring_particles_contacts(bool p_monitoring) {
 	_is_monitoring_particles_contacts = p_monitoring;
-
-	if (space)
-		space->primitive_body_sync_cmonitoring(this);
 }
 
 void FlexPrimitiveBody::set_clean() {

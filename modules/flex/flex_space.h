@@ -39,6 +39,7 @@
 
 #include "flex_memory_allocator.h"
 #include "flex_utility.h"
+#include <vector>
 
 struct NvFlexLibrary;
 struct NvFlexSolver;
@@ -102,27 +103,26 @@ class FlexSpace : public RIDFlex {
 	FlexMemoryAllocator *geometries_allocator;
 	GeometryMemory *geometries_memory;
 
-	Vector<FlexParticleBody *> particle_bodies;
-	Vector<FlexParticleBody *> particle_bodies_tearing;
-	Vector<TearingSplit> _tearing_splits;
+	std::vector<FlexParticleBody *> particle_bodies;
+	std::vector<FlexParticleBody *> particle_bodies_tearing;
+	std::vector<TearingSplit> _tearing_splits;
 	int tearing_max_splits;
 	int tearing_max_spring_checks;
 
-	Vector<FlexParticleBodyConstraint *> constraints;
+	std::vector<FlexParticleBodyConstraint *> constraints;
 
-	Vector<FlexPrimitiveBody *> primitive_bodies;
-	Vector<FlexPrimitiveBody *> primitive_bodies_contact_monitoring;
+	std::vector<FlexPrimitiveBody *> primitive_bodies;
 
-	Vector<FlexPrimitiveBody *> primitive_bodies_cf;
-	Vector<Transform> primitive_bodies_cf_prev_transform;
-	Vector<Transform> primitive_bodies_cf_prev_inv_transform;
-	Vector<Transform> primitive_bodies_cf_curr_transform;
-	Vector<Transform> primitive_bodies_cf_curr_inv_transform;
-	Vector<Transform> primitive_bodies_cf_motion;
-	Vector<Vector3> primitive_bodies_cf_extent;
-	Vector<real_t> primitive_bodies_cf_friction;
-	Vector<real_t> primitive_bodies_cf_friction_2_threshold;
-	Vector<uint32_t> primitive_bodies_cf_layers;
+	std::vector<FlexPrimitiveBody *> primitive_bodies_cf;
+	std::vector<Transform> primitive_bodies_cf_prev_transform;
+	std::vector<Transform> primitive_bodies_cf_prev_inv_transform;
+	std::vector<Transform> primitive_bodies_cf_curr_transform;
+	std::vector<Transform> primitive_bodies_cf_curr_inv_transform;
+	std::vector<Transform> primitive_bodies_cf_motion;
+	std::vector<Vector3> primitive_bodies_cf_extent;
+	std::vector<real_t> primitive_bodies_cf_friction;
+	std::vector<real_t> primitive_bodies_cf_friction_2_threshold;
+	std::vector<uint32_t> primitive_bodies_cf_layers;
 	bool are_updated_primitive_bodies_cf;
 
 	bool _is_using_default_params;
@@ -130,8 +130,8 @@ class FlexSpace : public RIDFlex {
 	/// Custom kernels
 
 	// Array size particle_bodies.size() * 2 where the first element is the starting index and the second the last particle index
-	Vector<int> particle_bodies_pindices;
-	Vector<AABB> particle_bodies_aabb;
+	//std::vector<int> particle_bodies_pindices;
+	//std::vector<AABB> particle_bodies_aabb;
 	GdFlexExtComputeAABBCallback *compute_aabb_callback;
 
 	GdFlexExtComputeFrictionCallback *compute_friction_callback;
@@ -195,7 +195,6 @@ public:
 
 	void add_primitive_body(FlexPrimitiveBody *p_body);
 	void remove_primitive_body(FlexPrimitiveBody *p_body);
-	void primitive_body_sync_cmonitoring(FlexPrimitiveBody *p_body);
 	int get_primitive_body_count() const;
 
 	bool set_param(const StringName &p_name, const Variant &p_property);
@@ -222,7 +221,7 @@ public:
 	void rebuild_inflatables_indices();
 
 	FlexParticleBody *find_particle_body(ParticleBufferIndex p_index) const;
-	FlexPrimitiveBody *find_primitive_body(GeometryBufferIndex p_index, bool p_contact_monitoring_only) const;
+	FlexPrimitiveBody *find_primitive_body(GeometryBufferIndex p_index) const;
 
 	void update_custom_friction_primitive_body(
 			FlexPrimitiveBody *p_body);
@@ -236,7 +235,7 @@ class FlexMemorySweeperFast : public FlexMemorySweeper {
 protected:
 	FlexMemoryAllocator *allocator;
 	MemoryChunk *&mchunk;
-	Vector<FlexChunkIndex> &indices_to_remove;
+	std::vector<FlexChunkIndex> &indices_to_remove;
 	const bool reallocate_memory;
 	const FlexBufferIndex custom_chunk_end_buffer_index;
 
@@ -244,7 +243,7 @@ public:
 	FlexMemorySweeperFast(
 			FlexMemoryAllocator *p_allocator,
 			MemoryChunk *&r_rigids_components_mchunk,
-			Vector<FlexChunkIndex> &r_indices_to_remove,
+			std::vector<FlexChunkIndex> &r_indices_to_remove,
 			bool p_reallocate_memory,
 			FlexBufferIndex p_custom_chunk_end_buffer_index = -1);
 
@@ -264,7 +263,7 @@ public:
 			FlexParticleBody *p_body,
 			FlexMemoryAllocator *p_allocator,
 			MemoryChunk *&r_rigids_components_mchunk,
-			Vector<FlexChunkIndex> &r_indices_to_remove,
+			std::vector<FlexChunkIndex> &r_indices_to_remove,
 			bool p_reallocate_memory,
 			FlexBufferIndex p_custom_chunk_end_buffer_index = -1);
 
@@ -276,7 +275,11 @@ class SpringsMemorySweeper : public FlexMemorySweeperFast {
 	FlexParticleBody *body;
 
 public:
-	SpringsMemorySweeper(FlexParticleBody *p_body, FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove);
+	SpringsMemorySweeper(
+			FlexParticleBody *p_body,
+			FlexMemoryAllocator *p_allocator,
+			MemoryChunk *&r_rigids_components_mchunk,
+			std::vector<FlexChunkIndex> &r_indices_to_remove);
 
 	virtual void on_element_index_changed(FlexBufferIndex old_element_index, FlexBufferIndex new_element_index);
 };
@@ -285,7 +288,11 @@ class TrianglesMemorySweeper : public FlexMemorySweeperFast {
 	FlexParticleBody *body;
 
 public:
-	TrianglesMemorySweeper(FlexParticleBody *p_body, FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove);
+	TrianglesMemorySweeper(
+			FlexParticleBody *p_body,
+			FlexMemoryAllocator *p_allocator,
+			MemoryChunk *&r_rigids_components_mchunk,
+			std::vector<FlexChunkIndex> &r_indices_to_remove);
 
 	virtual void on_element_removed(FlexBufferIndex on_element_removed);
 };
@@ -296,10 +303,13 @@ class FlexMemorySweeperSlow : public FlexMemorySweeper {
 protected:
 	FlexMemoryAllocator *allocator;
 	MemoryChunk *&mchunk;
-	Vector<FlexChunkIndex> &indices_to_remove;
+	std::vector<FlexChunkIndex> &indices_to_remove;
 
 public:
-	FlexMemorySweeperSlow(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove);
+	FlexMemorySweeperSlow(
+			FlexMemoryAllocator *p_allocator,
+			MemoryChunk *&r_rigids_components_mchunk,
+			std::vector<FlexChunkIndex> &r_indices_to_remove);
 
 	virtual void on_element_remove(FlexChunkIndex on_element_removed) {} // Before removal
 	virtual void on_element_removed(FlexChunkIndex on_element_removed) {} // Just after removal
@@ -313,7 +323,11 @@ class RigidsComponentsMemorySweeper : public FlexMemorySweeperSlow {
 	MemoryChunk *&rigids_mchunk;
 
 public:
-	RigidsComponentsMemorySweeper(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_components_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove, RigidsMemory *p_rigids_memory, MemoryChunk *&r_rigids_mchunk);
+	RigidsComponentsMemorySweeper(
+			FlexMemoryAllocator *p_allocator,
+			MemoryChunk *&r_rigids_components_mchunk,
+			std::vector<FlexChunkIndex> &r_indices_to_remove,
+			RigidsMemory *p_rigids_memory, MemoryChunk *&r_rigids_mchunk);
 
 	virtual void on_element_removed(RigidComponentIndex on_element_removed);
 };
@@ -329,7 +343,14 @@ class RigidsMemorySweeper : public FlexMemorySweeperSlow {
 	int rigid_particle_index_count;
 
 public:
-	RigidsMemorySweeper(FlexMemoryAllocator *p_allocator, MemoryChunk *&r_rigids_mchunk, Vector<FlexChunkIndex> &r_indices_to_remove, RigidsMemory *p_rigids_memory, FlexMemoryAllocator *p_rigids_components_allocator, RigidsComponentsMemory *p_rigids_components_memory, MemoryChunk *&r_rigids_components_mchunk);
+	RigidsMemorySweeper(
+			FlexMemoryAllocator *p_allocator,
+			MemoryChunk *&r_rigids_mchunk,
+			std::vector<FlexChunkIndex> &r_indices_to_remove,
+			RigidsMemory *p_rigids_memory,
+			FlexMemoryAllocator *p_rigids_components_allocator,
+			RigidsComponentsMemory *p_rigids_components_memory,
+			MemoryChunk *&r_rigids_components_mchunk);
 
 	virtual void on_element_remove(RigidIndex on_element_removed);
 	virtual void on_element_removed(RigidIndex on_element_removed);

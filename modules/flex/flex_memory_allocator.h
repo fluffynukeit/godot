@@ -35,8 +35,9 @@
 #ifndef FLEX_MEMORY_ALLOCATOR_H
 #define FLEX_MEMORY_ALLOCATOR_H
 
-#include "core/vector.h"
 #include "flex_utility.h"
+#include <algorithm>
+#include <vector>
 
 typedef void (*ResizechunkCallbackFunc)(
 		void *data,
@@ -134,9 +135,23 @@ public:
 	_FORCE_INLINE_ FlexUnit get_size() const { return size; }
 	_FORCE_INLINE_ bool get_is_free() const { return is_free; }
 	/// Get buffer index (relative to the memory)
-	_FORCE_INLINE_ FlexBufferIndex get_buffer_index(FlexChunkIndex p_chunk_index) const { return begin_index + p_chunk_index.value; }
+	_FORCE_INLINE_ FlexBufferIndex get_buffer_index(
+			FlexChunkIndex p_chunk_index) const {
+#ifdef FLEX_DEBUG_MEMORY
+		return begin_index + p_chunk_index.value;
+#else
+		return begin_index + p_chunk_index;
+#endif
+	}
 	/// Get chunk index (relative to this chunk)
-	_FORCE_INLINE_ FlexChunkIndex get_chunk_index(FlexBufferIndex p_buffer_index) const { return p_buffer_index.value - begin_index; }
+	_FORCE_INLINE_ FlexChunkIndex get_chunk_index(
+			FlexBufferIndex p_buffer_index) const {
+#ifdef FLEX_DEBUG_MEMORY
+		return p_buffer_index.value - begin_index;
+#else
+		return p_buffer_index - begin_index;
+#endif
+	}
 };
 
 /// This class is responsible for memory management.
@@ -167,7 +182,7 @@ public:
 ///
 class FlexMemoryAllocator {
 
-	Vector<MemoryChunk *> memory_table;
+	std::vector<MemoryChunk *> memory_table;
 	FlexUnit memory_size;
 	FlexUnit reallocation_extra_size;
 	FlexUnit max_memory_size;
