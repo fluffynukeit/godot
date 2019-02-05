@@ -66,7 +66,10 @@ bool FlexParticleBodyConstraint::is_owner_of_spring(SpringIndex p_spring) const 
 
 void FlexParticleBodyConstraint::remove_spring(SpringIndex p_spring_index) {
 	ERR_FAIL_COND(!is_owner_of_spring(p_spring_index));
-	if (-1 == delayed_commands.springs_to_remove.find(p_spring_index))
+	if (std::find(
+				delayed_commands.springs_to_remove.begin(),
+				delayed_commands.springs_to_remove.end(),
+				p_spring_index) == delayed_commands.springs_to_remove.end())
 		delayed_commands.springs_to_remove.push_back(p_spring_index);
 }
 

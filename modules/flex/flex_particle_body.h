@@ -39,6 +39,7 @@
 #include "flex_utility.h"
 #include "rid_flex.h"
 #include <memory>
+#include <vector>
 
 class FlexParticleBody;
 class FlexSpace;
@@ -60,7 +61,7 @@ enum ChangedBodyParameter {
 };
 
 struct FlexTearingData : public ParticlePhysicsServer::TearingData {
-	Vector<bool> sides;
+	std::vector<bool> sides;
 	int check_stopped; // used to delay the check
 
 	FlexTearingData() :
@@ -94,13 +95,13 @@ class FlexParticleBody : public RIDFlex {
 	FlexCallBackData primitive_contact_callback;
 
 	struct {
-		Vector<ParticleIndex> particles_to_unactive;
-		Vector<ParticleIndex> particles_to_remove;
-		Vector<SpringIndex> springs_to_remove;
-		Vector<TriangleIndex> triangles_to_remove;
-		Vector<RigidIndex> rigids_to_remove;
+		std::vector<ParticleIndex> particles_to_unactive;
+		std::vector<ParticleIndex> particles_to_remove;
+		std::vector<SpringIndex> springs_to_remove;
+		std::vector<TriangleIndex> triangles_to_remove;
+		std::vector<RigidIndex> rigids_to_remove;
 		// rigid component to add
-		Vector<RigidComponentIndex> rigids_components_to_remove;
+		std::vector<RigidComponentIndex> rigids_components_to_remove;
 	} delayed_commands;
 
 	uint32_t changed_parameters;
@@ -128,7 +129,7 @@ class FlexParticleBody : public RIDFlex {
 	bool tearing_active;
 	real_t tearing_max_extension; // Normalized percetage
 	std::shared_ptr<FlexTearingData> tearing_data;
-	Vector<ForceTearing> force_tearings;
+	std::vector<ForceTearing> force_tearings;
 
 public:
 	FlexParticleBody();
@@ -193,7 +194,7 @@ public:
 	real_t get_tearing_max_extension() const;
 
 	void add_force_tearing(ParticleIndex p_particle_index, const Vector3 &p_split_plane);
-	Vector<ForceTearing> &get_force_tearings();
+	std::vector<ForceTearing> &get_force_tearings();
 
 	// CMD
 

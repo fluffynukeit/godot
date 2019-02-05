@@ -37,16 +37,18 @@
 
 #include "core/map.h"
 #include "core/variant.h"
+#include "core/vector.h"
 #include "flex_utility.h"
 #include "rid_flex.h"
 #include "thirdparty/flex/include/NvFlexExt.h"
+#include <vector>
 
 class FlexPrimitiveBody;
 class FlexSpace;
 
 class FlexPrimitiveShape : public RIDFlex {
 
-	Vector<FlexPrimitiveBody *> owners;
+	std::vector<FlexPrimitiveBody *> owners;
 
 protected:
 	AABB aabb;
@@ -61,7 +63,7 @@ public:
 
 	void add_owner(FlexPrimitiveBody *p_owner);
 	void remove_owner(FlexPrimitiveBody *p_owner);
-	Vector<FlexPrimitiveBody *> get_owners() const { return owners; }
+	std::vector<FlexPrimitiveBody *> get_owners() const { return owners; }
 	void notify_change();
 
 	virtual NvFlexCollisionShapeType get_type() = 0;
@@ -133,7 +135,6 @@ class FlexPrimitiveConvexShape : public FlexPrimitiveShape {
 		NvFlexConvexMeshId mesh_id;
 		NvFlexVector<FlVector4> *vertices_buffer;
 	};
-
 	Vector<Vector3> vertices;
 	Map<FlexSpace *, MeshData> cache;
 

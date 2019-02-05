@@ -400,18 +400,18 @@ void ParticleBodyMeshInstance::_draw_mesh_pvparticles() {
 
 void ParticleBodyMeshInstance::update_mesh_skeleton(ParticleBodyCommands *p_cmds) {
 
-	const int rigids_count = ParticlePhysicsServer::get_singleton()->body_get_rigid_count(particle_body->get_rid());
-	const PoolVector<Vector3>::Read rigids_local_pos_r = particle_body->get_particle_body_model()->get_clusters_positions().read();
+	const int rigid_count(rigid_inv_loc.size());
 
 	Vector3 initial_cluster_x;
-	if (look_y_previous_cluster && rigids_count) {
+	if (look_y_previous_cluster && rigid_count) {
 
 		initial_cluster_x = Basis(p_cmds->get_rigid_rotation(0)).xform(Vector3(1, 0, 0));
 	}
 
-	for (int i = 0; i < rigids_count; ++i) {
+	VisualServer *vs = VisualServer::get_singleton();
+	Transform t;
+	for (int i = 0; i < rigid_count; ++i) {
 
-		Basis b;
 		if (look_y_previous_cluster && i != 0) {
 
 			Vector3 delta = p_cmds->get_rigid_position(i) - p_cmds->get_rigid_position(i - 1);
@@ -421,21 +421,21 @@ void ParticleBodyMeshInstance::update_mesh_skeleton(ParticleBodyCommands *p_cmds
 			Vector3 ya = delta;
 			Vector3 za = xa.cross(ya).normalized();
 			xa = ya.cross(za).normalized();
-			b.set(xa, ya, za);
+			t.basis.set(xa, ya, za);
 		} else {
 
-			b.set_quat(p_cmds->get_rigid_rotation(i));
+			t.basis.set_quat(p_cmds->get_rigid_rotation(i));
 		}
 
-		Transform t(b, p_cmds->get_rigid_position(i));
-		t.translate(rigids_local_pos_r[i] * -1);
-		skeleton->set_bone_pose(i, t);
+		t.origin = p_cmds->get_rigid_position(i);
+		t.translate(rigid_inv_loc[i]);
+		// Not using skeleton->set_bone_pose(i, t); to avoid useless
+		// transformation
+		vs->skeleton_bone_set_transform(
+				skeleton->get_skeleton(),
+				skeleton->get_process_order(i),
+				t);
 	}
-
-	static const AABB aabb(Vector3(-9999, -9999, -9999), Vector3(19998, 19998, 19998));
-
-	VS::get_singleton()->mesh_set_custom_aabb(mesh->get_rid(), aabb);
-	//VS::get_singleton()->mesh_set_custom_aabb(mesh->get_rid(), p_cmds->get_aabb());
 }
 
 void ParticleBodyMeshInstance::prepare_mesh_for_rendering() {
@@ -539,7 +539,9 @@ void ParticleBodyMeshInstance::prepare_mesh_skeleton_deformation() {
 	PoolVector<Vector3>::Read clusters_pos_r = model->get_clusters_positions().read();
 	const int bone_count(model->get_clusters_positions().size());
 
-	Array array_mesh = get_mesh()->surface_get_arrays(surface_id).duplicate();
+	Array array_mesh = get_mesh()->surface_get_arrays(surface_id);
+	Array surface_blend_arrays = get_mesh()->surface_get_blend_shape_arrays(0);
+	uint32_t surface_format = get_mesh()->surface_get_format(0);
 	PoolVector<Vector3> vertices = array_mesh[VS::ARRAY_VERTEX];
 	PoolVector<Vector3>::Read vertices_read = vertices.read();
 	const int vertex_count(vertices.size());
@@ -565,13 +567,19 @@ void ParticleBodyMeshInstance::prepare_mesh_skeleton_deformation() {
 		skeleton->set_bone_disable_rest(i, true);
 	}
 
+	surface_format |= Mesh::ARRAY_FLAG_USE_DYNAMIC_UPDATE;
+
 	// Create skeleton using these info:
 	array_mesh[VS::ARRAY_WEIGHTS] = weights;
 	array_mesh[VS::ARRAY_BONES] = bone_indices;
 
 	Ref<ArrayMesh> new_mesh;
 	new_mesh.instance();
-	new_mesh->add_surface_from_arrays(get_mesh()->surface_get_primitive_type(surface_id), array_mesh);
+	new_mesh->add_surface_from_arrays(
+			get_mesh()->surface_get_primitive_type(surface_id),
+			array_mesh,
+			surface_blend_arrays,
+			surface_format);
 	new_mesh->surface_set_material(0, mesh->surface_get_material(0));
 
 	set_mesh(new_mesh);
@@ -581,6 +589,17 @@ void ParticleBodyMeshInstance::prepare_mesh_skeleton_deformation() {
 	rendering_approach = RENDERING_UPDATE_APPROACH_SKELETON;
 
 	_clear_pvparticles_drawing();
+
+	const int rigid_count(particle_body->get_particle_body_model()->get_clusters_positions().size());
+	const PoolVector<Vector3>::Read rigids_local_pos_r = particle_body->get_particle_body_model()->get_clusters_positions().read();
+	rigid_inv_loc.resize(rigid_count);
+	for (int i = 0; i < rigid_count; ++i) {
+
+		rigid_inv_loc[i] = rigids_local_pos_r[i] * -1;
+	}
+
+	const AABB aabb(Vector3(-9999, -9999, -9999), Vector3(19998, 19998, 19998));
+	VS::get_singleton()->mesh_set_custom_aabb(mesh->get_rid(), aabb);
 }
 
 void ParticleBodyMeshInstance::_clear_pvparticles_drawing() {

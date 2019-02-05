@@ -153,8 +153,8 @@ void FlexMemoryAllocator::sanitize(bool p_want_update_cache, bool p_trim) {
 					NULL);
 
 			MemoryChunk *i_chunk = memory_table[i];
-			memory_table.write[i] = memory_table[next_i];
-			memory_table.write[next_i] = i_chunk;
+			memory_table[i] = memory_table[next_i];
+			memory_table[next_i] = i_chunk;
 
 			// Shift back data, even if the chunks collides it will work
 			// because the copy is performed incrementally
@@ -285,8 +285,9 @@ void FlexMemoryAllocator::resize_chunk(
 
 		/// Redux memory, don't need reallocation
 		// 1. Split chunk
-		FlexUnit chunk_index = memory_table.find(r_chunk);
-		ERR_FAIL_COND(chunk_index == -1);
+		auto it = std::find(memory_table.begin(), memory_table.end(), r_chunk);
+		ERR_FAIL_COND(it == memory_table.end());
+		FlexUnit chunk_index = it - memory_table.begin();
 
 		FlexUnit new_chunk_size = r_chunk->size - p_size;
 		MemoryChunk *new_chunk = insert_chunk(chunk_index + 1);
@@ -360,7 +361,7 @@ FlexUnit FlexMemoryAllocator::get_chunk_count() const {
 }
 
 MemoryChunk *FlexMemoryAllocator::get_chunk(FlexUnit i) const {
-	return memory_table.get(i);
+	return memory_table[i];
 }
 
 void FlexMemoryAllocator::register_resizechunk_callback(
@@ -416,7 +417,7 @@ MemoryChunk *FlexMemoryAllocator::insert_chunk(FlexBufferIndex p_index) {
 	chunk->owner_memory = memory;
 	chunk->owner_memory_allocator = this;
 #endif
-	memory_table.insert(p_index, chunk);
+	memory_table.insert(memory_table.begin() + p_index, chunk);
 	return chunk;
 }
 
@@ -432,5 +433,7 @@ MemoryChunk *FlexMemoryAllocator::create_chunk() {
 
 void FlexMemoryAllocator::delete_chunk(FlexBufferIndex p_index) {
 	delete memory_table[p_index];
-	memory_table.remove(p_index);
+	memory_table.erase(
+			memory_table.begin() + p_index,
+			memory_table.begin() + p_index + 1);
 }

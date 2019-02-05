@@ -528,6 +528,7 @@ void ComputeFrictionCallback(NvFlexSolverCallbackParams p_params){
 	const int particle_count = p_params.numActive;
 	const int kNumBlocks = (particle_count + kNumThreadsPerBlock - 1) / kNumThreadsPerBlock;
 
+	//
 	ComputeFriction<<<kNumBlocks, kNumThreadsPerBlock>>>(
 			inverse_dt,
 			p_params.sortedToOriginalMap,

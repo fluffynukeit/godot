@@ -218,6 +218,16 @@ float InflatablesMemory::get_constraint_scale(const MemoryChunk *p_chunk, Inflat
 	return constraint_scales[index];
 }
 
+void GeometryMemory::_on_resized(FlexUnit p_size) {
+	FlexBufferMemory::_on_resized(p_size);
+	bodies.resize(p_size);
+}
+
+void GeometryMemory::_on_copied_unit(FlexUnit p_to, FlexUnit p_from) {
+	FlexBufferMemory::_on_copied_unit(p_to, p_from);
+	bodies[p_to] = bodies[p_from];
+}
+
 void GeometryMemory::set_shape(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index, const NvFlexCollisionGeometry &p_shape) {
 	make_memory_index(p_chunk, p_geometry_index);
 	collision_shapes[index] = p_shape;
@@ -282,6 +292,20 @@ void GeometryMemory::set_flags(const MemoryChunk *p_chunk, GeometryIndex p_geome
 int GeometryMemory::get_flags(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index) const {
 	make_memory_index_V(p_chunk, p_geometry_index, 0);
 	return flags[index];
+}
+
+void GeometryMemory::set_self(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index, FlexPrimitiveBody *p_body) {
+	make_memory_index(p_chunk, p_geometry_index);
+	bodies[index] = p_body;
+}
+
+FlexPrimitiveBody *GeometryMemory::get_self(const MemoryChunk *p_chunk, GeometryIndex p_geometry_index) const {
+	make_memory_index_V(p_chunk, p_geometry_index, NULL);
+	return bodies[index];
+}
+
+FlexPrimitiveBody *GeometryMemory::get_self(GeometryBufferIndex p_geometry_index) const {
+	return bodies[p_geometry_index];
 }
 
 void RawRigidsMemory::set_stiffness(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, float p_stiffness) {
@@ -355,13 +379,13 @@ void RigidsMemory::_on_resized(FlexUnit p_size) {
 
 void RigidsMemory::_on_copied_unit(FlexUnit p_to, FlexUnit p_from) {
 	RawRigidsMemory::_on_copied_unit(p_to, p_from);
-	offsets.write[p_to] = offsets[p_from];
+	offsets[p_to] = offsets[p_from];
 	buffer_offsets[p_to + 1] = buffer_offsets[p_from + 1];
 }
 
 void RigidsMemory::set_offset(const MemoryChunk *p_chunk, RigidIndex p_rigid_index, RigidComponentIndex p_offset) {
 	make_memory_index(p_chunk, p_rigid_index);
-	offsets.write[index] = p_offset;
+	offsets[index] = p_offset;
 	changed = true;
 }
 

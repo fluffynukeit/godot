@@ -58,7 +58,9 @@ void FlexPrimitiveShape::add_owner(FlexPrimitiveBody *p_owner) {
 }
 
 void FlexPrimitiveShape::remove_owner(FlexPrimitiveBody *p_owner) {
-	owners.erase(p_owner);
+	auto it = std::find(owners.begin(), owners.end(), p_owner);
+	if (it != owners.end())
+		owners.erase(it, it + 1);
 }
 
 void FlexPrimitiveShape::notify_change() {

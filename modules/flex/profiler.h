@@ -10,7 +10,6 @@
   */
 
 #ifdef DEBUG_ENABLED
-// TODO put if debug void
 #define PROFILE(name) Profile __profiler_tcaerdna_(Profiler::get_profile_data((name)));
 #else
 #define PROFILE(name)

@@ -79,6 +79,8 @@ public:
 	PoolVector<int> get_mesh_indices() const { return mesh_indices; }
 };
 
+#include <vector>
+
 class ParticleBodyMeshInstance : public MeshInstance {
 	GDCLASS(ParticleBodyMeshInstance, MeshInstance);
 
@@ -96,6 +98,7 @@ class ParticleBodyMeshInstance : public MeshInstance {
 
 	ParticleBody *particle_body;
 	Skeleton *skeleton;
+	std::vector<Vector3> rigid_inv_loc;
 
 	RenderingUpdateApproach rendering_approach;
 

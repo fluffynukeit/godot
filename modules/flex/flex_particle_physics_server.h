@@ -192,7 +192,7 @@ private:
 
 	real_t delta_time;
 	short last_space_index;
-	Vector<FlexSpace *> active_spaces;
+	std::vector<FlexSpace *> active_spaces;
 
 	bool is_active;
 	FlexParticleBodyCommands *particle_body_commands;

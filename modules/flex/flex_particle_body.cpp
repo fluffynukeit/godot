@@ -177,37 +177,62 @@ void FlexParticleBody::set_monitoring_primitives_contacts(bool p_monitoring) {
 
 void FlexParticleBody::unactive_particle(ParticleIndex p_particle) {
 	ERR_FAIL_COND(!is_owner_of_particle(p_particle));
-	if (-1 == delayed_commands.particles_to_unactive.find(p_particle))
+	auto it = std::find(
+			delayed_commands.particles_to_unactive.begin(),
+			delayed_commands.particles_to_unactive.end(),
+			p_particle);
+	if (it == delayed_commands.particles_to_unactive.end())
 		delayed_commands.particles_to_unactive.push_back(p_particle);
 }
 
 void FlexParticleBody::remove_particle(ParticleIndex p_particle) {
 	ERR_FAIL_COND(!is_owner_of_particle(p_particle));
-	if (-1 == delayed_commands.particles_to_remove.find(p_particle))
+
+	auto it = std::find(
+			delayed_commands.particles_to_remove.begin(),
+			delayed_commands.particles_to_remove.end(),
+			p_particle);
+	if (it == delayed_commands.particles_to_remove.end())
 		delayed_commands.particles_to_remove.push_back(p_particle);
 }
 
 void FlexParticleBody::remove_spring(SpringIndex p_spring_index) {
 	ERR_FAIL_COND(!is_owner_of_spring(p_spring_index));
-	if (-1 == delayed_commands.springs_to_remove.find(p_spring_index))
+	auto it = std::find(
+			delayed_commands.springs_to_remove.begin(),
+			delayed_commands.springs_to_remove.end(),
+			p_spring_index);
+	if (it == delayed_commands.springs_to_remove.end())
 		delayed_commands.springs_to_remove.push_back(p_spring_index);
 }
 
 void FlexParticleBody::remove_triangle(const TriangleIndex p_triangle_index) {
 	ERR_FAIL_COND(!is_owner_of_triangle(p_triangle_index));
-	if (-1 == delayed_commands.triangles_to_remove.find(p_triangle_index))
+	auto it = std::find(
+			delayed_commands.triangles_to_remove.begin(),
+			delayed_commands.triangles_to_remove.end(),
+			p_triangle_index);
+	if (it == delayed_commands.triangles_to_remove.end())
 		delayed_commands.triangles_to_remove.push_back(p_triangle_index);
 }
 
 void FlexParticleBody::remove_rigid(RigidIndex p_rigid_index) {
 	ERR_FAIL_COND(!is_owner_of_rigid(p_rigid_index));
-	if (-1 == delayed_commands.rigids_to_remove.find(p_rigid_index))
+	auto it = std::find(
+			delayed_commands.rigids_to_remove.begin(),
+			delayed_commands.rigids_to_remove.end(),
+			p_rigid_index);
+	if (it == delayed_commands.rigids_to_remove.end())
 		delayed_commands.rigids_to_remove.push_back(p_rigid_index);
 }
 
 void FlexParticleBody::remove_rigid_component(RigidComponentIndex p_rigid_component_index) {
 	ERR_FAIL_COND(!is_owner_of_rigid_component(p_rigid_component_index));
-	if (-1 == delayed_commands.rigids_components_to_remove.find(p_rigid_component_index))
+	auto it = std::find(
+			delayed_commands.rigids_components_to_remove.begin(),
+			delayed_commands.rigids_components_to_remove.end(),
+			p_rigid_component_index);
+	if (it == delayed_commands.rigids_components_to_remove.end())
 		delayed_commands.rigids_components_to_remove.push_back(p_rigid_component_index);
 }
 
@@ -278,7 +303,7 @@ void FlexParticleBody::add_force_tearing(ParticleIndex p_particle_index, const V
 	force_tearings.push_back(h);
 }
 
-Vector<ForceTearing> &FlexParticleBody::get_force_tearings() {
+std::vector<ForceTearing> &FlexParticleBody::get_force_tearings() {
 	return force_tearings;
 }
 

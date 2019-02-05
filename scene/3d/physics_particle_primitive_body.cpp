@@ -114,12 +114,17 @@ ParticlePrimitiveBody::ParticlePrimitiveBody() :
 		debug_shape(NULL),
 		use_custom_friction(false),
 		custom_friction(0),
-		custom_friction_threshold(0) {
+		custom_friction_threshold(0),
+		monitoring_particles_contacts(false) {
 
 	ParticlePhysicsServer::get_singleton()->primitive_body_set_object_instance(rid, this);
 	set_notify_transform(true);
 
-	ParticlePhysicsServer::get_singleton()->primitive_body_set_callback(rid, ParticlePhysicsServer::PARTICLE_PRIMITIVE_BODY_CALLBACK_PARTICLECONTACT, this, "on_particle_contact");
+	ParticlePhysicsServer::get_singleton()->primitive_body_set_callback(
+			rid,
+			ParticlePhysicsServer::PARTICLE_PRIMITIVE_BODY_CALLBACK_PARTICLECONTACT,
+			this,
+			"on_particle_contact");
 }
 
 ParticlePrimitiveBody::~ParticlePrimitiveBody() {
@@ -218,11 +223,12 @@ bool ParticlePrimitiveBody::get_collision_layer_bit(int p_bit) const {
 }
 
 void ParticlePrimitiveBody::set_monitoring_particles_contacts(bool p_monitoring) {
+	monitoring_particles_contacts = p_monitoring;
 	ParticlePhysicsServer::get_singleton()->primitive_body_set_monitoring_particles_contacts(rid, p_monitoring);
 }
 
 bool ParticlePrimitiveBody::is_monitoring_particles_contacts() const {
-	return ParticlePhysicsServer::get_singleton()->primitive_body_is_monitoring_particles_contacts(rid);
+	return monitoring_particles_contacts;
 }
 
 void ParticlePrimitiveBody::set_callback_sync(bool p_enabled) {
@@ -240,7 +246,14 @@ bool ParticlePrimitiveBody::is_callback_sync_enabled() const {
 
 void ParticlePrimitiveBody::_on_particle_contact(Object *p_particle_body, int p_particle_index, Vector3 p_velocity, Vector3 p_normal) {
 
-	emit_signal("particle_contact", ParticlePhysicsServer::get_singleton()->body_get_commands(cast_to<ParticleBody>(p_particle_body)->get_rid()), p_particle_body, p_particle_index, p_velocity, p_normal);
+	if (monitoring_particles_contacts)
+		emit_signal("particle_contact",
+				ParticlePhysicsServer::get_singleton()->body_get_commands(
+						cast_to<ParticleBody>(p_particle_body)->get_rid()),
+				p_particle_body,
+				p_particle_index,
+				p_velocity,
+				p_normal);
 }
 
 void ParticlePrimitiveBody::_on_sync() {
@@ -318,23 +331,14 @@ ParticlePrimitiveArea::ParticlePrimitiveArea() :
 	set_callback_sync(false);
 }
 
-String ParticlePrimitiveArea::get_configuration_warning() const {
-	String warning = ParticlePrimitiveBody::get_configuration_warning();
-
-	if (monitor_particle_bodies_entering || monitor_particles_entering) {
-		if (!is_monitoring_particles_contacts()) {
-			if (warning != String()) {
-				warning += "\n\n";
-			}
-			warning += TTR("The Area can't monitor body or particles untill you set monitoring_particles_contacts to TRUE.");
-		}
-	}
-
-	return warning;
-}
-
 void ParticlePrimitiveArea::set_monitor_particle_bodies_entering(bool p_monitor) {
 	monitor_particle_bodies_entering = p_monitor;
+
+	ParticlePhysicsServer::get_singleton()->primitive_body_set_monitoring_particles_contacts(
+			rid,
+			monitoring_particles_contacts ||
+					monitor_particle_bodies_entering ||
+					monitor_particles_entering);
 
 	if (!Engine::get_singleton()->is_editor_hint())
 		set_callback_sync(monitor_particle_bodies_entering || monitor_particles_entering);
@@ -342,6 +346,12 @@ void ParticlePrimitiveArea::set_monitor_particle_bodies_entering(bool p_monitor)
 
 void ParticlePrimitiveArea::set_monitor_particles_entering(bool p_monitor) {
 	monitor_particles_entering = p_monitor;
+
+	ParticlePhysicsServer::get_singleton()->primitive_body_set_monitoring_particles_contacts(
+			rid,
+			monitoring_particles_contacts ||
+					monitor_particle_bodies_entering ||
+					monitor_particles_entering);
 
 	if (!Engine::get_singleton()->is_editor_hint())
 		set_callback_sync(monitor_particle_bodies_entering || monitor_particles_entering);
