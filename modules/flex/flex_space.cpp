@@ -1001,13 +1001,30 @@ void FlexSpace::set_custom_flex_callback() {
 			compute_friction_callback);
 }
 
-void FlexSpace::dispatch_callback_contacts() {
+#include "core/os/thread.h"
 
-	PROFILE("flex_server_dispatch_callback_contacts")
+struct ThreadData {
 
-	for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
+	FlexSpace *space;
+	const int start;
+	const int end;
 
-		FlexParticleBody *particle_body = particle_bodies[i];
+	ThreadData(
+			FlexSpace *p_space,
+			const int p_start,
+			const int p_end) :
+			space(p_space),
+			start(p_start),
+			end(p_end) {}
+};
+
+void thread_dispatch_cb_contacts(void *p_user_data) {
+
+	ThreadData *td = static_cast<ThreadData *>(p_user_data);
+
+	for (int i(td->start); i < td->end; ++i) {
+
+		FlexParticleBody *particle_body = td->space->particle_bodies[i];
 		if (!particle_body->is_monitorable())
 			continue;
 
@@ -1020,8 +1037,8 @@ void FlexSpace::dispatch_callback_contacts() {
 				particle_buffer_index <= end_index;
 				++particle_buffer_index) {
 
-			const int contact_index(contacts_buffers->indices[particle_buffer_index]);
-			const uint32_t particle_contact_count(contacts_buffers->counts[contact_index]);
+			const int contact_index(td->space->contacts_buffers->indices[particle_buffer_index]);
+			const uint32_t particle_contact_count(td->space->contacts_buffers->counts[contact_index]);
 
 			if (!particle_contact_count)
 				continue;
@@ -1030,14 +1047,14 @@ void FlexSpace::dispatch_callback_contacts() {
 
 			for (uint32_t c(0); c < particle_contact_count; ++c) {
 
-				const FlVector4 &velocity_and_primitive(contacts_buffers->velocities_prim_indices[contact_index * MAX_PERPARTICLE_CONTACT_COUNT + c]);
-				const FlVector4 &raw_normal(contacts_buffers->normals[contact_index * MAX_PERPARTICLE_CONTACT_COUNT + c]);
+				const FlVector4 &velocity_and_primitive(td->space->contacts_buffers->velocities_prim_indices[contact_index * MAX_PERPARTICLE_CONTACT_COUNT + c]);
+				const FlVector4 &raw_normal(td->space->contacts_buffers->normals[contact_index * MAX_PERPARTICLE_CONTACT_COUNT + c]);
 
 				Vector3 velocity(vec3_from_flvec4(velocity_and_primitive));
 				Vector3 normal(vec3_from_flvec4(raw_normal));
 
 				const int primitive_body_index(velocity_and_primitive.w);
-				FlexPrimitiveBody *primitive_body = find_primitive_body(primitive_body_index);
+				FlexPrimitiveBody *primitive_body = td->space->find_primitive_body(primitive_body_index);
 
 				if (!primitive_body->is_monitoring_particles_contacts())
 					continue;
@@ -1049,6 +1066,28 @@ void FlexSpace::dispatch_callback_contacts() {
 					primitive_body->dispatch_particle_contact(particle_body, particle_index, velocity, normal);
 			}
 		}
+	}
+}
+
+void FlexSpace::dispatch_callback_contacts() {
+
+	PROFILE("flex_server_dispatch_callback_contacts")
+
+	const int size(particle_bodies.size());
+	if (size > 10) {
+		const int size_per_thread = size / 2.0;
+
+		ThreadData td1(this, 0, size_per_thread);
+		Thread *thread1 = Thread::create(thread_dispatch_cb_contacts, &td1);
+
+		ThreadData td0(this, td1.end, size);
+		thread_dispatch_cb_contacts(&td0);
+
+		Thread::wait_to_finish(thread1);
+		memdelete(thread1);
+	} else {
+		ThreadData td0(this, 0, size);
+		thread_dispatch_cb_contacts(&td0);
 	}
 }
 
