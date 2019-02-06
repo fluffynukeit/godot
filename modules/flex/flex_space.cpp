@@ -57,8 +57,12 @@ bool has_error() {
 	return error_severity == eNvFlexLogError;
 }
 
+void threadmanager_dispatch_cb_contacts(ThreadData &p_td);
+
 FlexSpace::FlexSpace() :
 		RIDFlex(),
+		collision_check_thread1_td(false, this, 0, 0),
+		collision_check_thread1(threadmanager_dispatch_cb_contacts, std::ref(collision_check_thread1_td)),
 		flex_lib(NULL),
 		solver(NULL),
 		solver_max_particles(0),
@@ -92,6 +96,9 @@ FlexSpace::FlexSpace() :
 
 FlexSpace::~FlexSpace() {
 	terminate();
+	collision_check_thread1_td.stop = true;
+	collision_check_thread1_td.conditional.notify_one();
+	collision_check_thread1.join();
 }
 
 void FlexSpace::init() {
@@ -1001,30 +1008,11 @@ void FlexSpace::set_custom_flex_callback() {
 			compute_friction_callback);
 }
 
-#include "core/os/thread.h"
+void thread_dispatch_cb_contacts(FlexSpace *p_space, int start, int end) {
 
-struct ThreadData {
+	for (int i(start); i < end; ++i) {
 
-	FlexSpace *space;
-	const int start;
-	const int end;
-
-	ThreadData(
-			FlexSpace *p_space,
-			const int p_start,
-			const int p_end) :
-			space(p_space),
-			start(p_start),
-			end(p_end) {}
-};
-
-void thread_dispatch_cb_contacts(void *p_user_data) {
-
-	ThreadData *td = static_cast<ThreadData *>(p_user_data);
-
-	for (int i(td->start); i < td->end; ++i) {
-
-		FlexParticleBody *particle_body = td->space->particle_bodies[i];
+		FlexParticleBody *particle_body = p_space->particle_bodies[i];
 		if (!particle_body->is_monitorable())
 			continue;
 
@@ -1037,8 +1025,8 @@ void thread_dispatch_cb_contacts(void *p_user_data) {
 				particle_buffer_index <= end_index;
 				++particle_buffer_index) {
 
-			const int contact_index(td->space->contacts_buffers->indices[particle_buffer_index]);
-			const uint32_t particle_contact_count(td->space->contacts_buffers->counts[contact_index]);
+			const int contact_index(p_space->contacts_buffers->indices[particle_buffer_index]);
+			const uint32_t particle_contact_count(p_space->contacts_buffers->counts[contact_index]);
 
 			if (!particle_contact_count)
 				continue;
@@ -1047,14 +1035,14 @@ void thread_dispatch_cb_contacts(void *p_user_data) {
 
 			for (uint32_t c(0); c < particle_contact_count; ++c) {
 
-				const FlVector4 &velocity_and_primitive(td->space->contacts_buffers->velocities_prim_indices[contact_index * MAX_PERPARTICLE_CONTACT_COUNT + c]);
-				const FlVector4 &raw_normal(td->space->contacts_buffers->normals[contact_index * MAX_PERPARTICLE_CONTACT_COUNT + c]);
+				const FlVector4 &velocity_and_primitive(p_space->contacts_buffers->velocities_prim_indices[contact_index * MAX_PERPARTICLE_CONTACT_COUNT + c]);
+				const FlVector4 &raw_normal(p_space->contacts_buffers->normals[contact_index * MAX_PERPARTICLE_CONTACT_COUNT + c]);
 
 				Vector3 velocity(vec3_from_flvec4(velocity_and_primitive));
 				Vector3 normal(vec3_from_flvec4(raw_normal));
 
 				const int primitive_body_index(velocity_and_primitive.w);
-				FlexPrimitiveBody *primitive_body = td->space->find_primitive_body(primitive_body_index);
+				FlexPrimitiveBody *primitive_body = p_space->find_primitive_body(primitive_body_index);
 
 				if (!primitive_body->is_monitoring_particles_contacts())
 					continue;
@@ -1069,25 +1057,41 @@ void thread_dispatch_cb_contacts(void *p_user_data) {
 	}
 }
 
+void threadmanager_dispatch_cb_contacts(ThreadData &p_td) {
+
+	while (true) {
+		std::unique_lock<std::mutex> lock(p_td.mutex);
+		p_td.conditional.wait(lock);
+
+		if (p_td.stop)
+			return;
+
+		thread_dispatch_cb_contacts(
+				p_td.space,
+				p_td.start,
+				p_td.end);
+
+		p_td.done = true;
+	}
+}
+
 void FlexSpace::dispatch_callback_contacts() {
 
 	PROFILE("flex_server_dispatch_callback_contacts")
 
 	const int size(particle_bodies.size());
-	if (size > 10) {
-		const int size_per_thread = size / 2.0;
+	const int size_per_thread = size / 2.0;
 
-		ThreadData td1(this, 0, size_per_thread);
-		Thread *thread1 = Thread::create(thread_dispatch_cb_contacts, &td1);
+	//thread_dispatch_cb_contacts(this, 0, size);
 
-		ThreadData td0(this, td1.end, size);
-		thread_dispatch_cb_contacts(&td0);
+	collision_check_thread1_td.done = false;
+	collision_check_thread1_td.end = size_per_thread;
+	collision_check_thread1_td.conditional.notify_one();
 
-		Thread::wait_to_finish(thread1);
-		memdelete(thread1);
-	} else {
-		ThreadData td0(this, 0, size);
-		thread_dispatch_cb_contacts(&td0);
+	thread_dispatch_cb_contacts(this, size_per_thread, size);
+
+	// Wait for thread
+	while (!collision_check_thread1_td.done) {
 	}
 }
 
