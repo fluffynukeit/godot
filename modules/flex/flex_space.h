@@ -39,8 +39,12 @@
 
 #include "flex_memory_allocator.h"
 #include "flex_utility.h"
+#include <condition_variable>
+#include <mutex>
+#include <thread>
 #include <vector>
 
+class FlexSpace;
 struct NvFlexLibrary;
 struct NvFlexSolver;
 class FlexParticleBody;
@@ -59,6 +63,32 @@ class ContactsBuffers;
 class GdFlexExtComputeAABBCallback;
 class GdFlexExtComputeFrictionCallback;
 
+struct ThreadData {
+
+	bool stop;
+	FlexSpace *space;
+	int start;
+	int end;
+	std::mutex mutex;
+	std::condition_variable conditional;
+
+	bool done;
+	std::mutex ret_mutex;
+	std::condition_variable ret_conditional;
+
+	ThreadData(
+			bool p_stop,
+			FlexSpace *p_space,
+			const int p_start,
+			const int p_end) :
+			stop(p_stop),
+			space(p_space),
+			start(p_start),
+			end(p_end) {}
+};
+
+extern void thread_dispatch_cb_contacts(FlexSpace *p_space, int start, int end);
+
 struct TearingSplit {
 	ParticleIndex particle_to_split;
 	int involved_triangle_id;
@@ -66,14 +96,15 @@ struct TearingSplit {
 	Vector3 split_plane;
 };
 
-extern void thread_dispatch_cb_contacts(void *p_userdata);
-
 class FlexSpace : public RIDFlex {
 
 	friend class FlexBuffers;
 	friend class FlexParticleBodyCommands;
 	friend class FlexParticleBodyConstraintCommands;
-	friend void thread_dispatch_cb_contacts(void *p_userdata);
+	friend void thread_dispatch_cb_contacts(FlexSpace *p_space, int start, int end);
+
+	ThreadData collision_check_thread1_td;
+	std::thread collision_check_thread1;
 
 	NvFlexLibrary *flex_lib;
 	NvFlexSolver *solver;
