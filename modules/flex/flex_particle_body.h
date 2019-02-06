@@ -86,6 +86,7 @@ class FlexParticleBody : public RIDFlex {
 	friend class FlexSpace;
 	friend class FlexParticleBodyCommands;
 	friend class FlexParticleBodyConstraintCommands;
+	friend void thread_dispatch_cb_contacts(void *p_userdata);
 
 	int id;
 

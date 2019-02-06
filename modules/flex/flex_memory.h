@@ -656,6 +656,7 @@ class RigidsComponentsMemory : public FlexBufferMemory {
 class ContactsBuffers {
 
 	friend class FlexSpace;
+	friend void thread_dispatch_cb_contacts(void *p_userdata);
 
 	NvFlexVector<FlVector4> normals;
 	NvFlexVector<FlVector4> velocities_prim_indices;

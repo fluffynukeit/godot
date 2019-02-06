@@ -66,11 +66,14 @@ struct TearingSplit {
 	Vector3 split_plane;
 };
 
+extern void thread_dispatch_cb_contacts(void *p_userdata);
+
 class FlexSpace : public RIDFlex {
 
 	friend class FlexBuffers;
 	friend class FlexParticleBodyCommands;
 	friend class FlexParticleBodyConstraintCommands;
+	friend void thread_dispatch_cb_contacts(void *p_userdata);
 
 	NvFlexLibrary *flex_lib;
 	NvFlexSolver *solver;
