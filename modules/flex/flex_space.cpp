@@ -57,12 +57,12 @@ bool has_error() {
 	return error_severity == eNvFlexLogError;
 }
 
-void threadmanager_dispatch_cb_contacts(ThreadData &p_td);
+void threadmanager_dispatch_cb_contacts(ThreadData *p_td);
 
 FlexSpace::FlexSpace() :
 		RIDFlex(),
 		collision_check_thread1_td(false, this, 0, 0),
-		collision_check_thread1(threadmanager_dispatch_cb_contacts, std::ref(collision_check_thread1_td)),
+		collision_check_thread1(threadmanager_dispatch_cb_contacts, &collision_check_thread1_td),
 		flex_lib(NULL),
 		solver(NULL),
 		solver_max_particles(0),
@@ -1057,21 +1057,21 @@ void thread_dispatch_cb_contacts(FlexSpace *p_space, int start, int end) {
 	}
 }
 
-void threadmanager_dispatch_cb_contacts(ThreadData &p_td) {
+void threadmanager_dispatch_cb_contacts(ThreadData *p_td) {
 
 	while (true) {
-		std::unique_lock<std::mutex> lock(p_td.mutex);
-		p_td.conditional.wait(lock);
+		std::unique_lock<std::mutex> lock(p_td->mutex);
+		p_td->conditional.wait(lock);
 
-		if (p_td.stop)
+		if (p_td->stop)
 			return;
 
 		thread_dispatch_cb_contacts(
-				p_td.space,
-				p_td.start,
-				p_td.end);
+				p_td->space,
+				p_td->start,
+				p_td->end);
 
-		p_td.done = true;
+		p_td->done = true;
 	}
 }
 
