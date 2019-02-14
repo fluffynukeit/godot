@@ -39,9 +39,6 @@
 
 #include "flex_memory_allocator.h"
 #include "flex_utility.h"
-#include <condition_variable>
-#include <mutex>
-#include <thread>
 #include <vector>
 
 class FlexSpace;
@@ -69,12 +66,9 @@ struct ThreadData {
 	FlexSpace *space;
 	int start;
 	int end;
-	std::mutex mutex;
-	std::condition_variable conditional;
+	class Semaphore *semaphore;
 
 	bool done;
-	std::mutex ret_mutex;
-	std::condition_variable ret_conditional;
 
 	ThreadData(
 			bool p_stop,
@@ -104,7 +98,8 @@ class FlexSpace : public RIDFlex {
 	friend void thread_dispatch_cb_contacts(FlexSpace *p_space, int start, int end);
 
 	ThreadData collision_check_thread1_td;
-	std::thread collision_check_thread1;
+	class Thread *collision_check_thread1;
+	class Semaphore *collision_check_thread1_semaphore;
 
 	NvFlexLibrary *flex_lib;
 	NvFlexSolver *solver;
