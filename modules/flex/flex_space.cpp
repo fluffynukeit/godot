@@ -36,6 +36,8 @@
 
 #include "thirdparty/flex/include/NvFlex.h"
 
+#include "core/os/semaphore.h"
+#include "core/os/thread.h"
 #include "core/print_string.h"
 #include "flex_memory.h"
 #include "flex_particle_body.h"
@@ -46,6 +48,7 @@
 #include "profiler.h"
 
 #define DEVICE_ID 0
+//#define COLLISION_CHECK_MT
 
 // TODO use a class
 NvFlexErrorSeverity error_severity = eNvFlexLogInfo; // contain last error severity
@@ -57,12 +60,13 @@ bool has_error() {
 	return error_severity == eNvFlexLogError;
 }
 
-void threadmanager_dispatch_cb_contacts(ThreadData *p_td);
+#ifdef COLLISION_CHECK_MT
+void threadmanager_dispatch_cb_contacts(void *p_u_d);
+#endif
 
 FlexSpace::FlexSpace() :
 		RIDFlex(),
 		collision_check_thread1_td(false, this, 0, 0),
-		collision_check_thread1(threadmanager_dispatch_cb_contacts, &collision_check_thread1_td),
 		flex_lib(NULL),
 		solver(NULL),
 		solver_max_particles(0),
@@ -91,14 +95,27 @@ FlexSpace::FlexSpace() :
 		tearing_max_spring_checks(200),
 		force_buffer_write(false),
 		particle_radius(0.0) {
+
+#ifdef COLLISION_CHECK_MT
+	collision_check_thread1_td.semaphore = Semaphore::create();
+	collision_check_thread1 = Thread::create(
+			threadmanager_dispatch_cb_contacts,
+			&collision_check_thread1_td);
+#endif
+
 	init();
 }
 
 FlexSpace::~FlexSpace() {
 	terminate();
+
+#ifdef COLLISION_CHECK_MT
 	collision_check_thread1_td.stop = true;
-	collision_check_thread1_td.conditional.notify_one();
-	collision_check_thread1.join();
+	collision_check_thread1_td.semaphore->post();
+	Thread::wait_to_finish(collision_check_thread1);
+	memdelete(collision_check_thread1_td.semaphore);
+	memdelete(collision_check_thread1);
+#endif
 }
 
 void FlexSpace::init() {
@@ -1057,14 +1074,19 @@ void thread_dispatch_cb_contacts(FlexSpace *p_space, int start, int end) {
 	}
 }
 
-void threadmanager_dispatch_cb_contacts(ThreadData *p_td) {
+#ifdef COLLISION_CHECK_MT
+void threadmanager_dispatch_cb_contacts(void *p_user_data) {
+
+	ThreadData *p_td = static_cast<ThreadData *>(p_user_data);
 
 	while (true) {
-		std::unique_lock<std::mutex> lock(p_td->mutex);
-		p_td->conditional.wait(lock);
 
-		if (p_td->stop)
+		Error e = p_td->semaphore->wait();
+		CRASH_COND(e != OK);
+
+		if (p_td->stop) {
 			return;
+		}
 
 		thread_dispatch_cb_contacts(
 				p_td->space,
@@ -1074,25 +1096,30 @@ void threadmanager_dispatch_cb_contacts(ThreadData *p_td) {
 		p_td->done = true;
 	}
 }
+#endif
 
 void FlexSpace::dispatch_callback_contacts() {
 
 	PROFILE("flex_server_dispatch_callback_contacts")
 
+#ifdef COLLISION_CHECK_MT
 	const int size(particle_bodies.size());
 	const int size_per_thread = size / 2.0;
 
-	//thread_dispatch_cb_contacts(this, 0, size);
-
 	collision_check_thread1_td.done = false;
 	collision_check_thread1_td.end = size_per_thread;
-	collision_check_thread1_td.conditional.notify_one();
+	Error e = collision_check_thread1_td.semaphore->post();
+	CRASH_COND(e != OK);
 
 	thread_dispatch_cb_contacts(this, size_per_thread, size);
 
 	// Wait for thread
 	while (!collision_check_thread1_td.done) {
 	}
+#else
+
+	thread_dispatch_cb_contacts(this, 0, particle_bodies.size());
+#endif
 }
 
 void FlexSpace::dispatch_callbacks() {
