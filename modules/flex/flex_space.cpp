@@ -88,7 +88,7 @@ FlexSpace::FlexSpace() :
 		geometries_allocator(NULL),
 		geometries_memory(NULL),
 		contacts_buffers(NULL),
-		are_updated_primitive_bodies_cf(false),
+		are_primitive_bodies_cf_dirty(true),
 		compute_aabb_callback(NULL),
 		compute_friction_callback(NULL),
 		tearing_max_splits(100),
@@ -998,7 +998,7 @@ void FlexSpace::set_custom_flex_callback() {
 	/// FRICTION
 	///
 
-	if (!are_updated_primitive_bodies_cf) {
+	if (are_primitive_bodies_cf_dirty) {
 
 		GdFlexExtUpdateComputeFrictionPrimitives(
 				compute_friction_callback,
@@ -1012,7 +1012,7 @@ void FlexSpace::set_custom_flex_callback() {
 				&primitive_bodies_cf_friction_2_threshold[0],
 				&primitive_bodies_cf_layers[0],
 				0.0035 /*Margin*/);
-		are_updated_primitive_bodies_cf = true;
+		are_primitive_bodies_cf_dirty = false;
 	}
 
 	GdFlexExtUpdateComputeFrictionParticles(
@@ -1418,6 +1418,7 @@ void FlexSpace::execute_geometries_commands() {
 					primitive_bodies_cf_prev_inv_transform[i] *
 					primitive_bodies_cf_curr_transform[i];
 
+			int a = 0;
 		} else {
 
 			// Is Teleport
@@ -1433,7 +1434,7 @@ void FlexSpace::execute_geometries_commands() {
 			primitive_bodies_cf_motion[i] = Transform();
 		}
 		if (pb->use_custom_friction)
-			are_updated_primitive_bodies_cf = false;
+			are_primitive_bodies_cf_dirty = true;
 	}
 
 	///
@@ -2260,6 +2261,7 @@ FlexPrimitiveBody *FlexSpace::find_primitive_body(GeometryBufferIndex p_index) c
 void FlexSpace::update_custom_friction_primitive_body(
 		FlexPrimitiveBody *p_body) {
 
+	bool just_added = false;
 	if (!p_body->space && 0 <= p_body->_custom_friction_id) {
 
 		// Remove phase
@@ -2337,6 +2339,7 @@ void FlexSpace::update_custom_friction_primitive_body(
 			primitive_bodies_cf_layers.resize(new_size);
 
 			p_body->_custom_friction_id = id;
+			just_added = true;
 		} else {
 
 			ERR_FAIL_COND(primitive_bodies_cf[id] != p_body);
@@ -2344,12 +2347,14 @@ void FlexSpace::update_custom_friction_primitive_body(
 
 		// Update phase
 
-		primitive_bodies_cf[id] = p_body;
+		if (just_added) {
+			primitive_bodies_cf[id] = p_body;
 
-		primitive_bodies_cf_curr_transform[id] = p_body->get_transform();
+			primitive_bodies_cf_curr_transform[id] = p_body->get_transform();
 
-		primitive_bodies_cf_curr_inv_transform[id] =
-				p_body->get_transform().inverse();
+			primitive_bodies_cf_curr_inv_transform[id] =
+					p_body->get_transform().inverse();
+		}
 
 		if (
 				p_body->get_shape() &&
