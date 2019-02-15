@@ -322,6 +322,7 @@ void FlexParticleBody::add_unactive_particles(int p_particle_count) {
 	if (prev_begin_index != particles_mchunk->get_begin_index()) {
 		// Rebuild indices
 	}
+	changed_parameters |= eChangedBodyParamParticleJustAdded;
 }
 
 ParticleIndex FlexParticleBody::add_particles(int p_particle_count) {
@@ -338,6 +339,7 @@ ParticleIndex FlexParticleBody::add_particles(int p_particle_count) {
 	}
 
 	set_particle_count(new_size);
+	changed_parameters |= eChangedBodyParamParticleJustAdded;
 
 	return previous_size;
 }
