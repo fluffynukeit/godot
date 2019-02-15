@@ -152,7 +152,7 @@ class FlexSpace : public RIDFlex {
 	std::vector<real_t> primitive_bodies_cf_friction;
 	std::vector<real_t> primitive_bodies_cf_friction_2_threshold;
 	std::vector<uint32_t> primitive_bodies_cf_layers;
-	bool are_updated_primitive_bodies_cf;
+	bool are_primitive_bodies_cf_dirty;
 
 	bool _is_using_default_params;
 
