@@ -2351,10 +2351,17 @@ void FlexSpace::update_custom_friction_primitive_body(
 		primitive_bodies_cf_curr_inv_transform[id] =
 				p_body->get_transform().inverse();
 
-		primitive_bodies_cf_extent[id] =
-				p_body->get_shape() && p_body->get_shape()->get_type() == eNvFlexShapeBox ?
-						static_cast<FlexPrimitiveBoxShape *>(p_body->get_shape())->get_extends() :
-						Vector3();
+		if (
+				p_body->get_shape() &&
+				p_body->get_shape()->get_type() == eNvFlexShapeBox) {
+
+			FlexPrimitiveBoxShape *shape =
+					static_cast<FlexPrimitiveBoxShape *>(p_body->get_shape());
+
+			primitive_bodies_cf_extent[id] = shape->get_extends() * p_body->get_scale();
+		} else {
+			primitive_bodies_cf_extent[id] = Vector3();
+		}
 
 		primitive_bodies_cf_friction[id] = p_body->get_custom_friction();
 		primitive_bodies_cf_friction_2_threshold[id] =
