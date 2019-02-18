@@ -376,7 +376,7 @@ void FlexParticleBodyCommands::set_particle_normal(int p_index, const Vector3 &p
 	body->set_particle_normal(p_index, p_normal);
 }
 
-const AABB &FlexParticleBodyCommands::get_aabb() const {
+const AABB FlexParticleBodyCommands::get_aabb() const {
 	return AABB(); //body->get_space()->particle_bodies_aabb[body->id];
 }
 
