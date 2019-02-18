@@ -63,7 +63,7 @@ public:
 
 	void add_owner(FlexPrimitiveBody *p_owner);
 	void remove_owner(FlexPrimitiveBody *p_owner);
-	std::vector<FlexPrimitiveBody *> get_owners() const { return owners; }
+	const std::vector<FlexPrimitiveBody *> &get_owners() const { return owners; }
 	void notify_change();
 
 	virtual NvFlexCollisionShapeType get_type() = 0;
