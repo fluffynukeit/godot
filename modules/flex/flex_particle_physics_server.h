@@ -266,6 +266,15 @@ public:
 	virtual void body_remove_rigid(RID p_body, int p_rigid_index);
 
 	virtual int body_get_particle_count(RID p_body) const;
+
+	virtual const float *body_get_particle_particle_buffer(RID p_body) const;
+	virtual int body_get_particle_buffer_stride() const { return 4; }
+	virtual bool body_get_particle_position(RID p_body, int p_particle_index, Vector3 &r_pos) const;
+	virtual bool body_get_particle_normal(RID p_body, int p_particle_index, Vector3 &r_norm) const;
+	virtual real_t body_get_particle_mass(RID p_body, int p_particle_index) const;
+	virtual const float *body_get_particle_velocity_buffer(RID p_body) const;
+	virtual bool body_get_particle_velocity(RID p_body, int p_particle_index, Vector3 &r_vel) const;
+
 	virtual int body_get_spring_count(RID p_body) const;
 	virtual int body_get_rigid_count(RID p_body) const;
 

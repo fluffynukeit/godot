@@ -959,6 +959,83 @@ bool FlexSpace::is_using_default_params() const {
 	return _is_using_default_params;
 }
 
+#define GET_PARTICLE_MEM_INDEX(body, index) body->particles_mchunk->get_buffer_index(index)
+#define GET_RIGID_MEM_INDEX(body, index) body->rigids_mchunk->get_buffer_index(index)
+
+const FlVector4 *FlexSpace::get_particle_particle_buffer(
+		const FlexParticleBody *p_body) const {
+
+	return host_buffer.particle_particles.data() +
+		   p_body->particles_mchunk->get_begin_index();
+}
+
+const FlVector4 &FlexSpace::get_particle_position(
+		const FlexParticleBody *p_body,
+		ParticleIndex p_particle_index) const {
+
+	const ParticleBufferIndex mem_index(
+			GET_PARTICLE_MEM_INDEX(
+					p_body,
+					p_particle_index));
+
+	return host_buffer.particle_particles[mem_index];
+}
+
+const Vector3 *FlexSpace::get_particle_velocity_buffer(
+		const FlexParticleBody *p_body) const {
+
+	return host_buffer.particle_velocities.data() +
+		   p_body->particles_mchunk->get_begin_index();
+}
+
+const Vector3 &FlexSpace::get_particle_velocity(
+		const FlexParticleBody *p_body,
+		ParticleIndex p_particle_index) const {
+
+	const ParticleBufferIndex mem_index(
+			GET_PARTICLE_MEM_INDEX(
+					p_body,
+					p_particle_index));
+
+	return host_buffer.particle_velocities[mem_index];
+}
+
+const FlVector4 &FlexSpace::get_particle_normal(
+		const FlexParticleBody *p_body,
+		ParticleIndex p_particle_index) const {
+
+	const ParticleBufferIndex mem_index(
+			GET_PARTICLE_MEM_INDEX(
+					p_body,
+					p_particle_index));
+
+	return host_buffer.particle_normals[mem_index];
+}
+
+const Quat &FlexSpace::get_rigid_rotation(
+		const FlexParticleBody *p_body,
+		RigidIndex p_rigid_index) const {
+
+	const RigidBufferIndex mem_index(
+			GET_RIGID_MEM_INDEX(
+					p_body,
+					p_rigid_index));
+
+	return host_buffer.rigid_rotations[mem_index];
+}
+
+const Vector3 &FlexSpace::get_rigid_position(
+		const FlexParticleBody *p_body,
+		ParticleIndex p_rigid_index) const {
+
+	const RigidBufferIndex mem_index(
+			GET_RIGID_MEM_INDEX(
+					p_body,
+					p_rigid_index));
+
+	return host_buffer.rigid_positions[mem_index];
+}
+
 void FlexSpace::set_custom_flex_callback() {
 
 	PROFILE("flex_server_set_custom_flex_callback")
@@ -1033,9 +1110,9 @@ void thread_dispatch_cb_contacts(FlexSpace *p_space, int start, int end) {
 		if (!particle_body->is_monitorable())
 			continue;
 
-		FlexBufferIndex end_index =
+		const FlexBufferIndex end_index =
 				particle_body->particles_mchunk->get_buffer_index(
-						particle_body->get_particle_count());
+						particle_body->get_particle_count() - 1);
 
 		for (int particle_buffer_index =
 						particle_body->particles_mchunk->get_begin_index();
