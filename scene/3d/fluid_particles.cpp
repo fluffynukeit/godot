@@ -36,7 +36,7 @@
 void FluidParticles::_bind_methods() {
 
 	ClassDB::bind_method(
-			D_METHOD("update_data", "cmds"),
+			D_METHOD("update_data"),
 			&FluidParticles::update_data);
 
 	ClassDB::bind_method(
@@ -69,15 +69,9 @@ void FluidParticles::_notification(int p_what) {
 				set_global_transform(Transform());
 			}
 
-			if (particle_body) {
-				particle_body->disconnect("commands_process", this, "update_data");
-			}
-
 			particle_body = Object::cast_to<ParticleBody>(get_parent());
 
-			if (particle_body) {
-				particle_body->connect("commands_process", this, "update_data");
-			}
+			VS::get_singleton()->connect("frame_pre_draw", this, "update_data");
 
 		} break;
 		case NOTIFICATION_LOCAL_TRANSFORM_CHANGED: {
@@ -96,6 +90,7 @@ void FluidParticles::_notification(int p_what) {
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
 			particle_body = NULL;
+			VS::get_singleton()->disconnect("frame_pre_draw", this, "update_data");
 		} break;
 	}
 }
@@ -130,25 +125,27 @@ void FluidParticles::set_drop_thickness_factor(real_t p_factor) {
 			drop_thickness_factor);
 }
 
-void FluidParticles::update_data(Object *p_cmds) {
+void FluidParticles::update_data() {
 
-	ParticleBodyCommands *cmds = cast_to<ParticleBodyCommands>(p_cmds);
+	if (!particle_body)
+		return;
 
 	static const AABB aabb(Vector3(-9999, -9999, -9999), Vector3(19998, 19998, 19998));
-	//const AABB aabb = cmds->get_aabb();
-	const float *pbuffer = cmds->get_particle_buffer();
-	const float *vbuffer = cmds->get_particle_velocities_buffer();
-	const int count = cmds->get_particle_count();
+
+	ParticlePhysicsServer *phys = ParticlePhysicsServer::get_singleton();
+	const RID body(particle_body->get_rid());
+
+	const float *pbuffer = phys->body_get_particle_particle_buffer(body);
+	const float *vbuffer = phys->body_get_particle_velocity_buffer(body);
+	const int count = phys->body_get_particle_count(body);
 
 	VisualServer::get_singleton()->fluid_particles_set_aabb(
 			fluid_particles,
 			aabb);
 
-	// TODO please move this to proper method, copy this here is wrong.
-	// See how ParticleBody update its mesh
 	VisualServer::get_singleton()->fluid_particles_set_data(
 			fluid_particles,
-			cmds->get_particle_buffer_stride(),
+			phys->body_get_particle_buffer_stride(),
 			pbuffer,
 			vbuffer,
 			count);

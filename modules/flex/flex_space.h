@@ -232,6 +232,32 @@ public:
 	void reset_params_to_defaults();
 	bool is_using_default_params() const;
 
+	const FlVector4 *get_particle_particle_buffer(
+			const FlexParticleBody *p_body) const;
+
+	const FlVector4 &get_particle_position(
+			const FlexParticleBody *p_body,
+			ParticleIndex p_particle_index) const;
+
+	const Vector3 *get_particle_velocity_buffer(
+			const FlexParticleBody *p_body) const;
+
+	const Vector3 &get_particle_velocity(
+			const FlexParticleBody *p_body,
+			ParticleIndex p_particle_index) const;
+
+	const FlVector4 &get_particle_normal(
+			const FlexParticleBody *p_body,
+			ParticleIndex p_particle_index) const;
+
+	const Quat &get_rigid_rotation(
+			const FlexParticleBody *p_body,
+			ParticleIndex p_rigid_index) const;
+
+	const Vector3 &get_rigid_position(
+			const FlexParticleBody *p_body,
+			RigidIndex p_rigid_index) const;
+
 	// internals
 	void set_custom_flex_callback();
 	void dispatch_callback_contacts();

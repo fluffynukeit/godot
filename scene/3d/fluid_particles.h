@@ -40,7 +40,7 @@ class FluidParticles : public GeometryInstance {
 
 	RID fluid_particles;
 	ParticleBody *particle_body;
-        real_t drop_thickness_factor;
+	real_t drop_thickness_factor;
 
 protected:
 	static void _bind_methods();
@@ -54,13 +54,13 @@ public:
 	FluidParticles();
 	~FluidParticles();
 
-        void set_drop_thickness_factor(real_t p_factor);
-        real_t get_drop_thickness_factor() {
-                return drop_thickness_factor;
-        }
+	void set_drop_thickness_factor(real_t p_factor);
+	real_t get_drop_thickness_factor() {
+		return drop_thickness_factor;
+	}
 
 private:
-	void update_data(Object *p_cmds);
+	void update_data();
 };
 
 #endif

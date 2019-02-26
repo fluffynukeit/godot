@@ -868,6 +868,89 @@ int FlexParticlePhysicsServer::body_get_particle_count(RID p_body) const {
 	return body->get_particle_count();
 }
 
+const float *FlexParticlePhysicsServer::body_get_particle_particle_buffer(
+		RID p_body) const {
+
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND_V(!body, NULL);
+
+	return reinterpret_cast<const float *>(
+			body->get_space()->get_particle_particle_buffer(body));
+}
+
+bool FlexParticlePhysicsServer::body_get_particle_position(
+		RID p_body,
+		int p_particle_index,
+		Vector3 &r_pos) const {
+
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND_V(!body, false);
+
+	const FlVector4 &pos_mass =
+			body->get_space()->get_particle_position(
+					body,
+					p_particle_index);
+
+	r_pos = extract_position(pos_mass);
+	return true;
+}
+
+bool FlexParticlePhysicsServer::body_get_particle_normal(
+		RID p_body,
+		int p_particle_index,
+		Vector3 &r_norm) const {
+
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND_V(!body, false);
+
+	const FlVector4 &normal =
+			body->get_space()->get_particle_normal(
+					body,
+					p_particle_index);
+
+	r_norm = vec3_from_flvec4(normal);
+	return true;
+}
+
+real_t FlexParticlePhysicsServer::body_get_particle_mass(
+		RID p_body,
+		int p_particle_index) const {
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND_V(!body, 0);
+
+	const FlVector4 &pos_mass =
+			body->get_space()->get_particle_position(
+					body,
+					p_particle_index);
+
+	return extract_mass(pos_mass);
+}
+
+const float *FlexParticlePhysicsServer::body_get_particle_velocity_buffer(
+		RID p_body) const {
+
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND_V(!body, NULL);
+
+	return reinterpret_cast<const float *>(
+			body->get_space()->get_particle_velocity_buffer(body));
+}
+
+bool FlexParticlePhysicsServer::body_get_particle_velocity(
+		RID p_body,
+		int p_particle_index,
+		Vector3 &r_vel) const {
+
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND_V(!body, false);
+
+	r_vel = body->get_space()->get_particle_velocity(
+			body,
+			p_particle_index);
+
+	return true;
+}
+
 int FlexParticlePhysicsServer::body_get_spring_count(RID p_body) const {
 	FlexParticleBody *body = body_owner.get(p_body);
 	ERR_FAIL_COND_V(!body, 0);
