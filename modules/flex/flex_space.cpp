@@ -2083,37 +2083,38 @@ void FlexSpace::commands_write_buffer() {
 			const uint32_t changed_params(
 					body->get_changed_parameters());
 
-			if (changed_params != 0) {
-				copy_desc.srcOffset = body->particles_mchunk->get_begin_index();
-				copy_desc.dstOffset = body->particles_mchunk->get_begin_index();
-				copy_desc.elementCount = body->particles_mchunk->get_size();
+			if (changed_params == 0)
+				continue;
 
-				if (changed_params & eChangedBodyParamParticleJustAdded) {
+			copy_desc.srcOffset = body->particles_mchunk->get_begin_index();
+			copy_desc.dstOffset = body->particles_mchunk->get_begin_index();
+			copy_desc.elementCount = body->particles_mchunk->get_size();
+
+			if (changed_params & eChangedBodyParamParticleJustAdded) {
+				NvFlexSetParticles(solver, particles_memory->particles.buffer, &copy_desc);
+				NvFlexSetVelocities(solver, particles_memory->velocities.buffer, &copy_desc);
+				NvFlexSetNormals(solver, particles_memory->normals.buffer, &copy_desc);
+				NvFlexSetPhases(solver, particles_memory->phases.buffer, &copy_desc);
+			} else {
+				if (changed_params & eChangedBodyParamPositionMass)
 					NvFlexSetParticles(solver, particles_memory->particles.buffer, &copy_desc);
+				if (changed_params & eChangedBodyParamVelocity)
 					NvFlexSetVelocities(solver, particles_memory->velocities.buffer, &copy_desc);
-					NvFlexSetNormals(solver, particles_memory->normals.buffer, &copy_desc);
-					NvFlexSetPhases(solver, particles_memory->phases.buffer, &copy_desc);
-				} else {
-					if (changed_params & eChangedBodyParamPositionMass)
-						NvFlexSetParticles(solver, particles_memory->particles.buffer, &copy_desc);
-					if (changed_params & eChangedBodyParamVelocity)
-						NvFlexSetVelocities(solver, particles_memory->velocities.buffer, &copy_desc);
-					if (changed_params & eChangedBodyParamNormal)
-						NvFlexSetNormals(
-								solver,
-								particles_memory->normals.buffer,
-								&copy_desc);
-					if (changed_params & (eChangedBodyParamPhase | eChangedBodyParamPhaseSingle))
-						NvFlexSetPhases(
-								solver,
-								particles_memory->phases.buffer,
-								&copy_desc);
-					//if(changed_params & eChangedBodyRestParticles)
-					//	NvFlexSetRestParticles(solver, )
-				}
-
-				body->clear_changed_params();
+				if (changed_params & eChangedBodyParamNormal)
+					NvFlexSetNormals(
+							solver,
+							particles_memory->normals.buffer,
+							&copy_desc);
+				if (changed_params & (eChangedBodyParamPhase | eChangedBodyParamPhaseSingle))
+					NvFlexSetPhases(
+							solver,
+							particles_memory->phases.buffer,
+							&copy_desc);
+				//if(changed_params & eChangedBodyRestParticles)
+				//	NvFlexSetRestParticles(solver, )
 			}
+
+			body->clear_changed_params();
 		}
 	}
 
