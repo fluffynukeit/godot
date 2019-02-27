@@ -81,7 +81,7 @@ struct ThreadData {
 			end(p_end) {}
 };
 
-extern void thread_dispatch_cb_contacts(FlexSpace *p_space, int start, int end);
+extern void thread_check_contacts(FlexSpace *p_space, int start, int end);
 
 struct TearingSplit {
 	ParticleIndex particle_to_split;
@@ -90,12 +90,30 @@ struct TearingSplit {
 	Vector3 split_plane;
 };
 
+struct ContactData {
+	FlexParticleBody *particle_body;
+	FlexPrimitiveBody *primitive_body;
+	ParticleIndex particle_index;
+	Vector3 velocity;
+	Vector3 normal;
+};
+
 class FlexSpace : public RIDFlex {
 
 	friend class FlexBuffers;
 	friend class FlexParticleBodyCommands;
 	friend class FlexParticleBodyConstraintCommands;
-	friend void thread_dispatch_cb_contacts(FlexSpace *p_space, int start, int end);
+	friend void thread_check_contacts(FlexSpace *p_space, int start, int end);
+
+	struct {
+		std::vector<FlVector4> particle_particles;
+		std::vector<Vector3> particle_velocities;
+		std::vector<FlVector4> particle_normals;
+		std::vector<Quat> rigid_rotations;
+		std::vector<Vector3> rigid_positions;
+	} host_buffer;
+
+	std::vector<ContactData> contacts;
 
 	ThreadData collision_check_thread1_td;
 	class Thread *collision_check_thread1;
@@ -260,8 +278,8 @@ public:
 
 	// internals
 	void set_custom_flex_callback();
-	void dispatch_callback_contacts();
-	void dispatch_callbacks();
+	void check_contacts();
+	void dispatch_sync_callbacks();
 	void execute_delayed_commands();
 	void rebuild_rigids_offsets();
 	void execute_geometries_commands();
@@ -269,6 +287,7 @@ public:
 
 	void commands_write_buffer();
 	void commands_read_buffer();
+	void dispatch_contact_callback_to_godot();
 
 	void on_particle_removed(FlexParticleBody *p_body, ParticleBufferIndex p_index);
 	void on_particle_index_changed(FlexParticleBody *p_body, ParticleBufferIndex p_index_old, ParticleBufferIndex p_index_new);
