@@ -334,6 +334,8 @@ void ParticleBody::_notification(int p_what) {
 					}
 				}
 			}
+
+			set_process_internal(true);
 		} break;
 		case NOTIFICATION_TRANSFORM_CHANGED: {
 
@@ -343,6 +345,11 @@ void ParticleBody::_notification(int p_what) {
 			} else {
 				reset_transform = true;
 			}
+
+		} break;
+		case NOTIFICATION_INTERNAL_PROCESS: {
+
+			debug_update();
 
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
@@ -385,8 +392,7 @@ void ParticleBody::commands_process_internal(Object *p_cmds) {
 		particle_body_mesh->update_mesh(cmds);
 
 	emit_signal("commands_process", cmds);
-
-	debug_update(cmds);
+	debug_update_springs(cmds);
 
 	if (!get_script().is_null() && has_method("_commands_process")) {
 		call("_commands_process", p_cmds);
@@ -496,17 +502,18 @@ void ParticleBody::debug_resize_particle_visual_instance(int new_size) {
 	multi_mesh->set_instance_count(new_size);
 }
 
-void ParticleBody::debug_update(ParticleBodyCommands *p_cmds) {
+void ParticleBody::debug_update() {
 
 	if (!get_tree()->is_debugging_collisions_hint())
 		return;
 
-	const int particle_count = ParticlePhysicsServer::get_singleton()->body_get_particle_count(rid);
+	ParticlePhysicsServer *phys = ParticlePhysicsServer::get_singleton();
+
+	const int particle_count = phys->body_get_particle_count(rid);
 	debug_resize_particle_visual_instance(particle_count);
 
-	const real_t radius =
-			ParticlePhysicsServer::get_singleton()->space_get_particle_radius(
-					get_world()->get_particle_space());
+	const real_t radius = phys->space_get_particle_radius(
+			get_world()->get_particle_space());
 
 	debug_particle_mesh->set_radius(radius);
 	debug_particle_mesh->set_height(radius * 2);
@@ -514,11 +521,24 @@ void ParticleBody::debug_update(ParticleBodyCommands *p_cmds) {
 	Transform transf;
 	for (int i = 0; i < particle_count; ++i) {
 
-		transf.origin = p_cmds->get_particle_position(i);
+		phys->body_get_particle_position(
+				get_rid(),
+				i,
+				transf.origin);
+
 		multi_mesh->set_instance_transform(
 				i,
 				transf);
 	}
+}
+
+void ParticleBody::debug_update_springs(ParticleBodyCommands *p_cmds) {
+
+	if (!get_tree()->is_debugging_collisions_hint())
+		return;
+
+	// I did it in this way to avoid to store the springs
+	// only to show it during debugging
 
 	debug_spring_mesh->clear();
 	debug_spring_mesh->begin(Mesh::PRIMITIVE_LINES);
