@@ -272,11 +272,11 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 }
 
 void FlexParticleBodyCommands::add_unactive_particles(int p_particle_count) {
-	body->add_unactive_particles(p_particle_count);
+	body->CMD_add_unactive_particles(p_particle_count);
 }
 
 int FlexParticleBodyCommands::add_particles(int p_particle_count) {
-	return body->add_particles(p_particle_count);
+	return body->CMD_add_particles(p_particle_count);
 }
 
 void FlexParticleBodyCommands::initialize_particle(int p_index, const Vector3 &p_global_position, real_t p_mass) {
@@ -305,7 +305,7 @@ void FlexParticleBodyCommands::initialize_particle(int p_index, const Vector3 &p
 }
 
 void FlexParticleBodyCommands::set_particle_position_mass(int p_particle_index, const Vector3 &p_position, real_t p_mass) {
-	body->set_particle_position_mass(p_particle_index, p_position, p_mass);
+	body->CMD_set_particle_position_mass(p_particle_index, p_position, p_mass);
 }
 
 int FlexParticleBodyCommands::get_particle_count() const {
@@ -333,31 +333,31 @@ const float *FlexParticleBodyCommands::get_particle_velocities_buffer() const {
 }
 
 void FlexParticleBodyCommands::set_particle_position(int p_particle_index, const Vector3 &p_position) {
-	body->set_particle_position(p_particle_index, p_position);
+	body->CMD_set_particle_position(p_particle_index, p_position);
 }
 
 Vector3 FlexParticleBodyCommands::get_particle_position(int p_particle_index) const {
-	return body->get_particle_position(p_particle_index);
+	return body->CMD_get_particle_position(p_particle_index);
 }
 
 void FlexParticleBodyCommands::set_particle_mass(int p_particle_index, real_t p_mass) {
-	body->set_particle_mass(p_particle_index, p_mass);
+	body->CMD_set_particle_mass(p_particle_index, p_mass);
 }
 
 float FlexParticleBodyCommands::get_particle_mass(int p_particle_index) const {
-	return body->get_particle_mass(p_particle_index);
+	return body->CMD_get_particle_mass(p_particle_index);
 }
 
 float FlexParticleBodyCommands::get_particle_inv_mass(int p_particle_index) const {
-	return body->get_particle_inv_mass(p_particle_index);
+	return body->CMD_get_particle_inv_mass(p_particle_index);
 }
 
 const Vector3 &FlexParticleBodyCommands::get_particle_velocity(int p_particle_index) const {
-	return body->get_particle_velocity(p_particle_index);
+	return body->CMD_get_particle_velocity(p_particle_index);
 }
 
 void FlexParticleBodyCommands::set_particle_velocity(int p_particle_index, const Vector3 &p_velocity) {
-	body->set_particle_velocity(p_particle_index, p_velocity);
+	body->CMD_set_particle_velocity(p_particle_index, p_velocity);
 }
 
 void FlexParticleBodyCommands::apply_force(int p_particle_index, const Vector3 &p_force) {
@@ -369,11 +369,11 @@ void FlexParticleBodyCommands::apply_force(int p_particle_index, const Vector3 &
 }
 
 Vector3 FlexParticleBodyCommands::get_particle_normal(int p_index) const {
-	return vec3_from_flvec4(body->get_particle_normal(p_index));
+	return vec3_from_flvec4(body->CMD_get_particle_normal(p_index));
 }
 
 void FlexParticleBodyCommands::set_particle_normal(int p_index, const Vector3 &p_normal) {
-	body->set_particle_normal(p_index, p_normal);
+	body->CMD_set_particle_normal(p_index, p_normal);
 }
 
 const AABB FlexParticleBodyCommands::get_aabb() const {
@@ -381,11 +381,11 @@ const AABB FlexParticleBodyCommands::get_aabb() const {
 }
 
 const Vector3 &FlexParticleBodyCommands::get_rigid_position(int p_index) const {
-	return body->get_rigid_position(p_index);
+	return body->CMD_get_rigid_position(p_index);
 }
 
 const Quat &FlexParticleBodyCommands::get_rigid_rotation(int p_index) const {
-	return body->get_rigid_rotation(p_index);
+	return body->CMD_get_rigid_rotation(p_index);
 }
 
 Transform FlexParticleBodyCommands::get_rigid_transform(int p_index) const {
@@ -472,11 +472,11 @@ int FlexParticleBodyCommands::get_particle_group(int p_particle_index) const {
 }
 
 void FlexParticleBodyCommands::add_spring(int p_particle_0, int p_particle_1, float p_length, float p_stiffness) {
-	body->add_spring(p_particle_0, p_particle_1, p_length, p_stiffness);
+	body->CMD_add_spring(p_particle_0, p_particle_1, p_length, p_stiffness);
 }
 
 void FlexParticleBodyCommands::set_spring(SpringIndex p_index, ParticleIndex p_particle_0, ParticleIndex p_particle_1, float p_length, float p_stiffness) {
-	body->set_spring(p_index, p_particle_0, p_particle_1, p_length, p_stiffness);
+	body->CMD_set_spring(p_index, p_particle_0, p_particle_1, p_length, p_stiffness);
 }
 
 int FlexParticleBodyCommands::get_spring_count() const {
@@ -488,7 +488,7 @@ void FlexParticleBodyCommands::get_spring_positions(
 		Vector3 &r_begin,
 		Vector3 &r_end) const {
 
-	const Spring &s = body->get_spring_indices(p_spring_index);
+	const Spring &s = body->CMD_get_spring_indices(p_spring_index);
 	const FlVector4 &begin = body->space->get_particles_memory()->get_particle(s.index0);
 	const FlVector4 &end = body->space->get_particles_memory()->get_particle(s.index1);
 
@@ -569,8 +569,8 @@ void FlexParticleBodyConstraintCommands::set_spring(int p_index, int p_body0_par
 
 real_t FlexParticleBodyConstraintCommands::get_distance(int p_body0_particle, int p_body1_particle) const {
 	return (
-			constraint->body1->get_particle_position(p_body1_particle) -
-			constraint->body0->get_particle_position(p_body0_particle))
+			constraint->body1->CMD_get_particle_position(p_body1_particle) -
+			constraint->body0->CMD_get_particle_position(p_body0_particle))
 			.length();
 }
 
@@ -580,8 +580,8 @@ void FlexParticleBodyConstraintCommands::get_spring_positions(
 		Vector3 &r_begin,
 		Vector3 &r_end) const {
 
-	r_begin = constraint->body0->get_particle_position(p_body0_particle);
-	r_end = constraint->body1->get_particle_position(p_body1_particle);
+	r_begin = constraint->body0->CMD_get_particle_position(p_body0_particle);
+	r_end = constraint->body1->CMD_get_particle_position(p_body1_particle);
 }
 
 FlexParticlePhysicsServer *FlexParticlePhysicsServer::singleton = NULL;
