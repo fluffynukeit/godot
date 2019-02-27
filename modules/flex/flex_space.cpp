@@ -458,8 +458,8 @@ void FlexSpace::_sync() {
 
 	///
 	/// Stepping phase
-	dispatch_callback_contacts();
-	dispatch_callbacks();
+	check_contacts();
+	dispatch_sync_callbacks();
 	execute_delayed_commands();
 	execute_geometries_commands();
 
@@ -534,6 +534,8 @@ void FlexSpace::step(real_t p_delta_time, bool enable_timer) {
 	NvFlexUpdateSolver(solver, p_delta_time, substep, enable_timer);
 
 	commands_read_buffer();
+
+	dispatch_contact_callback_to_godot();
 }
 
 bool FlexSpace::can_commands_be_executed() const {
@@ -1102,7 +1104,7 @@ void FlexSpace::set_custom_flex_callback() {
 			compute_friction_callback);
 }
 
-void thread_dispatch_cb_contacts(FlexSpace *p_space, int start, int end) {
+void thread_check_contacts(FlexSpace *p_space, int start, int end) {
 
 	for (int i(start); i < end; ++i) {
 
@@ -1138,14 +1140,14 @@ void thread_dispatch_cb_contacts(FlexSpace *p_space, int start, int end) {
 				const int primitive_body_index(velocity_and_primitive.w);
 				FlexPrimitiveBody *primitive_body = p_space->find_primitive_body(primitive_body_index);
 
-				if (!primitive_body->is_monitoring_particles_contacts())
-					continue;
-
-				if (particle_body->is_monitoring_primitives_contacts())
-					particle_body->dispatch_primitive_contact(primitive_body, particle_index, velocity, normal);
-
-				if (primitive_body->is_monitoring_particles_contacts())
-					primitive_body->dispatch_particle_contact(particle_body, particle_index, velocity, normal);
+				if (primitive_body->is_monitoring_particles_contacts() ||
+						particle_body->is_monitoring_primitives_contacts())
+					p_space->contacts.push_back(
+							{ particle_body,
+									primitive_body,
+									particle_index,
+									velocity,
+									normal });
 			}
 		}
 	}
@@ -1175,9 +1177,11 @@ void threadmanager_dispatch_cb_contacts(void *p_user_data) {
 }
 #endif
 
-void FlexSpace::dispatch_callback_contacts() {
+void FlexSpace::check_contacts() {
 
-	PROFILE("flex_server_dispatch_callback_contacts")
+	PROFILE("flex_server_check_contacts")
+
+	contacts.clear();
 
 #ifdef COLLISION_CHECK_MT
 	const int size(particle_bodies.size());
@@ -1195,27 +1199,25 @@ void FlexSpace::dispatch_callback_contacts() {
 	}
 #else
 
-	thread_dispatch_cb_contacts(this, 0, particle_bodies.size());
+	thread_check_contacts(this, 0, particle_bodies.size());
 #endif
 }
 
-void FlexSpace::dispatch_callbacks() {
+void FlexSpace::dispatch_sync_callbacks() {
 	{
-		PROFILE("flex_server_dispatch_callbacks_particle_bodies")
+		PROFILE("flex_server_dispatch_sync_callbacks_particle_bodies")
 		for (int i(particle_bodies.size() - 1); 0 <= i; --i) {
 			particle_bodies[i]->dispatch_sync_callback();
 		}
 	}
 	{
-
-		PROFILE("flex_server_dispatch_callbacks_constraints")
+		PROFILE("flex_server_dispatch_sync_callbacks_constraints")
 		for (int i(constraints.size() - 1); 0 <= i; --i) {
 			constraints[i]->dispatch_sync_callback();
 		}
 	}
 	{
-
-		PROFILE("flex_server_dispatch_callbacks_primitives")
+		PROFILE("flex_server_dispatch_sync_callbacks_primitives")
 		for (int i(primitive_bodies.size() - 1); 0 <= i; --i) {
 			primitive_bodies[i]->dispatch_sync_callback();
 		}
@@ -2175,7 +2177,7 @@ void FlexSpace::commands_write_buffer() {
 
 void FlexSpace::commands_read_buffer() {
 
-	PROFILE("flex_server_step_read_buffer")
+	PROFILE("flex_server_read_buffer")
 
 	NvFlexGetParticles(solver, particles_memory->particles.buffer, NULL);
 	NvFlexGetVelocities(solver, particles_memory->velocities.buffer, NULL);
@@ -2200,6 +2202,27 @@ void FlexSpace::commands_read_buffer() {
 			contacts_buffers->velocities_prim_indices.buffer,
 			contacts_buffers->indices.buffer,
 			contacts_buffers->counts.buffer);
+}
+
+void FlexSpace::dispatch_contact_callback_to_godot() {
+
+	PROFILE("flex_server_dispatch_contact_callback_to_godot");
+
+	for (int i(contacts.size() - 1); 0 <= i; --i) {
+		if (contacts[i].particle_body->is_monitoring_primitives_contacts())
+			contacts[i].particle_body->dispatch_primitive_contact(
+					contacts[i].primitive_body,
+					contacts[i].particle_index,
+					contacts[i].velocity,
+					contacts[i].normal);
+
+		if (contacts[i].primitive_body->is_monitoring_particles_contacts())
+			contacts[i].primitive_body->dispatch_particle_contact(
+					contacts[i].particle_body,
+					contacts[i].particle_index,
+					contacts[i].velocity,
+					contacts[i].normal);
+	}
 }
 
 void FlexSpace::on_particle_removed(FlexParticleBody *p_body, ParticleBufferIndex p_index) {
