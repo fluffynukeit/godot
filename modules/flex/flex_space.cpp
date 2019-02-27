@@ -1303,7 +1303,7 @@ void FlexSpace::execute_delayed_commands() {
 					body->rigids_mchunk);
 
 			sweeper.exec();
-			body->reload_rigids_COM();
+			body->CMD_reload_rigids_COM();
 
 			// Check if there are particles to remove
 			int previous_offset(0);
@@ -1593,9 +1593,9 @@ bool can_split_particle(
 		bool &r_has_bottom) {
 
 	const FlVector4 fl_centroid =
-			(pb->get_particle(p_triangle.a) +
-					pb->get_particle(p_triangle.b) +
-					pb->get_particle(p_triangle.c)) /
+			(pb->CMD_get_particle(p_triangle.a) +
+					pb->CMD_get_particle(p_triangle.b) +
+					pb->CMD_get_particle(p_triangle.c)) /
 			3.0;
 
 	const Vector3 centroid(vec3_from_flvec4(fl_centroid));
@@ -1655,9 +1655,9 @@ void get_near_triangles(
 		std::vector<int> &adjacent_triangles) {
 
 	const FlVector4 fl_centroid =
-			(pb->get_particle(p_triangle.a) +
-					pb->get_particle(p_triangle.b) +
-					pb->get_particle(p_triangle.c)) /
+			(pb->CMD_get_particle(p_triangle.a) +
+					pb->CMD_get_particle(p_triangle.b) +
+					pb->CMD_get_particle(p_triangle.c)) /
 			3.0;
 
 	const Vector3 centroid(vec3_from_flvec4(fl_centroid));
@@ -1720,7 +1720,7 @@ int FlexSpace::execute_tearing() {
 			const ParticleIndex particle_to_split = force_tearings[x].particle_to_split;
 			const Vector3 &split_plane(force_tearings[x].split_plane);
 
-			const FlVector4 pts_pos = pb->get_particle(particle_to_split);
+			const FlVector4 pts_pos = pb->CMD_get_particle(particle_to_split);
 
 			const real_t w(
 					split_plane.dot(
@@ -1888,7 +1888,7 @@ int FlexSpace::execute_tearing() {
 			continue;
 
 		// This avoid too much reallocation
-		pb->add_unactive_particles(split_count);
+		pb->CMD_add_unactive_particles(split_count);
 		added_particles += split_count;
 
 		for (
@@ -1896,7 +1896,7 @@ int FlexSpace::execute_tearing() {
 				split_index < split_count;
 				++split_index) {
 
-			const ParticleIndex added_particle = pb->add_particles(1);
+			const ParticleIndex added_particle = pb->CMD_add_particles(1);
 			const ParticleBufferIndex added_particle_buffer =
 					pb->particles_mchunk->get_buffer_index(added_particle);
 
@@ -1905,7 +1905,7 @@ int FlexSpace::execute_tearing() {
 							_tearing_splits[split_index].particle_to_split));
 
 			// Duplicate particle
-			pb->copy_particle(
+			pb->CMD_copy_particle(
 					added_particle,
 					_tearing_splits[split_index].particle_to_split);
 
@@ -1960,7 +1960,7 @@ int FlexSpace::execute_tearing() {
 								// Reset bending spring index on the adjacent triangle
 								pb->tearing_data->triangles.write[triangle.edges[e].adjacent_triangle_index].edges[triangle.edges[e].adjacent_edge_index].bending_spring_index = -1;
 
-								pb->copy_spring(
+								pb->CMD_copy_spring(
 										index,
 										triangle.springs[e]);
 
@@ -1973,7 +1973,7 @@ int FlexSpace::execute_tearing() {
 						}
 
 						// Update particle ID
-						Spring spring = pb->get_spring_indices(triangle.springs[e]);
+						Spring spring = pb->CMD_get_spring_indices(triangle.springs[e]);
 
 						if (particle_buffer_to_split == spring.index0) {
 							spring.index0 = added_particle_buffer;
@@ -1981,14 +1981,14 @@ int FlexSpace::execute_tearing() {
 							spring.index1 = added_particle_buffer;
 						}
 
-						pb->set_spring_indices(
+						pb->CMD_set_spring_indices(
 								triangle.springs[e],
 								spring);
 
 						// Update bending spring
 						if (0 <= triangle.edges[e].bending_spring_index) {
 
-							Spring spring_bend = pb->get_spring_indices(
+							Spring spring_bend = pb->CMD_get_spring_indices(
 									triangle.edges[e].bending_spring_index);
 
 							if (particle_buffer_to_split == spring_bend.index0) {
@@ -1997,7 +1997,7 @@ int FlexSpace::execute_tearing() {
 								spring_bend.index1 = added_particle_buffer;
 							}
 
-							pb->set_spring_indices(
+							pb->CMD_set_spring_indices(
 									triangle.edges[e].bending_spring_index,
 									spring_bend);
 						}
@@ -2006,7 +2006,7 @@ int FlexSpace::execute_tearing() {
 
 							const int other_spring_id(pb->tearing_data->triangles.write[triangle.edges[e].adjacent_triangle_index].springs[triangle.edges[e].adjacent_edge_index]);
 
-							const Spring &other_spring(pb->get_spring_indices(other_spring_id));
+							const Spring &other_spring(pb->CMD_get_spring_indices(other_spring_id));
 
 							// Crossed check
 							if (
@@ -2029,7 +2029,7 @@ int FlexSpace::execute_tearing() {
 
 					// Update triangle
 
-					DynamicTriangle dynamic_tri = pb->get_triangle(t);
+					DynamicTriangle dynamic_tri = pb->CMD_get_triangle(t);
 					if (dynamic_tri.index0 == particle_buffer_to_split) {
 
 						dynamic_tri.index0 = added_particle_buffer;
@@ -2046,7 +2046,7 @@ int FlexSpace::execute_tearing() {
 						triangle.c = added_particle;
 					}
 
-					pb->set_triangle(t, dynamic_tri);
+					pb->CMD_set_triangle(t, dynamic_tri);
 				}
 			}
 
