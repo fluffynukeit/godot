@@ -67,14 +67,12 @@ public:
 
 				// detect when particle intersects the trigger 
 				// volume and teleport it over to the other box
-
 				if (shapeId == 1)
 				{
 					Vec3 pos = Vec3(Randf(-0.5f, 0.5f), 1.0f, Randf(-0.5f, 0.5f));
 
 					g_buffers->positions[i] = Vec4(pos, 1.0f);
-					//g_buffers->velocities[i] = .0f;
-					g_buffers->velocities[i] = Vec3(0, 10, 0);
+					g_buffers->velocities[i] = 0.0f;
 				}
 			}
 		}
