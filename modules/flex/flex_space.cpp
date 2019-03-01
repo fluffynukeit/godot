@@ -1497,7 +1497,6 @@ void FlexSpace::execute_geometries_commands() {
 					primitive_bodies_cf_prev_inv_transform[i] *
 					primitive_bodies_cf_curr_transform[i];
 
-			int a = 0;
 		} else {
 
 			// Is Teleport

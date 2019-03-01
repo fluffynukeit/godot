@@ -9,9 +9,6 @@ Import('env_modules')
 nvcc_path = ARGUMENTS.get("nvcc_path", "")
 cuda_lib = ARGUMENTS.get("cuda_lib", "")
 
-
-
-
 # Compile cuda files
 nvcc_flags = "-O3"
 
@@ -39,26 +36,25 @@ env.Prepend(LIBPATH=["#/modules/flex/godot_flex_ext"])
 
 env_flex = env_modules.Clone()
 
+FLEX_LIBS = ["NvFlexReleaseCUDA_x64", "NvFlexDeviceRelease_x64", "NvFlexExtReleaseCUDA_x64"]
+
 flex_debug = ARGUMENTS.get("flex_dev", "no")
 if flex_debug=="yes":
     env_flex.Append(CCFLAGS="-DFLEX_DEBUG_MEMORY")
+    FLEX_LIBS = ["NvFlexDebugCUDA_x64", "NvFlexDeviceDebug_x64", "NvFlexExtDebugCUDA_x64"]
 
 flex_base = "#thirdparty/flex"
-flex_lib = flex_base + "/lib"
+# TODO make platform agnostic
+flex_lib = flex_base + "/lib/linux64"
 flex_include = flex_base + "/include"
 flex_core = flex_base + "/core"
 
-# TODO change according to realease and debug version of godot
-FLEX_LIBS = ["NvFlexDebugCUDA_x64", "NvFlexDeviceDebug_x64", "NvFlexExtDebugCUDA_x64"]
-
-env.Append(LIBS=["cudart"])
-
-# TODO make platform agnostic
-env.Append(LIBPATH=[flex_lib + "/linux64", cuda_lib])
-env.Append(LIBS=[file_name for file_name in FLEX_LIBS])
-
+env.Append(LIBPATH=[flex_lib])
 if cuda_lib != "":
     env.Prepend(LIBPATH=[cuda_lib])
+
+env.Append(LIBS=[file_name for file_name in FLEX_LIBS])
+env.Append(LIBS=["cudart"])
 
 env_flex.Append(CPPPATH=[flex_include, flex_core])
 env_flex.add_source_files(env.modules_sources, "*.cpp")
