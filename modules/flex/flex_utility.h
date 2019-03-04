@@ -62,7 +62,7 @@
 #include "core/math/quat.h"
 #include "core/math/transform.h"
 #include "core/math/vector3.h"
-#include "core/string_db.h"
+#include "core/string_name.h"
 
 typedef int FlexUnit;
 
