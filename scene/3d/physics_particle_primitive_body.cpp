@@ -114,12 +114,12 @@ void ParticlePrimitiveBody::_notification(int p_what) {
 
 ParticlePrimitiveBody::ParticlePrimitiveBody() :
 		ParticleObject(ParticlePhysicsServer::get_singleton()->primitive_body_create()),
-		collision_layer(1),
-		debug_shape(NULL),
 		use_custom_friction(false),
 		custom_friction(0),
 		custom_friction_threshold(0),
-		monitoring_particles_contacts(false) {
+		collision_layer(1),
+		monitoring_particles_contacts(false),
+		debug_shape(NULL) {
 
 	ParticlePhysicsServer::get_singleton()->primitive_body_set_object_instance(rid, this);
 	set_notify_transform(true);
