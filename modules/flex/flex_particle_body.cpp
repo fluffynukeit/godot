@@ -56,6 +56,7 @@ FlexParticleBody::FlexParticleBody() :
 		pressure(1),
 		constraint_scale(0),
 		particle_count(0),
+		active_particle_count(0),
 		_is_monitorable(false),
 		_is_monitoring_primitives_contacts(false),
 		tearing_active(false),
@@ -252,14 +253,20 @@ void FlexParticleBody::set_particle_count(int p_particle_count) {
 	int memory_size = particles_mchunk ? particles_mchunk->get_size() : 0;
 	if (memory_size < p_particle_count) {
 		particle_count = memory_size;
+		particle_status.resize(particle_count);
 		ERR_FAIL();
 	} else {
 		particle_count = p_particle_count;
+		particle_status.resize(particle_count);
 	}
 }
 
 int FlexParticleBody::get_particle_count() const {
 	return particle_count;
+}
+
+int FlexParticleBody::get_active_particle_count() const {
+	return active_particle_count;
 }
 
 void FlexParticleBody::set_tearing_active(bool p_active) {
@@ -307,17 +314,30 @@ std::vector<ForceTearing> &FlexParticleBody::get_force_tearings() {
 	return force_tearings;
 }
 
+void FlexParticleBody::CMD_unactive_particles(ParticleIndex p_particle) {
+	ERR_FAIL_INDEX(p_particle, particle_status.size());
+	if (!particle_status[p_particle])
+		return;
+	particle_status[p_particle] = false;
+	active_particle_count--;
+	space->on_particle_removed(
+			this,
+			particles_mchunk->get_buffer_index(p_particle));
+}
+
 void FlexParticleBody::CMD_add_unactive_particles(int p_particle_count) {
 	ERR_FAIL_COND(p_particle_count < 1);
 
 	const int prev_begin_index(particles_mchunk->get_begin_index());
 
-	const int previous_size = get_particle_count();
+	const int previous_size = particles_mchunk->get_size();
 	const int new_size = previous_size + p_particle_count;
 
 	space->get_particles_allocator()->resize_chunk(
 			particles_mchunk,
 			new_size);
+
+	particle_status.reserve(new_size);
 
 	if (prev_begin_index != particles_mchunk->get_begin_index()) {
 		// Rebuild indices
@@ -339,7 +359,13 @@ ParticleIndex FlexParticleBody::CMD_add_particles(int p_particle_count) {
 	}
 
 	set_particle_count(new_size);
+	active_particle_count += p_particle_count;
 	changed_parameters |= eChangedBodyParamParticleJustAdded;
+
+	// Active new particles
+	for (int i(previous_size); i < new_size; ++i) {
+		particle_status[i] = true;
+	}
 
 	return previous_size;
 }
@@ -620,6 +646,7 @@ void FlexParticleBody::dispatch_sync_callback() {
 }
 
 void FlexParticleBody::particle_index_changed(ParticleIndex p_old_particle_index, ParticleIndex p_new_particle_index) {
+	particle_status[p_new_particle_index] = particle_status[p_old_particle_index];
 	if (!particle_index_changed_callback.receiver)
 		return;
 	particle_index_changed_callback.receiver->call(particle_index_changed_callback.method, (int)p_old_particle_index, (int)p_new_particle_index);
