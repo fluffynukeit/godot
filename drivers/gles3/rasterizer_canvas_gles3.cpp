@@ -1089,6 +1089,8 @@ void RasterizerCanvasGLES3::_canvas_item_render_commands(Item *p_item, Item *cur
 				_set_texture_rect_mode(false);
 
 			} break;
+			case Item::Command::TYPE_FLUID_PARTICLES: {
+			} break;
 			case Item::Command::TYPE_CIRCLE: {
 
 				_set_texture_rect_mode(false);
