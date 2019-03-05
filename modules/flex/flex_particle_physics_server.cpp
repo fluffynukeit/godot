@@ -64,10 +64,14 @@ void FlexParticleBodyCommands::load_model(Ref<ParticleBodyModel> p_model, const 
 
 	{ // Particle
 		const int resource_p_count(p_model->get_particles().size());
+
+		// Reset particle memory
 		body->space->particles_allocator->resize_chunk(
 				body->particles_mchunk,
-				resource_p_count);
-		body->set_particle_count(resource_p_count);
+				0);
+
+		ParticleIndex first_added_particle = body->CMD_add_particles(resource_p_count);
+		ERR_FAIL_COND(first_added_particle != 0);
 
 		PoolVector<real_t>::Read masses_r = p_model->get_masses().read();
 

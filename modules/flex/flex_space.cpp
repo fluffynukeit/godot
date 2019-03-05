@@ -1237,21 +1237,30 @@ void FlexSpace::execute_delayed_commands() {
 
 		if (body->delayed_commands.particles_to_unactive.size()) {
 
-			int particle_count = body->get_particle_count();
+			for (
+					auto it = body->delayed_commands.particles_to_unactive.begin();
+					it != body->delayed_commands.particles_to_unactive.end();
+					++it) {
 
-			body->set_particle_count(
-					particle_count -
-					body->delayed_commands.particles_to_unactive.size());
+				body->CMD_unactive_particles(*it);
+			}
+			body->delayed_commands.particles_to_unactive.clear();
 
-			ParticlesMemorySweeper sweeper(
-					this,
-					body,
-					particles_allocator,
-					body->particles_mchunk,
-					body->delayed_commands.particles_to_unactive,
-					false,
-					body->particles_mchunk->get_buffer_index(particle_count - 1));
-			sweeper.exec();
+			//int particle_count = body->get_particle_count();
+			//
+			//body->set_particle_count(
+			//		particle_count -
+			//		body->delayed_commands.particles_to_unactive.size());
+			//
+			//ParticlesMemorySweeper sweeper(
+			//		this,
+			//		body,
+			//		particles_allocator,
+			//		body->particles_mchunk,
+			//		body->delayed_commands.particles_to_unactive,
+			//		false,
+			//		body->particles_mchunk->get_buffer_index(particle_count - 1));
+			//sweeper.exec();
 		}
 
 		if (body->delayed_commands.particles_to_remove.size()) {
@@ -1345,7 +1354,7 @@ void FlexSpace::execute_delayed_commands() {
 			}
 		}
 
-		particles_count += body->get_particle_count();
+		particles_count += body->get_active_particle_count();
 	}
 
 	for (
@@ -1377,7 +1386,10 @@ void FlexSpace::execute_delayed_commands() {
 
 		is_active_particles_buffer_dirty = false;
 
-		active_particles_allocator->resize_chunk(active_particles_mchunk, particles_count, false);
+		active_particles_allocator->resize_chunk(
+				active_particles_mchunk,
+				particles_count,
+				false);
 		ERR_FAIL_COND(active_particles_mchunk->get_begin_index() != 0);
 
 		int active_particle_index(0);
@@ -1386,6 +1398,9 @@ void FlexSpace::execute_delayed_commands() {
 			FlexParticleBody *body = particle_bodies[i];
 
 			for (int p(0); p < body->get_particle_count(); ++p) {
+
+				if (!body->particle_status[p])
+					continue;
 
 				active_particles_memory->set_active_particle(
 						active_particles_mchunk,

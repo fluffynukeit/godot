@@ -124,6 +124,13 @@ class FlexParticleBody : public RIDFlex {
 	float constraint_scale;
 
 	int particle_count;
+
+	/**
+	 * @brief active_particle_count used to track the active particles of
+	 * this body
+	 */
+	int active_particle_count;
+
 	bool _is_monitorable;
 	bool _is_monitoring_primitives_contacts;
 
@@ -131,6 +138,12 @@ class FlexParticleBody : public RIDFlex {
 	real_t tearing_max_extension; // Normalized percetage
 	std::shared_ptr<FlexTearingData> tearing_data;
 	std::vector<ForceTearing> force_tearings;
+
+	/**
+	 * @brief particle_status has the same size of the particle count
+	 * and for each particle tells if it's active or unactive
+	 */
+	std::vector<bool> particle_status;
 
 public:
 	FlexParticleBody();
@@ -187,6 +200,7 @@ public:
 
 	void set_particle_count(int p_particle_count);
 	int get_particle_count() const;
+	int get_active_particle_count() const;
 
 	void set_tearing_active(bool active);
 	bool is_tearing_active() const;
@@ -198,6 +212,7 @@ public:
 	std::vector<ForceTearing> &get_force_tearings();
 
 	// CMD
+	void CMD_unactive_particles(ParticleIndex p_particle);
 	void CMD_add_unactive_particles(int p_particle_count);
 
 	/// Returns the ID of first new particle
