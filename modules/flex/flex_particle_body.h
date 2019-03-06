@@ -202,6 +202,8 @@ public:
 	int get_particle_count() const;
 	int get_active_particle_count() const;
 
+	bool is_particle_active(ParticleIndex p_index) const;
+
 	void set_tearing_active(bool active);
 	bool is_tearing_active() const;
 
