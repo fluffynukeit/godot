@@ -257,6 +257,8 @@ public:
 	virtual const float *body_get_particle_velocity_buffer(RID p_body) const = 0;
 	virtual bool body_get_particle_velocity(RID p_body, int p_particle_index, Vector3 &r_vel) const = 0;
 
+	virtual bool body_is_particle_active(RID p_body, int p_particle_index) const = 0;
+
 	virtual int body_get_spring_count(RID p_body) const = 0;
 	virtual int body_get_rigid_count(RID p_body) const = 0;
 

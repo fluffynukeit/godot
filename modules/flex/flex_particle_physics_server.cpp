@@ -955,6 +955,16 @@ bool FlexParticlePhysicsServer::body_get_particle_velocity(
 	return true;
 }
 
+bool FlexParticlePhysicsServer::body_is_particle_active(
+		RID p_body,
+		int p_particle_index) const {
+
+	FlexParticleBody *body = body_owner.get(p_body);
+	ERR_FAIL_COND_V(!body, false);
+
+	return body->is_particle_active(p_particle_index);
+}
+
 int FlexParticlePhysicsServer::body_get_spring_count(RID p_body) const {
 	FlexParticleBody *body = body_owner.get(p_body);
 	ERR_FAIL_COND_V(!body, 0);
