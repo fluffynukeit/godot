@@ -689,7 +689,7 @@ void FlexParticlePhysicsServer::space_get_params_defaults(Map<StringName, Varian
 
 	(*r_defs)[solver_param_numIterations] = 3;
 	(*r_defs)[solver_param_gravity] = Vector3(0, -10, 0);
-	(*r_defs)[solver_param_radius] = def_radius * 1.5;
+	(*r_defs)[solver_param_radius] = def_radius * 1.2;
 	(*r_defs)[solver_param_collisionDistance] = def_radius;
 	(*r_defs)[solver_param_solidRestDistance] = def_radius;
 	(*r_defs)[solver_param_fluidRestDistance] = def_radius;
@@ -698,12 +698,12 @@ void FlexParticlePhysicsServer::space_get_params_defaults(Map<StringName, Varian
 	(*r_defs)[solver_param_particleFriction] = 0.1;
 	(*r_defs)[solver_param_restitution] = 0.01;
 	(*r_defs)[solver_param_adhesion] = 0.0;
-	(*r_defs)[solver_param_sleepThreshold] = 0.0;
+	(*r_defs)[solver_param_sleepThreshold] = 0.5;
 	(*r_defs)[solver_param_maxSpeed] = FLT_MAX;
 	(*r_defs)[solver_param_maxAcceleration] = Vector3((*r_defs)[solver_param_gravity]).length() * 10.0;
 	(*r_defs)[solver_param_shockPropagation] = 0.0;
-	(*r_defs)[solver_param_dissipation] = 0.0;
-	(*r_defs)[solver_param_damping] = 0.0;
+	(*r_defs)[solver_param_dissipation] = 0.5;
+	(*r_defs)[solver_param_damping] = 0.1;
 	(*r_defs)[solver_param_wind] = Vector3();
 	(*r_defs)[solver_param_drag] = 0.0;
 	(*r_defs)[solver_param_lift] = 0.0;
