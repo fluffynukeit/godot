@@ -270,7 +270,7 @@ int FlexParticleBody::get_active_particle_count() const {
 }
 
 bool FlexParticleBody::is_particle_active(ParticleIndex p_index) const {
-	ERR_FAIL_INDEX_V(p_index, particle_status.size(), false);
+	ERR_FAIL_INDEX_V(p_index, particle_count, false);
 	return particle_status[p_index];
 }
 
