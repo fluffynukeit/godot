@@ -50,7 +50,7 @@ public:
 	ParticleObject(RID p_rid);
 	virtual ~ParticleObject();
 
-	_FORCE_INLINE_ RID get_rid() { return rid; }
+	_FORCE_INLINE_ RID get_rid() const { return rid; }
 };
 
 #endif // PHYSICS_PARTICLE_OBJECT_H
