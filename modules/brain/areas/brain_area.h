@@ -15,8 +15,17 @@ class SynapticTerminals : public Reference {
 	static void _bind_methods();
 
 public:
-	int terminal_count() const;
-	real_t get(int p_row) const;
+	void resize(int p_size);
+	int size() const;
+
+	void set_values(const Vector<real_t> &p_input);
+	void set_all(real_t p_value);
+
+	void set_value(int p_row, real_t p_value);
+	real_t get_value(int p_row) const;
+
+	void paint_on_texture(Ref<Texture> r_texture);
+	void paint_on_image(Ref<Image> r_image);
 };
 
 class BrainArea : public Node {
@@ -39,6 +48,8 @@ private:
 
 public:
 	BrainArea();
+
+	static void test() {}
 };
 
 VARIANT_ENUM_CAST(BrainArea::Activation);
