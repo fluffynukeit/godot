@@ -1,7 +1,7 @@
 
 #include "register_types.h"
 
-#include "areas/brain_area.h"
+#include "areas/uniform_brain_area.h"
 #include "thirdparty/brain/brain/error_handler.h"
 
 brain::ErrorHandlerList *error_handler;
