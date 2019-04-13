@@ -30,7 +30,7 @@ void print_error_callback(
 
 void register_brain_types() {
 	ClassDB::register_class<SynapticTerminals>();
-	ClassDB::register_class<BrainArea>();
+	ClassDB::register_virtual_class<BrainArea>();
 	ClassDB::register_class<UniformBrainArea>();
 
 	error_handler = new brain::ErrorHandlerList;
