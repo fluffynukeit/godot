@@ -18,11 +18,18 @@ public:
 	void resize(int p_size);
 	int size() const;
 
-	void set_values(const Vector<real_t> &p_input);
 	void set_all(real_t p_value);
+	void set_values(const Vector<real_t> &p_values);
+	void set_value__grid(
+			int p_width,
+			int p_height,
+			int p_x,
+			int p_y,
+			real_t p_value,
+			int p_propagation_radius);
 
-	void set_value(int p_row, real_t p_value);
-	real_t get_value(int p_row) const;
+	void set_value(int p_index, real_t p_value);
+	real_t get_value(int p_index) const;
 
 	void paint_on_texture(Ref<Texture> r_texture);
 	void paint_on_image(Ref<Image> r_image);
