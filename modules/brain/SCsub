@@ -43,7 +43,7 @@ env_brain.Append(CXXFLAGS = '-std=c++11')
 # Thirdparty
 env_thirdparty = env_brain.Clone()
 env_thirdparty["CPPPATH"] = '#thirdparty/brain'
-env_thirdparty.add_source_files(env.modules_sources, detect_files("../../thirdparty/brain", [], ["c", "cpp"]))
+env_thirdparty.add_source_files(env.modules_sources, detect_files("../../thirdparty/brain", ["misc/pcg.cpp"], ["c", "cpp"]))
 
 # Godot source
 env_brain.Append(CPPPATH = ['#thirdparty/brain'])
