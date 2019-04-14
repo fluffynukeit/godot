@@ -219,11 +219,11 @@ void SynapticTerminals::paint_on_image(Ref<Image> r_image) {
 
 	r_image->lock();
 
-	for (int i(0); i < matrix.get_row_count(); ++i) {
-		const real_t v = matrix.get(i, 0);
-		const int y = i / width;
-		const int x = i - y * height;
-		r_image->set_pixel(x, y, Color(v, 0., 0., 0.));
+	for (int x(0); x < width; ++x) {
+		for (int y(0); y < height; ++y) {
+			const real_t v = matrix.get(GRID_GET_ID(x, y, width), 0);
+			r_image->set_pixel(x, y, Color(v, 0., 0., 0.));
+		}
 	}
 
 	r_image->unlock();
