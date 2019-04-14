@@ -26,7 +26,8 @@ public:
 			int p_x,
 			int p_y,
 			real_t p_value,
-			int p_propagation_radius);
+			int p_propagation_radius = 0,
+			real_t p_propagation_force = 1.);
 
 	void set_value(int p_index, real_t p_value);
 	real_t get_value(int p_index) const;
