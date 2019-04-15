@@ -54,11 +54,17 @@ void SynapticTerminals::set_value__grid(
 	if (!p_propagation_radius)
 		return;
 
-	/// TODO write description
+	/// The below code is responsible for propagating the value to near neighbors
+	/// To do it, this algorithm propagates the value using some passes, where
+	/// each pass add a value to the grid elements that are around the previous
+	/// elements.
+	///
+	/// The value propagation order is this one:
 	///    ^------>
 	///    |      |
 	///    |      |
 	///    <------v
+	/// Where the value is propagated from top to right to down to left
 
 	int ring_size = 1;
 	for (int prop = 1; prop <= p_propagation_radius; ++prop) {
