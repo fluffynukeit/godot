@@ -1,7 +1,9 @@
 
 #include "register_types.h"
 
+#include "areas/sharp_brain_area.h"
 #include "areas/uniform_brain_area.h"
+#include "neat/neat_population.h"
 #include "thirdparty/brain/brain/error_handler.h"
 
 brain::ErrorHandlerList *error_handler;
@@ -32,6 +34,13 @@ void register_brain_types() {
 	ClassDB::register_class<SynapticTerminals>();
 	ClassDB::register_virtual_class<BrainArea>();
 	ClassDB::register_class<UniformBrainArea>();
+
+	ClassDB::register_virtual_class<SharpBrainAreaStructure>();
+	ClassDB::register_class<SharpBrainAreaStructureEditable>();
+	ClassDB::register_class<SharpBrainArea>();
+
+	ClassDB::register_virtual_class<Neat>();
+	ClassDB::register_class<NeatPopulation>();
 
 	error_handler = new brain::ErrorHandlerList;
 	error_handler->errfunc = print_error_callback;

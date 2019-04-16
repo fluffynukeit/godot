@@ -49,4 +49,5 @@ env_thirdparty.add_source_files(env.modules_sources, detect_files("../../thirdpa
 env_brain.Append(CPPPATH = ['#thirdparty/brain'])
 env_brain.add_source_files(env.modules_sources, "./extra/*.cpp")
 env_brain.add_source_files(env.modules_sources, "./areas/*.cpp")
+env_brain.add_source_files(env.modules_sources, "./neat/*.cpp")
 env_brain.add_source_files(env.modules_sources, "*.cpp")

@@ -2,8 +2,7 @@
 #define BRAINAREA_H
 
 #include "scene/main/node.h"
-
-#include "thirdparty/brain/brain/brain_areas/uniform_brain_area.h"
+#include "thirdparty/brain/brain/math/matrix.h"
 
 class SynapticTerminals : public Reference {
 	GDCLASS(SynapticTerminals, Reference);

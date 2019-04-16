@@ -3,6 +3,8 @@
 
 #include "brain_area.h"
 
+#include "thirdparty/brain/brain/brain_areas/uniform_brain_area.h"
+
 class UniformBrainArea : public BrainArea {
 	GDCLASS(UniformBrainArea, BrainArea);
 
