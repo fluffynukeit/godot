@@ -1,6 +1,7 @@
 #ifndef BRAINAREA_H
 #define BRAINAREA_H
 
+#include "core/reference.h"
 #include "scene/main/node.h"
 #include "thirdparty/brain/brain/math/matrix.h"
 

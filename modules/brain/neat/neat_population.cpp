@@ -1,7 +1,21 @@
 #include "neat_population.h"
 
+#include "core/engine.h"
+#include "core/os/os.h"
+
 void NeatPopulation::_bind_methods() {
 
+	ClassDB::bind_method(D_METHOD("set_population_size", "population_size"), &NeatPopulation::set_population_size);
+	ClassDB::bind_method(D_METHOD("get_population_size"), &NeatPopulation::get_population_size);
+
+	ClassDB::bind_method(D_METHOD("set_random_seed", "actice"), &NeatPopulation::set_random_seed);
+	ClassDB::bind_method(D_METHOD("get_random_seed"), &NeatPopulation::get_random_seed);
+
+	ClassDB::bind_method(D_METHOD("set_ancestor", "ancestor"), &NeatPopulation::set_ancestor);
+	ClassDB::bind_method(D_METHOD("get_ancestor"), &NeatPopulation::get_ancestor);
+
+	ClassDB::bind_method(D_METHOD("set_seed", "seed"), &NeatPopulation::set_seed);
+	ClassDB::bind_method(D_METHOD("get_seed"), &NeatPopulation::get_seed);
 	ClassDB::bind_method(D_METHOD("set_learning_deviation", "learning_deviation"), &NeatPopulation::set_learning_deviation);
 	ClassDB::bind_method(D_METHOD("get_learning_deviation"), &NeatPopulation::get_learning_deviation);
 	ClassDB::bind_method(D_METHOD("set_genetic_compatibility_threshold", "genetic_compatibility_threshold"), &NeatPopulation::set_genetic_compatibility_threshold);
@@ -53,33 +67,97 @@ void NeatPopulation::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_population_stagnant_age_thresold", "population_stagnant_age_thresold"), &NeatPopulation::set_population_stagnant_age_thresold);
 	ClassDB::bind_method(D_METHOD("get_population_stagnant_age_thresold"), &NeatPopulation::get_population_stagnant_age_thresold);
 
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "learning_deviation"), "set_learning_deviation", "get_learning_deviation");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "genetic_compatibility_threshold"), "set_genetic_compatibility_threshold", "get_genetic_compatibility_threshold");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "genetic_disjoints_significance"), "set_genetic_disjoints_significance", "get_genetic_disjoints_significance");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "genetic_excesses_significance"), "set_genetic_excesses_significance", "get_genetic_excesses_significance");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "genetic_weights_significance"), "set_genetic_weights_significance", "get_genetic_weights_significance");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "genetic_mate_prob"), "set_genetic_mate_prob", "get_genetic_mate_prob");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "genetic_mate_inside_species_threshold"), "set_genetic_mate_inside_species_threshold", "get_genetic_mate_inside_species_threshold");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "genetic_mate_multipoint_threshold"), "set_genetic_mate_multipoint_threshold", "get_genetic_mate_multipoint_threshold");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "genetic_mate_multipoint_avg_threshold"), "set_genetic_mate_multipoint_avg_threshold", "get_genetic_mate_multipoint_avg_threshold");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "genetic_mate_singlepoint_threshold"), "set_genetic_mate_singlepoint_threshold", "get_genetic_mate_singlepoint_threshold");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "genetic_mutate_add_link_porb"), "set_genetic_mutate_add_link_porb", "get_genetic_mutate_add_link_porb");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "genetic_mutate_add_node_prob"), "set_genetic_mutate_add_node_prob", "get_genetic_mutate_add_node_prob");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "genetic_mutate_link_weight_prob"), "set_genetic_mutate_link_weight_prob", "get_genetic_mutate_link_weight_prob");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "genetic_mutate_link_weight_uniform_prob"), "set_genetic_mutate_link_weight_uniform_prob", "get_genetic_mutate_link_weight_uniform_prob");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "genetic_mutate_toggle_link_enable_prob"), "set_genetic_mutate_toggle_link_enable_prob", "get_genetic_mutate_toggle_link_enable_prob");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "genetic_mutate_add_link_recurrent_prob"), "set_genetic_mutate_add_link_recurrent_prob", "get_genetic_mutate_add_link_recurrent_prob");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "species_youngness_age_threshold"), "set_species_youngness_age_threshold", "get_species_youngness_age_threshold");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "species_youngness_multiplier"), "set_species_youngness_multiplier", "get_species_youngness_multiplier");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "species_stagnant_age_threshold"), "set_species_stagnant_age_threshold", "get_species_stagnant_age_threshold");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "species_stagnant_multiplier"), "set_species_stagnant_multiplier", "get_species_stagnant_multiplier");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "species_survival_ratio"), "set_species_survival_ratio", "get_species_survival_ratio");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "cribs_stealing"), "set_cribs_stealing", "get_cribs_stealing");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "cribs_stealing_limit"), "set_cribs_stealing_limit", "get_cribs_stealing_limit");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "cribs_stealing_protection_age_threshold"), "set_cribs_stealing_protection_age_threshold", "get_cribs_stealing_protection_age_threshold");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "population_stagnant_age_thresold"), "set_population_stagnant_age_thresold", "get_population_stagnant_age_thresold");
+	ClassDB::bind_method(D_METHOD("organism_get_brain_area", "organism_id"), &NeatPopulation::organism_get_brain_area);
+	ClassDB::bind_method(D_METHOD("organism_set_fitness", "organism_id", "fitness"), &NeatPopulation::organism_set_fitness);
+	ClassDB::bind_method(D_METHOD("epoch_advance"), &NeatPopulation::epoch_advance);
+
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "population_size"), "set_population_size", "get_population_size");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "random_seed"), "set_random_seed", "get_random_seed");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "ancestor", PROPERTY_HINT_RESOURCE_TYPE, "SharpBrainAreaStructure"), "set_ancestor", "get_ancestor");
+
+	ADD_GROUP("Settings", "settings_");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "settings_seed"), "set_seed", "get_seed");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "settings_learning_deviation"), "set_learning_deviation", "get_learning_deviation");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "settings_genetic_compatibility_threshold"), "set_genetic_compatibility_threshold", "get_genetic_compatibility_threshold");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "settings_genetic_disjoints_significance"), "set_genetic_disjoints_significance", "get_genetic_disjoints_significance");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "settings_genetic_excesses_significance"), "set_genetic_excesses_significance", "get_genetic_excesses_significance");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "settings_genetic_weights_significance"), "set_genetic_weights_significance", "get_genetic_weights_significance");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "settings_genetic_mate_prob"), "set_genetic_mate_prob", "get_genetic_mate_prob");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "settings_genetic_mate_inside_species_threshold"), "set_genetic_mate_inside_species_threshold", "get_genetic_mate_inside_species_threshold");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "settings_genetic_mate_multipoint_threshold"), "set_genetic_mate_multipoint_threshold", "get_genetic_mate_multipoint_threshold");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "settings_genetic_mate_multipoint_avg_threshold"), "set_genetic_mate_multipoint_avg_threshold", "get_genetic_mate_multipoint_avg_threshold");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "settings_genetic_mate_singlepoint_threshold"), "set_genetic_mate_singlepoint_threshold", "get_genetic_mate_singlepoint_threshold");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "settings_genetic_mutate_add_link_porb"), "set_genetic_mutate_add_link_porb", "get_genetic_mutate_add_link_porb");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "settings_genetic_mutate_add_node_prob"), "set_genetic_mutate_add_node_prob", "get_genetic_mutate_add_node_prob");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "settings_genetic_mutate_link_weight_prob"), "set_genetic_mutate_link_weight_prob", "get_genetic_mutate_link_weight_prob");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "settings_genetic_mutate_link_weight_uniform_prob"), "set_genetic_mutate_link_weight_uniform_prob", "get_genetic_mutate_link_weight_uniform_prob");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "settings_genetic_mutate_toggle_link_enable_prob"), "set_genetic_mutate_toggle_link_enable_prob", "get_genetic_mutate_toggle_link_enable_prob");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "settings_genetic_mutate_add_link_recurrent_prob"), "set_genetic_mutate_add_link_recurrent_prob", "get_genetic_mutate_add_link_recurrent_prob");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "settings_species_youngness_age_threshold"), "set_species_youngness_age_threshold", "get_species_youngness_age_threshold");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "settings_species_youngness_multiplier"), "set_species_youngness_multiplier", "get_species_youngness_multiplier");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "settings_species_stagnant_age_threshold"), "set_species_stagnant_age_threshold", "get_species_stagnant_age_threshold");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "settings_species_stagnant_multiplier"), "set_species_stagnant_multiplier", "get_species_stagnant_multiplier");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "settings_species_survival_ratio"), "set_species_survival_ratio", "get_species_survival_ratio");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "settings_cribs_stealing"), "set_cribs_stealing", "get_cribs_stealing");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "settings_cribs_stealing_limit"), "set_cribs_stealing_limit", "get_cribs_stealing_limit");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "settings_cribs_stealing_protection_age_threshold"), "set_cribs_stealing_protection_age_threshold", "get_cribs_stealing_protection_age_threshold");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "settings_population_stagnant_age_thresold"), "set_population_stagnant_age_thresold", "get_population_stagnant_age_thresold");
+}
+
+void NeatPopulation::_notification(int p_what) {
+	switch (p_what) {
+		case NOTIFICATION_READY: {
+
+			if (Engine::get_singleton()->is_editor_hint())
+				break;
+
+			init_population();
+			break;
+		}
+	}
 }
 
 NeatPopulation::NeatPopulation() :
-		Neat() {
+		Neat(),
+		population_size(100),
+		random_seed(true),
+		population(nullptr) {
+}
+
+void NeatPopulation::set_ancestor(Ref<SharpBrainAreaStructure> p_ancestor) {
+	ancestor = p_ancestor;
+}
+
+Ref<SharpBrainAreaStructure> NeatPopulation::organism_get_brain_area(int p_organism_id) {
+
+	const brain::SharpBrainArea *ba = population->organism_get_network(p_organism_id);
+
+	Ref<SharpBrainAreaStructureRuntime> structure;
+	structure.instance();
+	structure->area = *ba;
+	return structure;
+}
+
+void NeatPopulation::organism_set_fitness(int p_organism_id, real_t p_fitness) {
+	population->organism_set_fitness(p_organism_id, p_fitness);
+}
+
+bool NeatPopulation::epoch_advance() {
+	return population->epoch_advance();
+}
+
+void NeatPopulation::init_population() {
+
+	if (random_seed)
+		settings.seed = OS::get_singleton()->get_ticks_usec();
+
+	ERR_FAIL_COND(ancestor.is_null());
+
+	brain::NtGenome ancestor_genome;
+	ancestor->make_brain_area(ancestor_genome);
+
+	population = new brain::NtPopulation(
+			ancestor_genome,
+			population_size,
+			settings);
 }

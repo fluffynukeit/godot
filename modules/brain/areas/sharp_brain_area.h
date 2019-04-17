@@ -14,6 +14,16 @@ public:
 	virtual void make_brain_area(brain::NtGenome &r_genome) = 0;
 };
 
+class SharpBrainAreaStructureRuntime : public Resource {
+	GDCLASS(SharpBrainAreaStructureRuntime, Resource);
+
+public:
+	brain::SharpBrainArea area;
+
+	virtual void make_brain_area(brain::SharpBrainArea &r_area);
+	virtual void make_brain_area(brain::NtGenome &r_genome);
+};
+
 class SharpBrainAreaStructureEditable : public SharpBrainAreaStructure {
 	GDCLASS(SharpBrainAreaStructureEditable, SharpBrainAreaStructure);
 

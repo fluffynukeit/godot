@@ -1,6 +1,7 @@
 #ifndef NEAT_POPULATION_H
 #define NEAT_POPULATION_H
 
+#include "modules/brain/areas/sharp_brain_area.h"
 #include "neat.h"
 #include "thirdparty/brain/brain/NEAT/neat_population.h"
 
@@ -8,15 +9,31 @@ class NeatPopulation : public Neat {
 
 	GDCLASS(NeatPopulation, Neat);
 
+	int population_size;
+	bool random_seed;
+	Ref<SharpBrainAreaStructure> ancestor;
 	brain::NtPopulationSettings settings;
+
 	brain::NtPopulation *population;
 
 	static void _bind_methods();
 
+	void _notification(int p_what);
+
 public:
 	NeatPopulation();
 
-	uint64_t seed = 1;
+	void set_population_size(int p_population_size) { population_size = p_population_size; }
+	int get_population_size() const { return population_size; }
+
+	void set_random_seed(bool p_v) { random_seed = p_v; }
+	bool get_random_seed() const { return random_seed; }
+
+	void set_ancestor(Ref<SharpBrainAreaStructure> p_ancestor);
+	Ref<SharpBrainAreaStructure> get_ancestor() const { return ancestor; }
+
+	void set_seed(int p_seed) { settings.seed = p_seed; }
+	int get_seed() const { return settings.seed; }
 
 	void set_learning_deviation(real_t p_learning_deviation) { settings.learning_deviation = p_learning_deviation; }
 	real_t get_learning_deviation() const { return settings.learning_deviation; }
@@ -49,7 +66,7 @@ public:
 	real_t get_genetic_mate_singlepoint_threshold() const { return settings.genetic_mate_singlepoint_threshold; }
 
 	void set_genetic_mutate_add_link_porb(real_t p_genetic_mutate_add_link_porb) { settings.genetic_mutate_add_link_porb = p_genetic_mutate_add_link_porb; }
-	real_t get_genetic_mutate_add_link_porb(real_t p_genetic_mutate_add_link_porb) const { return settings.genetic_mutate_add_link_porb; }
+	real_t get_genetic_mutate_add_link_porb() const { return settings.genetic_mutate_add_link_porb; }
 
 	void set_genetic_mutate_add_node_prob(real_t p_genetic_mutate_add_node_prob) { settings.genetic_mutate_add_node_prob = p_genetic_mutate_add_node_prob; }
 	real_t get_genetic_mutate_add_node_prob() const { return settings.genetic_mutate_add_node_prob; }
@@ -92,6 +109,13 @@ public:
 
 	void set_population_stagnant_age_thresold(real_t p_population_stagnant_age_thresold) { settings.population_stagnant_age_thresold = p_population_stagnant_age_thresold; }
 	int get_population_stagnant_age_thresold() const { return settings.population_stagnant_age_thresold; }
+
+	Ref<SharpBrainAreaStructure> organism_get_brain_area(int p_organism_id);
+	void organism_set_fitness(int p_organism_id, real_t p_fitness);
+	bool epoch_advance();
+
+private:
+	void init_population();
 };
 
 #endif // NEAT_POPULATION_H

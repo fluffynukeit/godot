@@ -1,5 +1,14 @@
 #include "sharp_brain_area.h"
 
+void SharpBrainAreaStructureRuntime::make_brain_area(brain::SharpBrainArea &r_area) {
+	r_area = area;
+}
+
+void SharpBrainAreaStructureRuntime::make_brain_area(brain::NtGenome &r_genome) {
+	ERR_EXPLAIN("This function is not implemented");
+	ERR_FAIL();
+}
+
 bool SharpBrainAreaStructureEditable::_set(const StringName &p_name, const Variant &p_value) {
 
 	String name(p_name);
