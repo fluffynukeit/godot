@@ -70,7 +70,7 @@ AreaBullet::AreaBullet() :
 
 AreaBullet::~AreaBullet() {
 	// signal are handled by godot, so just clear without notify
-	for (int i = overlappingObjects.size() - 1; 0 <= i; --i)
+	for (int i = 0; i < overlappingObjects.size(); ++i)
 		overlappingObjects[i].object->on_exit_area(this);
 }
 
@@ -128,7 +128,7 @@ void AreaBullet::scratch() {
 }
 
 void AreaBullet::clear_overlaps(bool p_notify) {
-	for (int i = overlappingObjects.size() - 1; 0 <= i; --i) {
+	for (int i = 0; i < overlappingObjects.size(); ++i) {
 		if (p_notify)
 			call_event(overlappingObjects[i].object, PhysicsServer::AREA_BODY_REMOVED);
 		overlappingObjects[i].object->on_exit_area(this);
@@ -137,7 +137,7 @@ void AreaBullet::clear_overlaps(bool p_notify) {
 }
 
 void AreaBullet::remove_overlap(CollisionObjectBullet *p_object, bool p_notify) {
-	for (int i = overlappingObjects.size() - 1; 0 <= i; --i) {
+	for (int i = 0; i < overlappingObjects.size(); ++i) {
 		if (overlappingObjects[i].object == p_object) {
 			if (p_notify)
 				call_event(overlappingObjects[i].object, PhysicsServer::AREA_BODY_REMOVED);
