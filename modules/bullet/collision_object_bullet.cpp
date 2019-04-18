@@ -113,6 +113,7 @@ void CollisionObjectBullet::body_scale_changed() {
 
 void CollisionObjectBullet::destroyBulletCollisionObject() {
 	bulletdelete(bt_collision_object);
+	bt_collision_object = NULL;
 }
 
 void CollisionObjectBullet::setupBulletCollisionObject(btCollisionObject *p_collisionObject) {

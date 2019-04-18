@@ -80,6 +80,7 @@ void AreaBullet::dispatch_callbacks() {
 	isScratched = false;
 
 	// Reverse order because I've to remove EXIT objects
+	int ini(overlappingObjects.size());
 	for (int i = overlappingObjects.size() - 1; 0 <= i; --i) {
 		OverlappingObjectData &otherObj = overlappingObjects.write[i];
 
@@ -91,6 +92,9 @@ void AreaBullet::dispatch_callbacks() {
 				break;
 			case OVERLAP_STATE_EXIT:
 				call_event(otherObj.object, PhysicsServer::AREA_BODY_REMOVED);
+				if (!otherObj.object->get_bt_collision_object()) {
+					int a = 0;
+				}
 				otherObj.object->on_exit_area(this);
 				overlappingObjects.remove(i); // Remove after callback
 				break;

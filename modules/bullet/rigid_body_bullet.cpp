@@ -913,7 +913,7 @@ void RigidBodyBullet::reload_space_override_modificator() {
 	Vector3 support_gravity(0, 0, 0);
 
 	int countCombined(0);
-	for (int i = 0; i < areaWhereIamCount; ++i) {
+	for (int i = areaWhereIamCount - 1; 0 <= i; --i) {
 
 		currentArea = areasWhereIam[i];
 

@@ -669,10 +669,14 @@ void SpaceBullet::check_ghost_overlaps() {
 
 		for (int i = 0; i < overlap_count; ++i) {
 			btCollisionObject *other_bt_object = area->get_bt_ghost()->getOverlappingObject(i);
-			CollisionObjectBullet *other_object = static_cast<CollisionObjectBullet *>(other_bt_object->getUserPointer());
 
-			if (other_object->getType() >= CollisionObjectBullet::TYPE_SOFT_BODY)
+			if (other_bt_object->getUserIndex() == CollisionObjectBullet::TYPE_AREA)
+				if (!static_cast<AreaBullet *>(other_bt_object->getUserPointer())->is_monitorable())
+					continue;
+			if (other_bt_object->getUserIndex() != CollisionObjectBullet::TYPE_RIGID_BODY)
 				continue;
+
+			RigidCollisionObjectBullet *other_object = static_cast<RigidCollisionObjectBullet *>(other_bt_object->getUserPointer());
 
 			const int indexOverlap = area->find_overlapping_object(other_object);
 			if (-1 == indexOverlap) {
