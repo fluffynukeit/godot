@@ -67,9 +67,16 @@ void NeatPopulation::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_population_stagnant_age_thresold", "population_stagnant_age_thresold"), &NeatPopulation::set_population_stagnant_age_thresold);
 	ClassDB::bind_method(D_METHOD("get_population_stagnant_age_thresold"), &NeatPopulation::get_population_stagnant_age_thresold);
 
-	ClassDB::bind_method(D_METHOD("organism_get_brain_area", "organism_id"), &NeatPopulation::organism_get_brain_area);
+	ClassDB::bind_method(D_METHOD("organism_get_brain_area", "organism_id", "ret"), &NeatPopulation::organism_get_brain_area);
+
 	ClassDB::bind_method(D_METHOD("organism_set_fitness", "organism_id", "fitness"), &NeatPopulation::organism_set_fitness);
+	ClassDB::bind_method(D_METHOD("organism_get_fitness", "organism_id"), &NeatPopulation::organism_get_fitness);
+
 	ClassDB::bind_method(D_METHOD("epoch_advance"), &NeatPopulation::epoch_advance);
+
+	ClassDB::bind_method(D_METHOD("get_epoch"), &NeatPopulation::get_epoch);
+	ClassDB::bind_method(D_METHOD("get_best_fitness_ever"), &NeatPopulation::get_best_fitness_ever);
+	ClassDB::bind_method(D_METHOD("get_champion_brain_area", "brain_area"), &NeatPopulation::get_champion_brain_area);
 
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "population_size"), "set_population_size", "get_population_size");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "random_seed"), "set_random_seed", "get_random_seed");
@@ -106,7 +113,7 @@ void NeatPopulation::_bind_methods() {
 
 void NeatPopulation::_notification(int p_what) {
 	switch (p_what) {
-		case NOTIFICATION_READY: {
+		case NOTIFICATION_ENTER_TREE: {
 
 			if (Engine::get_singleton()->is_editor_hint())
 				break;
@@ -128,22 +135,38 @@ void NeatPopulation::set_ancestor(Ref<SharpBrainAreaStructure> p_ancestor) {
 	ancestor = p_ancestor;
 }
 
-Ref<SharpBrainAreaStructure> NeatPopulation::organism_get_brain_area(int p_organism_id) {
+void NeatPopulation::organism_get_brain_area(int p_organism_id, Object *r_brain_area) const {
 
-	const brain::SharpBrainArea *ba = population->organism_get_network(p_organism_id);
-
-	Ref<SharpBrainAreaStructureRuntime> structure;
-	structure.instance();
-	structure->area = *ba;
-	return structure;
+	SharpBrainArea *brain_area = Object::cast_to<SharpBrainArea>(r_brain_area);
+	ERR_FAIL_COND(!brain_area);
+	brain_area->set_structure(Ref<SharpBrainAreaStructure>());
+	brain_area->brain_area = *population->organism_get_network(p_organism_id);
 }
 
 void NeatPopulation::organism_set_fitness(int p_organism_id, real_t p_fitness) {
 	population->organism_set_fitness(p_organism_id, p_fitness);
 }
 
+real_t NeatPopulation::organism_get_fitness(int p_organism_id) const {
+	return population->organism_get_fitness(p_organism_id);
+}
+
 bool NeatPopulation::epoch_advance() {
 	return population->epoch_advance();
+}
+
+int NeatPopulation::get_epoch() const {
+	return population->get_epoch();
+}
+
+real_t NeatPopulation::get_best_fitness_ever() const {
+	return population->get_best_personal_fitness();
+}
+
+void NeatPopulation::get_champion_brain_area(Object *r_brain_area) const {
+	SharpBrainArea *brain_area = Object::cast_to<SharpBrainArea>(r_brain_area);
+	ERR_FAIL_COND(!brain_area);
+	population->get_champion_network(brain_area->brain_area);
 }
 
 void NeatPopulation::init_population() {

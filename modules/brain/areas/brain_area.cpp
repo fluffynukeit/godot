@@ -237,6 +237,8 @@ void SynapticTerminals::paint_on_image(Ref<Image> r_image) {
 
 void BrainArea::_bind_methods() {
 
+	ClassDB::bind_method(D_METHOD("guess", "input", "result"), &BrainArea::guess);
+
 	BIND_ENUM_CONSTANT(ACTIVATION_SIGMOID);
 	BIND_ENUM_CONSTANT(ACTIVATION_RELU);
 	BIND_ENUM_CONSTANT(ACTIVATION_LEAKY_RELU);

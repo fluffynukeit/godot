@@ -37,7 +37,13 @@ public:
 
 	void prepare_to_learn();
 	real_t learn(const Vector<real_t> &p_input, const Vector<real_t> &p_expected, real_t p_learning_rate);
-	Ref<SynapticTerminals> guess(const Vector<real_t> &p_input);
+	Ref<SynapticTerminals> _guess(const Vector<real_t> &p_input);
+
+	virtual bool guess(
+			Ref<SynapticTerminals> p_input,
+			Ref<SynapticTerminals> r_result) {
+		return false;
+	}
 
 	void save_knowledge(const String &p_path, bool p_overwrite = false);
 	void load_knowledge(const String &p_path);

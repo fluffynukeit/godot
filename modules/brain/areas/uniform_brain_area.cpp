@@ -86,7 +86,7 @@ void UniformBrainArea::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("prepare_to_learn"), &UniformBrainArea::prepare_to_learn);
 	ClassDB::bind_method(D_METHOD("learn", "input", "expected", "learning_rate"), &UniformBrainArea::learn);
-	ClassDB::bind_method(D_METHOD("guess", "input"), &UniformBrainArea::guess);
+	ClassDB::bind_method(D_METHOD("guess", "input"), &UniformBrainArea::_guess);
 
 	ClassDB::bind_method(D_METHOD("save_knowledge", "path", "overwrite"), &UniformBrainArea::save_knowledge);
 	ClassDB::bind_method(D_METHOD("load_knowledge", "path"), &UniformBrainArea::load_knowledge);
@@ -180,7 +180,7 @@ real_t UniformBrainArea::learn(
 	return brain_area.learn(input, expected, learning_rate, &learning_cache);
 }
 
-Ref<SynapticTerminals> UniformBrainArea::guess(const Vector<real_t> &p_input) {
+Ref<SynapticTerminals> UniformBrainArea::_guess(const Vector<real_t> &p_input) {
 
 	brain::Matrix input(p_input.size(), 1, p_input.ptr());
 

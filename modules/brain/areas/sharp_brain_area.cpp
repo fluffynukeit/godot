@@ -268,12 +268,54 @@ void SharpBrainAreaStructureEditable::make_brain_area(brain::NtGenome &r_genome)
 	}
 }
 
+SharpBrainAreaStructureAncestor::SharpBrainAreaStructureAncestor() :
+		input_count(0),
+		output_count(0),
+		randomize_weights(0),
+		input_activation_func(BrainArea::ACTIVATION_LEAKY_RELU),
+		output_activation_func(BrainArea::ACTIVATION_LINEAR) {
+}
+
+void SharpBrainAreaStructureAncestor::_bind_methods() {
+
+	ClassDB::bind_method(D_METHOD("set_input_count", "input_count"), &SharpBrainAreaStructureAncestor::set_input_count);
+	ClassDB::bind_method(D_METHOD("get_input_count"), &SharpBrainAreaStructureAncestor::get_input_count);
+	ClassDB::bind_method(D_METHOD("set_output_count", "output_count"), &SharpBrainAreaStructureAncestor::set_output_count);
+	ClassDB::bind_method(D_METHOD("get_output_count"), &SharpBrainAreaStructureAncestor::get_output_count);
+	ClassDB::bind_method(D_METHOD("set_randomize_weights", "randomize_weights"), &SharpBrainAreaStructureAncestor::set_randomize_weights);
+	ClassDB::bind_method(D_METHOD("get_randomize_weights"), &SharpBrainAreaStructureAncestor::get_randomize_weights);
+	ClassDB::bind_method(D_METHOD("set_input_activation_func", "input_activation_func"), &SharpBrainAreaStructureAncestor::set_input_activation_func);
+	ClassDB::bind_method(D_METHOD("get_input_activation_func"), &SharpBrainAreaStructureAncestor::get_input_activation_func);
+	ClassDB::bind_method(D_METHOD("set_output_activation_func", "output_activation_func"), &SharpBrainAreaStructureAncestor::set_output_activation_func);
+	ClassDB::bind_method(D_METHOD("get_output_activation_func"), &SharpBrainAreaStructureAncestor::get_output_activation_func);
+
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "input_count"), "set_input_count", "get_input_count");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "output_count"), "set_output_count", "get_output_count");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "randomize_weights"), "set_randomize_weights", "get_randomize_weights");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "input_activation_func", PROPERTY_HINT_ENUM, "Sigmoid,Relu,Leaky relu,Tanh,Linear,Binary,Soft Max"), "set_input_activation_func", "get_input_activation_func");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "output_activation_func", PROPERTY_HINT_ENUM, "Sigmoid,Relu,Leaky relu,Tanh,Linear,Binary,Soft Max"), "set_output_activation_func", "get_output_activation_func");
+}
+
+void SharpBrainAreaStructureAncestor::make_brain_area(brain::SharpBrainArea &r_area) {
+}
+
+void SharpBrainAreaStructureAncestor::make_brain_area(brain::NtGenome &r_genome) {
+	r_genome.construct(
+			input_count,
+			output_count,
+			randomize_weights,
+			static_cast<brain::BrainArea::Activation>(input_activation_func),
+			static_cast<brain::BrainArea::Activation>(output_activation_func));
+}
+
 void SharpBrainArea::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("set_structure", "struct"), &SharpBrainArea::set_structure);
 	ClassDB::bind_method(D_METHOD("get_structure"), &SharpBrainArea::get_structure);
 
 	ClassDB::bind_method(D_METHOD("update_shape_area"), &SharpBrainArea::update_shape_area);
+
+	ClassDB::bind_method(D_METHOD("description"), &SharpBrainArea::description);
 
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "structure", PROPERTY_HINT_RESOURCE_TYPE, "SharpBrainAreaStructure"), "set_structure", "get_structure");
 }
@@ -287,6 +329,7 @@ void SharpBrainArea::set_structure(Ref<SharpBrainAreaStructure> p_struct) {
 	}
 
 	structure = p_struct;
+	update_shape_area();
 
 	if (structure.is_valid()) {
 		structure->connect("changed", this, "update_shape_area");
@@ -297,6 +340,27 @@ Ref<SharpBrainAreaStructure> SharpBrainArea::get_structure() const {
 	return structure;
 }
 
+String SharpBrainArea::description() const {
+	String s("");
+	s += "Neuron count: " + itos(brain_area.get_neuron_count());
+	s += " - Hidden neurons count: " + itos(brain_area.get_neuron_count() - (brain_area.get_input_layer_size() + brain_area.get_output_layer_size()));
+	return s;
+}
+
+bool SharpBrainArea::guess(
+		Ref<SynapticTerminals> p_input,
+		Ref<SynapticTerminals> r_result) {
+
+	ERR_FAIL_COND_V(p_input.is_null(), false);
+	ERR_FAIL_COND_V(r_result.is_null(), false);
+
+	return brain_area.guess(
+			p_input->matrix,
+			r_result->matrix);
+}
+
 void SharpBrainArea::update_shape_area() {
+	if (structure.is_null())
+		return;
 	structure->make_brain_area(brain_area);
 }

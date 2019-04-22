@@ -110,9 +110,17 @@ public:
 	void set_population_stagnant_age_thresold(real_t p_population_stagnant_age_thresold) { settings.population_stagnant_age_thresold = p_population_stagnant_age_thresold; }
 	int get_population_stagnant_age_thresold() const { return settings.population_stagnant_age_thresold; }
 
-	Ref<SharpBrainAreaStructure> organism_get_brain_area(int p_organism_id);
+	void organism_get_brain_area(int p_organism_id, Object *r_brain_area) const;
+
 	void organism_set_fitness(int p_organism_id, real_t p_fitness);
+	real_t organism_get_fitness(int p_organism_id) const;
+
 	bool epoch_advance();
+
+	int get_epoch() const;
+
+	real_t get_best_fitness_ever() const;
+	void get_champion_brain_area(Object *r_brain_area) const;
 
 private:
 	void init_population();

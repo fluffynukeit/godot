@@ -9,6 +9,7 @@ class SynapticTerminals : public Reference {
 	GDCLASS(SynapticTerminals, Reference);
 
 	friend class UniformBrainArea;
+	friend class SharpBrainArea;
 
 	brain::Matrix matrix;
 
@@ -57,7 +58,9 @@ private:
 public:
 	BrainArea();
 
-	static void test() {}
+	virtual bool guess(
+			Ref<SynapticTerminals> p_input,
+			Ref<SynapticTerminals> r_result) = 0;
 };
 
 VARIANT_ENUM_CAST(BrainArea::Activation);

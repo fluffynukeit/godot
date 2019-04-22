@@ -37,6 +37,8 @@ void register_brain_types() {
 
 	ClassDB::register_virtual_class<SharpBrainAreaStructure>();
 	ClassDB::register_class<SharpBrainAreaStructureEditable>();
+	ClassDB::register_class<SharpBrainAreaStructureAncestor>();
+	ClassDB::register_class<SharpBrainAreaStructureRuntime>();
 	ClassDB::register_class<SharpBrainArea>();
 
 	ClassDB::register_virtual_class<Neat>();

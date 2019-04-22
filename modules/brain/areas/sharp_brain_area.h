@@ -69,8 +69,64 @@ public:
 	virtual void make_brain_area(brain::NtGenome &r_genome);
 };
 
+class SharpBrainAreaStructureAncestor : public SharpBrainAreaStructure {
+	GDCLASS(SharpBrainAreaStructureAncestor, SharpBrainAreaStructure);
+
+	int input_count;
+	int output_count;
+	bool randomize_weights;
+	BrainArea::Activation input_activation_func;
+	BrainArea::Activation output_activation_func;
+
+	static void _bind_methods();
+
+public:
+	SharpBrainAreaStructureAncestor();
+
+	void set_input_count(int p_input_count) {
+		input_count = p_input_count;
+		emit_changed();
+	}
+	int get_input_count() const {
+		return input_count;
+	}
+	void set_output_count(int p_output_count) {
+		output_count = p_output_count;
+		emit_changed();
+	}
+	int get_output_count() const {
+		return output_count;
+	}
+	void set_randomize_weights(bool p_randomize_weights) {
+		randomize_weights = p_randomize_weights;
+		emit_changed();
+	}
+	bool get_randomize_weights() const {
+		return randomize_weights;
+	}
+	void set_input_activation_func(BrainArea::Activation p_input_activation_func) {
+		input_activation_func = p_input_activation_func;
+		emit_changed();
+	}
+	BrainArea::Activation get_input_activation_func() const {
+		return input_activation_func;
+	}
+	void set_output_activation_func(BrainArea::Activation p_output_activation_func) {
+		output_activation_func = p_output_activation_func;
+		emit_changed();
+	}
+	BrainArea::Activation get_output_activation_func() const {
+		return output_activation_func;
+	}
+
+	virtual void make_brain_area(brain::SharpBrainArea &r_area);
+	virtual void make_brain_area(brain::NtGenome &r_genome);
+};
+
 class SharpBrainArea : public BrainArea {
 	GDCLASS(SharpBrainArea, BrainArea);
+
+	friend class NeatPopulation;
 
 private:
 	Ref<SharpBrainAreaStructure> structure;
@@ -83,6 +139,12 @@ public:
 
 	void set_structure(Ref<SharpBrainAreaStructure> p_struct);
 	Ref<SharpBrainAreaStructure> get_structure() const;
+
+	String description() const;
+
+	virtual bool guess(
+			Ref<SynapticTerminals> p_input,
+			Ref<SynapticTerminals> r_result);
 
 private:
 	void update_shape_area();
