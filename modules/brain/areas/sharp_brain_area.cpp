@@ -297,6 +297,9 @@ void SharpBrainAreaStructureAncestor::_bind_methods() {
 }
 
 void SharpBrainAreaStructureAncestor::make_brain_area(brain::SharpBrainArea &r_area) {
+	brain::NtGenome genome;
+	make_brain_area(genome);
+	genome.generate_neural_network(r_area);
 }
 
 void SharpBrainAreaStructureAncestor::make_brain_area(brain::NtGenome &r_genome) {

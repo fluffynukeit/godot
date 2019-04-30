@@ -78,6 +78,8 @@ void NeatPopulation::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_best_fitness_ever"), &NeatPopulation::get_best_fitness_ever);
 	ClassDB::bind_method(D_METHOD("get_champion_brain_area", "brain_area"), &NeatPopulation::get_champion_brain_area);
 
+	ClassDB::bind_method(D_METHOD("get_statistic", "key"), &NeatPopulation::get_statistic);
+
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "population_size"), "set_population_size", "get_population_size");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "random_seed"), "set_random_seed", "get_random_seed");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "ancestor", PROPERTY_HINT_RESOURCE_TYPE, "SharpBrainAreaStructure"), "set_ancestor", "get_ancestor");
@@ -109,6 +111,34 @@ void NeatPopulation::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "settings_cribs_stealing_limit"), "set_cribs_stealing_limit", "get_cribs_stealing_limit");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "settings_cribs_stealing_protection_age_threshold"), "set_cribs_stealing_protection_age_threshold", "get_cribs_stealing_protection_age_threshold");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "settings_population_stagnant_age_thresold"), "set_population_stagnant_age_thresold", "get_population_stagnant_age_thresold");
+
+	BIND_ENUM_CONSTANT(STATISTIC_EPOCH);
+	BIND_ENUM_CONSTANT(STATISTIC_IS_EPOCH_ADVANCED);
+	BIND_ENUM_CONSTANT(STATISTIC_POP_CHAMPION_FITNESS);
+	BIND_ENUM_CONSTANT(STATISTIC_POP_CHAMPION_SPECIES_ID);
+	BIND_ENUM_CONSTANT(STATISTIC_SPECIES_COUNT);
+	BIND_ENUM_CONSTANT(STATISTIC_SPECIES_YOUNG_COUNT);
+	BIND_ENUM_CONSTANT(STATISTIC_SPECIES_STAGNANT_COUNT);
+	BIND_ENUM_CONSTANT(STATISTIC_SPECIES_AVG_AGES);
+	BIND_ENUM_CONSTANT(STATISTIC_SPECIES_BEST_ID);
+	BIND_ENUM_CONSTANT(STATISTIC_SPECIES_BEST_AGE);
+	BIND_ENUM_CONSTANT(STATISTIC_SPECIES_BEST_OFFSPRING_PRE_STEAL);
+	BIND_ENUM_CONSTANT(STATISTIC_SPECIES_BEST_OFFSPRING);
+	BIND_ENUM_CONSTANT(STATISTIC_SPECIES_BEST_CHAMPION_OFFSPRING);
+	BIND_ENUM_CONSTANT(STATISTIC_SPECIES_BEST_IS_DIED);
+	BIND_ENUM_CONSTANT(STATISTIC_POP_AVG_FITNESS);
+	BIND_ENUM_CONSTANT(STATISTIC_POP_IS_STAGNANT);
+	BIND_ENUM_CONSTANT(STATISTIC_POP_EPOCH_LAST_IMPROVEMENT);
+	BIND_ENUM_CONSTANT(STATISTIC_POP_STOLEN_CRIBS);
+	BIND_ENUM_CONSTANT(STATISTIC_REPRODUCTION_CHAMPION_MUTATE_WEIGHTS);
+	BIND_ENUM_CONSTANT(STATISTIC_REPRODUCTION_CHAMPION_ADD_RANDOM_LINK);
+	BIND_ENUM_CONSTANT(STATISTIC_REPRODUCTION_MATE_MULTIPOINT);
+	BIND_ENUM_CONSTANT(STATISTIC_REPRODUCTION_MATE_MULTIPOINT_AVG);
+	BIND_ENUM_CONSTANT(STATISTIC_REPRODUCTION_MATE_SINGLEPOINT);
+	BIND_ENUM_CONSTANT(STATISTIC_REPRODUCTION_MUTATE_ADD_RANDOM_LINK);
+	BIND_ENUM_CONSTANT(STATISTIC_REPRODUCTION_MUTATE_ADD_RANDOM_NEURON);
+	BIND_ENUM_CONSTANT(STATISTIC_REPRODUCTION_MUTATE_WEIGHTS);
+	BIND_ENUM_CONSTANT(STATISTIC_REPRODUCTION_MUTATE_TOGGLE_LINK_ACTIVATION);
 }
 
 void NeatPopulation::_notification(int p_what) {
@@ -152,7 +182,9 @@ real_t NeatPopulation::organism_get_fitness(int p_organism_id) const {
 }
 
 bool NeatPopulation::epoch_advance() {
-	return population->epoch_advance();
+	const bool res = population->epoch_advance();
+	statistics = population->get_epoch_statistics();
+	return res;
 }
 
 int NeatPopulation::get_epoch() const {
@@ -167,6 +199,94 @@ void NeatPopulation::get_champion_brain_area(Object *r_brain_area) const {
 	SharpBrainArea *brain_area = Object::cast_to<SharpBrainArea>(r_brain_area);
 	ERR_FAIL_COND(!brain_area);
 	population->get_champion_network(brain_area->brain_area);
+}
+
+Variant NeatPopulation::get_statistic(StatisticKeys p_what) const {
+
+	if (p_what == STATISTIC_EPOCH) {
+		return statistics.epoch;
+	}
+	if (p_what == STATISTIC_IS_EPOCH_ADVANCED) {
+		return statistics.is_epoch_advanced;
+	}
+	if (p_what == STATISTIC_POP_CHAMPION_FITNESS) {
+		return statistics.pop_champion_fitness;
+	}
+	if (p_what == STATISTIC_POP_CHAMPION_SPECIES_ID) {
+		return statistics.pop_champion_species_id;
+	}
+	if (p_what == STATISTIC_SPECIES_COUNT) {
+		return statistics.species_count;
+	}
+	if (p_what == STATISTIC_SPECIES_YOUNG_COUNT) {
+		return statistics.species_young_count;
+	}
+	if (p_what == STATISTIC_SPECIES_STAGNANT_COUNT) {
+		return statistics.species_stagnant_count;
+	}
+	if (p_what == STATISTIC_SPECIES_AVG_AGES) {
+		return statistics.species_avg_ages;
+	}
+	if (p_what == STATISTIC_SPECIES_BEST_ID) {
+		return statistics.species_best_id;
+	}
+	if (p_what == STATISTIC_SPECIES_BEST_AGE) {
+		return statistics.species_best_age;
+	}
+	if (p_what == STATISTIC_SPECIES_BEST_OFFSPRING_PRE_STEAL) {
+		return statistics.species_best_offspring_pre_steal;
+	}
+	if (p_what == STATISTIC_SPECIES_BEST_OFFSPRING) {
+		return statistics.species_best_offspring;
+	}
+	if (p_what == STATISTIC_SPECIES_BEST_CHAMPION_OFFSPRING) {
+		return statistics.species_best_champion_offspring;
+	}
+	if (p_what == STATISTIC_SPECIES_BEST_IS_DIED) {
+		return statistics.species_best_is_died;
+	}
+	if (p_what == STATISTIC_POP_AVG_FITNESS) {
+		return statistics.pop_avg_fitness;
+	}
+	if (p_what == STATISTIC_POP_IS_STAGNANT) {
+		return statistics.pop_is_stagnant;
+	}
+	if (p_what == STATISTIC_POP_EPOCH_LAST_IMPROVEMENT) {
+		return statistics.pop_epoch_last_improvement;
+	}
+	if (p_what == STATISTIC_POP_STOLEN_CRIBS) {
+		return statistics.pop_stolen_cribs;
+	}
+	if (p_what == STATISTIC_REPRODUCTION_CHAMPION_MUTATE_WEIGHTS) {
+		return statistics.reproduction_champion_mutate_weights;
+	}
+	if (p_what == STATISTIC_REPRODUCTION_CHAMPION_ADD_RANDOM_LINK) {
+		return statistics.reproduction_champion_add_random_link;
+	}
+	if (p_what == STATISTIC_REPRODUCTION_MATE_MULTIPOINT) {
+		return statistics.reproduction_mate_multipoint;
+	}
+	if (p_what == STATISTIC_REPRODUCTION_MATE_MULTIPOINT_AVG) {
+		return statistics.reproduction_mate_multipoint_avg;
+	}
+	if (p_what == STATISTIC_REPRODUCTION_MATE_SINGLEPOINT) {
+		return statistics.reproduction_mate_singlepoint;
+	}
+	if (p_what == STATISTIC_REPRODUCTION_MUTATE_ADD_RANDOM_LINK) {
+		return statistics.reproduction_mutate_add_random_link;
+	}
+	if (p_what == STATISTIC_REPRODUCTION_MUTATE_ADD_RANDOM_NEURON) {
+		return statistics.reproduction_mutate_add_random_neuron;
+	}
+	if (p_what == STATISTIC_REPRODUCTION_MUTATE_WEIGHTS) {
+		return statistics.reproduction_mutate_weights;
+	}
+	if (p_what == STATISTIC_REPRODUCTION_MUTATE_TOGGLE_LINK_ACTIVATION) {
+		return statistics.reproduction_mutate_toggle_link_activation;
+	}
+
+	ERR_EXPLAIN("The what value, is not a valid parameter");
+	ERR_FAIL_V(Variant());
 }
 
 void NeatPopulation::init_population() {

@@ -86,10 +86,7 @@ void UniformBrainArea::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("prepare_to_learn"), &UniformBrainArea::prepare_to_learn);
 	ClassDB::bind_method(D_METHOD("learn", "input", "expected", "learning_rate"), &UniformBrainArea::learn);
-	ClassDB::bind_method(D_METHOD("guess", "input"), &UniformBrainArea::_guess);
-
-	ClassDB::bind_method(D_METHOD("save_knowledge", "path", "overwrite"), &UniformBrainArea::save_knowledge);
-	ClassDB::bind_method(D_METHOD("load_knowledge", "path"), &UniformBrainArea::load_knowledge);
+	ClassDB::bind_method(D_METHOD("_guess", "input"), &UniformBrainArea::_guess);
 
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "input_layer_size"), "set_input_layer_size", "get_input_layer_size");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "hidden_layers_count"), "set_hidden_layers_count", "get_hidden_layers_count");
@@ -188,79 +185,4 @@ Ref<SynapticTerminals> UniformBrainArea::_guess(const Vector<real_t> &p_input) {
 	output.instance();
 	brain_area.guess(input, output->matrix);
 	return output;
-}
-
-void UniformBrainArea::save_knowledge(const String &p_path, bool p_overwrite) {
-
-	ERR_FAIL_COND(p_overwrite == false && FileAccess::exists(p_path));
-	Error e;
-	FileAccess *f = FileAccess::open(p_path, FileAccess::WRITE, &e);
-
-	if (e != OK) {
-		ERR_EXPLAIN("Can't open file" + p_path + " because " + itos(e));
-		ERR_FAIL();
-	}
-
-	std::vector<uint8_t> buffer;
-	if (!brain_area.get_buffer(buffer)) {
-		f->close();
-		memdelete(f);
-		ERR_EXPLAIN("Can't save knowledge. File: " + p_path);
-		ERR_FAIL();
-	}
-
-	f->store_buffer(buffer.data(), buffer.size());
-
-	f->close();
-	memdelete(f);
-}
-
-void UniformBrainArea::load_knowledge(const String &p_path) {
-
-	ERR_FAIL_COND(!FileAccess::exists(p_path));
-
-	Error e;
-	FileAccess *f = FileAccess::open(p_path, FileAccess::READ, &e);
-
-	if (e != OK) {
-		ERR_EXPLAIN("Can't open file because " + itos(e));
-		ERR_FAIL();
-	}
-
-	std::vector<uint8_t> buffer;
-
-	const uint32_t buffer_size = f->get_len();
-	buffer.resize(buffer_size);
-
-	const int readed = f->get_buffer(buffer.data(), buffer_size);
-	if (readed != buffer_size) {
-		f->close();
-		memdelete(f);
-		ERR_EXPLAIN("File corrupted: " + p_path);
-		ERR_FAIL();
-	}
-
-	if (brain_area.is_buffer_corrupted(buffer)) {
-		f->close();
-		memdelete(f);
-		ERR_EXPLAIN("File corrupted: " + p_path);
-		ERR_FAIL();
-	}
-
-	if (!brain_area.is_buffer_compatible(buffer)) {
-		f->close();
-		memdelete(f);
-		ERR_EXPLAIN("This knowledge has a different brain structure: " + p_path);
-		ERR_FAIL();
-	}
-
-	if (!brain_area.set_buffer(buffer)) {
-		f->close();
-		memdelete(f);
-		ERR_EXPLAIN("File corrupted: " + p_path);
-		ERR_FAIL();
-	}
-
-	f->close();
-	memdelete(f);
 }

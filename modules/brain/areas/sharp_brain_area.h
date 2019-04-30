@@ -137,6 +137,10 @@ private:
 public:
 	SharpBrainArea();
 
+	virtual brain::BrainArea &get_internal_brain() {
+		return brain_area;
+	}
+
 	void set_structure(Ref<SharpBrainAreaStructure> p_struct);
 	Ref<SharpBrainAreaStructure> get_structure() const;
 

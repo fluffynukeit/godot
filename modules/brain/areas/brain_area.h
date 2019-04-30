@@ -3,6 +3,7 @@
 
 #include "core/reference.h"
 #include "scene/main/node.h"
+#include "thirdparty/brain/brain/brain_areas/brain_area.h"
 #include "thirdparty/brain/brain/math/matrix.h"
 
 class SynapticTerminals : public Reference {
@@ -58,9 +59,14 @@ private:
 public:
 	BrainArea();
 
+	virtual brain::BrainArea &get_internal_brain() = 0;
+
 	virtual bool guess(
 			Ref<SynapticTerminals> p_input,
 			Ref<SynapticTerminals> r_result) = 0;
+
+	void save_knowledge(const String &p_path, bool p_overwrite = false);
+	void load_knowledge(const String &p_path);
 };
 
 VARIANT_ENUM_CAST(BrainArea::Activation);

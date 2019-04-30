@@ -20,6 +20,10 @@ private:
 public:
 	UniformBrainArea();
 
+	virtual brain::BrainArea &get_internal_brain() {
+		return brain_area;
+	}
+
 	void set_input_layer_size(int p_size);
 	int get_input_layer_size();
 
@@ -44,9 +48,6 @@ public:
 			Ref<SynapticTerminals> r_result) {
 		return false;
 	}
-
-	void save_knowledge(const String &p_path, bool p_overwrite = false);
-	void load_knowledge(const String &p_path);
 };
 
 #endif // BRAIN_AREA_H
