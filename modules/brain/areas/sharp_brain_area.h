@@ -14,8 +14,8 @@ public:
 	virtual void make_brain_area(brain::NtGenome &r_genome) = 0;
 };
 
-class SharpBrainAreaStructureRuntime : public Resource {
-	GDCLASS(SharpBrainAreaStructureRuntime, Resource);
+class SharpBrainAreaStructureRuntime : public SharpBrainAreaStructure {
+	GDCLASS(SharpBrainAreaStructureRuntime, SharpBrainAreaStructure);
 
 public:
 	brain::SharpBrainArea area;
@@ -123,6 +123,21 @@ public:
 	virtual void make_brain_area(brain::NtGenome &r_genome);
 };
 
+class SharpBrainAreaStructureFile : public SharpBrainAreaStructure {
+	GDCLASS(SharpBrainAreaStructureFile, SharpBrainAreaStructure);
+
+	String path;
+
+	static void _bind_methods();
+
+public:
+	void set_file_path(String p_path);
+	String get_file_path() const;
+
+	virtual void make_brain_area(brain::SharpBrainArea &r_area);
+	virtual void make_brain_area(brain::NtGenome &r_genome);
+};
+
 class SharpBrainArea : public BrainArea {
 	GDCLASS(SharpBrainArea, BrainArea);
 
@@ -151,7 +166,7 @@ public:
 			Ref<SynapticTerminals> r_result);
 
 private:
-	void update_shape_area();
+	void update_sharp_area();
 };
 
 #endif // SHARP_BRAIN_AREA_H

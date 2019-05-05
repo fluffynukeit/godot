@@ -311,12 +311,65 @@ void SharpBrainAreaStructureAncestor::make_brain_area(brain::NtGenome &r_genome)
 			static_cast<brain::BrainArea::Activation>(output_activation_func));
 }
 
+void SharpBrainAreaStructureFile::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_file_path", "path"), &SharpBrainAreaStructureFile::set_file_path);
+	ClassDB::bind_method(D_METHOD("get_file_path"), &SharpBrainAreaStructureFile::get_file_path);
+
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "path"), "set_file_path", "get_file_path");
+}
+
+void SharpBrainAreaStructureFile::set_file_path(String p_path) {
+	path = p_path;
+}
+String SharpBrainAreaStructureFile::get_file_path() const {
+	return path;
+}
+
+void SharpBrainAreaStructureFile::make_brain_area(brain::SharpBrainArea &r_area) {
+	SharpBrainArea sba;
+	sba.load_knowledge(path);
+	r_area = static_cast<brain::SharpBrainArea &>(sba.get_internal_brain());
+}
+
+void SharpBrainAreaStructureFile::make_brain_area(brain::NtGenome &r_genome) {
+	SharpBrainArea sba;
+	sba.load_knowledge(path);
+	const brain::SharpBrainArea &area = static_cast<brain::SharpBrainArea &>(sba.get_internal_brain());
+
+	r_genome.clear();
+
+	for (int i(0); i < area.get_neuron_count(); ++i) {
+		brain::NtNeuronGene::NeuronGeneType type = brain::NtNeuronGene::NEURON_GENE_TYPE_HIDDEN;
+		if (area.is_neuron_input(i)) {
+			type = brain::NtNeuronGene::NEURON_GENE_TYPE_INPUT;
+		} else if (area.is_neuron_output(i)) {
+			type = brain::NtNeuronGene::NEURON_GENE_TYPE_OUTPUT;
+		}
+
+		const brain::BrainArea::Activation activation = static_cast<brain::BrainArea::Activation>(area.get_neuron_activation(i));
+
+		r_genome.add_neuron(type, activation);
+	}
+
+	int innovation_number(1);
+	for (int i(0); i < area.get_neuron_count(); ++i) {
+		for (int link(0); link < area.get_neuron_parent_count(i); ++link) {
+			r_genome.add_link(
+					area.get_neuron_parent_id(i, link),
+					i,
+					area.get_neuron_parent_weight(i, link),
+					area.get_neuron_parent_is_recurrent(i, link),
+					innovation_number++);
+		}
+	}
+}
+
 void SharpBrainArea::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("set_structure", "struct"), &SharpBrainArea::set_structure);
 	ClassDB::bind_method(D_METHOD("get_structure"), &SharpBrainArea::get_structure);
 
-	ClassDB::bind_method(D_METHOD("update_shape_area"), &SharpBrainArea::update_shape_area);
+	ClassDB::bind_method(D_METHOD("update_sharp_area"), &SharpBrainArea::update_sharp_area);
 
 	ClassDB::bind_method(D_METHOD("description"), &SharpBrainArea::description);
 
@@ -332,7 +385,7 @@ void SharpBrainArea::set_structure(Ref<SharpBrainAreaStructure> p_struct) {
 	}
 
 	structure = p_struct;
-	update_shape_area();
+	update_sharp_area();
 
 	if (structure.is_valid()) {
 		structure->connect("changed", this, "update_shape_area");
@@ -362,7 +415,7 @@ bool SharpBrainArea::guess(
 			r_result->matrix);
 }
 
-void SharpBrainArea::update_shape_area() {
+void SharpBrainArea::update_sharp_area() {
 	if (structure.is_null())
 		return;
 	structure->make_brain_area(brain_area);

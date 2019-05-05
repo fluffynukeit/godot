@@ -67,7 +67,8 @@ void NeatPopulation::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_population_stagnant_age_thresold", "population_stagnant_age_thresold"), &NeatPopulation::set_population_stagnant_age_thresold);
 	ClassDB::bind_method(D_METHOD("get_population_stagnant_age_thresold"), &NeatPopulation::get_population_stagnant_age_thresold);
 
-	ClassDB::bind_method(D_METHOD("organism_get_brain_area", "organism_id", "ret"), &NeatPopulation::organism_get_brain_area);
+	ClassDB::bind_method(D_METHOD("organism_get_brain_area", "organism_id", "sharp_brain_area"), &NeatPopulation::organism_get_brain_area);
+	ClassDB::bind_method(D_METHOD("organism_get_brain_area_structure", "organism_id"), &NeatPopulation::organism_get_brain_area_structure);
 
 	ClassDB::bind_method(D_METHOD("organism_set_fitness", "organism_id", "fitness"), &NeatPopulation::organism_set_fitness);
 	ClassDB::bind_method(D_METHOD("organism_get_fitness", "organism_id"), &NeatPopulation::organism_get_fitness);
@@ -76,7 +77,7 @@ void NeatPopulation::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("get_epoch"), &NeatPopulation::get_epoch);
 	ClassDB::bind_method(D_METHOD("get_best_fitness_ever"), &NeatPopulation::get_best_fitness_ever);
-	ClassDB::bind_method(D_METHOD("get_champion_brain_area", "brain_area"), &NeatPopulation::get_champion_brain_area);
+	ClassDB::bind_method(D_METHOD("get_champion_brain_area"), &NeatPopulation::get_champion_brain_area);
 
 	ClassDB::bind_method(D_METHOD("get_statistic", "key"), &NeatPopulation::get_statistic);
 
@@ -173,6 +174,14 @@ void NeatPopulation::organism_get_brain_area(int p_organism_id, Object *r_brain_
 	brain_area->brain_area = *population->organism_get_network(p_organism_id);
 }
 
+Ref<SharpBrainAreaStructureRuntime> NeatPopulation::organism_get_brain_area_structure(int p_organism_id) const {
+
+	Ref<SharpBrainAreaStructureRuntime> r;
+	r.instance();
+	r->area = *population->organism_get_network(p_organism_id);
+	return r;
+}
+
 void NeatPopulation::organism_set_fitness(int p_organism_id, real_t p_fitness) {
 	population->organism_set_fitness(p_organism_id, p_fitness);
 }
@@ -195,10 +204,11 @@ real_t NeatPopulation::get_best_fitness_ever() const {
 	return population->get_best_personal_fitness();
 }
 
-void NeatPopulation::get_champion_brain_area(Object *r_brain_area) const {
-	SharpBrainArea *brain_area = Object::cast_to<SharpBrainArea>(r_brain_area);
-	ERR_FAIL_COND(!brain_area);
-	population->get_champion_network(brain_area->brain_area);
+Ref<SharpBrainAreaStructureRuntime> NeatPopulation::get_champion_brain_area() const {
+	Ref<SharpBrainAreaStructureRuntime> r;
+	r.instance();
+	population->get_champion_network(r->area);
+	return r;
 }
 
 Variant NeatPopulation::get_statistic(StatisticKeys p_what) const {

@@ -50,7 +50,9 @@ void SynapticTerminals::set_value__grid(
 
 	ERR_FAIL_COND(p_x < 0 || p_x >= p_width);
 	ERR_FAIL_COND(p_y < 0 || p_y >= p_height);
-	ERR_FAIL_COND(p_width * p_height != matrix.get_row_count());
+	if (p_width * p_height != matrix.get_row_count()) {
+		WARN_PRINT_ONCE("The synapsis are differnt quantity of width * height");
+	}
 
 	set_value(GRID_GET_ID(p_x, p_y, p_width), p_value);
 

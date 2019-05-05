@@ -144,6 +144,7 @@ public:
 	int get_population_stagnant_age_thresold() const { return settings.population_stagnant_age_thresold; }
 
 	void organism_get_brain_area(int p_organism_id, Object *r_brain_area) const;
+	Ref<SharpBrainAreaStructureRuntime> organism_get_brain_area_structure(int p_organism_id) const;
 
 	void organism_set_fitness(int p_organism_id, real_t p_fitness);
 	real_t organism_get_fitness(int p_organism_id) const;
@@ -153,7 +154,8 @@ public:
 	int get_epoch() const;
 
 	real_t get_best_fitness_ever() const;
-	void get_champion_brain_area(Object *r_brain_area) const;
+
+	Ref<SharpBrainAreaStructureRuntime> get_champion_brain_area() const;
 
 	Variant get_statistic(StatisticKeys p_what) const;
 
