@@ -5,6 +5,7 @@
 #include "areas/uniform_brain_area.h"
 #include "neat/neat_population.h"
 #include "thirdparty/brain/brain/error_handler.h"
+#include "weights_raw_resource_format_loader.h"
 
 brain::ErrorHandlerList *error_handler;
 
@@ -30,6 +31,7 @@ void print_error_callback(
 	ERR_PRINT(msg.c_str());
 }
 
+static WeightsRawResourceFormatLoader *weight_raw_loader = NULL;
 void register_brain_types() {
 	ClassDB::register_class<SynapticTerminals>();
 	ClassDB::register_virtual_class<BrainArea>();
@@ -48,9 +50,16 @@ void register_brain_types() {
 	error_handler = new brain::ErrorHandlerList;
 	error_handler->errfunc = print_error_callback;
 	brain::add_error_handler(error_handler);
+
+	weight_raw_loader = memnew(WeightsRawResourceFormatLoader);
+	ResourceLoader::add_resource_format_loader(weight_raw_loader);
+	ClassDB::register_class<WeightsRawResourceFormatLoader>();
 }
 
 void unregister_brain_types() {
 	delete error_handler;
 	error_handler = NULL;
+
+	memdelete(weight_raw_loader);
+	weight_raw_loader = NULL;
 }
