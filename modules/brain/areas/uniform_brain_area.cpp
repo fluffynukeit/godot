@@ -86,7 +86,6 @@ void UniformBrainArea::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("prepare_to_learn"), &UniformBrainArea::prepare_to_learn);
 	ClassDB::bind_method(D_METHOD("learn", "input", "expected", "learning_rate"), &UniformBrainArea::learn);
-	ClassDB::bind_method(D_METHOD("_guess", "input"), &UniformBrainArea::_guess);
 
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "input_layer_size"), "set_input_layer_size", "get_input_layer_size");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "hidden_layers_count"), "set_hidden_layers_count", "get_hidden_layers_count");
@@ -177,12 +176,9 @@ real_t UniformBrainArea::learn(
 	return brain_area.learn(input, expected, learning_rate, &learning_cache);
 }
 
-Ref<SynapticTerminals> UniformBrainArea::_guess(const Vector<real_t> &p_input) {
+bool UniformBrainArea::guess(
+		Ref<SynapticTerminals> p_input,
+		Ref<SynapticTerminals> r_result) {
 
-	brain::Matrix input(p_input.size(), 1, p_input.ptr());
-
-	Ref<SynapticTerminals> output;
-	output.instance();
-	brain_area.guess(input, output->matrix);
-	return output;
+	return brain_area.guess(p_input->matrix, r_result->matrix);
 }
