@@ -69,7 +69,7 @@ void UniformBrainArea::_get_property_list(List<PropertyInfo> *p_list) const {
 				Variant::INT,
 				"hidden_layer_" + itos(i) + "/activation",
 				PROPERTY_HINT_ENUM,
-				"Sigmoid"));
+				"Sigmoid,Relu,Leaky Relu,Tanh,Linear,Binary,Soft Max"));
 	}
 }
 
@@ -84,12 +84,16 @@ void UniformBrainArea::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_output_layer_size", "size"), &UniformBrainArea::set_output_layer_size);
 	ClassDB::bind_method(D_METHOD("get_output_layer_size"), &UniformBrainArea::get_output_layer_size);
 
+	ClassDB::bind_method(D_METHOD("set_output_layer_activation", "activation"), &UniformBrainArea::set_output_layer_activation);
+	ClassDB::bind_method(D_METHOD("get_output_layer_activation"), &UniformBrainArea::get_output_layer_activation);
+
 	ClassDB::bind_method(D_METHOD("prepare_to_learn"), &UniformBrainArea::prepare_to_learn);
 	ClassDB::bind_method(D_METHOD("learn", "input", "expected", "learning_rate"), &UniformBrainArea::learn);
 
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "input_layer_size"), "set_input_layer_size", "get_input_layer_size");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "hidden_layers_count"), "set_hidden_layers_count", "get_hidden_layers_count");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "output_layer_size"), "set_output_layer_size", "get_output_layer_size");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "output_layer_activation", PROPERTY_HINT_ENUM, "Sigmoid,Relu,Leaky Relu,Tanh,Linear,Binary,Soft Max"), "set_output_layer_activation", "get_output_layer_activation");
 }
 
 UniformBrainArea::UniformBrainArea() {}
@@ -155,8 +159,17 @@ void UniformBrainArea::set_output_layer_size(int p_size) {
 	brain_area.set_output_layer_size(p_size);
 }
 
-int UniformBrainArea::get_output_layer_size() {
+int UniformBrainArea::get_output_layer_size() const {
 	return brain_area.get_output_layer_size();
+}
+
+void UniformBrainArea::set_output_layer_activation(Activation p_activation) {
+	brain_area.set_output_layer_activation(
+			static_cast<brain::BrainArea::Activation>(p_activation));
+}
+
+BrainArea::Activation UniformBrainArea::get_output_layer_activation() const {
+	return static_cast<Activation>(brain_area.get_output_layer_activation());
 }
 
 void UniformBrainArea::prepare_to_learn() {

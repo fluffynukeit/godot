@@ -37,7 +37,10 @@ public:
 	Activation get_hidden_layer_activation(int p_hidden_layer) const;
 
 	void set_output_layer_size(int p_size);
-	int get_output_layer_size();
+	int get_output_layer_size() const;
+
+	void set_output_layer_activation(Activation p_activation);
+	Activation get_output_layer_activation() const;
 
 	void prepare_to_learn();
 	real_t learn(const Vector<real_t> &p_input, const Vector<real_t> &p_expected, real_t p_learning_rate);
