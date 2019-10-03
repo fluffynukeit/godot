@@ -40,7 +40,7 @@
 	@author AndreaCatania
 */
 
-class btGhostObject;
+class btPairCachingGhostObject;
 
 class AreaBullet : public RigidCollisionObjectBullet {
 	friend void SpaceBullet::check_ghost_overlaps();
@@ -85,7 +85,7 @@ private:
 	Variant call_event_res[5];
 	Variant *call_event_res_ptr[5];
 
-	btGhostObject *btGhost;
+	btPairCachingGhostObject *btGhost;
 	Vector<OverlappingObjectData> overlappingObjects;
 	bool monitorable;
 
@@ -107,8 +107,8 @@ public:
 	AreaBullet();
 	~AreaBullet();
 
-	_FORCE_INLINE_ btGhostObject *get_bt_ghost() const { return btGhost; }
-	int find_overlapping_object(CollisionObjectBullet *p_colObj);
+	_FORCE_INLINE_ btPairCachingGhostObject *get_bt_ghost() const { return btGhost; }
+	int find_overlapping_object(const CollisionObjectBullet *p_colObj);
 
 	void set_monitorable(bool p_monitorable);
 	_FORCE_INLINE_ bool is_monitorable() const { return monitorable; }
@@ -153,7 +153,7 @@ public:
 
 	void clear_overlaps(bool p_notify);
 	// Dispatch the callbacks and removes from overlapping list
-	void remove_overlap(CollisionObjectBullet *p_object, bool p_notify);
+	void remove_overlap(const CollisionObjectBullet *p_object, bool p_notify);
 
 	virtual void on_collision_filters_change();
 	virtual void on_collision_checker_start() {}

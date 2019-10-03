@@ -141,7 +141,7 @@ void CollisionObjectBullet::setupBulletCollisionObject(btCollisionObject *p_coll
 	bt_collision_object->setUserPointer(this);
 	bt_collision_object->setUserIndex(type);
 	// Force the enabling of collision and avoid problems
-	set_collision_enabled(collisionsEnabled);
+	set_contact_response_enabled(collisionsEnabled);
 	p_collisionObject->setCollisionFlags(p_collisionObject->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
 }
 
@@ -165,7 +165,7 @@ bool CollisionObjectBullet::has_collision_exception(const CollisionObjectBullet 
 	return !bt_collision_object->checkCollideWith(p_otherCollisionObject->bt_collision_object);
 }
 
-void CollisionObjectBullet::set_collision_enabled(bool p_enabled) {
+void CollisionObjectBullet::set_contact_response_enabled(bool p_enabled) {
 	collisionsEnabled = p_enabled;
 	if (collisionsEnabled) {
 		bt_collision_object->setCollisionFlags(bt_collision_object->getCollisionFlags() & (~btCollisionObject::CF_NO_CONTACT_RESPONSE));

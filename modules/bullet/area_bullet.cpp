@@ -57,12 +57,13 @@ AreaBullet::AreaBullet() :
 		spOv_priority(0),
 		isScratched(false) {
 
-	btGhost = bulletnew(btGhostObject);
+	//btGhost = bulletnew(btGhostObject);
+	btGhost = bulletnew(btPairCachingGhostObject);
 	reload_shapes();
 	setupBulletCollisionObject(btGhost);
 	/// Collision objects with a callback still have collision response with dynamic rigid bodies.
 	/// In order to use collision objects as trigger, you have to disable the collision response.
-	set_collision_enabled(false);
+	set_contact_response_enabled(false);
 
 	for (int i = 0; i < 5; ++i)
 		call_event_res_ptr[i] = &call_event_res[i];
@@ -136,7 +137,7 @@ void AreaBullet::clear_overlaps(bool p_notify) {
 	overlappingObjects.clear();
 }
 
-void AreaBullet::remove_overlap(CollisionObjectBullet *p_object, bool p_notify) {
+void AreaBullet::remove_overlap(const CollisionObjectBullet *p_object, bool p_notify) {
 	for (int i = overlappingObjects.size() - 1; 0 <= i; --i) {
 		if (overlappingObjects[i].object == p_object) {
 			if (p_notify)
@@ -148,7 +149,7 @@ void AreaBullet::remove_overlap(CollisionObjectBullet *p_object, bool p_notify) 
 	}
 }
 
-int AreaBullet::find_overlapping_object(CollisionObjectBullet *p_colObj) {
+int AreaBullet::find_overlapping_object(const CollisionObjectBullet *p_colObj) {
 	const int size = overlappingObjects.size();
 	for (int i = 0; i < size; ++i) {
 		if (overlappingObjects[i].object == p_colObj) {

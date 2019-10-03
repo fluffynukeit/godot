@@ -193,7 +193,7 @@ public:
 
 	virtual void dispatch_callbacks() = 0;
 
-	void set_collision_enabled(bool p_enabled);
+	void set_contact_response_enabled(bool p_enabled);
 	bool is_collisions_response_enabled();
 
 	void notify_new_overlap(AreaBullet *p_area);
