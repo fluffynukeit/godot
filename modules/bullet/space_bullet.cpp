@@ -611,6 +611,7 @@ void SpaceBullet::create_empty_world(bool p_create_soft_world) {
 	dynamicsWorld->setInternalTickCallback(onBulletTickCallback, this, false);
 	dynamicsWorld->getPairCache()->setInternalGhostPairCallback(ghostPairCallback);
 	dynamicsWorld->getPairCache()->setOverlapFilterCallback(godotFilterCallback);
+	dynamicsWorld->getDispatchInfo().m_enableSatConvex = true;
 
 	if (soft_body_world_info) {
 		soft_body_world_info->m_broadphase = broadphase;
@@ -679,11 +680,13 @@ void SpaceBullet::check_ghost_overlaps() {
 			btBroadphasePair *pair;
 
 			btCollisionObject *overlapped_bt_co = bt_ghost_overlaps[i];
-			RigidCollisionObjectBullet *other_object = static_cast<RigidCollisionObjectBullet *>(overlapped_bt_co->getUserPointer());
-			//if (!area->is_transform_changed() && !other_object->is_transform_changed()) {
-			//	has_overlap = -1 != area->find_overlapping_object(other_object);
-			//	goto collision_found;
-			//}
+			if (overlapped_bt_co->getUserIndex() == CollisionObjectBullet::TYPE_AREA) {
+				// TODO Perform this check here: /modules/bullet/godot_collision_dispatcher.cpp
+				AreaBullet *other_object = static_cast<AreaBullet *>(overlapped_bt_co->getUserPointer());
+				if (!other_object->is_monitorable()) {
+					continue;
+				}
+			}
 
 			pair = dynamicsWorld->getPairCache()->findPair(area_bp_handle, overlapped_bt_co->getBroadphaseHandle());
 			if (pair == NULL || pair->m_algorithm == NULL) {
@@ -711,6 +714,7 @@ void SpaceBullet::check_ghost_overlaps() {
 			if (!has_overlap)
 				continue;
 
+			CollisionObjectBullet *other_object = static_cast<CollisionObjectBullet *>(overlapped_bt_co->getUserPointer());
 			const int indexOverlap = area->find_overlapping_object(other_object);
 			if (-1 == indexOverlap) {
 				// Not found
@@ -770,13 +774,13 @@ void SpaceBullet::check_ghost_overlaps() {
 		//	//}
 		//}
 
-		///// 3. Remove not overlapping
-		//for (int i = 0; i < area->overlappingObjects.size(); --i) {
-		//	// If the overlap has DIRTY state it means that it's no more overlapping
-		//	if (area->overlappingObjects[i].state == AreaBullet::OVERLAP_STATE_DIRTY) {
-		//		area->put_overlap_as_exit(i);
-		//	}
-		//}
+		// 3. Remove not overlapping objects
+		for (int i = 0; i < area->overlappingObjects.size(); i++) {
+			// If the overlap has DIRTY state it means that it's no more overlapping
+			if (area->overlappingObjects[i].state == AreaBullet::OVERLAP_STATE_DIRTY) {
+				area->put_overlap_as_exit(i);
+			}
+		}
 	}
 }
 
