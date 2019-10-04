@@ -43,6 +43,7 @@
 #include "soft_body_bullet.h"
 
 #include <BulletCollision/CollisionDispatch/btCollisionObject.h>
+#include <BulletCollision/CollisionDispatch/btCompoundCompoundCollisionAlgorithm.h>
 #include <BulletCollision/CollisionDispatch/btGhostObject.h>
 #include <BulletCollision/NarrowPhaseCollision/btGjkEpaPenetrationDepthSolver.h>
 #include <BulletCollision/NarrowPhaseCollision/btGjkPairDetector.h>
@@ -694,7 +695,12 @@ void SpaceBullet::check_ghost_overlaps() {
 			}
 
 			manifold_array.clear();
-			pair->m_algorithm->getAllContactManifolds(manifold_array);
+			auto comp_comp_algo = dynamic_cast<btCompoundCompoundCollisionAlgorithm *>(pair->m_algorithm);
+			if (comp_comp_algo) {
+				comp_comp_algo->getAllContactManifolds(manifold_array);
+			} else {
+				pair->m_algorithm->getAllContactManifolds(manifold_array);
+			}
 
 			for (int y = 0; y < manifold_array.size(); y++) {
 				btPersistentManifold *manifold = manifold_array[y];
