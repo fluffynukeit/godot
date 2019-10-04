@@ -669,6 +669,8 @@ void SpaceBullet::check_ghost_overlaps() {
 		}
 
 		// 2. Checks the overlaps
+		// Is also possible retrieve other information from the manifold
+		// Check this: https://github.com/AndresTraks/BulletSharp/wiki/Collision-Callbacks-and-Triggers
 
 		btBroadphaseProxy *area_bp_handle = area->get_bt_ghost()->getBroadphaseHandle();
 
