@@ -178,7 +178,7 @@
 #include "scene/3d/baked_lightmap.h"
 #include "scene/3d/bone_attachment.h"
 #include "scene/3d/camera.h"
-#include "scene/3d/collision_avoidance_controller.h"
+#include "scene/3d/navigation_agent.h"
 #include "scene/3d/collision_polygon.h"
 #include "scene/3d/collision_shape.h"
 #include "scene/3d/cpu_particles.h"
@@ -440,7 +440,7 @@ void register_scene_types() {
 	ClassDB::register_class<RigidBody>();
 	ClassDB::register_class<KinematicCollision>();
 	ClassDB::register_class<KinematicBody>();
-    ClassDB::register_class<CollisionAvoidanceController>();
+    ClassDB::register_class<NavigationAgent>();
     ClassDB::register_class<SpringArm>();
 
 	ClassDB::register_class<PhysicalBone>();

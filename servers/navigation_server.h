@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  collision_avoidance_server.h                                         */
+/*  navigation_server.h                                                  */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,22 +28,22 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef COLLISION_AVOIDANCE_SERVER_H
-#define COLLISION_AVOIDANCE_SERVER_H
+#ifndef NAVIGATION_SERVER_H
+#define NAVIGATION_SERVER_H
 
 #include "core/object.h"
 #include "core/rid.h"
 
-class CollisionAvoidanceServer : public Object {
-    GDCLASS(CollisionAvoidanceServer, Object);
+class NavigationServer : public Object {
+    GDCLASS(NavigationServer, Object);
 
-    static CollisionAvoidanceServer *singleton;
+    static NavigationServer *singleton;
 
 protected:
     static void _bind_methods();
 
 public:
-    static CollisionAvoidanceServer *get_singleton();
+    static NavigationServer *get_singleton();
 
     virtual RID space_create() = 0;
     virtual void space_set_active(RID p_space, bool p_active) = 0;
@@ -138,18 +138,18 @@ public:
     virtual void set_active(bool p_active) = 0;
     virtual void step(real_t delta_time) = 0;
 
-    CollisionAvoidanceServer();
-    virtual ~CollisionAvoidanceServer();
+    NavigationServer();
+    virtual ~NavigationServer();
 };
 
-typedef CollisionAvoidanceServer *(*CreateCollisionAvoidanceServerCallback)();
+typedef NavigationServer *(*NavigationServerCallback)();
 
-class CollisionAvoidanceServerManager {
-    static CreateCollisionAvoidanceServerCallback create_callback;
+class NavigationServerManager {
+    static NavigationServerCallback create_callback;
 
 public:
-    static void set_default_server(CreateCollisionAvoidanceServerCallback p_callback);
-    static CollisionAvoidanceServer *new_default_server();
+    static void set_default_server(NavigationServerCallback p_callback);
+    static NavigationServer *new_default_server();
 };
 
 #endif

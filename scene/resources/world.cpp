@@ -35,7 +35,7 @@
 #include "scene/3d/camera.h"
 #include "scene/3d/visibility_notifier.h"
 #include "scene/scene_string_names.h"
-#include "servers/collision_avoidance_server.h"
+#include "servers/navigation_server.h"
 
 struct SpatialIndexer {
 
@@ -331,10 +331,10 @@ void World::_bind_methods() {
 World::World() {
 
 	space = PhysicsServer::get_singleton()->space_create();
-    collision_avoidance_space = CollisionAvoidanceServer::get_singleton()->space_create();
+    collision_avoidance_space = NavigationServer::get_singleton()->space_create();
 	scenario = VisualServer::get_singleton()->scenario_create();
 
-    CollisionAvoidanceServer::get_singleton()->space_set_active(collision_avoidance_space, true);
+    NavigationServer::get_singleton()->space_set_active(collision_avoidance_space, true);
     PhysicsServer::get_singleton()->space_set_active(space, true);
     PhysicsServer::get_singleton()->area_set_param(space, PhysicsServer::AREA_PARAM_GRAVITY, GLOBAL_DEF("physics/3d/default_gravity", 9.8));
 	PhysicsServer::get_singleton()->area_set_param(space, PhysicsServer::AREA_PARAM_GRAVITY_VECTOR, GLOBAL_DEF("physics/3d/default_gravity_vector", Vector3(0, -1, 0)));
@@ -353,7 +353,7 @@ World::World() {
 World::~World() {
 
 	PhysicsServer::get_singleton()->free(space);
-    CollisionAvoidanceServer::get_singleton()->free(collision_avoidance_space);
+    NavigationServer::get_singleton()->free(collision_avoidance_space);
     VisualServer::get_singleton()->free(scenario);
 
 #ifndef _3D_DISABLED

@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  collision_avoidance_controller.cpp                                   */
+/*  navigation_agent.cpp                                                 */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,34 +28,34 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#include "collision_avoidance_controller.h"
+#include "navigation_agent.h"
 
 #include "scene/3d/physics_body.h"
-#include "servers/collision_avoidance_server.h"
+#include "servers/navigation_server.h"
 
-void CollisionAvoidanceController::_bind_methods() {
+void NavigationAgent::_bind_methods() {
 
-    ClassDB::bind_method(D_METHOD("set_neighbor_dist", "neighbor_dist"), &CollisionAvoidanceController::set_neighbor_dist);
-    ClassDB::bind_method(D_METHOD("get_neighbor_dist"), &CollisionAvoidanceController::get_neighbor_dist);
+    ClassDB::bind_method(D_METHOD("set_neighbor_dist", "neighbor_dist"), &NavigationAgent::set_neighbor_dist);
+    ClassDB::bind_method(D_METHOD("get_neighbor_dist"), &NavigationAgent::get_neighbor_dist);
 
-    ClassDB::bind_method(D_METHOD("set_max_neighbors", "max_neighbors"), &CollisionAvoidanceController::set_max_neighbors);
-    ClassDB::bind_method(D_METHOD("get_max_neighbors"), &CollisionAvoidanceController::get_max_neighbors);
+    ClassDB::bind_method(D_METHOD("set_max_neighbors", "max_neighbors"), &NavigationAgent::set_max_neighbors);
+    ClassDB::bind_method(D_METHOD("get_max_neighbors"), &NavigationAgent::get_max_neighbors);
 
-    ClassDB::bind_method(D_METHOD("set_time_horizon", "time_horizon"), &CollisionAvoidanceController::set_time_horizon);
-    ClassDB::bind_method(D_METHOD("get_time_horizon"), &CollisionAvoidanceController::get_time_horizon);
+    ClassDB::bind_method(D_METHOD("set_time_horizon", "time_horizon"), &NavigationAgent::set_time_horizon);
+    ClassDB::bind_method(D_METHOD("get_time_horizon"), &NavigationAgent::get_time_horizon);
 
-    ClassDB::bind_method(D_METHOD("set_time_horizon_obs", "time_horizon_obs"), &CollisionAvoidanceController::set_time_horizon_obs);
-    ClassDB::bind_method(D_METHOD("get_time_horizon_obs"), &CollisionAvoidanceController::get_time_horizon_obs);
+    ClassDB::bind_method(D_METHOD("set_time_horizon_obs", "time_horizon_obs"), &NavigationAgent::set_time_horizon_obs);
+    ClassDB::bind_method(D_METHOD("get_time_horizon_obs"), &NavigationAgent::get_time_horizon_obs);
 
-    ClassDB::bind_method(D_METHOD("set_radius", "radius"), &CollisionAvoidanceController::set_radius);
-    ClassDB::bind_method(D_METHOD("get_radius"), &CollisionAvoidanceController::get_radius);
+    ClassDB::bind_method(D_METHOD("set_radius", "radius"), &NavigationAgent::set_radius);
+    ClassDB::bind_method(D_METHOD("get_radius"), &NavigationAgent::get_radius);
 
-    ClassDB::bind_method(D_METHOD("set_max_speed", "max_speed"), &CollisionAvoidanceController::set_max_speed);
-    ClassDB::bind_method(D_METHOD("get_max_speed"), &CollisionAvoidanceController::get_max_speed);
+    ClassDB::bind_method(D_METHOD("set_max_speed", "max_speed"), &NavigationAgent::set_max_speed);
+    ClassDB::bind_method(D_METHOD("get_max_speed"), &NavigationAgent::get_max_speed);
 
-    ClassDB::bind_method(D_METHOD("set_velocity", "velocity"), &CollisionAvoidanceController::set_velocity);
+    ClassDB::bind_method(D_METHOD("set_velocity", "velocity"), &NavigationAgent::set_velocity);
 
-    ClassDB::bind_method(D_METHOD("_avoidance_done", "new_velocity"), &CollisionAvoidanceController::_avoidance_done);
+    ClassDB::bind_method(D_METHOD("_avoidance_done", "new_velocity"), &NavigationAgent::_avoidance_done);
 
     ADD_PROPERTY(PropertyInfo(Variant::REAL, "neighbor_dist", PROPERTY_HINT_RANGE, "0.1,10000,0.01"), "set_neighbor_dist", "get_neighbor_dist");
     ADD_PROPERTY(PropertyInfo(Variant::INT, "max_neighbors", PROPERTY_HINT_RANGE, "1,10000,1"), "set_max_neighbors", "get_max_neighbors");
@@ -67,27 +67,27 @@ void CollisionAvoidanceController::_bind_methods() {
     ADD_SIGNAL(MethodInfo("velocity_computed", PropertyInfo(Variant::VECTOR3, "safe_velocity")));
 }
 
-void CollisionAvoidanceController::_notification(int p_what) {
+void NavigationAgent::_notification(int p_what) {
     switch (p_what) {
         case NOTIFICATION_READY: {
             ERR_FAIL_COND(agent.is_valid());
             PhysicsBody *parent = Object::cast_to<PhysicsBody>(get_parent());
             if (parent) {
-                agent = CollisionAvoidanceServer::get_singleton()->agent_add(parent->get_world()->get_collision_avoidance_space());
+                agent = NavigationServer::get_singleton()->agent_add(parent->get_world()->get_collision_avoidance_space());
 
-                CollisionAvoidanceServer::get_singleton()->agent_set_neighbor_dist(agent, neighbor_dist);
-                CollisionAvoidanceServer::get_singleton()->agent_set_max_neighbors(agent, max_neighbors);
-                CollisionAvoidanceServer::get_singleton()->agent_set_time_horizon(agent, time_horizon);
-                CollisionAvoidanceServer::get_singleton()->agent_set_time_horizon_obs(agent, time_horizon_obs);
-                CollisionAvoidanceServer::get_singleton()->agent_set_radius(agent, radius);
-                CollisionAvoidanceServer::get_singleton()->agent_set_max_speed(agent, max_speed);
-                CollisionAvoidanceServer::get_singleton()->agent_set_callback(agent, this, "_avoidance_done");
+                NavigationServer::get_singleton()->agent_set_neighbor_dist(agent, neighbor_dist);
+                NavigationServer::get_singleton()->agent_set_max_neighbors(agent, max_neighbors);
+                NavigationServer::get_singleton()->agent_set_time_horizon(agent, time_horizon);
+                NavigationServer::get_singleton()->agent_set_time_horizon_obs(agent, time_horizon_obs);
+                NavigationServer::get_singleton()->agent_set_radius(agent, radius);
+                NavigationServer::get_singleton()->agent_set_max_speed(agent, max_speed);
+                NavigationServer::get_singleton()->agent_set_callback(agent, this, "_avoidance_done");
                 set_physics_process_internal(true);
             }
         } break;
         case NOTIFICATION_EXIT_TREE: {
             if (agent.is_valid()) {
-                CollisionAvoidanceServer::get_singleton()->free(agent);
+                NavigationServer::get_singleton()->free(agent);
                 agent = RID();
                 set_physics_process_internal(false);
             }
@@ -96,13 +96,13 @@ void CollisionAvoidanceController::_notification(int p_what) {
             if (agent.is_valid()) {
                 PhysicsBody *parent = Object::cast_to<PhysicsBody>(get_parent());
                 const Vector2 o(parent->get_global_transform().origin.x, parent->get_global_transform().origin.z);
-                CollisionAvoidanceServer::get_singleton()->agent_set_position(agent, o);
+                NavigationServer::get_singleton()->agent_set_position(agent, o);
             }
         } break;
     }
 }
 
-CollisionAvoidanceController::CollisionAvoidanceController() :
+NavigationAgent::NavigationAgent() :
         agent(RID()),
         neighbor_dist(30.0),
         max_neighbors(10),
@@ -113,59 +113,59 @@ CollisionAvoidanceController::CollisionAvoidanceController() :
         velocity_submitted(false) {
 }
 
-void CollisionAvoidanceController::set_neighbor_dist(real_t p_dist) {
+void NavigationAgent::set_neighbor_dist(real_t p_dist) {
     neighbor_dist = p_dist;
     if (agent.is_valid()) {
-        CollisionAvoidanceServer::get_singleton()->agent_set_neighbor_dist(agent, neighbor_dist);
+        NavigationServer::get_singleton()->agent_set_neighbor_dist(agent, neighbor_dist);
     }
 }
 
-void CollisionAvoidanceController::set_max_neighbors(int p_count) {
+void NavigationAgent::set_max_neighbors(int p_count) {
     max_neighbors = p_count;
     if (agent.is_valid()) {
-        CollisionAvoidanceServer::get_singleton()->agent_set_max_neighbors(agent, max_neighbors);
+        NavigationServer::get_singleton()->agent_set_max_neighbors(agent, max_neighbors);
     }
 }
 
-void CollisionAvoidanceController::set_time_horizon(real_t p_time) {
+void NavigationAgent::set_time_horizon(real_t p_time) {
     time_horizon = p_time;
     if (agent.is_valid()) {
-        CollisionAvoidanceServer::get_singleton()->agent_set_time_horizon(agent, time_horizon);
+        NavigationServer::get_singleton()->agent_set_time_horizon(agent, time_horizon);
     }
 }
 
-void CollisionAvoidanceController::set_time_horizon_obs(real_t p_time) {
+void NavigationAgent::set_time_horizon_obs(real_t p_time) {
     time_horizon_obs = p_time;
     if (agent.is_valid()) {
-        CollisionAvoidanceServer::get_singleton()->agent_set_time_horizon_obs(agent, time_horizon_obs);
+        NavigationServer::get_singleton()->agent_set_time_horizon_obs(agent, time_horizon_obs);
     }
 }
 
-void CollisionAvoidanceController::set_radius(real_t p_radius) {
+void NavigationAgent::set_radius(real_t p_radius) {
     radius = p_radius;
     if (agent.is_valid()) {
-        CollisionAvoidanceServer::get_singleton()->agent_set_radius(agent, radius);
+        NavigationServer::get_singleton()->agent_set_radius(agent, radius);
     }
 }
 
-void CollisionAvoidanceController::set_max_speed(real_t p_max_speed) {
+void NavigationAgent::set_max_speed(real_t p_max_speed) {
     max_speed = p_max_speed;
     if (agent.is_valid()) {
-        CollisionAvoidanceServer::get_singleton()->agent_set_max_speed(agent, max_speed);
+        NavigationServer::get_singleton()->agent_set_max_speed(agent, max_speed);
     }
 }
 
-void CollisionAvoidanceController::set_velocity(Vector3 p_velocity) {
+void NavigationAgent::set_velocity(Vector3 p_velocity) {
     if (agent.is_valid()) {
         target_velocity = p_velocity;
         Vector2 v(target_velocity.x, target_velocity.z);
-        CollisionAvoidanceServer::get_singleton()->agent_set_target_velocity(agent, v);
-        CollisionAvoidanceServer::get_singleton()->agent_set_velocity(agent, prev_safe_velocity);
+        NavigationServer::get_singleton()->agent_set_target_velocity(agent, v);
+        NavigationServer::get_singleton()->agent_set_velocity(agent, prev_safe_velocity);
         velocity_submitted = true;
     }
 }
 
-void CollisionAvoidanceController::_avoidance_done(Vector2 p_new_velocity) {
+void NavigationAgent::_avoidance_done(Vector2 p_new_velocity) {
     prev_safe_velocity = p_new_velocity;
 
     if (!velocity_submitted) {
@@ -178,7 +178,7 @@ void CollisionAvoidanceController::_avoidance_done(Vector2 p_new_velocity) {
     emit_signal("velocity_computed", vel);
 }
 
-String CollisionAvoidanceController::get_configuration_warning() const {
+String NavigationAgent::get_configuration_warning() const {
     if (!Object::cast_to<PhysicsBody>(get_parent())) {
         return TTR("CollisionAvoidanceController only serves to provide collision avoidance to a physics object. Please only use it as a child of RigidBody, KinematicBody.");
     }

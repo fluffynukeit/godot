@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  rvo_collision_avoidance_server.cpp                                   */
+/*  gd_navigation_server.cpp                                             */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,23 +28,23 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#include "rvo_collision_avoidance_server.h"
+#include "gd_navigation_server.h"
 
-RvoCollisionAvoidanceServer::RvoCollisionAvoidanceServer() :
-        CollisionAvoidanceServer(),
+GdNavigationServer::GdNavigationServer() :
+        NavigationServer(),
         active(true) {
 }
 
-RvoCollisionAvoidanceServer::~RvoCollisionAvoidanceServer() {}
+GdNavigationServer::~GdNavigationServer() {}
 
-RID RvoCollisionAvoidanceServer::space_create() {
+RID GdNavigationServer::space_create() {
     RvoSpace *space = memnew(RvoSpace);
     RID rid = space_owner.make_rid(space);
     space->set_self(rid);
     return rid;
 }
 
-void RvoCollisionAvoidanceServer::space_set_active(RID p_space, bool p_active) {
+void GdNavigationServer::space_set_active(RID p_space, bool p_active) {
     RvoSpace *space = space_owner.get(p_space);
     ERR_FAIL_COND(space == NULL);
 
@@ -57,14 +57,14 @@ void RvoCollisionAvoidanceServer::space_set_active(RID p_space, bool p_active) {
     }
 }
 
-bool RvoCollisionAvoidanceServer::space_is_active(RID p_space) const {
+bool GdNavigationServer::space_is_active(RID p_space) const {
     RvoSpace *space = space_owner.get(p_space);
     ERR_FAIL_COND_V(space == NULL, false);
 
     return active_spaces.find(space) >= 0;
 }
 
-RID RvoCollisionAvoidanceServer::agent_add(RID p_space) {
+RID GdNavigationServer::agent_add(RID p_space) {
     RvoSpace *space = space_owner.get(p_space);
     ERR_FAIL_COND_V(space == NULL, RID());
 
@@ -77,84 +77,84 @@ RID RvoCollisionAvoidanceServer::agent_add(RID p_space) {
     return rid;
 }
 
-void RvoCollisionAvoidanceServer::agent_set_neighbor_dist(RID p_agent, real_t p_dist) {
+void GdNavigationServer::agent_set_neighbor_dist(RID p_agent, real_t p_dist) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
     agent->get_agent()->neighborDist_ = p_dist;
 }
 
-void RvoCollisionAvoidanceServer::agent_set_max_neighbors(RID p_agent, int p_count) {
+void GdNavigationServer::agent_set_max_neighbors(RID p_agent, int p_count) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
     agent->get_agent()->maxNeighbors_ = p_count;
 }
 
-void RvoCollisionAvoidanceServer::agent_set_time_horizon(RID p_agent, real_t p_time) {
+void GdNavigationServer::agent_set_time_horizon(RID p_agent, real_t p_time) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
     agent->get_agent()->timeHorizon_ = p_time;
 }
 
-void RvoCollisionAvoidanceServer::agent_set_time_horizon_obs(RID p_agent, real_t p_time) {
+void GdNavigationServer::agent_set_time_horizon_obs(RID p_agent, real_t p_time) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
     agent->get_agent()->timeHorizonObst_ = p_time;
 }
 
-void RvoCollisionAvoidanceServer::agent_set_radius(RID p_agent, real_t p_radius) {
+void GdNavigationServer::agent_set_radius(RID p_agent, real_t p_radius) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
     agent->get_agent()->radius_ = p_radius;
 }
 
-void RvoCollisionAvoidanceServer::agent_set_max_speed(RID p_agent, real_t p_max_speed) {
+void GdNavigationServer::agent_set_max_speed(RID p_agent, real_t p_max_speed) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
     agent->get_agent()->maxSpeed_ = p_max_speed;
 }
 
-void RvoCollisionAvoidanceServer::agent_set_velocity(RID p_agent, Vector2 p_velocity) {
+void GdNavigationServer::agent_set_velocity(RID p_agent, Vector2 p_velocity) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
     agent->get_agent()->velocity_ = RVO::Vector2(p_velocity.x, p_velocity.y);
 }
 
-void RvoCollisionAvoidanceServer::agent_set_target_velocity(RID p_agent, Vector2 p_velocity) {
+void GdNavigationServer::agent_set_target_velocity(RID p_agent, Vector2 p_velocity) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
     agent->get_agent()->prefVelocity_ = RVO::Vector2(p_velocity.x, p_velocity.y);
 }
 
-void RvoCollisionAvoidanceServer::agent_set_position(RID p_agent, Vector2 p_position) {
+void GdNavigationServer::agent_set_position(RID p_agent, Vector2 p_position) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
     agent->get_agent()->position_ = RVO::Vector2(p_position.x, p_position.y);
 }
 
-void RvoCollisionAvoidanceServer::agent_set_callback(RID p_agent, Object *p_receiver, const StringName &p_method, const Variant &p_udata) {
+void GdNavigationServer::agent_set_callback(RID p_agent, Object *p_receiver, const StringName &p_method, const Variant &p_udata) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
     agent->set_callback(p_receiver->get_instance_id(), p_method, p_udata);
 }
 
-RID RvoCollisionAvoidanceServer::obstacle_add(RID p_space) {
+RID GdNavigationServer::obstacle_add(RID p_space) {
     RvoObstacle *obstacle = memnew(RvoObstacle);
     RID rid = obstacle_owner.make_rid(obstacle);
     obstacle->set_self(rid);
     return rid;
 }
 
-void RvoCollisionAvoidanceServer::free(RID p_object) {
+void GdNavigationServer::free(RID p_object) {
     if (space_owner.owns(p_object)) {
         RvoSpace *obj = space_owner.get(p_object);
 
@@ -190,11 +190,11 @@ void RvoCollisionAvoidanceServer::free(RID p_object) {
     }
 }
 
-void RvoCollisionAvoidanceServer::set_active(bool p_active) {
+void GdNavigationServer::set_active(bool p_active) {
     active = p_active;
 }
 
-void RvoCollisionAvoidanceServer::step(real_t p_delta_time) {
+void GdNavigationServer::step(real_t p_delta_time) {
     if (!active) {
         return;
     }

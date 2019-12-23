@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  register_types.cpp                                                   */
+/*  gd_navigation_server.h                                               */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,18 +28,48 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#include "register_types.h"
+#ifndef RVO_COLLISION_AVOIDANCE_SERVER_H
+#define RVO_COLLISION_AVOIDANCE_SERVER_H
 
-#include "rvo_collision_avoidance_server.h"
-#include "servers/collision_avoidance_server.h"
+#include "rvo_agent.h"
+#include "rvo_obstacle.h"
+#include "rvo_space.h"
+#include "servers/navigation_server.h"
 
-CollisionAvoidanceServer *new_server() {
-    return memnew(RvoCollisionAvoidanceServer);
-}
+class GdNavigationServer : public NavigationServer {
+    mutable RID_Owner<RvoSpace> space_owner;
+    mutable RID_Owner<RvoAgent> agent_owner;
+    mutable RID_Owner<RvoObstacle> obstacle_owner;
 
-void register_orca_types() {
-    CollisionAvoidanceServerManager::set_default_server(new_server);
-}
+    bool active;
+    Vector<RvoSpace *> active_spaces;
 
-void unregister_orca_types() {
-}
+public:
+    GdNavigationServer();
+    virtual ~GdNavigationServer();
+
+    virtual RID space_create();
+    virtual void space_set_active(RID p_space, bool p_active);
+    virtual bool space_is_active(RID p_space) const;
+
+    virtual RID agent_add(RID p_space);
+    virtual void agent_set_neighbor_dist(RID p_agent, real_t p_dist);
+    virtual void agent_set_max_neighbors(RID p_agent, int p_count);
+    virtual void agent_set_time_horizon(RID p_agent, real_t p_time);
+    virtual void agent_set_time_horizon_obs(RID p_agent, real_t p_time);
+    virtual void agent_set_radius(RID p_agent, real_t p_radius);
+    virtual void agent_set_max_speed(RID p_agent, real_t p_max_speed);
+    virtual void agent_set_velocity(RID p_agent, Vector2 p_velocity);
+    virtual void agent_set_target_velocity(RID p_agent, Vector2 p_velocity);
+    virtual void agent_set_position(RID p_agent, Vector2 p_position);
+    virtual void agent_set_callback(RID p_agent, Object *p_receiver, const StringName &p_method, const Variant &p_udata = Variant());
+
+    virtual RID obstacle_add(RID p_space);
+
+    virtual void free(RID p_object);
+
+    virtual void set_active(bool p_active);
+    virtual void step(real_t p_delta_time);
+};
+
+#endif // RVO_COLLISION_AVOIDANCE_SERVER_H

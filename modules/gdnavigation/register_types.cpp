@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  register_types.h                                                     */
+/*  register_types.cpp                                                   */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,5 +28,18 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-void register_orca_types();
-void unregister_orca_types();
+#include "register_types.h"
+
+#include "gd_navigation_server.h"
+#include "servers/navigation_server.h"
+
+NavigationServer *new_server() {
+    return memnew(GdNavigationServer);
+}
+
+void register_gdnavigation_types() {
+    NavigationServerManager::set_default_server(new_server);
+}
+
+void unregister_gdnavigation_types() {
+}

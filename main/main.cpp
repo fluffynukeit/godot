@@ -66,7 +66,7 @@
 #include "servers/arvr_server.h"
 #include "servers/audio_server.h"
 #include "servers/camera_server.h"
-#include "servers/collision_avoidance_server.h"
+#include "servers/navigation_server.h"
 #include "servers/physics_2d_server.h"
 #include "servers/physics_server.h"
 #include "servers/register_server_types.h"
@@ -103,7 +103,7 @@ static CameraServer *camera_server = NULL;
 static ARVRServer *arvr_server = NULL;
 static PhysicsServer *physics_server = NULL;
 static Physics2DServer *physics_2d_server = NULL;
-static CollisionAvoidanceServer *collision_avoidance_server = NULL;
+static NavigationServer *navigation_server = NULL;
 // We error out if setup2() doesn't turn this true
 static bool _start_success = false;
 
@@ -198,14 +198,14 @@ void finalize_physics() {
 	memdelete(physics_2d_server);
 }
 
-void initialize_collision_avoidance() {
-    ERR_FAIL_COND(collision_avoidance_server != NULL);
-    collision_avoidance_server = CollisionAvoidanceServerManager::new_default_server();
+void initialize_navigation_server() {
+    ERR_FAIL_COND(navigation_server != NULL);
+    navigation_server = NavigationServerManager::new_default_server();
 }
 
-void finalize_collision_avoidance() {
-    memdelete(collision_avoidance_server);
-    collision_avoidance_server = NULL;
+void finalize_navigation_server() {
+    memdelete(navigation_server);
+    navigation_server = NULL;
 }
 
 //#define DEBUG_INIT
@@ -1358,7 +1358,7 @@ Error Main::setup2(Thread::ID p_main_tid_override) {
 	camera_server = CameraServer::create();
 
 	initialize_physics();
-    initialize_collision_avoidance();
+    initialize_navigation_server();
 	register_server_singletons();
 
 	register_driver_types();
@@ -2004,7 +2004,7 @@ bool Main::iteration() {
 
         message_queue->flush();
 
-        CollisionAvoidanceServer::get_singleton()->step(frame_slice * time_scale);
+        NavigationServer::get_singleton()->step(frame_slice * time_scale);
 
 		PhysicsServer::get_singleton()->step(frame_slice * time_scale);
 
@@ -2190,7 +2190,7 @@ void Main::cleanup() {
 
 	OS::get_singleton()->finalize();
 	finalize_physics();
-    finalize_collision_avoidance();
+    finalize_navigation_server();
 
 	if (packed_data)
 		memdelete(packed_data);
