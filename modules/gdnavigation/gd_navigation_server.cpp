@@ -37,35 +37,78 @@ GdNavigationServer::GdNavigationServer() :
 
 GdNavigationServer::~GdNavigationServer() {}
 
-RID GdNavigationServer::space_create() {
-    RvoSpace *space = memnew(RvoSpace);
-    RID rid = space_owner.make_rid(space);
+RID GdNavigationServer::map_create() {
+    NavMap *space = memnew(NavMap);
+    RID rid = map_owner.make_rid(space);
     space->set_self(rid);
     return rid;
 }
 
-void GdNavigationServer::space_set_active(RID p_space, bool p_active) {
-    RvoSpace *space = space_owner.get(p_space);
-    ERR_FAIL_COND(space == NULL);
+void GdNavigationServer::map_set_active(RID p_map, bool p_active) {
+    NavMap *map = map_owner.get(p_map);
+    ERR_FAIL_COND(map == NULL);
 
     if (p_active) {
-        if (!space_is_active(p_space)) {
-            active_spaces.push_back(space);
+        if (!map_is_active(p_map)) {
+            active_maps.push_back(map);
         }
     } else {
-        active_spaces.erase(space);
+        active_maps.erase(map);
     }
 }
 
-bool GdNavigationServer::space_is_active(RID p_space) const {
-    RvoSpace *space = space_owner.get(p_space);
-    ERR_FAIL_COND_V(space == NULL, false);
+bool GdNavigationServer::map_is_active(RID p_map) const {
+    NavMap *map = map_owner.get(p_map);
+    ERR_FAIL_COND_V(map == NULL, false);
 
-    return active_spaces.find(space) >= 0;
+    return active_maps.find(map) >= 0;
+}
+
+RID GdNavigationServer::region_create() {
+    NavRegion *reg = memnew(NavRegion);
+    RID rid = region_owner.make_rid(reg);
+    reg->set_self(rid);
+    return rid;
+}
+
+void GdNavigationServer::region_set_map(RID p_region, RID p_map) {
+    NavRegion *region = region_owner.get(p_region);
+    ERR_FAIL_COND(region == NULL);
+
+    NavMap *map = map_owner.get(p_map);
+
+    if (region->get_map() == map)
+        // Pointless
+        return;
+
+    if (region->get_map() != NULL) {
+        region->get_map()->remove_region(region);
+        region->set_map(NULL);
+    }
+
+    if (map != NULL) {
+
+        map->add_region(region);
+        region->set_map(map);
+    }
+}
+
+void GdNavigationServer::region_set_transform(RID p_region, Transform p_transform) {
+    NavRegion *region = region_owner.get(p_region);
+    ERR_FAIL_COND(region == NULL);
+
+    region->set_transform(p_transform);
+}
+
+void GdNavigationServer::region_set_navmesh(RID p_region, Ref<NavigationMesh> p_nav_mesh) {
+    NavRegion *region = region_owner.get(p_region);
+    ERR_FAIL_COND(region == NULL);
+
+    region->set_mesh(p_nav_mesh);
 }
 
 RID GdNavigationServer::agent_add(RID p_space) {
-    RvoSpace *space = space_owner.get(p_space);
+    NavMap *space = map_owner.get(p_space);
     ERR_FAIL_COND_V(space == NULL, RID());
 
     RvoAgent *agent = memnew(RvoAgent(space));
@@ -155,8 +198,8 @@ RID GdNavigationServer::obstacle_add(RID p_space) {
 }
 
 void GdNavigationServer::free(RID p_object) {
-    if (space_owner.owns(p_object)) {
-        RvoSpace *obj = space_owner.get(p_object);
+    if (map_owner.owns(p_object)) {
+        NavMap *obj = map_owner.get(p_object);
 
         // Destroy all the agents of this server
         if (obj->get_agents().size() != 0) {
@@ -171,10 +214,14 @@ void GdNavigationServer::free(RID p_object) {
 
         // TODO please destroy Obstacles
 
-        space_set_active(p_object, false);
-        space_owner.free(p_object);
+        map_set_active(p_object, false);
+        map_owner.free(p_object);
 
         memdelete(obj);
+    } else if (region_owner.owns(p_object)) {
+        NavRegion *nav = region_owner.get(p_object);
+        region_owner.free(p_object);
+        memdelete(nav);
     } else if (agent_owner.owns(p_object)) {
         RvoAgent *obj = agent_owner.get(p_object);
         obj->get_space()->remove_agent(obj);
@@ -199,9 +246,9 @@ void GdNavigationServer::step(real_t p_delta_time) {
         return;
     }
 
-    for (int i(0); i < active_spaces.size(); i++) {
-        active_spaces[i]->sync();
-        active_spaces[i]->step(p_delta_time);
-        active_spaces[i]->dispatch_callbacks();
+    for (int i(0); i < active_maps.size(); i++) {
+        active_maps[i]->sync();
+        active_maps[i]->step(p_delta_time);
+        active_maps[i]->dispatch_callbacks();
     }
 }

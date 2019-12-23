@@ -73,7 +73,7 @@ void NavigationAgent::_notification(int p_what) {
             ERR_FAIL_COND(agent.is_valid());
             PhysicsBody *parent = Object::cast_to<PhysicsBody>(get_parent());
             if (parent) {
-                agent = NavigationServer::get_singleton()->agent_add(parent->get_world()->get_collision_avoidance_space());
+                //agent = NavigationServer::get_singleton()->agent_add(parent->get_world()->get_collision_avoidance_space());
 
                 NavigationServer::get_singleton()->agent_set_neighbor_dist(agent, neighbor_dist);
                 NavigationServer::get_singleton()->agent_set_max_neighbors(agent, max_neighbors);

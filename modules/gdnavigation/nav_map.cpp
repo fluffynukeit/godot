@@ -28,46 +28,33 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#include "rvo_space.h"
+#include "nav_map.h"
 
 #include "core/os/threaded_array_processor.h"
 #include "rvo_agent.h"
 
-RvoSpace::RvoSpace() :
+NavMap::NavMap() :
         deltatime(0.0) {
 }
 
-bool RvoSpace::has_obstacle(RVO::Obstacle *obstacle) const {
-    return std::find(obstacles.begin(), obstacles.end(), obstacle) != obstacles.end();
+void NavMap::add_region(NavRegion *p_region) {
 }
 
-void RvoSpace::add_obstacle(RVO::Obstacle *obstacle) {
-    if (!has_obstacle(obstacle)) {
-        obstacles.push_back(obstacle);
-        obstacles_dirty = true;
-    }
+void NavMap::remove_region(NavRegion *p_region) {
 }
 
-void RvoSpace::remove_obstacle(RVO::Obstacle *obstacle) {
-    auto it = std::find(obstacles.begin(), obstacles.end(), obstacle);
-    if (it != obstacles.end()) {
-        obstacles.erase(it);
-        obstacles_dirty = true;
-    }
-}
-
-bool RvoSpace::has_agent(RvoAgent *agent) const {
+bool NavMap::has_agent(RvoAgent *agent) const {
     return std::find(agents.begin(), agents.end(), agent) != agents.end();
 }
 
-void RvoSpace::add_agent(RvoAgent *agent) {
+void NavMap::add_agent(RvoAgent *agent) {
     if (!has_agent(agent)) {
         agents.push_back(agent);
         agents_dirty = true;
     }
 }
 
-void RvoSpace::remove_agent(RvoAgent *agent) {
+void NavMap::remove_agent(RvoAgent *agent) {
     remove_agent_as_controlled(agent);
     auto it = std::find(agents.begin(), agents.end(), agent);
     if (it != agents.end()) {
@@ -76,7 +63,7 @@ void RvoSpace::remove_agent(RvoAgent *agent) {
     }
 }
 
-void RvoSpace::set_agent_as_controlled(RvoAgent *agent) {
+void NavMap::set_agent_as_controlled(RvoAgent *agent) {
     const bool exist = std::find(controlled_agents.begin(), controlled_agents.end(), agent) != controlled_agents.end();
     if (!exist) {
         ERR_FAIL_COND(!has_agent(agent));
@@ -84,19 +71,14 @@ void RvoSpace::set_agent_as_controlled(RvoAgent *agent) {
     }
 }
 
-void RvoSpace::remove_agent_as_controlled(RvoAgent *agent) {
+void NavMap::remove_agent_as_controlled(RvoAgent *agent) {
     auto it = std::find(controlled_agents.begin(), controlled_agents.end(), agent);
     if (it != controlled_agents.end()) {
         controlled_agents.erase(it);
     }
 }
 
-void RvoSpace::sync() {
-    if (obstacles_dirty) {
-        rvo.buildObstacleTree(obstacles);
-        obstacles_dirty = false;
-    }
-
+void NavMap::sync() {
     if (agents_dirty) {
         std::vector<RVO::Agent *> raw_agents;
         raw_agents.reserve(agents.size());
@@ -107,21 +89,21 @@ void RvoSpace::sync() {
     }
 }
 
-void RvoSpace::compute_single_step(uint32_t _index, RvoAgent **agent) {
+void NavMap::compute_single_step(uint32_t _index, RvoAgent **agent) {
     (*agent)->get_agent()->computeNeighbors(&rvo);
     (*agent)->get_agent()->computeNewVelocity(deltatime);
 }
 
-void RvoSpace::step(real_t p_deltatime) {
+void NavMap::step(real_t p_deltatime) {
     deltatime = p_deltatime;
     thread_process_array(
             controlled_agents.size(),
             this,
-            &RvoSpace::compute_single_step,
+            &NavMap::compute_single_step,
             controlled_agents.data());
 }
 
-void RvoSpace::dispatch_callbacks() {
+void NavMap::dispatch_callbacks() {
     for (int i(0); i < static_cast<int>(controlled_agents.size()); i++) {
         controlled_agents[i]->dispatch_callback();
     }

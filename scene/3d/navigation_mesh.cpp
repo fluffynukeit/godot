@@ -31,6 +31,7 @@
 #include "navigation_mesh.h"
 #include "mesh_instance.h"
 #include "navigation.h"
+#include "servers/navigation_server.h"
 
 void NavigationMesh::create_from_mesh(const Ref<Mesh> &p_mesh) {
 
@@ -736,9 +737,11 @@ NavigationMeshInstance::NavigationMeshInstance() {
 	nav_id = -1;
 	enabled = true;
 	set_notify_transform(true);
+    region = NavigationServer::get_singleton()->region_create();
 }
 
 NavigationMeshInstance::~NavigationMeshInstance() {
 	if (navmesh.is_valid())
 		navmesh->remove_change_receptor(this);
+    NavigationServer::get_singleton()->free(region);
 }

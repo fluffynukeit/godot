@@ -3,9 +3,34 @@
 Import('env')
 Import('env_modules')
 
-env_orca = env_modules.Clone()
+env_navigation = env_modules.Clone()
 
-# Thirdparty source files
+# Recast Thirdparty source files
+if env['builtin_recast']:
+    thirdparty_dir = "#thirdparty/recastnavigation/Recast/"
+    thirdparty_sources = [
+                "Source/Recast.cpp",
+                "Source/RecastAlloc.cpp",
+                "Source/RecastArea.cpp",
+                "Source/RecastAssert.cpp",
+                "Source/RecastContour.cpp",
+                "Source/RecastFilter.cpp",
+                "Source/RecastLayers.cpp",
+                "Source/RecastMesh.cpp",
+                "Source/RecastMeshDetail.cpp",
+                "Source/RecastRasterization.cpp",
+                "Source/RecastRegion.cpp",
+    ]
+    thirdparty_sources = [thirdparty_dir + file for file in thirdparty_sources]
+
+    env_navigation.Prepend(CPPPATH=[thirdparty_dir + "/Include"])
+
+    env_thirdparty = env_navigation.Clone()
+    env_thirdparty.disable_warnings()
+    env_thirdparty.add_source_files(env.modules_sources, thirdparty_sources)
+
+
+# RVO Thirdparty source files
 if env['builtin_rvo2']:
     thirdparty_dir = "#thirdparty/rvo2"
     thirdparty_sources = [
@@ -15,11 +40,12 @@ if env['builtin_rvo2']:
     ]
     thirdparty_sources = [thirdparty_dir + file for file in thirdparty_sources]
 
-    env_orca.Prepend(CPPPATH=[thirdparty_dir + "/src"])
+    env_navigation.Prepend(CPPPATH=[thirdparty_dir + "/src"])
 
-    env_thirdparty = env_orca.Clone()
+    env_thirdparty = env_navigation.Clone()
     env_thirdparty.disable_warnings()
     env_thirdparty.add_source_files(env.modules_sources, thirdparty_sources)
 
+
 # Godot source files
-env_orca.add_source_files(env.modules_sources, "*.cpp")
+env_navigation.add_source_files(env.modules_sources, "*.cpp")

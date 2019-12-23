@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  register_types.cpp                                                   */
+/*  rvo_space.h                                                          */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,34 +28,57 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#include "register_types.h"
+#ifndef RVO_SPACE_H
+#define RVO_SPACE_H
 
-#include "navigation_mesh_editor_plugin.h"
+#include "nav_rid.h"
 
-#ifdef TOOLS_ENABLED
-EditorNavigationMeshGenerator *_nav_mesh_generator = NULL;
-#endif
+#include "core/math/math_defs.h"
+#include <KdTree.h>
+#include <Obstacle.h>
 
-void register_recast_types() {
-#ifdef TOOLS_ENABLED
-	EditorPlugins::add_by_type<NavigationMeshEditorPlugin>();
-	_nav_mesh_generator = memnew(EditorNavigationMeshGenerator);
+class RvoAgent;
+class NavRegion;
 
-	ClassDB::APIType prev_api = ClassDB::get_current_api();
-	ClassDB::set_current_api(ClassDB::API_EDITOR);
+class NavMap : public NavRid {
 
-	ClassDB::register_class<EditorNavigationMeshGenerator>();
+    /// Rvo world
+    RVO::KdTree rvo;
 
-	ClassDB::set_current_api(prev_api);
+    /// Is agent array modified?
+    bool agents_dirty;
 
-	Engine::get_singleton()->add_singleton(Engine::Singleton("NavigationMeshGenerator", EditorNavigationMeshGenerator::get_singleton()));
-#endif
-}
+    /// All the Agents (even the controlled one)
+    std::vector<RvoAgent *> agents;
 
-void unregister_recast_types() {
-#ifdef TOOLS_ENABLED
-	if (_nav_mesh_generator) {
-		memdelete(_nav_mesh_generator);
-	}
-#endif
-}
+    /// Controlled agents
+    std::vector<RvoAgent *> controlled_agents;
+
+    /// Physics delta time
+    real_t deltatime;
+
+public:
+    NavMap();
+
+    void add_region(NavRegion *p_region);
+    void remove_region(NavRegion *p_region);
+
+    bool has_agent(RvoAgent *agent) const;
+    void add_agent(RvoAgent *agent);
+    void remove_agent(RvoAgent *agent);
+    std::vector<RvoAgent *> &get_agents() {
+        return agents;
+    }
+
+    void set_agent_as_controlled(RvoAgent *agent);
+    void remove_agent_as_controlled(RvoAgent *agent);
+
+    void sync();
+    void step(real_t p_deltatime);
+    void dispatch_callbacks();
+
+private:
+    void compute_single_step(uint32_t index, RvoAgent **agent);
+};
+
+#endif // RVO_SPACE_H

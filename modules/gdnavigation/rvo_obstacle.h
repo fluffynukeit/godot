@@ -31,11 +31,11 @@
 #ifndef RVO_OBSTACLE_H
 #define RVO_OBSTACLE_H
 
-#include "rvo_rid.h"
+#include "nav_rid.h"
 
 #include "Obstacle.h"
 
-class RvoObstacle : public RvoRid {
+class RvoObstacle : public NavRid {
     RVO::Obstacle obstacle;
 
 public:

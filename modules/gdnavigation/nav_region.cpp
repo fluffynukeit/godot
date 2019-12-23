@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  rvo_rid.h                                                            */
+/*  nav_region.h                                                         */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,17 +28,30 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef RVO_RID_H
-#define RVO_RID_H
+#include "nav_region.h"
 
-#include "core/rid.h"
+NavRegion::NavRegion() :
+        map(NULL) {
+}
 
-class RvoRid : public RID_Data {
-    RID self;
+void NavRegion::set_map(NavMap *p_map) {
+    map = p_map;
+    update_map();
+}
 
-public:
-    _FORCE_INLINE_ void set_self(const RID &p_self) { self = p_self; }
-    _FORCE_INLINE_ RID get_self() const { return self; }
-};
+void NavRegion::set_transform(Transform p_transform) {
+    transform = p_transform;
+    update_map();
+}
 
-#endif // RVO_RID_H
+void NavRegion::set_mesh(Ref<NavigationMesh> p_mesh) {
+    mesh = p_mesh;
+    update_map();
+}
+
+void NavRegion::update_map() {
+    if (map == NULL)
+        return;
+
+    // Do something here?
+}

@@ -30,9 +30,9 @@
 
 #include "rvo_agent.h"
 
-#include "rvo_space.h"
+#include "nav_map.h"
 
-RvoAgent::RvoAgent(RvoSpace *p_space) :
+RvoAgent::RvoAgent(NavMap *p_space) :
         space(p_space) {
     callback.id = ObjectID(0);
 }

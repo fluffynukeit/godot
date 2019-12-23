@@ -28,29 +28,37 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef RVO_COLLISION_AVOIDANCE_SERVER_H
-#define RVO_COLLISION_AVOIDANCE_SERVER_H
+#ifndef GD_NAVIGATION_SERVER_H
+#define GD_NAVIGATION_SERVER_H
 
-#include "rvo_agent.h"
-#include "rvo_obstacle.h"
-#include "rvo_space.h"
 #include "servers/navigation_server.h"
 
+#include "nav_map.h"
+#include "nav_region.h"
+#include "rvo_agent.h"
+#include "rvo_obstacle.h"
+
 class GdNavigationServer : public NavigationServer {
-    mutable RID_Owner<RvoSpace> space_owner;
+    mutable RID_Owner<NavMap> map_owner;
+    mutable RID_Owner<NavRegion> region_owner;
     mutable RID_Owner<RvoAgent> agent_owner;
     mutable RID_Owner<RvoObstacle> obstacle_owner;
 
     bool active;
-    Vector<RvoSpace *> active_spaces;
+    Vector<NavMap *> active_maps;
 
 public:
     GdNavigationServer();
     virtual ~GdNavigationServer();
 
-    virtual RID space_create();
-    virtual void space_set_active(RID p_space, bool p_active);
-    virtual bool space_is_active(RID p_space) const;
+    virtual RID map_create();
+    virtual void map_set_active(RID p_map, bool p_active);
+    virtual bool map_is_active(RID p_map) const;
+
+    virtual RID region_create();
+    virtual void region_set_map(RID p_region, RID p_map);
+    virtual void region_set_transform(RID p_region, Transform p_transform);
+    virtual void region_set_navmesh(RID p_region, Ref<NavigationMesh> p_nav_mesh);
 
     virtual RID agent_add(RID p_space);
     virtual void agent_set_neighbor_dist(RID p_agent, real_t p_dist);
@@ -72,4 +80,4 @@ public:
     virtual void step(real_t p_delta_time);
 };
 
-#endif // RVO_COLLISION_AVOIDANCE_SERVER_H
+#endif // GD_NAVIGATION_SERVER_H

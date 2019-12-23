@@ -33,6 +33,7 @@
 
 #include "core/object.h"
 #include "core/rid.h"
+#include "scene/3d/navigation_mesh.h"
 
 class NavigationServer : public Object {
     GDCLASS(NavigationServer, Object);
@@ -45,9 +46,14 @@ protected:
 public:
     static NavigationServer *get_singleton();
 
-    virtual RID space_create() = 0;
-    virtual void space_set_active(RID p_space, bool p_active) = 0;
-    virtual bool space_is_active(RID p_space) const = 0;
+    virtual RID map_create() = 0;
+    virtual void map_set_active(RID p_map, bool p_active) = 0;
+    virtual bool map_is_active(RID p_map) const = 0;
+
+    virtual RID region_create() = 0;
+    virtual void region_set_map(RID p_region, RID p_map) = 0;
+    virtual void region_set_transform(RID p_region, Transform p_transform) = 0;
+    virtual void region_set_navmesh(RID p_region, Ref<NavigationMesh> p_nav_mesh) = 0;
 
     /**
      * Creates and add the agent to the space.

@@ -30,6 +30,8 @@
 
 #include "navigation.h"
 
+#include "servers/navigation_server.h"
+
 #define USE_ENTRY_POINT
 
 void Navigation::_navmesh_link(int p_id) {
@@ -724,4 +726,9 @@ Navigation::Navigation() {
 	cell_size = 0.01; //one centimeter
 	last_id = 1;
 	up = Vector3(0, 1, 0);
+    map = NavigationServer::get_singleton()->map_create();
+}
+
+Navigation::~Navigation() {
+    NavigationServer::get_singleton()->free(map);
 }

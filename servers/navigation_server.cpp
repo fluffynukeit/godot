@@ -34,9 +34,9 @@ NavigationServer *NavigationServer::singleton = NULL;
 
 void NavigationServer::_bind_methods() {
 
-    ClassDB::bind_method(D_METHOD("space_create"), &NavigationServer::space_create);
-    ClassDB::bind_method(D_METHOD("space_set_active"), &NavigationServer::space_set_active);
-    ClassDB::bind_method(D_METHOD("space_is_active"), &NavigationServer::space_is_active);
+    ClassDB::bind_method(D_METHOD("space_create"), &NavigationServer::map_create);
+    ClassDB::bind_method(D_METHOD("space_set_active"), &NavigationServer::map_set_active);
+    ClassDB::bind_method(D_METHOD("space_is_active"), &NavigationServer::map_is_active);
 
     ClassDB::bind_method(D_METHOD("agent_add", "space"), &NavigationServer::agent_add);
     ClassDB::bind_method(D_METHOD("agent_add", "space"), &NavigationServer::agent_add);

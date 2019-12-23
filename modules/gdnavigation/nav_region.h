@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  navigation_mesh_generator.h                                          */
+/*  nav_region.cpp                                                       */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,40 +28,40 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef NAVIGATION_MESH_GENERATOR_H
-#define NAVIGATION_MESH_GENERATOR_H
+#ifndef NAV_REGION_H
+#define NAV_REGION_H
 
-#include "editor/editor_node.h"
-#include "scene/3d/navigation_mesh.h"
+#include "nav_rid.h"
 
-#include <Recast.h>
+#include "scene/3d/navigation.h"
 
-class EditorNavigationMeshGenerator : public Object {
-	GDCLASS(EditorNavigationMeshGenerator, Object);
+class NavMap;
 
-	static EditorNavigationMeshGenerator *singleton;
-
-protected:
-	static void _bind_methods();
-
-	static void _add_vertex(const Vector3 &p_vec3, Vector<float> &p_verticies);
-	static void _add_mesh(const Ref<Mesh> &p_mesh, const Transform &p_xform, Vector<float> &p_verticies, Vector<int> &p_indices);
-	static void _add_faces(const PoolVector3Array &p_faces, const Transform &p_xform, Vector<float> &p_verticies, Vector<int> &p_indices);
-	static void _parse_geometry(Transform p_accumulated_transform, Node *p_node, Vector<float> &p_verticies, Vector<int> &p_indices, int p_generate_from, uint32_t p_collision_mask, bool p_recurse_children);
-
-	static void _convert_detail_mesh_to_native_navigation_mesh(const rcPolyMeshDetail *p_detail_mesh, Ref<NavigationMesh> p_nav_mesh);
-	static void _build_recast_navigation_mesh(Ref<NavigationMesh> p_nav_mesh, EditorProgress *ep,
-			rcHeightfield *hf, rcCompactHeightfield *chf, rcContourSet *cset, rcPolyMesh *poly_mesh,
-			rcPolyMeshDetail *detail_mesh, Vector<float> &vertices, Vector<int> &indices);
+class NavRegion : public NavRid {
+    NavMap *map;
+    Transform transform;
+    Ref<NavigationMesh> mesh;
 
 public:
-	static EditorNavigationMeshGenerator *get_singleton();
+    NavRegion();
 
-	EditorNavigationMeshGenerator();
-	~EditorNavigationMeshGenerator();
+    void set_map(NavMap *p_map);
+    NavMap *get_map() const {
+        return map;
+    }
 
-	void bake(Ref<NavigationMesh> p_nav_mesh, Node *p_node);
-	void clear(Ref<NavigationMesh> p_nav_mesh);
+    void set_transform(Transform transform);
+    const Transform &get_transform() const {
+        return transform;
+    }
+
+    void set_mesh(Ref<NavigationMesh> p_mesh);
+    const Ref<NavigationMesh> get_mesh() const {
+        return mesh;
+    }
+
+private:
+    void update_map();
 };
 
-#endif // NAVIGATION_MESH_GENERATOR_H
+#endif // NAV_REGION_H

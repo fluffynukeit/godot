@@ -31,7 +31,10 @@
 #include "register_types.h"
 
 #include "gd_navigation_server.h"
+#include "navigation_mesh_editor_plugin.h"
 #include "servers/navigation_server.h"
+
+NavigationMeshGenerator *_nav_mesh_generator = NULL;
 
 NavigationServer *new_server() {
     return memnew(GdNavigationServer);
@@ -39,7 +42,23 @@ NavigationServer *new_server() {
 
 void register_gdnavigation_types() {
     NavigationServerManager::set_default_server(new_server);
+
+    _nav_mesh_generator = memnew(NavigationMeshGenerator);
+    ClassDB::register_class<NavigationMeshGenerator>();
+    Engine::get_singleton()->add_singleton(Engine::Singleton("NavigationMeshGenerator", NavigationMeshGenerator::get_singleton()));
+
+#ifdef TOOLS_ENABLED
+    EditorPlugins::add_by_type<NavigationMeshEditorPlugin>();
+
+    ClassDB::APIType prev_api = ClassDB::get_current_api();
+    ClassDB::set_current_api(ClassDB::API_EDITOR);
+
+    ClassDB::set_current_api(prev_api);
+#endif
 }
 
 void unregister_gdnavigation_types() {
+    if (_nav_mesh_generator) {
+        memdelete(_nav_mesh_generator);
+    }
 }

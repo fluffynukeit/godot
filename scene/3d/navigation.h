@@ -156,6 +156,7 @@ class Navigation : public Spatial {
 	float cell_size;
 	Map<int, NavMesh> navmesh_map;
 	int last_id;
+    RID map;
 
 	Vector3 up;
 	void _clip_path(Vector<Vector3> &path, Polygon *from_poly, const Vector3 &p_to_point, Polygon *p_to_poly);
@@ -179,6 +180,7 @@ public:
 	Object *get_closest_point_owner(const Vector3 &p_point);
 
 	Navigation();
+    ~Navigation();
 };
 
 #endif // NAVIGATION_H

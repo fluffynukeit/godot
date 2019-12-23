@@ -53,15 +53,15 @@
 #include "modules/gridmap/grid_map.h"
 #endif
 
-EditorNavigationMeshGenerator *EditorNavigationMeshGenerator::singleton = NULL;
+NavigationMeshGenerator *NavigationMeshGenerator::singleton = NULL;
 
-void EditorNavigationMeshGenerator::_add_vertex(const Vector3 &p_vec3, Vector<float> &p_verticies) {
+void NavigationMeshGenerator::_add_vertex(const Vector3 &p_vec3, Vector<float> &p_verticies) {
 	p_verticies.push_back(p_vec3.x);
 	p_verticies.push_back(p_vec3.y);
 	p_verticies.push_back(p_vec3.z);
 }
 
-void EditorNavigationMeshGenerator::_add_mesh(const Ref<Mesh> &p_mesh, const Transform &p_xform, Vector<float> &p_verticies, Vector<int> &p_indices) {
+void NavigationMeshGenerator::_add_mesh(const Ref<Mesh> &p_mesh, const Transform &p_xform, Vector<float> &p_verticies, Vector<int> &p_indices) {
 	int current_vertex_count;
 
 	for (int i = 0; i < p_mesh->get_surface_count(); i++) {
@@ -116,7 +116,7 @@ void EditorNavigationMeshGenerator::_add_mesh(const Ref<Mesh> &p_mesh, const Tra
 	}
 }
 
-void EditorNavigationMeshGenerator::_add_faces(const PoolVector3Array &p_faces, const Transform &p_xform, Vector<float> &p_verticies, Vector<int> &p_indices) {
+void NavigationMeshGenerator::_add_faces(const PoolVector3Array &p_faces, const Transform &p_xform, Vector<float> &p_verticies, Vector<int> &p_indices) {
 	int face_count = p_faces.size() / 3;
 	int current_vertex_count = p_verticies.size() / 3;
 
@@ -131,7 +131,7 @@ void EditorNavigationMeshGenerator::_add_faces(const PoolVector3Array &p_faces, 
 	}
 }
 
-void EditorNavigationMeshGenerator::_parse_geometry(Transform p_accumulated_transform, Node *p_node, Vector<float> &p_verticies, Vector<int> &p_indices, int p_generate_from, uint32_t p_collision_mask, bool p_recurse_children) {
+void NavigationMeshGenerator::_parse_geometry(Transform p_accumulated_transform, Node *p_node, Vector<float> &p_verticies, Vector<int> &p_indices, int p_generate_from, uint32_t p_collision_mask, bool p_recurse_children) {
 
 	if (Object::cast_to<MeshInstance>(p_node) && p_generate_from != NavigationMesh::PARSED_GEOMETRY_STATIC_COLLIDERS) {
 
@@ -270,7 +270,7 @@ void EditorNavigationMeshGenerator::_parse_geometry(Transform p_accumulated_tran
 	}
 }
 
-void EditorNavigationMeshGenerator::_convert_detail_mesh_to_native_navigation_mesh(const rcPolyMeshDetail *p_detail_mesh, Ref<NavigationMesh> p_nav_mesh) {
+void NavigationMeshGenerator::_convert_detail_mesh_to_native_navigation_mesh(const rcPolyMeshDetail *p_detail_mesh, Ref<NavigationMesh> p_nav_mesh) {
 
 	PoolVector<Vector3> nav_vertices;
 
@@ -298,7 +298,7 @@ void EditorNavigationMeshGenerator::_convert_detail_mesh_to_native_navigation_me
 	}
 }
 
-void EditorNavigationMeshGenerator::_build_recast_navigation_mesh(Ref<NavigationMesh> p_nav_mesh, EditorProgress *ep,
+void NavigationMeshGenerator::_build_recast_navigation_mesh(Ref<NavigationMesh> p_nav_mesh, EditorProgress *ep,
 		rcHeightfield *hf, rcCompactHeightfield *chf, rcContourSet *cset, rcPolyMesh *poly_mesh, rcPolyMeshDetail *detail_mesh,
 		Vector<float> &vertices, Vector<int> &indices) {
 	rcContext ctx;
@@ -420,18 +420,18 @@ void EditorNavigationMeshGenerator::_build_recast_navigation_mesh(Ref<Navigation
 	detail_mesh = 0;
 }
 
-EditorNavigationMeshGenerator *EditorNavigationMeshGenerator::get_singleton() {
+NavigationMeshGenerator *NavigationMeshGenerator::get_singleton() {
 	return singleton;
 }
 
-EditorNavigationMeshGenerator::EditorNavigationMeshGenerator() {
+NavigationMeshGenerator::NavigationMeshGenerator() {
 	singleton = this;
 }
 
-EditorNavigationMeshGenerator::~EditorNavigationMeshGenerator() {
+NavigationMeshGenerator::~NavigationMeshGenerator() {
 }
 
-void EditorNavigationMeshGenerator::bake(Ref<NavigationMesh> p_nav_mesh, Node *p_node) {
+void NavigationMeshGenerator::bake(Ref<NavigationMesh> p_nav_mesh, Node *p_node) {
 
 	ERR_FAIL_COND(!p_nav_mesh.is_valid());
 
@@ -485,14 +485,14 @@ void EditorNavigationMeshGenerator::bake(Ref<NavigationMesh> p_nav_mesh, Node *p
 	ep.step(TTR("Done!"), 11);
 }
 
-void EditorNavigationMeshGenerator::clear(Ref<NavigationMesh> p_nav_mesh) {
+void NavigationMeshGenerator::clear(Ref<NavigationMesh> p_nav_mesh) {
 	if (p_nav_mesh.is_valid()) {
 		p_nav_mesh->clear_polygons();
 		p_nav_mesh->set_vertices(PoolVector<Vector3>());
 	}
 }
 
-void EditorNavigationMeshGenerator::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("bake", "nav_mesh", "root_node"), &EditorNavigationMeshGenerator::bake);
-	ClassDB::bind_method(D_METHOD("clear", "nav_mesh"), &EditorNavigationMeshGenerator::clear);
+void NavigationMeshGenerator::_bind_methods() {
+    ClassDB::bind_method(D_METHOD("bake", "nav_mesh", "root_node"), &NavigationMeshGenerator::bake);
+    ClassDB::bind_method(D_METHOD("clear", "nav_mesh"), &NavigationMeshGenerator::clear);
 }

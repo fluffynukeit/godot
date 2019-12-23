@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  rvo_space.h                                                          */
+/*  rvo_rid.h                                                            */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,62 +28,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef RVO_SPACE_H
-#define RVO_SPACE_H
+#ifndef RVO_RID_H
+#define RVO_RID_H
 
-#include "rvo_rid.h"
+#include "core/rid.h"
 
-#include "core/math/math_defs.h"
-#include <KdTree.h>
-#include <Obstacle.h>
-
-class RvoAgent;
-
-class RvoSpace : public RvoRid {
-
-    /// Rvo world
-    RVO::KdTree rvo;
-
-    /// Is the obstacles array modified?
-    bool obstacles_dirty;
-    /// Obstacles
-    std::vector<RVO::Obstacle *> obstacles;
-
-    /// Is agent array modified?
-    bool agents_dirty;
-
-    /// All the Agents (even the controlled one)
-    std::vector<RvoAgent *> agents;
-
-    /// Controlled agents
-    std::vector<RvoAgent *> controlled_agents;
-
-    /// Physics delta time
-    real_t deltatime;
+class NavRid : public RID_Data {
+    RID self;
 
 public:
-    RvoSpace();
-
-    bool has_obstacle(RVO::Obstacle *obstacle) const;
-    void add_obstacle(RVO::Obstacle *obstacle);
-    void remove_obstacle(RVO::Obstacle *obstacle);
-
-    bool has_agent(RvoAgent *agent) const;
-    void add_agent(RvoAgent *agent);
-    void remove_agent(RvoAgent *agent);
-    std::vector<RvoAgent *> &get_agents() {
-        return agents;
-    }
-
-    void set_agent_as_controlled(RvoAgent *agent);
-    void remove_agent_as_controlled(RvoAgent *agent);
-
-    void sync();
-    void step(real_t p_deltatime);
-    void dispatch_callbacks();
-
-private:
-    void compute_single_step(uint32_t index, RvoAgent **agent);
+    _FORCE_INLINE_ void set_self(const RID &p_self) { self = p_self; }
+    _FORCE_INLINE_ RID get_self() const { return self; }
 };
 
-#endif // RVO_SPACE_H
+#endif // RVO_RID_H

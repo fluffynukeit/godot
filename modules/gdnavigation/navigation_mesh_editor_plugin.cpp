@@ -64,8 +64,8 @@ void NavigationMeshEditor::_bake_pressed() {
 		return;
 	}
 
-	EditorNavigationMeshGenerator::get_singleton()->clear(node->get_navigation_mesh());
-	EditorNavigationMeshGenerator::get_singleton()->bake(node->get_navigation_mesh(), node);
+    NavigationMeshGenerator::get_singleton()->clear(node->get_navigation_mesh());
+    NavigationMeshGenerator::get_singleton()->bake(node->get_navigation_mesh(), node);
 
 	node->update_gizmo();
 }
@@ -73,7 +73,7 @@ void NavigationMeshEditor::_bake_pressed() {
 void NavigationMeshEditor::_clear_pressed() {
 
 	if (node)
-		EditorNavigationMeshGenerator::get_singleton()->clear(node->get_navigation_mesh());
+        NavigationMeshGenerator::get_singleton()->clear(node->get_navigation_mesh());
 
 	button_bake->set_pressed(false);
 	bake_info->set_text("");

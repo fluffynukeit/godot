@@ -32,12 +32,12 @@
 #define RVO_AGENT_H
 
 #include "core/object.h"
-#include "rvo_rid.h"
+#include "nav_rid.h"
 #include <Agent.h>
 
-class RvoSpace;
+class NavMap;
 
-class RvoAgent : public RvoRid {
+class RvoAgent : public NavRid {
     struct AvoidanceComputedCallback {
         ObjectID id;
         StringName method;
@@ -45,14 +45,14 @@ class RvoAgent : public RvoRid {
         Variant new_velocity;
     };
 
-    RvoSpace *space;
+    NavMap *space;
     RVO::Agent agent;
     AvoidanceComputedCallback callback;
 
 public:
-    RvoAgent(RvoSpace *p_space);
+    RvoAgent(NavMap *p_space);
 
-    RvoSpace *get_space() {
+    NavMap *get_space() {
         return space;
     }
 

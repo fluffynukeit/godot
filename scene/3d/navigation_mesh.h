@@ -202,6 +202,7 @@ class NavigationMeshInstance : public Spatial {
 	bool enabled;
 	int nav_id;
 	Navigation *navigation;
+    RID region;
 	Ref<NavigationMesh> navmesh;
 
 	Node *debug_view;
