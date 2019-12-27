@@ -606,9 +606,11 @@ void NavigationMeshInstance::_notification(int p_what) {
 				navigation = Object::cast_to<Navigation>(c);
 				if (navigation) {
 
-					if (enabled && navmesh.is_valid()) {
+                    if (enabled) {
 
-						nav_id = navigation->navmesh_add(navmesh, get_relative_transform(navigation), this);
+                        NavigationServer::get_singleton()->region_set_map(region, navigation->get_rid());
+                        // TODO remove this
+                        nav_id = navigation->navmesh_add(navmesh, get_relative_transform(navigation), this);
 					}
 					break;
 				}
@@ -632,7 +634,10 @@ void NavigationMeshInstance::_notification(int p_what) {
 		} break;
 		case NOTIFICATION_TRANSFORM_CHANGED: {
 
-			if (navigation && nav_id != -1) {
+            NavigationServer::get_singleton()->region_set_transform(region, get_global_transform());
+
+            // TODO remove this
+            if (navigation && nav_id != -1) {
 				navigation->navmesh_set_transform(nav_id, get_relative_transform(navigation));
 			}
 
@@ -641,7 +646,9 @@ void NavigationMeshInstance::_notification(int p_what) {
 
 			if (navigation) {
 
-				if (nav_id != -1) {
+                NavigationServer::get_singleton()->region_set_map(region, RID());
+                // TODO remove this
+                if (nav_id != -1) {
 					navigation->navmesh_remove(nav_id);
 					nav_id = -1;
 				}
@@ -658,7 +665,9 @@ void NavigationMeshInstance::_notification(int p_what) {
 
 void NavigationMeshInstance::set_navigation_mesh(const Ref<NavigationMesh> &p_navmesh) {
 
-	if (p_navmesh == navmesh)
+    NavigationServer::get_singleton()->region_set_navmesh(region, p_navmesh);
+
+    if (p_navmesh == navmesh)
 		return;
 
 	if (navigation && nav_id != -1) {
@@ -676,6 +685,7 @@ void NavigationMeshInstance::set_navigation_mesh(const Ref<NavigationMesh> &p_na
 		navmesh->add_change_receptor(this);
 	}
 
+    // TODO remove this
 	if (navigation && navmesh.is_valid() && enabled) {
 		nav_id = navigation->navmesh_add(navmesh, get_relative_transform(navigation), this);
 	}

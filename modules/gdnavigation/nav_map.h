@@ -34,13 +34,33 @@
 #include "nav_rid.h"
 
 #include "core/math/math_defs.h"
+#include "nav_utils.h"
 #include <KdTree.h>
 #include <Obstacle.h>
 
+class NavRegion;
 class RvoAgent;
 class NavRegion;
 
 class NavMap : public NavRid {
+
+    /// Map Up
+    Vector3 up;
+
+    /// To find the polygons edges the vertices are displaced in a grid where
+    /// each cell has the following cell_size.
+    float cell_size;
+
+    /// This value is used to detect the near edges to connect.
+    float edge_connection_margin;
+
+    bool regenerate_polygons;
+    bool regenerate_links;
+
+    std::vector<NavRegion *> regions;
+
+    /// Map polygons
+    std::vector<Polygon> polygons;
 
     /// Rvo world
     RVO::KdTree rvo;
@@ -59,6 +79,25 @@ class NavMap : public NavRid {
 
 public:
     NavMap();
+
+    void set_up(Vector3 p_up);
+    Vector3 get_up() const {
+        return up;
+    }
+
+    void set_cell_size(float p_cell_size);
+    float get_cell_size() const {
+        return cell_size;
+    }
+
+    void set_edge_connection_margin(float p_edge_connection_margin);
+    float get_edge_connection_margin() const {
+        return edge_connection_margin;
+    }
+
+    PointKey get_point_key(const Vector3 &p_pos) const;
+
+    Vector<Vector3> get_path(Vector3 p_origin, Vector3 p_destination, bool p_optimize) const;
 
     void add_region(NavRegion *p_region);
     void remove_region(NavRegion *p_region);

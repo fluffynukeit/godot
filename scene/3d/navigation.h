@@ -163,8 +163,13 @@ class Navigation : public Spatial {
 
 protected:
 	static void _bind_methods();
+    void _notification(int p_what);
 
 public:
+    RID get_rid() const {
+        return map;
+    }
+
 	void set_up_vector(const Vector3 &p_up);
 	Vector3 get_up_vector() const;
 

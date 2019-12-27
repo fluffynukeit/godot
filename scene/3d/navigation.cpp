@@ -273,6 +273,9 @@ void Navigation::_clip_path(Vector<Vector3> &path, Polygon *from_poly, const Vec
 
 Vector<Vector3> Navigation::get_simple_path(const Vector3 &p_start, const Vector3 &p_end, bool p_optimize) {
 
+    return NavigationServer::get_singleton()->map_get_path(map, p_start, p_end, p_optimize);
+
+    // TODO remove below
 	Polygon *begin_poly = NULL;
 	Polygon *end_poly = NULL;
 	Vector3 begin_point;
@@ -694,7 +697,8 @@ Object *Navigation::get_closest_point_owner(const Vector3 &p_point) {
 
 void Navigation::set_up_vector(const Vector3 &p_up) {
 
-	up = p_up;
+    up = p_up;
+    NavigationServer::get_singleton()->map_set_up(map, up);
 }
 
 Vector3 Navigation::get_up_vector() const {
@@ -718,6 +722,18 @@ void Navigation::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_up_vector"), &Navigation::get_up_vector);
 
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "up_vector"), "set_up_vector", "get_up_vector");
+}
+
+void Navigation::_notification(int p_what) {
+    switch (p_what) {
+        case NOTIFICATION_READY: {
+            NavigationServer::get_singleton()->map_set_active(map, true);
+        } break;
+        case NOTIFICATION_EXIT_TREE: {
+
+            NavigationServer::get_singleton()->map_set_active(map, false);
+        } break;
+    }
 }
 
 Navigation::Navigation() {

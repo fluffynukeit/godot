@@ -64,6 +64,27 @@ bool GdNavigationServer::map_is_active(RID p_map) const {
     return active_maps.find(map) >= 0;
 }
 
+void GdNavigationServer::map_set_up(RID p_map, Vector3 p_up) {
+    NavMap *map = map_owner.get(p_map);
+    ERR_FAIL_COND(map == NULL);
+
+    map->set_up(p_up);
+}
+
+Vector3 GdNavigationServer::map_get_up(RID p_map) const {
+    NavMap *map = map_owner.get(p_map);
+    ERR_FAIL_COND_V(map == NULL, Vector3());
+
+    return map->get_up();
+}
+
+Vector<Vector3> GdNavigationServer::map_get_path(RID p_map, Vector3 p_origin, Vector3 p_destination, bool p_optimize) const {
+    NavMap *map = map_owner.get(p_map);
+    ERR_FAIL_COND_V(map == NULL, Vector<Vector3>());
+
+    return map->get_path(p_origin, p_destination, p_optimize);
+}
+
 RID GdNavigationServer::region_create() {
     NavRegion *reg = memnew(NavRegion);
     RID rid = region_owner.make_rid(reg);

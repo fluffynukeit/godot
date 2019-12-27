@@ -33,17 +33,32 @@
 
 #include "nav_rid.h"
 
+#include "nav_utils.h"
 #include "scene/3d/navigation.h"
+#include <vector>
 
 class NavMap;
+class NavRegion;
 
 class NavRegion : public NavRid {
     NavMap *map;
+    /// To find the polygons edges the vertices are displaced in a grid where
+    /// each cell has the following cell_size.
+    float cell_size;
     Transform transform;
     Ref<NavigationMesh> mesh;
 
+    bool polygons_dirty;
+
+    /// Cache
+    std::vector<Polygon> polygons;
+
 public:
     NavRegion();
+
+    void scratch_polygons() {
+        polygons_dirty = true;
+    }
 
     void set_map(NavMap *p_map);
     NavMap *get_map() const {
@@ -60,8 +75,14 @@ public:
         return mesh;
     }
 
+    std::vector<Polygon> const &get_polygons() const {
+        return polygons;
+    }
+
+    bool sync();
+
 private:
-    void update_map();
+    void update_polygons();
 };
 
 #endif // NAV_REGION_H

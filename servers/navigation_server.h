@@ -50,6 +50,11 @@ public:
     virtual void map_set_active(RID p_map, bool p_active) = 0;
     virtual bool map_is_active(RID p_map) const = 0;
 
+    virtual void map_set_up(RID p_map, Vector3 p_up) = 0;
+    virtual Vector3 map_get_up(RID p_map) const = 0;
+
+    virtual Vector<Vector3> map_get_path(RID p_map, Vector3 p_origin, Vector3 p_destination, bool p_optimize) const = 0;
+
     virtual RID region_create() = 0;
     virtual void region_set_map(RID p_region, RID p_map) = 0;
     virtual void region_set_transform(RID p_region, Transform p_transform) = 0;
