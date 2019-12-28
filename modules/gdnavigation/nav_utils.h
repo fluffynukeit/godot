@@ -126,8 +126,8 @@ struct NavigationPoly {
     const Polygon *poly;
     /// The previous navigation poly (id in the `navigation_poly` array).
     int prev_navigation_poly_id;
-    /// The edge id in the `prev_navigation_poly` that connects it with this poly.
-    uint prev_navigation_edge;
+    /// The edge id in this `Poly` to reach the `prev_navigation_poly_id`.
+    uint back_navigation_edge;
     /// The entry location of this poly.
     Vector3 entry;
     /// The distance to the destination.
@@ -137,7 +137,7 @@ struct NavigationPoly {
             self_id(0),
             poly(p_poly),
             prev_navigation_poly_id(-1),
-            prev_navigation_edge(0),
+            back_navigation_edge(0),
             traveled_distance(0.0) {
     }
 

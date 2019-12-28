@@ -144,61 +144,63 @@ Vector<Vector3> NavMap::get_path(Vector3 p_origin, Vector3 p_destination, bool p
 
     while (found_route == false) {
 
-        NavigationPoly *least_cost_poly = &navigation_polys[least_cost_id];
-        // Takes the current least_cost_poly neighbors and compute the traveled_distance of each
-        for (int i = 0; i < least_cost_poly->poly->edges.size(); i++) {
+        {
+            NavigationPoly *least_cost_poly = &navigation_polys[least_cost_id];
+            // Takes the current least_cost_poly neighbors and compute the traveled_distance of each
+            for (int i = 0; i < least_cost_poly->poly->edges.size(); i++) {
 
-            const Edge &edge = least_cost_poly->poly->edges[i];
-            if (!edge.other_polygon)
-                continue;
+                const Edge &edge = least_cost_poly->poly->edges[i];
+                if (!edge.other_polygon)
+                    continue;
 
 #ifdef USE_ENTRY_POINT
-            Vector3 edge_line[2] = {
-                least_cost_poly->poly->points[i].pos,
-                least_cost_poly->poly->points[(i + 1) % least_cost_poly->poly->points.size()].pos
-            };
+                Vector3 edge_line[2] = {
+                    least_cost_poly->poly->points[i].pos,
+                    least_cost_poly->poly->points[(i + 1) % least_cost_poly->poly->points.size()].pos
+                };
 
-            const Vector3 new_entry = Geometry::get_closest_point_to_segment(least_cost_poly->entry, edge_line);
-            const float new_distance = least_cost_poly->entry.distance_to(new_entry) + least_cost_poly->traveled_distance;
+                const Vector3 new_entry = Geometry::get_closest_point_to_segment(least_cost_poly->entry, edge_line);
+                const float new_distance = least_cost_poly->entry.distance_to(new_entry) + least_cost_poly->traveled_distance;
 #else
-            const float new_distance = least_cost_poly->poly->center.distance_to(least_cost_poly->other_polygon->center) + least_cost_poly->distance;
+                const float new_distance = least_cost_poly->poly->center.distance_to(edge.other_polygon->center) + least_cost_poly->traveled_distance;
 #endif
 
-            auto it = std::find(
-                    navigation_polys.begin(),
-                    navigation_polys.end(),
-                    NavigationPoly(edge.other_polygon));
+                auto it = std::find(
+                        navigation_polys.begin(),
+                        navigation_polys.end(),
+                        NavigationPoly(edge.other_polygon));
 
-            if (it != navigation_polys.end()) {
-                // Oh this was visited already, can we win the cost?
-                if (it->traveled_distance > new_distance) {
+                if (it != navigation_polys.end()) {
+                    // Oh this was visited already, can we win the cost?
+                    if (it->traveled_distance > new_distance) {
 
-                    it->prev_navigation_poly_id = least_cost_id;
-                    it->prev_navigation_edge = edge.other_edge;
-                    it->traveled_distance = new_distance;
+                        it->prev_navigation_poly_id = least_cost_id;
+                        it->back_navigation_edge = edge.other_edge;
+                        it->traveled_distance = new_distance;
 #ifdef USE_ENTRY_POINT
-                    it->entry = new_entry;
+                        it->entry = new_entry;
 #endif
+                    }
+                } else {
+                    // Add to open neighbours
+
+                    navigation_polys.push_back(NavigationPoly(edge.other_polygon));
+                    NavigationPoly *np = &navigation_polys[navigation_polys.size() - 1];
+
+                    np->self_id = navigation_polys.size() - 1;
+                    np->prev_navigation_poly_id = least_cost_id;
+                    np->back_navigation_edge = edge.other_edge;
+                    np->traveled_distance = new_distance;
+#ifdef USE_ENTRY_POINT
+                    np->entry = new_entry;
+#endif
+                    open_list.push_back(navigation_polys.size() - 1);
                 }
-            } else {
-                // Add to open neighbours
 
-                navigation_polys.push_back(NavigationPoly(edge.other_polygon));
-                NavigationPoly *np = &navigation_polys[navigation_polys.size() - 1];
-
-                np->self_id = navigation_polys.size() - 1;
-                np->prev_navigation_poly_id = least_cost_id;
-                np->prev_navigation_edge = edge.other_edge;
-                np->traveled_distance = new_distance;
-#ifdef USE_ENTRY_POINT
-                np->entry = new_entry;
-#endif
-                open_list.push_back(navigation_polys.size() - 1);
+                // At this point the pointer may not be valid anymore because I've touched the `navigation_polys`.
+                // So reset the pointer just to be sure.
+                least_cost_poly = &navigation_polys[least_cost_id];
             }
-
-            // At this point the pointer may not be valid anymore because I've touched the `navigation_polys`.
-            // So reset the pointer just to be sure.
-            least_cost_poly = &navigation_polys[least_cost_id];
         }
 
         // Removes the least cost polygon from the open list so we can advance.
@@ -230,15 +232,46 @@ Vector<Vector3> NavMap::get_path(Vector3 p_origin, Vector3 p_destination, bool p
         ERR_BREAK(least_cost_id == -1);
 
         // Check if we reached the end
-        if (least_cost_poly->poly == end_poly) {
+        if (navigation_polys[least_cost_id].poly == end_poly) {
             // Yep, done!!
             found_route = true;
             break;
         }
     }
 
-    // TODO continue ?
+    if (found_route) {
 
+        // TODO remove this please
+        p_optimize = false;
+
+        Vector<Vector3> path;
+        if (p_optimize) {
+
+            // TODO continue ?
+        } else {
+            path.push_back(end_point);
+
+            // Add mid points
+            int np_id = least_cost_id;
+            while (np_id != -1) {
+
+#ifdef USE_ENTRY_POINT
+                Vector3 point = navigation_polys[np_id].entry;
+#else
+                int prev = navigation_polys[np_id].back_navigation_edge;
+                int prev_n = (navigation_polys[np_id].back_navigation_edge + 1) % navigation_polys[np_id].poly->points.size();
+                Vector3 point = (navigation_polys[np_id].poly->points[prev].pos + navigation_polys[np_id].poly->points[prev_n].pos) * 0.5;
+#endif
+
+                path.push_back(point);
+                np_id = navigation_polys[np_id].prev_navigation_poly_id;
+            }
+
+            path.invert();
+        }
+
+        return path;
+    }
     return Vector<Vector3>();
 }
 
