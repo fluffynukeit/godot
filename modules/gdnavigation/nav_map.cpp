@@ -241,13 +241,96 @@ Vector<Vector3> NavMap::get_path(Vector3 p_origin, Vector3 p_destination, bool p
 
     if (found_route) {
 
-        // TODO remove this please
-        p_optimize = false;
-
         Vector<Vector3> path;
         if (p_optimize) {
 
-            // TODO continue ?
+            // String pulling
+
+            NavigationPoly *apex_poly = &navigation_polys[least_cost_id];
+            Vector3 apex_point = end_point;
+            Vector3 portal_left = apex_point;
+            Vector3 portal_right = apex_point;
+            NavigationPoly *left_poly = apex_poly;
+            NavigationPoly *right_poly = apex_poly;
+            NavigationPoly *p = apex_poly;
+
+            path.push_back(end_point);
+
+            while (p) {
+
+                Vector3 left;
+                Vector3 right;
+
+#define CLOCK_TANGENT(m_a, m_b, m_c) (((m_a) - (m_c)).cross((m_a) - (m_b)))
+
+                if (p->poly == begin_poly) {
+                    left = begin_point;
+                    right = begin_point;
+                } else {
+                    int prev = p->back_navigation_edge;
+                    int prev_n = (p->back_navigation_edge + 1) % p->poly->points.size();
+                    left = p->poly->points[prev].pos;
+                    right = p->poly->points[prev_n].pos;
+
+                    //if (CLOCK_TANGENT(apex_point,left,(left+right)*0.5).dot(up) < 0){
+                    if (p->poly->clockwise) {
+                        SWAP(left, right);
+                    }
+                }
+
+                bool skip = false;
+
+                if (CLOCK_TANGENT(apex_point, portal_left, left).dot(up) >= 0) {
+                    //process
+                    if (portal_left == apex_point || CLOCK_TANGENT(apex_point, left, portal_right).dot(up) > 0) {
+                        left_poly = p;
+                        portal_left = left;
+                    } else {
+
+                        clip_path(navigation_polys, path, apex_poly, portal_right, right_poly);
+
+                        apex_point = portal_right;
+                        p = right_poly;
+                        left_poly = p;
+                        apex_poly = p;
+                        portal_left = apex_point;
+                        portal_right = apex_point;
+                        path.push_back(apex_point);
+                        skip = true;
+                    }
+                }
+
+                if (!skip && CLOCK_TANGENT(apex_point, portal_right, right).dot(up) <= 0) {
+                    //process
+                    if (portal_right == apex_point || CLOCK_TANGENT(apex_point, right, portal_left).dot(up) < 0) {
+                        right_poly = p;
+                        portal_right = right;
+                    } else {
+
+                        clip_path(navigation_polys, path, apex_poly, portal_left, left_poly);
+
+                        apex_point = portal_left;
+                        p = left_poly;
+                        right_poly = p;
+                        apex_poly = p;
+                        portal_right = apex_point;
+                        portal_left = apex_point;
+                        path.push_back(apex_point);
+                    }
+                }
+
+                if (p->prev_navigation_poly_id != -1)
+                    p = &navigation_polys[p->prev_navigation_poly_id];
+                else
+                    // The end
+                    p = NULL;
+            }
+
+            if (path[path.size() - 1] != begin_point)
+                path.push_back(begin_point);
+
+            path.invert();
+
         } else {
             path.push_back(end_point);
 
@@ -415,6 +498,39 @@ void NavMap::sync() {
 void NavMap::compute_single_step(uint32_t _index, RvoAgent **agent) {
     (*agent)->get_agent()->computeNeighbors(&rvo);
     (*agent)->get_agent()->computeNewVelocity(deltatime);
+}
+
+void NavMap::clip_path(const std::vector<NavigationPoly> &p_navigation_polys, Vector<Vector3> &path, const NavigationPoly *from_poly, const Vector3 &p_to_point, const NavigationPoly *p_to_poly) const {
+    Vector3 from = path[path.size() - 1];
+
+    if (from.distance_to(p_to_point) < CMP_EPSILON)
+        return;
+    Plane cut_plane;
+    cut_plane.normal = (from - p_to_point).cross(up);
+    if (cut_plane.normal == Vector3())
+        return;
+    cut_plane.normal.normalize();
+    cut_plane.d = cut_plane.normal.dot(from);
+
+    while (from_poly != p_to_poly) {
+
+        int back_nav_edge = from_poly->back_navigation_edge;
+        Vector3 a = from_poly->poly->points[back_nav_edge].pos;
+        Vector3 b = from_poly->poly->points[(back_nav_edge + 1) % from_poly->poly->points.size()].pos;
+
+        ERR_FAIL_COND(from_poly->prev_navigation_poly_id == -1);
+        from_poly = &p_navigation_polys[from_poly->prev_navigation_poly_id];
+
+        if (a.distance_to(b) > CMP_EPSILON) {
+
+            Vector3 inters;
+            if (cut_plane.intersects_segment(a, b, &inters)) {
+                if (inters.distance_to(p_to_point) > CMP_EPSILON && inters.distance_to(path[path.size() - 1]) > CMP_EPSILON) {
+                    path.push_back(inters);
+                }
+            }
+        }
+    }
 }
 
 void NavMap::step(real_t p_deltatime) {

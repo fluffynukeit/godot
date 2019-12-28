@@ -118,6 +118,7 @@ public:
 
 private:
     void compute_single_step(uint32_t index, RvoAgent **agent);
+    void clip_path(const std::vector<NavigationPoly> &p_navigation_polys, Vector<Vector3> &path, const NavigationPoly *from_poly, const Vector3 &p_to_point, const NavigationPoly *p_to_poly) const;
 };
 
 #endif // RVO_SPACE_H
