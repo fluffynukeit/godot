@@ -150,4 +150,13 @@ struct NavigationPoly {
     }
 };
 
+struct FreeEdge {
+    bool is_free;
+    Polygon *poly;
+    uint edge_id;
+    Vector3 edge_center;
+    Vector3 edge_dir;
+    float edge_len_squared;
+};
+
 #endif // UTILS_H

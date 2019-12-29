@@ -124,8 +124,9 @@ Vector<Vector3> NavMap::get_path(Vector3 p_origin, Vector3 p_destination, bool p
         return path;
     }
 
-    // TODO reserve size?
     std::vector<NavigationPoly> navigation_polys;
+    navigation_polys.reserve(polygons.size() * 0.75);
+
     // The elements indices in the `navigation_polys`.
     int least_cost_id(-1);
     List<uint> open_list;
@@ -407,7 +408,7 @@ void NavMap::sync() {
     // TODO write lock here?
 
     if (regenerate_polygons) {
-        for (int r(0); r < regions.size(); r++) {
+        for (uint r(0); r < regions.size(); r++) {
             regions[r]->scratch_polygons();
             regenerate_links = true;
         }
@@ -478,8 +479,77 @@ void NavMap::sync() {
             }
         }
 
-        // Connect regions by connecting the free edges
-        // TODO
+        // Takes all the free edges.
+        std::vector<FreeEdge> free_edges;
+        free_edges.reserve(connections.size());
+
+        for (auto connection_element = connections.front(); connection_element; connection_element = connection_element->next()) {
+            if (connection_element->get().B == NULL) {
+                CRASH_COND(connection_element->get().A == NULL); // Unreachable
+                CRASH_COND(connection_element->get().A_edge < 0); // Unreachable
+
+                // This is a free edge
+                uint id(free_edges.size());
+                free_edges.push_back(FreeEdge());
+                free_edges[id].is_free = true;
+                free_edges[id].poly = connection_element->get().A;
+                free_edges[id].edge_id = connection_element->get().A_edge;
+                uint point_0(free_edges[id].edge_id);
+                uint point_1((free_edges[id].edge_id + 1) % free_edges[id].poly->points.size());
+                Vector3 pos_0 = free_edges[id].poly->points[point_0].pos;
+                Vector3 pos_1 = free_edges[id].poly->points[point_1].pos;
+                Vector3 relative = pos_1 - pos_0;
+                free_edges[id].edge_center = (pos_0 + pos_1) / 2.0;
+                free_edges[id].edge_dir = relative.normalized();
+                free_edges[id].edge_len_squared = relative.length_squared();
+            }
+        }
+
+        const float margin(5); // TODO make this a map parameter!
+        const float margin_squared(margin * margin);
+#define LEN_TOLLERANCE 0.1
+#define DIR_TOLLERANCE 0.9
+        // In front of tollerance
+#define IFO_TOLLERANCE 0.5
+
+        // Find the compatible near edges.
+        //
+        // Note:
+        // Considering that the edges must be compatible (for obvious reasons)
+        // to be connected, create new polygons to remove that small gap is
+        // not really useful and would result in wasteful computation during
+        // connection, integration and path finding.
+        for (uint i(0); i < free_edges.size(); i++) {
+            if (!free_edges[i].is_free) {
+                continue;
+            }
+            FreeEdge &edge = free_edges[i];
+            for (uint y(0); y < free_edges.size(); y++) {
+                if (i == y || !free_edges[y].is_free) {
+                    continue;
+                }
+                FreeEdge &other_edge = free_edges[y];
+
+                Vector3 rel_centers = other_edge.edge_center - edge.edge_center;
+                if (margin_squared > rel_centers.length_squared() // Are enough closer?
+                        && ABS(edge.edge_len_squared - other_edge.edge_len_squared) < LEN_TOLLERANCE // Are the same length?
+                        && ABS(edge.edge_dir.dot(other_edge.edge_dir)) > DIR_TOLLERANCE // Are alligned?
+                        && ABS(rel_centers.normalized().dot(edge.edge_dir)) < IFO_TOLLERANCE // Are one in front the other?
+                ) {
+                    // The edges can be connected
+                    edge.is_free = false;
+                    other_edge.is_free = false;
+
+                    edge.poly->edges[edge.edge_id].this_edge = edge.edge_id;
+                    edge.poly->edges[edge.edge_id].other_edge = other_edge.edge_id;
+                    edge.poly->edges[edge.edge_id].other_polygon = other_edge.poly;
+
+                    other_edge.poly->edges[other_edge.edge_id].this_edge = other_edge.edge_id;
+                    other_edge.poly->edges[other_edge.edge_id].other_edge = edge.edge_id;
+                    other_edge.poly->edges[other_edge.edge_id].other_polygon = edge.poly;
+                }
+            }
+        }
     }
 
     if (agents_dirty) {
