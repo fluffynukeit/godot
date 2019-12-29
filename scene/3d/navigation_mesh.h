@@ -85,9 +85,8 @@ public:
 	};
 
 protected:
-    // TODO remove this?
-	float cell_size;
-	float cell_height;
+    float cell_size;
+    float cell_height;
 	float agent_height;
 	float agent_radius;
 	float agent_max_climb;
@@ -201,12 +200,11 @@ class NavigationMeshInstance : public Spatial {
 	GDCLASS(NavigationMeshInstance, Spatial);
 
 	bool enabled;
-	int nav_id;
-	Navigation *navigation;
     RID region;
 	Ref<NavigationMesh> navmesh;
 
-	Node *debug_view;
+    Navigation *navigation;
+    Node *debug_view;
 
 protected:
 	void _notification(int p_what);

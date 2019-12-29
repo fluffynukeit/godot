@@ -128,11 +128,11 @@ StringName NavigationMesh::get_source_group_name() const {
 }
 
 void NavigationMesh::set_cell_size(float p_value) {
-	cell_size = p_value;
+    cell_size = p_value;
 }
 
 float NavigationMesh::get_cell_size() const {
-	return cell_size;
+    return cell_size;
 }
 
 void NavigationMesh::set_cell_height(float p_value) {
@@ -412,10 +412,10 @@ void NavigationMesh::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_source_group_name", "mask"), &NavigationMesh::set_source_group_name);
 	ClassDB::bind_method(D_METHOD("get_source_group_name"), &NavigationMesh::get_source_group_name);
 
-	ClassDB::bind_method(D_METHOD("set_cell_size", "cell_size"), &NavigationMesh::set_cell_size);
-	ClassDB::bind_method(D_METHOD("get_cell_size"), &NavigationMesh::get_cell_size);
+    ClassDB::bind_method(D_METHOD("set_cell_size", "cell_size"), &NavigationMesh::set_cell_size);
+    ClassDB::bind_method(D_METHOD("get_cell_size"), &NavigationMesh::get_cell_size);
 
-	ClassDB::bind_method(D_METHOD("set_cell_height", "cell_height"), &NavigationMesh::set_cell_height);
+    ClassDB::bind_method(D_METHOD("set_cell_height", "cell_height"), &NavigationMesh::set_cell_height);
 	ClassDB::bind_method(D_METHOD("get_cell_height"), &NavigationMesh::get_cell_height);
 
 	ClassDB::bind_method(D_METHOD("set_agent_height", "agent_height"), &NavigationMesh::set_agent_height);
@@ -490,8 +490,8 @@ void NavigationMesh::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "geometry/source_geometry_mode", PROPERTY_HINT_ENUM, "Navmesh Children, Group With Children, Group Explicit"), "set_source_geometry_mode", "get_source_geometry_mode");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "geometry/source_group_name"), "set_source_group_name", "get_source_group_name");
 
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "cell/size", PROPERTY_HINT_RANGE, "0.1,1.0,0.01,or_greater"), "set_cell_size", "get_cell_size");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "cell/height", PROPERTY_HINT_RANGE, "0.1,1.0,0.01,or_greater"), "set_cell_height", "get_cell_height");
+    ADD_PROPERTY(PropertyInfo(Variant::REAL, "cell/size", PROPERTY_HINT_RANGE, "0.1,1.0,0.01,or_greater"), "set_cell_size", "get_cell_size");
+    ADD_PROPERTY(PropertyInfo(Variant::REAL, "cell/height", PROPERTY_HINT_RANGE, "0.1,1.0,0.01,or_greater"), "set_cell_height", "get_cell_height");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "agent/height", PROPERTY_HINT_RANGE, "0.1,5.0,0.01,or_greater"), "set_agent_height", "get_agent_height");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "agent/radius", PROPERTY_HINT_RANGE, "0.1,5.0,0.01,or_greater"), "set_agent_radius", "get_agent_radius");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "agent/max_climb", PROPERTY_HINT_RANGE, "0.1,5.0,0.01,or_greater"), "set_agent_max_climb", "get_agent_max_climb");
@@ -526,8 +526,8 @@ void NavigationMesh::_validate_property(PropertyInfo &property) const {
 }
 
 NavigationMesh::NavigationMesh() {
-	cell_size = 0.3f;
-	cell_height = 0.2f;
+    cell_size = 0.3f;
+    cell_height = 0.2f;
 	agent_height = 2.0f;
 	agent_radius = 0.6f;
 	agent_max_climb = 0.9f;
@@ -561,18 +561,12 @@ void NavigationMeshInstance::set_enabled(bool p_enabled) {
 
 	if (!enabled) {
 
-		if (nav_id != -1) {
-			navigation->navmesh_remove(nav_id);
-			nav_id = -1;
-		}
+        NavigationServer::get_singleton()->region_set_map(region, RID());
 	} else {
 
 		if (navigation) {
 
-			if (navmesh.is_valid()) {
-
-				nav_id = navigation->navmesh_add(navmesh, get_relative_transform(navigation), this);
-			}
+            NavigationServer::get_singleton()->region_set_map(region, navigation->get_rid());
 		}
 	}
 
@@ -609,8 +603,6 @@ void NavigationMeshInstance::_notification(int p_what) {
                     if (enabled) {
 
                         NavigationServer::get_singleton()->region_set_map(region, navigation->get_rid());
-                        // TODO remove this
-                        nav_id = navigation->navmesh_add(navmesh, get_relative_transform(navigation), this);
 					}
 					break;
 				}
@@ -636,22 +628,12 @@ void NavigationMeshInstance::_notification(int p_what) {
 
             NavigationServer::get_singleton()->region_set_transform(region, get_global_transform());
 
-            // TODO remove this
-            if (navigation && nav_id != -1) {
-				navigation->navmesh_set_transform(nav_id, get_relative_transform(navigation));
-			}
-
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
 
 			if (navigation) {
 
                 NavigationServer::get_singleton()->region_set_map(region, RID());
-                // TODO remove this
-                if (nav_id != -1) {
-					navigation->navmesh_remove(nav_id);
-					nav_id = -1;
-				}
 			}
 
 			if (debug_view) {
@@ -665,30 +647,20 @@ void NavigationMeshInstance::_notification(int p_what) {
 
 void NavigationMeshInstance::set_navigation_mesh(const Ref<NavigationMesh> &p_navmesh) {
 
-    NavigationServer::get_singleton()->region_set_navmesh(region, p_navmesh);
-
     if (p_navmesh == navmesh)
 		return;
-
-	if (navigation && nav_id != -1) {
-		navigation->navmesh_remove(nav_id);
-		nav_id = -1;
-	}
 
 	if (navmesh.is_valid()) {
 		navmesh->remove_change_receptor(this);
 	}
 
-	navmesh = p_navmesh;
+    navmesh = p_navmesh;
 
 	if (navmesh.is_valid()) {
 		navmesh->add_change_receptor(this);
 	}
 
-    // TODO remove this
-	if (navigation && navmesh.is_valid() && enabled) {
-		nav_id = navigation->navmesh_add(navmesh, get_relative_transform(navigation), this);
-	}
+    NavigationServer::get_singleton()->region_set_navmesh(region, p_navmesh);
 
 	if (debug_view && navmesh.is_valid()) {
 		Object::cast_to<MeshInstance>(debug_view)->set_mesh(navmesh->get_debug_mesh());
@@ -742,12 +714,12 @@ void NavigationMeshInstance::_changed_callback(Object *p_changed, const char *p_
 
 NavigationMeshInstance::NavigationMeshInstance() {
 
-	debug_view = NULL;
-	navigation = NULL;
-	nav_id = -1;
 	enabled = true;
 	set_notify_transform(true);
     region = NavigationServer::get_singleton()->region_create();
+
+    navigation = NULL;
+    debug_view = NULL;
 }
 
 NavigationMeshInstance::~NavigationMeshInstance() {

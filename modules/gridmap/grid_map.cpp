@@ -420,7 +420,8 @@ bool GridMap::_octant_update(const OctantKey &p_key) {
 	//erase navigation
 	if (navigation) {
 		for (Map<IndexKey, Octant::NavMesh>::Element *E = g.navmesh_ids.front(); E; E = E->next()) {
-			navigation->navmesh_remove(E->get().id);
+            // TODO do something here?
+            // navigation->navmesh_remove(E->get().id);
 		}
 		g.navmesh_ids.clear();
 	}
@@ -498,7 +499,8 @@ bool GridMap::_octant_update(const OctantKey &p_key) {
 			nm.xform = xform * mesh_library->get_item_navmesh_transform(c.item);
 
 			if (navigation) {
-				nm.id = navigation->navmesh_add(navmesh, xform, this);
+                // TODO do somethin here?
+                // nm.id = navigation->navmesh_add(navmesh, xform, this);
 			} else {
 				nm.id = -1;
 			}
@@ -594,7 +596,8 @@ void GridMap::_octant_enter_world(const OctantKey &p_key) {
 			if (cell_map.has(F->key()) && F->get().id < 0) {
 				Ref<NavigationMesh> nm = mesh_library->get_item_navmesh(cell_map[F->key()].item);
 				if (nm.is_valid()) {
-					F->get().id = navigation->navmesh_add(nm, F->get().xform, this);
+                    // TODO do somethin here?
+                    // F->get().id = navigation->navmesh_add(nm, F->get().xform, this);
 				}
 			}
 		}
@@ -621,7 +624,8 @@ void GridMap::_octant_exit_world(const OctantKey &p_key) {
 		for (Map<IndexKey, Octant::NavMesh>::Element *F = g.navmesh_ids.front(); F; F = F->next()) {
 
 			if (F->get().id >= 0) {
-				navigation->navmesh_remove(F->get().id);
+                // TODO do somethin here?
+                // navigation->navmesh_remove(F->get().id);
 				F->get().id = -1;
 			}
 		}
@@ -643,7 +647,8 @@ void GridMap::_octant_clean_up(const OctantKey &p_key) {
 	//erase navigation
 	if (navigation) {
 		for (Map<IndexKey, Octant::NavMesh>::Element *E = g.navmesh_ids.front(); E; E = E->next()) {
-			navigation->navmesh_remove(E->get().id);
+            // TODO Do something here?
+            // navigation->navmesh_remove(E->get().id);
 		}
 		g.navmesh_ids.clear();
 	}
