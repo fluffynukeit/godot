@@ -78,6 +78,34 @@ Vector3 GdNavigationServer::map_get_up(RID p_map) const {
     return map->get_up();
 }
 
+void GdNavigationServer::map_set_cell_size(RID p_map, real_t p_cell_size) {
+    NavMap *map = map_owner.get(p_map);
+    ERR_FAIL_COND(map == NULL);
+
+    map->set_cell_size(p_cell_size);
+}
+
+real_t GdNavigationServer::map_get_cell_size(RID p_map) const {
+    NavMap *map = map_owner.get(p_map);
+    ERR_FAIL_COND_V(map == NULL, 0);
+
+    return map->get_cell_size();
+}
+
+void GdNavigationServer::map_set_edge_connection_margin(RID p_map, real_t p_connection_margin) {
+    NavMap *map = map_owner.get(p_map);
+    ERR_FAIL_COND(map == NULL);
+
+    map->set_edge_connection_margin(p_connection_margin);
+}
+
+real_t GdNavigationServer::map_get_edge_connection_margin(RID p_map) const {
+    NavMap *map = map_owner.get(p_map);
+    ERR_FAIL_COND_V(map == NULL, 0);
+
+    return map->get_edge_connection_margin();
+}
+
 Vector<Vector3> GdNavigationServer::map_get_path(RID p_map, Vector3 p_origin, Vector3 p_destination, bool p_optimize) const {
     NavMap *map = map_owner.get(p_map);
     ERR_FAIL_COND_V(map == NULL, Vector<Vector3>());

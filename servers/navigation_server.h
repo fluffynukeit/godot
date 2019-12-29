@@ -53,6 +53,12 @@ public:
     virtual void map_set_up(RID p_map, Vector3 p_up) = 0;
     virtual Vector3 map_get_up(RID p_map) const = 0;
 
+    virtual void map_set_cell_size(RID p_map, real_t p_cell_size) = 0;
+    virtual real_t map_get_cell_size(RID p_map) const = 0;
+
+    virtual void map_set_edge_connection_margin(RID p_map, real_t p_connection_margin) = 0;
+    virtual real_t map_get_edge_connection_margin(RID p_map) const = 0;
+
     virtual Vector<Vector3> map_get_path(RID p_map, Vector3 p_origin, Vector3 p_destination, bool p_optimize) const = 0;
 
     virtual RID region_create() = 0;

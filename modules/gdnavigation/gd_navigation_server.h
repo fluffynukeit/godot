@@ -54,10 +54,15 @@ public:
     virtual RID map_create();
     virtual void map_set_active(RID p_map, bool p_active);
     virtual bool map_is_active(RID p_map) const;
-    // TODO set cell_size and edge_margin
 
     virtual void map_set_up(RID p_map, Vector3 p_up);
     virtual Vector3 map_get_up(RID p_map) const;
+
+    virtual void map_set_cell_size(RID p_map, real_t p_cell_size);
+    virtual real_t map_get_cell_size(RID p_map) const;
+
+    virtual void map_set_edge_connection_margin(RID p_map, real_t p_connection_margin);
+    virtual real_t map_get_edge_connection_margin(RID p_map) const;
 
     virtual Vector<Vector3> map_get_path(RID p_map, Vector3 p_origin, Vector3 p_destination, bool p_optimize) const;
 

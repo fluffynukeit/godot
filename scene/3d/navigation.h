@@ -153,13 +153,15 @@ class Navigation : public Spatial {
 	void _navmesh_link(int p_id);
 	void _navmesh_unlink(int p_id);
 
-	float cell_size;
 	Map<int, NavMesh> navmesh_map;
 	int last_id;
     RID map;
 
 	Vector3 up;
-	void _clip_path(Vector<Vector3> &path, Polygon *from_poly, const Vector3 &p_to_point, Polygon *p_to_poly);
+    real_t cell_size;
+    real_t edge_connection_margin;
+
+    void _clip_path(Vector<Vector3> &path, Polygon *from_poly, const Vector3 &p_to_point, Polygon *p_to_poly);
 
 protected:
 	static void _bind_methods();
@@ -173,7 +175,17 @@ public:
 	void set_up_vector(const Vector3 &p_up);
 	Vector3 get_up_vector() const;
 
-	//API should be as dynamic as possible
+    void set_cell_size(float p_cell_size);
+    float get_cell_size() const {
+        return cell_size;
+    }
+
+    void set_edge_connection_margin(float p_edge_connection_margin);
+    float get_edge_connection_margin() const {
+        return edge_connection_margin;
+    }
+
+    //API should be as dynamic as possible
 	int navmesh_add(const Ref<NavigationMesh> &p_mesh, const Transform &p_xform, Object *p_owner = NULL);
 	void navmesh_set_transform(int p_id, const Transform &p_xform);
 	void navmesh_remove(int p_id);

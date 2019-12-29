@@ -85,6 +85,7 @@ public:
 	};
 
 protected:
+    // TODO remove this?
 	float cell_size;
 	float cell_height;
 	float agent_height;

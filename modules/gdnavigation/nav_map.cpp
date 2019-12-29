@@ -38,8 +38,8 @@
 
 NavMap::NavMap() :
         up(0, 1, 0),
-        cell_size(0.2),
-        edge_connection_margin(2.0),
+        cell_size(0.3),
+        edge_connection_margin(5.0),
         regenerate_polygons(true),
         regenerate_links(true),
         agents_dirty(false),
@@ -361,12 +361,12 @@ Vector<Vector3> NavMap::get_path(Vector3 p_origin, Vector3 p_destination, bool p
 
 void NavMap::add_region(NavRegion *p_region) {
     regions.push_back(p_region);
-    // TODO reload region links?
+    regenerate_links = true;
 }
 
 void NavMap::remove_region(NavRegion *p_region) {
     regions.push_back(p_region);
-    // TODO reload region links?
+    regenerate_links = true;
 }
 
 bool NavMap::has_agent(RvoAgent *agent) const {
@@ -410,8 +410,8 @@ void NavMap::sync() {
     if (regenerate_polygons) {
         for (uint r(0); r < regions.size(); r++) {
             regions[r]->scratch_polygons();
-            regenerate_links = true;
         }
+        regenerate_links = true;
     }
 
     for (uint r(0); r < regions.size(); r++) {
@@ -505,8 +505,7 @@ void NavMap::sync() {
             }
         }
 
-        const float margin(5); // TODO make this a map parameter!
-        const float margin_squared(margin * margin);
+        const float ecm_squared(edge_connection_margin * edge_connection_margin);
 #define LEN_TOLLERANCE 0.1
 #define DIR_TOLLERANCE 0.9
         // In front of tollerance
@@ -531,7 +530,7 @@ void NavMap::sync() {
                 FreeEdge &other_edge = free_edges[y];
 
                 Vector3 rel_centers = other_edge.edge_center - edge.edge_center;
-                if (margin_squared > rel_centers.length_squared() // Are enough closer?
+                if (ecm_squared > rel_centers.length_squared() // Are enough closer?
                         && ABS(edge.edge_len_squared - other_edge.edge_len_squared) < LEN_TOLLERANCE // Are the same length?
                         && ABS(edge.edge_dir.dot(other_edge.edge_dir)) > DIR_TOLLERANCE // Are alligned?
                         && ABS(rel_centers.normalized().dot(edge.edge_dir)) < IFO_TOLLERANCE // Are one in front the other?

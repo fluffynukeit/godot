@@ -706,6 +706,16 @@ Vector3 Navigation::get_up_vector() const {
 	return up;
 }
 
+void Navigation::set_cell_size(float p_cell_size) {
+    cell_size = p_cell_size;
+    NavigationServer::get_singleton()->map_set_cell_size(map, cell_size);
+}
+
+void Navigation::set_edge_connection_margin(float p_edge_connection_margin) {
+    edge_connection_margin = p_edge_connection_margin;
+    NavigationServer::get_singleton()->map_set_edge_connection_margin(map, edge_connection_margin);
+}
+
 void Navigation::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("navmesh_add", "mesh", "xform", "owner"), &Navigation::navmesh_add, DEFVAL(Variant()));
@@ -721,7 +731,15 @@ void Navigation::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_up_vector", "up"), &Navigation::set_up_vector);
 	ClassDB::bind_method(D_METHOD("get_up_vector"), &Navigation::get_up_vector);
 
+    ClassDB::bind_method(D_METHOD("set_cell_size", "cell_size"), &Navigation::set_cell_size);
+    ClassDB::bind_method(D_METHOD("get_cell_size"), &Navigation::get_cell_size);
+
+    ClassDB::bind_method(D_METHOD("set_edge_connection_margin", "margin"), &Navigation::set_edge_connection_margin);
+    ClassDB::bind_method(D_METHOD("get_edge_connection_margin"), &Navigation::get_edge_connection_margin);
+
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "up_vector"), "set_up_vector", "get_up_vector");
+    ADD_PROPERTY(PropertyInfo(Variant::REAL, "cell_size"), "set_cell_size", "get_cell_size");
+    ADD_PROPERTY(PropertyInfo(Variant::REAL, "edge_connection_margin"), "set_edge_connection_margin", "get_edge_connection_margin");
 }
 
 void Navigation::_notification(int p_what) {
@@ -739,10 +757,13 @@ void Navigation::_notification(int p_what) {
 Navigation::Navigation() {
 
 	ERR_FAIL_COND(sizeof(Point) != 8);
-	cell_size = 0.01; //one centimeter
+    map = NavigationServer::get_singleton()->map_create();
+
+    set_cell_size(0.3);
+    set_edge_connection_margin(5.0); // Five meters, depends alot on the agents radius
+
 	last_id = 1;
 	up = Vector3(0, 1, 0);
-    map = NavigationServer::get_singleton()->map_create();
 }
 
 Navigation::~Navigation() {
