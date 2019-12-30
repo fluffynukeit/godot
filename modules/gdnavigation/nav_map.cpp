@@ -33,6 +33,7 @@
 #include "core/os/threaded_array_processor.h"
 #include "nav_region.h"
 #include "rvo_agent.h"
+#include <Obstacle.h>
 
 #define USE_ENTRY_POINT
 
@@ -524,10 +525,10 @@ void NavMap::sync() {
             }
             FreeEdge &edge = free_edges[i];
             for (uint y(0); y < free_edges.size(); y++) {
-                if (i == y || !free_edges[y].is_free) {
+                FreeEdge &other_edge = free_edges[y];
+                if (i == y || !other_edge.is_free || edge.poly->owner == other_edge.poly->owner) {
                     continue;
                 }
-                FreeEdge &other_edge = free_edges[y];
 
                 Vector3 rel_centers = other_edge.edge_center - edge.edge_center;
                 if (ecm_squared > rel_centers.length_squared() // Are enough closer?
@@ -557,6 +558,7 @@ void NavMap::sync() {
         for (uint i(0); i < agents.size(); i++)
             raw_agents.push_back(agents[i]->get_agent());
         rvo.buildAgentTree(raw_agents);
+        rvo.buildObstacleTree(std::vector<RVO::Obstacle *>());
     }
 
     regenerate_polygons = false;
@@ -567,6 +569,23 @@ void NavMap::sync() {
 void NavMap::compute_single_step(uint32_t _index, RvoAgent **agent) {
     (*agent)->get_agent()->computeNeighbors(&rvo);
     (*agent)->get_agent()->computeNewVelocity(deltatime);
+}
+
+void NavMap::step(real_t p_deltatime) {
+    deltatime = p_deltatime;
+    if (controlled_agents.size() > 0) {
+        thread_process_array(
+                controlled_agents.size(),
+                this,
+                &NavMap::compute_single_step,
+                controlled_agents.data());
+    }
+}
+
+void NavMap::dispatch_callbacks() {
+    for (int i(0); i < static_cast<int>(controlled_agents.size()); i++) {
+        controlled_agents[i]->dispatch_callback();
+    }
 }
 
 void NavMap::clip_path(const std::vector<NavigationPoly> &p_navigation_polys, Vector<Vector3> &path, const NavigationPoly *from_poly, const Vector3 &p_to_point, const NavigationPoly *p_to_poly) const {
@@ -599,21 +618,5 @@ void NavMap::clip_path(const std::vector<NavigationPoly> &p_navigation_polys, Ve
                 }
             }
         }
-    }
-}
-
-void NavMap::step(real_t p_deltatime) {
-    deltatime = p_deltatime;
-    // TODO reactive this ?
-    //thread_process_array(
-    //        controlled_agents.size(),
-    //        this,
-    //        &NavMap::compute_single_step,
-    //        controlled_agents.data());
-}
-
-void NavMap::dispatch_callbacks() {
-    for (int i(0); i < static_cast<int>(controlled_agents.size()); i++) {
-        controlled_agents[i]->dispatch_callback();
     }
 }

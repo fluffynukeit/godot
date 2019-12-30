@@ -67,9 +67,14 @@ public:
     virtual void region_set_navmesh(RID p_region, Ref<NavigationMesh> p_nav_mesh) = 0;
 
     /**
-     * Creates and add the agent to the space.
+     * Creates the agent.
      */
-    virtual RID agent_add(RID p_space) = 0;
+    virtual RID agent_create() = 0;
+
+    /**
+     * Put the agent in the map.
+     */
+    virtual void agent_set_map(RID p_agent, RID p_map) = 0;
 
     /*
      * The maximum distance (center point to
@@ -105,18 +110,6 @@ public:
     virtual void agent_set_time_horizon(RID p_agent, real_t p_time) = 0;
 
     /**
-     * The minimal amount of time for which this
-     * agent's velocities that are computed by the
-     * simulation are safe with respect to
-     * obstacles. The larger this number, the
-     * sooner this agent will respond to the
-     * presence of obstacles, but the less freedom
-     * this agent has in choosing its velocities.
-     * Must be positive.
-     */
-    virtual void agent_set_time_horizon_obs(RID p_agent, real_t p_time) = 0;
-
-    /**
      * The radius of this agent.
      * Must be non-negative.
      */
@@ -131,24 +124,22 @@ public:
     /**
      * Current velocity of the agent
      */
-    virtual void agent_set_velocity(RID p_agent, Vector2 p_velocity) = 0;
+    virtual void agent_set_velocity(RID p_agent, Vector3 p_velocity) = 0;
 
     /**
      * The new target velocity.
      */
-    virtual void agent_set_target_velocity(RID p_agent, Vector2 p_velocity) = 0;
+    virtual void agent_set_target_velocity(RID p_agent, Vector3 p_velocity) = 0;
 
     /**
      * Position of the agent in world space.
      */
-    virtual void agent_set_position(RID p_agent, Vector2 p_position) = 0;
+    virtual void agent_set_position(RID p_agent, Vector3 p_position) = 0;
 
     /**
      * Callback called at the end of the RVO process
      */
     virtual void agent_set_callback(RID p_agent, Object *p_receiver, const StringName &p_method, const Variant &p_udata = Variant()) = 0;
-
-    virtual RID obstacle_add(RID p_space) = 0;
 
     virtual void free(RID p_object) = 0;
 

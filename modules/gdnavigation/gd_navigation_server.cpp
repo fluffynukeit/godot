@@ -156,17 +156,33 @@ void GdNavigationServer::region_set_navmesh(RID p_region, Ref<NavigationMesh> p_
     region->set_mesh(p_nav_mesh);
 }
 
-RID GdNavigationServer::agent_add(RID p_space) {
-    NavMap *space = map_owner.get(p_space);
-    ERR_FAIL_COND_V(space == NULL, RID());
-
-    RvoAgent *agent = memnew(RvoAgent(space));
+RID GdNavigationServer::agent_create() {
+    RvoAgent *agent = memnew(RvoAgent());
     RID rid = agent_owner.make_rid(agent);
     agent->set_self(rid);
 
-    space->add_agent(agent);
-
     return rid;
+}
+
+void GdNavigationServer::agent_set_map(RID p_agent, RID p_map) {
+    RvoAgent *agent = agent_owner.get(p_agent);
+    ERR_FAIL_COND(agent == NULL);
+
+    if (agent->get_map()) {
+        agent->get_map()->remove_agent(agent);
+    }
+
+    agent->set_map(NULL);
+
+    NavMap *map = map_owner.get(p_map);
+    if (map != NULL) {
+        agent->set_map(map);
+        map->add_agent(agent);
+
+        if (agent->has_callback()) {
+            map->set_agent_as_controlled(agent);
+        }
+    }
 }
 
 void GdNavigationServer::agent_set_neighbor_dist(RID p_agent, real_t p_dist) {
@@ -190,13 +206,6 @@ void GdNavigationServer::agent_set_time_horizon(RID p_agent, real_t p_time) {
     agent->get_agent()->timeHorizon_ = p_time;
 }
 
-void GdNavigationServer::agent_set_time_horizon_obs(RID p_agent, real_t p_time) {
-    RvoAgent *agent = agent_owner.get(p_agent);
-    ERR_FAIL_COND(agent == NULL);
-
-    agent->get_agent()->timeHorizonObst_ = p_time;
-}
-
 void GdNavigationServer::agent_set_radius(RID p_agent, real_t p_radius) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
@@ -211,39 +220,39 @@ void GdNavigationServer::agent_set_max_speed(RID p_agent, real_t p_max_speed) {
     agent->get_agent()->maxSpeed_ = p_max_speed;
 }
 
-void GdNavigationServer::agent_set_velocity(RID p_agent, Vector2 p_velocity) {
+void GdNavigationServer::agent_set_velocity(RID p_agent, Vector3 p_velocity) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
-    agent->get_agent()->velocity_ = RVO::Vector2(p_velocity.x, p_velocity.y);
+    agent->get_agent()->velocity_ = RVO::Vector2(p_velocity.x, p_velocity.z);
 }
 
-void GdNavigationServer::agent_set_target_velocity(RID p_agent, Vector2 p_velocity) {
+void GdNavigationServer::agent_set_target_velocity(RID p_agent, Vector3 p_velocity) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
-    agent->get_agent()->prefVelocity_ = RVO::Vector2(p_velocity.x, p_velocity.y);
+    agent->get_agent()->prefVelocity_ = RVO::Vector2(p_velocity.x, p_velocity.z);
 }
 
-void GdNavigationServer::agent_set_position(RID p_agent, Vector2 p_position) {
+void GdNavigationServer::agent_set_position(RID p_agent, Vector3 p_position) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
-    agent->get_agent()->position_ = RVO::Vector2(p_position.x, p_position.y);
+    agent->get_agent()->position_ = RVO::Vector2(p_position.x, p_position.z);
 }
 
 void GdNavigationServer::agent_set_callback(RID p_agent, Object *p_receiver, const StringName &p_method, const Variant &p_udata) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
-    agent->set_callback(p_receiver->get_instance_id(), p_method, p_udata);
-}
+    agent->set_callback(p_receiver == NULL ? 0 : p_receiver->get_instance_id(), p_method, p_udata);
 
-RID GdNavigationServer::obstacle_add(RID p_space) {
-    RvoObstacle *obstacle = memnew(RvoObstacle);
-    RID rid = obstacle_owner.make_rid(obstacle);
-    obstacle->set_self(rid);
-    return rid;
+    if (agent->get_map())
+        if (p_receiver == NULL) {
+            agent->get_map()->remove_agent_as_controlled(agent);
+        } else {
+            agent->get_map()->set_agent_as_controlled(agent);
+        }
 }
 
 void GdNavigationServer::free(RID p_object) {
@@ -269,17 +278,15 @@ void GdNavigationServer::free(RID p_object) {
         memdelete(obj);
     } else if (region_owner.owns(p_object)) {
         NavRegion *nav = region_owner.get(p_object);
+        // TODO nothing more to remove??
         region_owner.free(p_object);
         memdelete(nav);
     } else if (agent_owner.owns(p_object)) {
         RvoAgent *obj = agent_owner.get(p_object);
-        obj->get_space()->remove_agent(obj);
+        if (obj->get_map() != NULL) {
+            obj->get_map()->remove_agent(obj);
+        }
         agent_owner.free(p_object);
-        memdelete(obj);
-    } else if (obstacle_owner.owns(p_object)) {
-        RvoObstacle *obj = obstacle_owner.get(p_object);
-        // TODO please remove from the space
-        obstacle_owner.free(p_object);
         memdelete(obj);
     } else {
         ERR_FAIL_COND("Invalid ID.");

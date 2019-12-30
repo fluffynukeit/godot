@@ -36,7 +36,6 @@
 #include "core/math/math_defs.h"
 #include "nav_utils.h"
 #include <KdTree.h>
-#include <Obstacle.h>
 
 class NavRegion;
 class RvoAgent;

@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  rvo_agent.h                                                          */
+/*  navigation_obstacle.h                                                */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,43 +28,41 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef RVO_AGENT_H
-#define RVO_AGENT_H
+#ifndef NAVIGATION_OBSTACLE_H
+#define NAVIGATION_OBSTACLE_H
 
-#include "core/object.h"
-#include "nav_rid.h"
-#include <Agent.h>
+#include "scene/main/node.h"
 
-class NavMap;
+class Navigation;
 
-class RvoAgent : public NavRid {
-    struct AvoidanceComputedCallback {
-        ObjectID id;
-        StringName method;
-        Variant udata;
-        Variant new_velocity;
-    };
+class NavigationObstacle : public Node {
+    GDCLASS(NavigationObstacle, Node);
 
-    NavMap *map;
-    RVO::Agent agent;
-    AvoidanceComputedCallback callback;
+    Navigation *navigation;
+
+    RID agent;
+
+protected:
+    static void _bind_methods();
+    void _notification(int p_what);
 
 public:
-    RvoAgent();
+    NavigationObstacle();
+    virtual ~NavigationObstacle();
 
-    void set_map(NavMap *p_map);
-    NavMap *get_map() {
-        return map;
+    void set_navigation(Navigation *p_nav);
+    const Navigation *get_navigation() const {
+        return navigation;
     }
 
-    RVO::Agent *get_agent() {
-        return &agent;
+    void set_navigation_node(Node *p_nav);
+    Node *get_navigation_node() const;
+
+    RID get_rid() const {
+        return agent;
     }
 
-    void set_callback(ObjectID p_id, const StringName &p_method, const Variant &p_udata = Variant());
-    bool has_callback() const;
-
-    void dispatch_callback();
+    virtual String get_configuration_warning() const;
 };
 
-#endif // RVO_AGENT_H
+#endif

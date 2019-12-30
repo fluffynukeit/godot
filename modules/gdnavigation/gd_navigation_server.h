@@ -42,7 +42,6 @@ class GdNavigationServer : public NavigationServer {
     mutable RID_Owner<NavMap> map_owner;
     mutable RID_Owner<NavRegion> region_owner;
     mutable RID_Owner<RvoAgent> agent_owner;
-    mutable RID_Owner<RvoObstacle> obstacle_owner;
 
     bool active;
     Vector<NavMap *> active_maps;
@@ -71,19 +70,17 @@ public:
     virtual void region_set_transform(RID p_region, Transform p_transform);
     virtual void region_set_navmesh(RID p_region, Ref<NavigationMesh> p_nav_mesh);
 
-    virtual RID agent_add(RID p_space);
+    virtual RID agent_create();
+    virtual void agent_set_map(RID p_agent, RID p_map);
     virtual void agent_set_neighbor_dist(RID p_agent, real_t p_dist);
     virtual void agent_set_max_neighbors(RID p_agent, int p_count);
     virtual void agent_set_time_horizon(RID p_agent, real_t p_time);
-    virtual void agent_set_time_horizon_obs(RID p_agent, real_t p_time);
     virtual void agent_set_radius(RID p_agent, real_t p_radius);
     virtual void agent_set_max_speed(RID p_agent, real_t p_max_speed);
-    virtual void agent_set_velocity(RID p_agent, Vector2 p_velocity);
-    virtual void agent_set_target_velocity(RID p_agent, Vector2 p_velocity);
-    virtual void agent_set_position(RID p_agent, Vector2 p_position);
+    virtual void agent_set_velocity(RID p_agent, Vector3 p_velocity);
+    virtual void agent_set_target_velocity(RID p_agent, Vector3 p_velocity);
+    virtual void agent_set_position(RID p_agent, Vector3 p_position);
     virtual void agent_set_callback(RID p_agent, Object *p_receiver, const StringName &p_method, const Variant &p_udata = Variant());
-
-    virtual RID obstacle_add(RID p_space);
 
     virtual void free(RID p_object);
 

@@ -34,24 +34,28 @@ NavigationServer *NavigationServer::singleton = NULL;
 
 void NavigationServer::_bind_methods() {
 
-    ClassDB::bind_method(D_METHOD("space_create"), &NavigationServer::map_create);
-    ClassDB::bind_method(D_METHOD("space_set_active"), &NavigationServer::map_set_active);
-    ClassDB::bind_method(D_METHOD("space_is_active"), &NavigationServer::map_is_active);
+    ClassDB::bind_method(D_METHOD("map_create"), &NavigationServer::map_create);
+    ClassDB::bind_method(D_METHOD("map_set_active", "map", "active"), &NavigationServer::map_set_active);
+    ClassDB::bind_method(D_METHOD("map_is_active", "nap"), &NavigationServer::map_is_active);
+    ClassDB::bind_method(D_METHOD("map_set_up", "map", "up"), &NavigationServer::map_set_up);
+    ClassDB::bind_method(D_METHOD("map_get_up", "map"), &NavigationServer::map_get_up);
+    ClassDB::bind_method(D_METHOD("map_set_cell_size", "map", "cell_size"), &NavigationServer::map_set_cell_size);
+    ClassDB::bind_method(D_METHOD("map_get_cell_size", "map"), &NavigationServer::map_get_cell_size);
+    ClassDB::bind_method(D_METHOD("map_set_edge_connection_margin", "map", "margin"), &NavigationServer::map_set_edge_connection_margin);
+    ClassDB::bind_method(D_METHOD("map_get_edge_connection_margin", "map"), &NavigationServer::map_get_edge_connection_margin);
+    ClassDB::bind_method(D_METHOD("map_get_path", "map", "origin", "destination", "optimize"), &NavigationServer::map_get_path);
 
-    ClassDB::bind_method(D_METHOD("agent_add", "space"), &NavigationServer::agent_add);
-    ClassDB::bind_method(D_METHOD("agent_add", "space"), &NavigationServer::agent_add);
+    ClassDB::bind_method(D_METHOD("agent_create"), &NavigationServer::agent_create);
+    ClassDB::bind_method(D_METHOD("agent_set_map", "agent", "map"), &NavigationServer::agent_set_map);
     ClassDB::bind_method(D_METHOD("agent_set_neighbor_dist", "agent", "dist"), &NavigationServer::agent_set_neighbor_dist);
     ClassDB::bind_method(D_METHOD("agent_set_max_neighbors", "agent", "count"), &NavigationServer::agent_set_max_neighbors);
     ClassDB::bind_method(D_METHOD("agent_set_time_horizon", "agent", "time"), &NavigationServer::agent_set_time_horizon);
-    ClassDB::bind_method(D_METHOD("agent_set_time_horizon_obs", "agent", "time"), &NavigationServer::agent_set_time_horizon_obs);
     ClassDB::bind_method(D_METHOD("agent_set_radius", "agent", "radius"), &NavigationServer::agent_set_radius);
     ClassDB::bind_method(D_METHOD("agent_set_max_speed", "agent", "max_speed"), &NavigationServer::agent_set_max_speed);
     ClassDB::bind_method(D_METHOD("agent_set_velocity", "agent", "velocity"), &NavigationServer::agent_set_velocity);
     ClassDB::bind_method(D_METHOD("agent_set_velocity_target", "agent", "target_velocity"), &NavigationServer::agent_set_target_velocity);
     ClassDB::bind_method(D_METHOD("agent_set_position", "agent", "position"), &NavigationServer::agent_set_position);
     ClassDB::bind_method(D_METHOD("agent_set_callback", "agent", "receiver", "method", "userdata"), &NavigationServer::agent_set_callback, DEFVAL(Variant()));
-
-    ClassDB::bind_method(D_METHOD("obstacle_add", "space"), &NavigationServer::obstacle_add);
 
     ClassDB::bind_method(D_METHOD("free", "object"), &NavigationServer::free);
 

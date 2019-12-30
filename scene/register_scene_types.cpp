@@ -178,7 +178,6 @@
 #include "scene/3d/baked_lightmap.h"
 #include "scene/3d/bone_attachment.h"
 #include "scene/3d/camera.h"
-#include "scene/3d/navigation_agent.h"
 #include "scene/3d/collision_polygon.h"
 #include "scene/3d/collision_shape.h"
 #include "scene/3d/cpu_particles.h"
@@ -190,7 +189,9 @@
 #include "scene/3d/mesh_instance.h"
 #include "scene/3d/multimesh_instance.h"
 #include "scene/3d/navigation.h"
+#include "scene/3d/navigation_agent.h"
 #include "scene/3d/navigation_mesh.h"
+#include "scene/3d/navigation_obstacle.h"
 #include "scene/3d/particles.h"
 #include "scene/3d/path.h"
 #include "scene/3d/physics_body.h"
@@ -441,6 +442,7 @@ void register_scene_types() {
 	ClassDB::register_class<KinematicCollision>();
 	ClassDB::register_class<KinematicBody>();
     ClassDB::register_class<NavigationAgent>();
+    ClassDB::register_class<NavigationObstacle>();
     ClassDB::register_class<SpringArm>();
 
 	ClassDB::register_class<PhysicalBone>();
