@@ -63,6 +63,9 @@ public:
     }
 
     virtual String get_configuration_warning() const;
+
+private:
+    void update_agent_shape();
 };
 
 #endif

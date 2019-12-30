@@ -41,7 +41,7 @@ void RvoAgent::set_map(NavMap *p_map) {
     map = p_map;
 }
 
-void RvoAgent::set_callback(ObjectID p_id, const StringName &p_method, const Variant &p_udata) {
+void RvoAgent::set_callback(ObjectID p_id, const StringName p_method, const Variant p_udata) {
     callback.id = p_id;
     callback.method = p_method;
     callback.udata = p_udata;

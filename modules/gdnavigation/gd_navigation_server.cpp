@@ -37,14 +37,80 @@ GdNavigationServer::GdNavigationServer() :
 
 GdNavigationServer::~GdNavigationServer() {}
 
+void GdNavigationServer::add_command(SetCommand *command) {
+    // TODO Mutex here please
+    commands.push_back(command);
+}
+
 RID GdNavigationServer::map_create() {
+    // TODO Mutex here please
     NavMap *space = memnew(NavMap);
     RID rid = map_owner.make_rid(space);
     space->set_self(rid);
     return rid;
 }
 
-void GdNavigationServer::map_set_active(RID p_map, bool p_active) {
+#define COMMAND_2(F_NAME, T_0, D_0, T_1, D_1)                   \
+    struct __CONCAT(F_NAME, _command) : public SetCommand {     \
+        T_0 d_0;                                                \
+        T_1 d_1;                                                \
+        __CONCAT(F_NAME, _command)                              \
+        (                                                       \
+                T_0 p_d_0,                                      \
+                T_1 p_d_1) :                                    \
+                d_0(p_d_0),                                     \
+                d_1(p_d_1) {}                                   \
+        virtual void exec(GdNavigationServer *server) {         \
+            server->__CONCAT(_cmd_, F_NAME)(d_0, d_1);          \
+        }                                                       \
+    };                                                          \
+                                                                \
+    void GdNavigationServer::F_NAME(T_0 D_0, T_1 D_1) const {   \
+        /* TODO mutex here */                                   \
+        auto cmd = memnew(__CONCAT(F_NAME, _command)(           \
+                D_0,                                            \
+                D_1));                                          \
+                                                                \
+        auto mut_this = const_cast<GdNavigationServer *>(this); \
+        mut_this->add_command(cmd);                             \
+    }                                                           \
+    void GdNavigationServer::__CONCAT(_cmd_, F_NAME)(T_0 D_0, T_1 D_1)
+
+#define COMMAND_4(F_NAME, T_0, D_0, T_1, D_1, T_2, D_2, T_3, D_3)               \
+    struct __CONCAT(F_NAME, _command) : public SetCommand {                     \
+        T_0 d_0;                                                                \
+        T_1 d_1;                                                                \
+        T_2 d_2;                                                                \
+        T_3 d_3;                                                                \
+        __CONCAT(F_NAME, _command)                                              \
+        (                                                                       \
+                T_0 p_d_0,                                                      \
+                T_1 p_d_1,                                                      \
+                T_2 p_d_2,                                                      \
+                T_3 p_d_3) :                                                    \
+                d_0(p_d_0),                                                     \
+                d_1(p_d_1),                                                     \
+                d_2(p_d_2),                                                     \
+                d_3(p_d_3) {}                                                   \
+        virtual void exec(GdNavigationServer *server) {                         \
+            server->__CONCAT(_cmd_, F_NAME)(d_0, d_1, d_2, d_3);                \
+        }                                                                       \
+    };                                                                          \
+                                                                                \
+    void GdNavigationServer::F_NAME(T_0 D_0, T_1 D_1, T_2 D_2, T_3 D_3) const { \
+        /* TODO mutex here */                                                   \
+        auto cmd = memnew(__CONCAT(F_NAME, _command)(                           \
+                D_0,                                                            \
+                D_1,                                                            \
+                D_2,                                                            \
+                D_3));                                                          \
+                                                                                \
+        auto mut_this = const_cast<GdNavigationServer *>(this);                 \
+        mut_this->add_command(cmd);                                             \
+    }                                                                           \
+    void GdNavigationServer::__CONCAT(_cmd_, F_NAME)(T_0 D_0, T_1 D_1, T_2 D_2, T_3 D_3)
+
+COMMAND_2(map_set_active, RID, p_map, bool, p_active) {
     NavMap *map = map_owner.get(p_map);
     ERR_FAIL_COND(map == NULL);
 
@@ -64,7 +130,7 @@ bool GdNavigationServer::map_is_active(RID p_map) const {
     return active_maps.find(map) >= 0;
 }
 
-void GdNavigationServer::map_set_up(RID p_map, Vector3 p_up) {
+COMMAND_2(map_set_up, RID, p_map, Vector3, p_up) {
     NavMap *map = map_owner.get(p_map);
     ERR_FAIL_COND(map == NULL);
 
@@ -78,7 +144,7 @@ Vector3 GdNavigationServer::map_get_up(RID p_map) const {
     return map->get_up();
 }
 
-void GdNavigationServer::map_set_cell_size(RID p_map, real_t p_cell_size) {
+COMMAND_2(map_set_cell_size, RID, p_map, real_t, p_cell_size) {
     NavMap *map = map_owner.get(p_map);
     ERR_FAIL_COND(map == NULL);
 
@@ -92,7 +158,7 @@ real_t GdNavigationServer::map_get_cell_size(RID p_map) const {
     return map->get_cell_size();
 }
 
-void GdNavigationServer::map_set_edge_connection_margin(RID p_map, real_t p_connection_margin) {
+COMMAND_2(map_set_edge_connection_margin, RID, p_map, real_t, p_connection_margin) {
     NavMap *map = map_owner.get(p_map);
     ERR_FAIL_COND(map == NULL);
 
@@ -114,42 +180,43 @@ Vector<Vector3> GdNavigationServer::map_get_path(RID p_map, Vector3 p_origin, Ve
 }
 
 RID GdNavigationServer::region_create() {
+    // TODO Mutex here please
     NavRegion *reg = memnew(NavRegion);
     RID rid = region_owner.make_rid(reg);
     reg->set_self(rid);
     return rid;
 }
 
-void GdNavigationServer::region_set_map(RID p_region, RID p_map) {
+COMMAND_2(region_set_map, RID, p_region, RID, p_map) {
     NavRegion *region = region_owner.get(p_region);
     ERR_FAIL_COND(region == NULL);
 
-    NavMap *map = map_owner.get(p_map);
-
-    if (region->get_map() == map)
-        // Pointless
-        return;
-
     if (region->get_map() != NULL) {
+
+        if (region->get_map()->get_self() == p_map)
+            return; // Pointless
+
         region->get_map()->remove_region(region);
         region->set_map(NULL);
     }
 
-    if (map != NULL) {
+    if (p_map.is_valid()) {
+        NavMap *map = map_owner.get(p_map);
+        ERR_FAIL_COND(map == NULL);
 
         map->add_region(region);
         region->set_map(map);
     }
 }
 
-void GdNavigationServer::region_set_transform(RID p_region, Transform p_transform) {
+COMMAND_2(region_set_transform, RID, p_region, Transform, p_transform) {
     NavRegion *region = region_owner.get(p_region);
     ERR_FAIL_COND(region == NULL);
 
     region->set_transform(p_transform);
 }
 
-void GdNavigationServer::region_set_navmesh(RID p_region, Ref<NavigationMesh> p_nav_mesh) {
+COMMAND_2(region_set_navmesh, RID, p_region, Ref<NavigationMesh>, p_nav_mesh) {
     NavRegion *region = region_owner.get(p_region);
     ERR_FAIL_COND(region == NULL);
 
@@ -157,6 +224,7 @@ void GdNavigationServer::region_set_navmesh(RID p_region, Ref<NavigationMesh> p_
 }
 
 RID GdNavigationServer::agent_create() {
+    // TODO Mutex here please
     RvoAgent *agent = memnew(RvoAgent());
     RID rid = agent_owner.make_rid(agent);
     agent->set_self(rid);
@@ -164,18 +232,23 @@ RID GdNavigationServer::agent_create() {
     return rid;
 }
 
-void GdNavigationServer::agent_set_map(RID p_agent, RID p_map) {
+COMMAND_2(agent_set_map, RID, p_agent, RID, p_map) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
     if (agent->get_map()) {
+        if (agent->get_map()->get_self() == p_map)
+            return; // Pointless
+
         agent->get_map()->remove_agent(agent);
     }
 
     agent->set_map(NULL);
 
-    NavMap *map = map_owner.get(p_map);
-    if (map != NULL) {
+    if (p_map.is_valid()) {
+        NavMap *map = map_owner.get(p_map);
+        ERR_FAIL_COND(map == NULL);
+
         agent->set_map(map);
         map->add_agent(agent);
 
@@ -185,63 +258,63 @@ void GdNavigationServer::agent_set_map(RID p_agent, RID p_map) {
     }
 }
 
-void GdNavigationServer::agent_set_neighbor_dist(RID p_agent, real_t p_dist) {
+COMMAND_2(agent_set_neighbor_dist, RID, p_agent, real_t, p_dist) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
     agent->get_agent()->neighborDist_ = p_dist;
 }
 
-void GdNavigationServer::agent_set_max_neighbors(RID p_agent, int p_count) {
+COMMAND_2(agent_set_max_neighbors, RID, p_agent, int, p_count) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
     agent->get_agent()->maxNeighbors_ = p_count;
 }
 
-void GdNavigationServer::agent_set_time_horizon(RID p_agent, real_t p_time) {
+COMMAND_2(agent_set_time_horizon, RID, p_agent, real_t, p_time) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
     agent->get_agent()->timeHorizon_ = p_time;
 }
 
-void GdNavigationServer::agent_set_radius(RID p_agent, real_t p_radius) {
+COMMAND_2(agent_set_radius, RID, p_agent, real_t, p_radius) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
     agent->get_agent()->radius_ = p_radius;
 }
 
-void GdNavigationServer::agent_set_max_speed(RID p_agent, real_t p_max_speed) {
+COMMAND_2(agent_set_max_speed, RID, p_agent, real_t, p_max_speed) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
     agent->get_agent()->maxSpeed_ = p_max_speed;
 }
 
-void GdNavigationServer::agent_set_velocity(RID p_agent, Vector3 p_velocity) {
+COMMAND_2(agent_set_velocity, RID, p_agent, Vector3, p_velocity) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
     agent->get_agent()->velocity_ = RVO::Vector2(p_velocity.x, p_velocity.z);
 }
 
-void GdNavigationServer::agent_set_target_velocity(RID p_agent, Vector3 p_velocity) {
+COMMAND_2(agent_set_target_velocity, RID, p_agent, Vector3, p_velocity) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
     agent->get_agent()->prefVelocity_ = RVO::Vector2(p_velocity.x, p_velocity.z);
 }
 
-void GdNavigationServer::agent_set_position(RID p_agent, Vector3 p_position) {
+COMMAND_2(agent_set_position, RID, p_agent, Vector3, p_position) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
     agent->get_agent()->position_ = RVO::Vector2(p_position.x, p_position.z);
 }
 
-void GdNavigationServer::agent_set_callback(RID p_agent, Object *p_receiver, const StringName &p_method, const Variant &p_udata) {
+COMMAND_4(agent_set_callback, RID, p_agent, Object *, p_receiver, StringName, p_method, Variant, p_udata) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
@@ -301,6 +374,12 @@ void GdNavigationServer::step(real_t p_delta_time) {
     if (!active) {
         return;
     }
+
+    for (uint i(0); i < commands.size(); i++) {
+        commands[i]->exec(this);
+        memdelete(commands[i]);
+    }
+    commands.clear();
 
     for (int i(0); i < active_maps.size(); i++) {
         active_maps[i]->sync();

@@ -61,7 +61,7 @@ public:
         return &agent;
     }
 
-    void set_callback(ObjectID p_id, const StringName &p_method, const Variant &p_udata = Variant());
+    void set_callback(ObjectID p_id, const StringName p_method, const Variant p_udata = Variant());
     bool has_callback() const;
 
     void dispatch_callback();

@@ -146,8 +146,8 @@ public:
 
 #ifdef DEBUG_ENABLED
 
-		ERR_FAIL_COND_V(!p_rid.is_valid(), NULL);
-		ERR_FAIL_COND_V(!id_map.has(p_rid.get_data()), NULL);
+        ERR_FAIL_COND_V(!p_rid.is_valid(), NULL);
+        ERR_FAIL_COND_V(!id_map.has(p_rid.get_data()), NULL);
 #endif
 		return static_cast<T *>(p_rid.get_data());
 	}

@@ -35,42 +35,6 @@
 #include "scene/3d/physics_body.h"
 #include "servers/navigation_server.h"
 
-void ca_init_agent_as_obstacle(RID p_agent, Node *p_node) {
-    // Estimate the radius of this physics body
-    real_t radius = 0.0;
-    for (int i(0); i < p_node->get_child_count(); i++) {
-        // For each collision shape
-        CollisionShape *cs = Object::cast_to<CollisionShape>(p_node->get_child(i));
-        if (cs) {
-            // Take the distance between the Body center to the shape center
-            real_t r = cs->get_transform().origin.length();
-            if (cs->get_shape().is_valid()) {
-                // and add the enclosing shape radius
-                r += cs->get_shape()->get_enclosing_radius();
-            }
-            Vector3 s = cs->get_global_transform().basis.get_scale();
-            r *= MAX(s.x, MAX(s.y, s.z));
-            // Takes the biggest radius
-            radius = MAX(radius, r);
-        }
-    }
-    Spatial *spa = Object::cast_to<Spatial>(p_node);
-    if (spa) {
-        Vector3 s = spa->get_global_transform().basis.get_scale();
-        radius *= MAX(s.x, MAX(s.y, s.z));
-    }
-
-    if (radius == 0.0)
-        radius = 1.0; // Never a 0 radius
-
-    // Initialize the Agent as an object
-    NavigationServer::get_singleton()->agent_set_neighbor_dist(p_agent, 0.0);
-    NavigationServer::get_singleton()->agent_set_max_neighbors(p_agent, 0);
-    NavigationServer::get_singleton()->agent_set_time_horizon(p_agent, 0.0);
-    NavigationServer::get_singleton()->agent_set_radius(p_agent, radius);
-    NavigationServer::get_singleton()->agent_set_max_speed(p_agent, 0.0);
-}
-
 void NavigationObstacle::_bind_methods() {
 
     ClassDB::bind_method(D_METHOD("set_navigation", "navigation"), &NavigationObstacle::set_navigation_node);
@@ -81,7 +45,7 @@ void NavigationObstacle::_notification(int p_what) {
     switch (p_what) {
         case NOTIFICATION_READY: {
 
-            ca_init_agent_as_obstacle(agent, get_parent());
+            update_agent_shape();
 
             // Search the navigation node and set it
             {
@@ -157,4 +121,42 @@ String NavigationObstacle::get_configuration_warning() const {
     }
 
     return String();
+}
+
+void NavigationObstacle::update_agent_shape() {
+    Node *node = get_parent();
+
+    // Estimate the radius of this physics body
+    real_t radius = 0.0;
+    for (int i(0); i < node->get_child_count(); i++) {
+        // For each collision shape
+        CollisionShape *cs = Object::cast_to<CollisionShape>(node->get_child(i));
+        if (cs) {
+            // Take the distance between the Body center to the shape center
+            real_t r = cs->get_transform().origin.length();
+            if (cs->get_shape().is_valid()) {
+                // and add the enclosing shape radius
+                r += cs->get_shape()->get_enclosing_radius();
+            }
+            Vector3 s = cs->get_global_transform().basis.get_scale();
+            r *= MAX(s.x, MAX(s.y, s.z));
+            // Takes the biggest radius
+            radius = MAX(radius, r);
+        }
+    }
+    Spatial *spa = Object::cast_to<Spatial>(node);
+    if (spa) {
+        Vector3 s = spa->get_global_transform().basis.get_scale();
+        radius *= MAX(s.x, MAX(s.y, s.z));
+    }
+
+    if (radius == 0.0)
+        radius = 1.0; // Never a 0 radius
+
+    // Initialize the Agent as an object
+    NavigationServer::get_singleton()->agent_set_neighbor_dist(agent, 0.0);
+    NavigationServer::get_singleton()->agent_set_max_neighbors(agent, 0);
+    NavigationServer::get_singleton()->agent_set_time_horizon(agent, 0.0);
+    NavigationServer::get_singleton()->agent_set_radius(agent, radius);
+    NavigationServer::get_singleton()->agent_set_max_speed(agent, 0.0);
 }
