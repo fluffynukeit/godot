@@ -1,6 +1,6 @@
 /*
- * Obstacle.h
- * RVO2 Library
+ * API.h
+ * RVO2-3D Library
  *
  * Copyright 2008 University of North Carolina at Chapel Hill
  *
@@ -30,35 +30,38 @@
  * <http://gamma.cs.unc.edu/RVO2/>
  */
 
-#ifndef RVO_OBSTACLE_H_
-#define RVO_OBSTACLE_H_
-
 /**
- * \file       Obstacle.h
- * \brief      Contains the Obstacle class.
+ * \file    API.h
+ * \brief   Contains definitions related to Microsoft Windows.
  */
 
-#include "Definitions.h"
+#ifndef RVO_API_H_
+#define RVO_API_H_
 
-namespace RVO {
-	/**
-	 * \brief      Defines static obstacles in the simulation.
-	 */
-	class Obstacle {
-	public:
-		/**
-		 * \brief      Constructs a static obstacle instance.
-		 */
-		Obstacle();
+#ifdef _WIN32
+#include <SDKDDKVer.h>
+#define WIN32_LEAN_AND_MEAN
+#define NOCOMM
+#define NOIMAGE
+#define NOIME
+#define NOKANJI
+#define NOMCX
+#define NOMINMAX
+#define NOPROXYSTUB
+#define NOSERVICE
+#define NOSOUND
+#define NOTAPE
+#define NORPC
+#define _USE_MATH_DEFINES
+#include <windows.h>
+#endif
 
-		bool isConvex_;
-		Obstacle *nextObstacle_;
-		Vector2 point_;
-		Obstacle *prevObstacle_;
-		Vector2 unitDir_;
+#ifdef RVO_EXPORTS
+#define RVO_API __declspec(dllexport)
+#elif defined(RVO_IMPORTS)
+#define RVO_API __declspec(dllimport)
+#else
+#define RVO_API
+#endif
 
-		size_t id_;
-	};
-}
-
-#endif /* RVO_OBSTACLE_H_ */
+#endif /* RVO_API_H_ */

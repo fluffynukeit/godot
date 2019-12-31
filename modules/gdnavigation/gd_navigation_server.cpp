@@ -338,21 +338,21 @@ COMMAND_2(agent_set_velocity, RID, p_agent, Vector3, p_velocity) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
-    agent->get_agent()->velocity_ = RVO::Vector2(p_velocity.x, p_velocity.z);
+    agent->get_agent()->velocity_ = RVO::Vector3(p_velocity.x, p_velocity.y, p_velocity.z);
 }
 
 COMMAND_2(agent_set_target_velocity, RID, p_agent, Vector3, p_velocity) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
-    agent->get_agent()->prefVelocity_ = RVO::Vector2(p_velocity.x, p_velocity.z);
+    agent->get_agent()->prefVelocity_ = RVO::Vector3(p_velocity.x, p_velocity.y, p_velocity.z);
 }
 
 COMMAND_2(agent_set_position, RID, p_agent, Vector3, p_position) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
 
-    agent->get_agent()->position_ = RVO::Vector2(p_position.x, p_position.z);
+    agent->get_agent()->position_ = RVO::Vector3(p_position.x, p_position.y, p_position.z);
 }
 
 bool GdNavigationServer::agent_is_map_changed(RID p_agent) const {

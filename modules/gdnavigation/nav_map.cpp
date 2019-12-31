@@ -33,7 +33,7 @@
 #include "core/os/threaded_array_processor.h"
 #include "nav_region.h"
 #include "rvo_agent.h"
-#include <Obstacle.h>
+#include <algorithm>
 
 /**
     @author AndreaCatania
@@ -564,7 +564,6 @@ void NavMap::sync() {
         for (uint i(0); i < agents.size(); i++)
             raw_agents.push_back(agents[i]->get_agent());
         rvo.buildAgentTree(raw_agents);
-        rvo.buildObstacleTree(std::vector<RVO::Obstacle *>());
     }
 
     regenerate_polygons = false;

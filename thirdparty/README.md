@@ -437,10 +437,10 @@ Files extracted from upstream source:
 - License.txt
 
 
-## rvo2
+## rvo2-3D
 
 - Upstream: http://gamma.cs.unc.edu/RVO2/
-- version: 2.0.2
+- version: 1.0.1
 - License: Apache 2.0
 
 Files extracted from upstream source:

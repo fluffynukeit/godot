@@ -39,8 +39,11 @@ void NavigationAgent::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_radius", "radius"), &NavigationAgent::set_radius);
     ClassDB::bind_method(D_METHOD("get_radius"), &NavigationAgent::get_radius);
 
-    ClassDB::bind_method(D_METHOD("set_half_height", "navigation"), &NavigationAgent::set_half_height);
+    ClassDB::bind_method(D_METHOD("set_half_height", "half_height"), &NavigationAgent::set_half_height);
     ClassDB::bind_method(D_METHOD("get_half_height"), &NavigationAgent::get_half_height);
+
+    ClassDB::bind_method(D_METHOD("set_ignore_y", "ignore"), &NavigationAgent::set_ignore_y);
+    ClassDB::bind_method(D_METHOD("get_ignore_y"), &NavigationAgent::get_ignore_y);
 
     ClassDB::bind_method(D_METHOD("set_navigation", "navigation"), &NavigationAgent::set_navigation_node);
     ClassDB::bind_method(D_METHOD("get_navigation"), &NavigationAgent::get_navigation_node);
@@ -77,6 +80,7 @@ void NavigationAgent::_bind_methods() {
     ADD_PROPERTY(PropertyInfo(Variant::REAL, "time_horizon", PROPERTY_HINT_RANGE, "0.1,10000,0.01"), "set_time_horizon", "get_time_horizon");
     ADD_PROPERTY(PropertyInfo(Variant::REAL, "max_speed", PROPERTY_HINT_RANGE, "0.1,10000,0.01"), "set_max_speed", "get_max_speed");
     ADD_PROPERTY(PropertyInfo(Variant::REAL, "path_max_distance", PROPERTY_HINT_RANGE, "1,10,0.1"), "set_path_max_distance", "get_path_max_distance");
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "ignore_y"), "set_ignore_y", "get_ignore_y");
 
     ADD_SIGNAL(MethodInfo("path_changed"));
     ADD_SIGNAL(MethodInfo("velocity_computed", PropertyInfo(Variant::VECTOR3, "safe_velocity")));
@@ -121,6 +125,7 @@ void NavigationAgent::_notification(int p_what) {
 
 NavigationAgent::NavigationAgent() :
         half_height(1.5),
+        ignore_y(true),
         agent_node(NULL),
         navigation(NULL),
         agent(RID()),
@@ -157,13 +162,17 @@ Node *NavigationAgent::get_navigation_node() const {
     return Object::cast_to<Node>(navigation);
 }
 
+void NavigationAgent::set_half_height(real_t p_hh) {
+    half_height = p_hh;
+}
+
+void NavigationAgent::set_ignore_y(bool p_ignore_y) {
+    ignore_y = p_ignore_y;
+}
+
 void NavigationAgent::set_radius(real_t p_radius) {
     radius = p_radius;
     NavigationServer::get_singleton()->agent_set_radius(agent, radius);
-}
-
-void NavigationAgent::set_half_height(real_t p_hh) {
-    half_height = p_hh;
 }
 
 void NavigationAgent::set_neighbor_dist(real_t p_dist) {
@@ -271,9 +280,12 @@ void NavigationAgent::_avoidance_done(Vector3 p_new_velocity) {
     }
     velocity_submitted = false;
 
-    // TODO Skip Y velocity?
-    //Vector3 vel(p_new_velocity.x, target_velocity.y, p_new_velocity.y);
-    emit_signal("velocity_computed", p_new_velocity);
+    if (ignore_y) {
+        Vector3 vel(p_new_velocity.x, target_velocity.y, p_new_velocity.y);
+        emit_signal("velocity_computed", vel);
+    } else {
+        emit_signal("velocity_computed", p_new_velocity);
+    }
 }
 
 String NavigationAgent::get_configuration_warning() const {

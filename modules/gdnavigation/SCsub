@@ -36,7 +36,6 @@ if env['builtin_rvo2']:
     thirdparty_sources = [
                 "/src/Agent.cpp",
                 "/src/KdTree.cpp",
-                "/src/Obstacle.cpp",
     ]
     thirdparty_sources = [thirdparty_dir + file for file in thirdparty_sources]
 
