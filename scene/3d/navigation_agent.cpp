@@ -61,7 +61,9 @@ void NavigationAgent::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_path_max_distance"), &NavigationAgent::get_path_max_distance);
 
     ClassDB::bind_method(D_METHOD("set_target_location", "location"), &NavigationAgent::set_target_location);
+    ClassDB::bind_method(D_METHOD("get_target_location"), &NavigationAgent::get_target_location);
     ClassDB::bind_method(D_METHOD("get_next_location"), &NavigationAgent::get_next_location);
+    ClassDB::bind_method(D_METHOD("distance_to_target"), &NavigationAgent::distance_to_target);
     ClassDB::bind_method(D_METHOD("set_velocity", "velocity"), &NavigationAgent::set_velocity);
     ClassDB::bind_method(D_METHOD("get_nav_path"), &NavigationAgent::get_nav_path);
     ClassDB::bind_method(D_METHOD("get_nav_path_index"), &NavigationAgent::get_nav_path_index);
@@ -76,6 +78,7 @@ void NavigationAgent::_bind_methods() {
     ADD_PROPERTY(PropertyInfo(Variant::REAL, "max_speed", PROPERTY_HINT_RANGE, "0.1,10000,0.01"), "set_max_speed", "get_max_speed");
     ADD_PROPERTY(PropertyInfo(Variant::REAL, "path_max_distance", PROPERTY_HINT_RANGE, "1,10,0.1"), "set_path_max_distance", "get_path_max_distance");
 
+    ADD_SIGNAL(MethodInfo("path_changed"));
     ADD_SIGNAL(MethodInfo("velocity_computed", PropertyInfo(Variant::VECTOR3, "safe_velocity")));
 }
 
@@ -196,6 +199,10 @@ void NavigationAgent::set_target_location(Vector3 p_location) {
     navigation_path.clear();
 }
 
+Vector3 NavigationAgent::get_target_location() const {
+    return target_location;
+}
+
 Vector3 NavigationAgent::get_next_location() {
 
     Vector3 o = agent_node->get_global_transform().origin;
@@ -204,7 +211,9 @@ Vector3 NavigationAgent::get_next_location() {
 
     bool reload_path = false;
 
-    if (navigation_path.size() == 0) {
+    if (NavigationServer::get_singleton()->agent_is_map_changed(agent)) {
+        reload_path = true;
+    } else if (navigation_path.size() == 0) {
         reload_path = true;
     } else {
         // Check if too far from the navigation path
@@ -225,6 +234,7 @@ Vector3 NavigationAgent::get_next_location() {
     if (reload_path) {
         navigation_path = NavigationServer::get_singleton()->map_get_path(navigation->get_rid(), o, target_location, true);
         nav_path_index = 0;
+        emit_signal("path_changed");
     } else {
         // Check if we can advance the navigation path
         if (nav_path_index + 1 < navigation_path.size()) {
@@ -238,6 +248,11 @@ Vector3 NavigationAgent::get_next_location() {
         return o;
 
     return navigation_path[nav_path_index] + Vector3(0, half_height, 0);
+}
+
+real_t NavigationAgent::distance_to_target() const {
+    ERR_FAIL_COND_V(agent_node == NULL, 0.0);
+    return agent_node->get_global_transform().origin.distance_to(target_location);
 }
 
 void NavigationAgent::set_velocity(Vector3 p_velocity) {

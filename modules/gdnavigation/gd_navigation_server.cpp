@@ -30,50 +30,57 @@
 
 #include "gd_navigation_server.h"
 
-GdNavigationServer::GdNavigationServer() :
-        NavigationServer(),
-        active(true) {
-}
+#include "core/os/mutex.h"
+#include "navigation_mesh_generator.h"
 
-GdNavigationServer::~GdNavigationServer() {}
+/**
+    @author AndreaCatania
+*/
 
-void GdNavigationServer::add_command(SetCommand *command) {
-    // TODO Mutex here please
-    commands.push_back(command);
-}
+/// Creates a struct for each function and a function that once called creates
+/// an instance of that struct with the submited parameters.
+/// Then, that struct is stored in an array; the `sync` function consume that array.
 
-RID GdNavigationServer::map_create() {
-    // TODO Mutex here please
-    NavMap *space = memnew(NavMap);
-    RID rid = map_owner.make_rid(space);
-    space->set_self(rid);
-    return rid;
-}
+#define COMMAND_1(F_NAME, T_0, D_0)                         \
+    struct __CONCAT(F_NAME, _command) : public SetCommand { \
+        T_0 d_0;                                            \
+        __CONCAT(F_NAME, _command)                          \
+        (T_0 p_d_0) :                                       \
+                d_0(p_d_0) {}                               \
+        virtual void exec(GdNavigationServer *server) {     \
+            server->__CONCAT(_cmd_, F_NAME)(d_0);           \
+        }                                                   \
+    };                                                      \
+                                                            \
+    void GdNavigationServer::F_NAME(T_0 D_0) const {        \
+        auto cmd = memnew(__CONCAT(F_NAME, _command)(       \
+                D_0));                                      \
+        add_command(cmd);                                   \
+    }                                                       \
+    void GdNavigationServer::__CONCAT(_cmd_, F_NAME)(T_0 D_0)
 
-#define COMMAND_2(F_NAME, T_0, D_0, T_1, D_1)                   \
-    struct __CONCAT(F_NAME, _command) : public SetCommand {     \
-        T_0 d_0;                                                \
-        T_1 d_1;                                                \
-        __CONCAT(F_NAME, _command)                              \
-        (                                                       \
-                T_0 p_d_0,                                      \
-                T_1 p_d_1) :                                    \
-                d_0(p_d_0),                                     \
-                d_1(p_d_1) {}                                   \
-        virtual void exec(GdNavigationServer *server) {         \
-            server->__CONCAT(_cmd_, F_NAME)(d_0, d_1);          \
-        }                                                       \
-    };                                                          \
-                                                                \
-    void GdNavigationServer::F_NAME(T_0 D_0, T_1 D_1) const {   \
-        /* TODO mutex here */                                   \
-        auto cmd = memnew(__CONCAT(F_NAME, _command)(           \
-                D_0,                                            \
-                D_1));                                          \
-                                                                \
-        auto mut_this = const_cast<GdNavigationServer *>(this); \
-        mut_this->add_command(cmd);                             \
-    }                                                           \
+#define COMMAND_2(F_NAME, T_0, D_0, T_1, D_1)                 \
+    struct __CONCAT(F_NAME, _command) : public SetCommand {   \
+        T_0 d_0;                                              \
+        T_1 d_1;                                              \
+        __CONCAT(F_NAME, _command)                            \
+        (                                                     \
+                T_0 p_d_0,                                    \
+                T_1 p_d_1) :                                  \
+                d_0(p_d_0),                                   \
+                d_1(p_d_1) {}                                 \
+        virtual void exec(GdNavigationServer *server) {       \
+            server->__CONCAT(_cmd_, F_NAME)(d_0, d_1);        \
+        }                                                     \
+    };                                                        \
+                                                              \
+    void GdNavigationServer::F_NAME(T_0 D_0, T_1 D_1) const { \
+        auto cmd = memnew(__CONCAT(F_NAME, _command)(         \
+                D_0,                                          \
+                D_1));                                        \
+                                                              \
+        add_command(cmd);                                     \
+    }                                                         \
     void GdNavigationServer::__CONCAT(_cmd_, F_NAME)(T_0 D_0, T_1 D_1)
 
 #define COMMAND_4(F_NAME, T_0, D_0, T_1, D_1, T_2, D_2, T_3, D_3)               \
@@ -98,17 +105,40 @@ RID GdNavigationServer::map_create() {
     };                                                                          \
                                                                                 \
     void GdNavigationServer::F_NAME(T_0 D_0, T_1 D_1, T_2 D_2, T_3 D_3) const { \
-        /* TODO mutex here */                                                   \
         auto cmd = memnew(__CONCAT(F_NAME, _command)(                           \
                 D_0,                                                            \
                 D_1,                                                            \
                 D_2,                                                            \
                 D_3));                                                          \
-                                                                                \
-        auto mut_this = const_cast<GdNavigationServer *>(this);                 \
-        mut_this->add_command(cmd);                                             \
+        add_command(cmd);                                                       \
     }                                                                           \
     void GdNavigationServer::__CONCAT(_cmd_, F_NAME)(T_0 D_0, T_1 D_1, T_2 D_2, T_3 D_3)
+
+GdNavigationServer::GdNavigationServer() :
+        NavigationServer(),
+        active(true) {
+    commands_mutex = Mutex::create();
+    operations_mutex = Mutex::create();
+}
+
+GdNavigationServer::~GdNavigationServer() {}
+
+void GdNavigationServer::add_command(SetCommand *command) const {
+    auto mut_this = const_cast<GdNavigationServer *>(this);
+    commands_mutex->lock();
+    mut_this->commands.push_back(command);
+    commands_mutex->unlock();
+}
+
+RID GdNavigationServer::map_create() const {
+    auto mut_this = const_cast<GdNavigationServer *>(this);
+    mut_this->operations_mutex->lock();
+    NavMap *space = memnew(NavMap);
+    RID rid = map_owner.make_rid(space);
+    space->set_self(rid);
+    mut_this->operations_mutex->unlock();
+    return rid;
+}
 
 COMMAND_2(map_set_active, RID, p_map, bool, p_active) {
     NavMap *map = map_owner.get(p_map);
@@ -179,11 +209,13 @@ Vector<Vector3> GdNavigationServer::map_get_path(RID p_map, Vector3 p_origin, Ve
     return map->get_path(p_origin, p_destination, p_optimize);
 }
 
-RID GdNavigationServer::region_create() {
-    // TODO Mutex here please
+RID GdNavigationServer::region_create() const {
+    auto mut_this = const_cast<GdNavigationServer *>(this);
+    mut_this->operations_mutex->lock();
     NavRegion *reg = memnew(NavRegion);
     RID rid = region_owner.make_rid(reg);
     reg->set_self(rid);
+    mut_this->operations_mutex->unlock();
     return rid;
 }
 
@@ -223,12 +255,21 @@ COMMAND_2(region_set_navmesh, RID, p_region, Ref<NavigationMesh>, p_nav_mesh) {
     region->set_mesh(p_nav_mesh);
 }
 
-RID GdNavigationServer::agent_create() {
-    // TODO Mutex here please
+void GdNavigationServer::region_bake_navmesh(Ref<NavigationMesh> r_mesh, Node *p_node) const {
+    ERR_FAIL_COND(r_mesh.is_null());
+    ERR_FAIL_COND(p_node == NULL);
+
+    NavigationMeshGenerator::get_singleton()->clear(r_mesh);
+    NavigationMeshGenerator::get_singleton()->bake(r_mesh, p_node);
+}
+
+RID GdNavigationServer::agent_create() const {
+    auto mut_this = const_cast<GdNavigationServer *>(this);
+    mut_this->operations_mutex->lock();
     RvoAgent *agent = memnew(RvoAgent());
     RID rid = agent_owner.make_rid(agent);
     agent->set_self(rid);
-
+    mut_this->operations_mutex->unlock();
     return rid;
 }
 
@@ -314,6 +355,13 @@ COMMAND_2(agent_set_position, RID, p_agent, Vector3, p_position) {
     agent->get_agent()->position_ = RVO::Vector2(p_position.x, p_position.z);
 }
 
+bool GdNavigationServer::agent_is_map_changed(RID p_agent) const {
+    RvoAgent *agent = agent_owner.get(p_agent);
+    ERR_FAIL_COND_V(agent == NULL, false);
+
+    return agent->is_map_changed();
+}
+
 COMMAND_4(agent_set_callback, RID, p_agent, Object *, p_receiver, StringName, p_method, Variant, p_udata) {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND(agent == NULL);
@@ -328,46 +376,58 @@ COMMAND_4(agent_set_callback, RID, p_agent, Object *, p_receiver, StringName, p_
         }
 }
 
-void GdNavigationServer::free(RID p_object) {
+COMMAND_1(free, RID, p_object) {
     if (map_owner.owns(p_object)) {
-        NavMap *obj = map_owner.get(p_object);
+        NavMap *map = map_owner.get(p_object);
 
-        // Destroy all the agents of this server
-        if (obj->get_agents().size() != 0) {
-            print_error("The collision avoidance server destroyed contains Agents, please destroy these.");
+        // Removes any assigned region
+        std::vector<NavRegion *> regions = map->get_regions();
+        for (uint i(0); i < regions.size(); i++) {
+            map->remove_region(regions[i]);
         }
 
-        for (int i(0); i < obj->get_agents().size(); i++) {
-            agent_owner.free(obj->get_agents()[i]->get_self());
-            memdelete(obj->get_agents()[i]);
-            obj->get_agents()[i] = NULL;
+        // Remove any assigned agent
+        std::vector<RvoAgent *> agents = map->get_agents();
+        for (uint i(0); i < agents.size(); i++) {
+            map->remove_agent(agents[i]);
         }
 
-        // TODO please destroy Obstacles
-
-        map_set_active(p_object, false);
+        active_maps.erase(map);
         map_owner.free(p_object);
+        memdelete(map);
 
-        memdelete(obj);
     } else if (region_owner.owns(p_object)) {
-        NavRegion *nav = region_owner.get(p_object);
-        // TODO nothing more to remove??
-        region_owner.free(p_object);
-        memdelete(nav);
-    } else if (agent_owner.owns(p_object)) {
-        RvoAgent *obj = agent_owner.get(p_object);
-        if (obj->get_map() != NULL) {
-            obj->get_map()->remove_agent(obj);
+        NavRegion *region = region_owner.get(p_object);
+
+        // Removes this region from the map if assigned
+        if (region->get_map() != NULL) {
+            region->get_map()->remove_region(region);
         }
+
+        region_owner.free(p_object);
+        memdelete(region);
+
+    } else if (agent_owner.owns(p_object)) {
+        RvoAgent *agent = agent_owner.get(p_object);
+
+        // Removes this agent from the map if assigned
+        if (agent->get_map() != NULL) {
+            agent->get_map()->remove_agent(agent);
+        }
+
         agent_owner.free(p_object);
-        memdelete(obj);
+        memdelete(agent);
+
     } else {
         ERR_FAIL_COND("Invalid ID.");
     }
 }
 
-void GdNavigationServer::set_active(bool p_active) {
-    active = p_active;
+void GdNavigationServer::set_active(bool p_active) const {
+    auto mut_this = const_cast<GdNavigationServer *>(this);
+    mut_this->operations_mutex->lock();
+    mut_this->active = p_active;
+    mut_this->operations_mutex->unlock();
 }
 
 void GdNavigationServer::step(real_t p_delta_time) {
@@ -375,12 +435,18 @@ void GdNavigationServer::step(real_t p_delta_time) {
         return;
     }
 
+    // With c++ we can't be 100% sure this is called in single thread so use the mutex.
+    commands_mutex->lock();
+    operations_mutex->lock();
     for (uint i(0); i < commands.size(); i++) {
         commands[i]->exec(this);
         memdelete(commands[i]);
     }
     commands.clear();
+    operations_mutex->unlock();
+    commands_mutex->unlock();
 
+    // These are internal operations so don't need to be shielded.
     for (int i(0); i < active_maps.size(); i++) {
         active_maps[i]->sync();
         active_maps[i]->step(p_delta_time);

@@ -2004,7 +2004,7 @@ bool Main::iteration() {
 
         message_queue->flush();
 
-        NavigationServer::get_singleton()->step(frame_slice * time_scale);
+        NavigationServer::get_singleton_mut()->step(frame_slice * time_scale);
 
 		PhysicsServer::get_singleton()->step(frame_slice * time_scale);
 

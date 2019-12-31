@@ -37,6 +37,10 @@
 #include "nav_utils.h"
 #include <KdTree.h>
 
+/**
+    @author AndreaCatania
+*/
+
 class NavRegion;
 class RvoAgent;
 class NavRegion;
@@ -76,6 +80,9 @@ class NavMap : public NavRid {
     /// Physics delta time
     real_t deltatime;
 
+    /// Change the id each time the map is updated.
+    uint map_update_id;
+
 public:
     NavMap();
 
@@ -100,16 +107,23 @@ public:
 
     void add_region(NavRegion *p_region);
     void remove_region(NavRegion *p_region);
+    const std::vector<NavRegion *> &get_regions() const {
+        return regions;
+    }
 
     bool has_agent(RvoAgent *agent) const;
     void add_agent(RvoAgent *agent);
     void remove_agent(RvoAgent *agent);
-    std::vector<RvoAgent *> &get_agents() {
+    const std::vector<RvoAgent *> &get_agents() const {
         return agents;
     }
 
     void set_agent_as_controlled(RvoAgent *agent);
     void remove_agent_as_controlled(RvoAgent *agent);
+
+    uint get_map_update_id() const {
+        return map_update_id;
+    }
 
     void sync();
     void step(real_t p_deltatime);

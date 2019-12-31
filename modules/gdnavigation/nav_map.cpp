@@ -35,6 +35,10 @@
 #include "rvo_agent.h"
 #include <Obstacle.h>
 
+/**
+    @author AndreaCatania
+*/
+
 #define USE_ENTRY_POINT
 
 NavMap::NavMap() :
@@ -44,7 +48,8 @@ NavMap::NavMap() :
         regenerate_polygons(true),
         regenerate_links(true),
         agents_dirty(false),
-        deltatime(0.0) {}
+        deltatime(0.0),
+        map_update_id(0) {}
 
 void NavMap::set_up(Vector3 p_up) {
     up = p_up;
@@ -75,8 +80,6 @@ PointKey NavMap::get_point_key(const Vector3 &p_pos) const {
 }
 
 Vector<Vector3> NavMap::get_path(Vector3 p_origin, Vector3 p_destination, bool p_optimize) const {
-
-    // TODO check for write lock?
 
     const Polygon *begin_poly = NULL;
     const Polygon *end_poly = NULL;
@@ -406,7 +409,6 @@ void NavMap::remove_agent_as_controlled(RvoAgent *agent) {
 }
 
 void NavMap::sync() {
-    // TODO write lock here?
 
     if (regenerate_polygons) {
         for (uint r(0); r < regions.size(); r++) {
@@ -550,6 +552,10 @@ void NavMap::sync() {
                 }
             }
         }
+    }
+
+    if (regenerate_links) {
+        map_update_id = map_update_id + 1 % 9999999;
     }
 
     if (agents_dirty) {

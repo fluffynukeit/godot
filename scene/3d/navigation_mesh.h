@@ -205,6 +205,7 @@ class NavigationMeshInstance : public Spatial {
 
     Navigation *navigation;
     Node *debug_view;
+    Thread *bake_thread;
 
 protected:
 	void _notification(int p_what);
@@ -218,7 +219,12 @@ public:
 	void set_navigation_mesh(const Ref<NavigationMesh> &p_navmesh);
 	Ref<NavigationMesh> get_navigation_mesh() const;
 
-	String get_configuration_warning() const;
+    /// Bakes the navigation mesh in a dedicated thread; once done, automatically
+    /// sets the new navigation mesh and emits a signal
+    void bake_navigation_mesh();
+    void _bake_done(Ref<NavigationMesh> p_nav_mesh);
+
+    String get_configuration_warning() const;
 
 	NavigationMeshInstance();
 	~NavigationMeshInstance();

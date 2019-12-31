@@ -298,11 +298,24 @@ void NavigationMeshGenerator::_convert_detail_mesh_to_native_navigation_mesh(con
 	}
 }
 
-void NavigationMeshGenerator::_build_recast_navigation_mesh(Ref<NavigationMesh> p_nav_mesh, EditorProgress *ep,
-		rcHeightfield *hf, rcCompactHeightfield *chf, rcContourSet *cset, rcPolyMesh *poly_mesh, rcPolyMeshDetail *detail_mesh,
-		Vector<float> &vertices, Vector<int> &indices) {
+void NavigationMeshGenerator::_build_recast_navigation_mesh(
+        Ref<NavigationMesh> p_nav_mesh,
+#ifdef TOOLS_ENABLED
+        EditorProgress *ep,
+#endif
+        rcHeightfield *hf,
+        rcCompactHeightfield *chf,
+        rcContourSet *cset,
+        rcPolyMesh *poly_mesh,
+        rcPolyMeshDetail *detail_mesh,
+        Vector<float> &vertices,
+        Vector<int> &indices) {
 	rcContext ctx;
-	ep->step(TTR("Setting up Configuration..."), 1);
+
+#ifdef TOOLS_ENABLED
+    if (ep)
+        ep->step(TTR("Setting up Configuration..."), 1);
+#endif
 
 	const float *verts = vertices.ptr();
 	const int nverts = vertices.size() / 3;
@@ -336,16 +349,25 @@ void NavigationMeshGenerator::_build_recast_navigation_mesh(Ref<NavigationMesh> 
 	cfg.bmax[1] = bmax[1];
 	cfg.bmax[2] = bmax[2];
 
-	ep->step(TTR("Calculating grid size..."), 2);
+#ifdef TOOLS_ENABLED
+    if (ep)
+        ep->step(TTR("Calculating grid size..."), 2);
+#endif
 	rcCalcGridSize(cfg.bmin, cfg.bmax, cfg.cs, &cfg.width, &cfg.height);
 
-	ep->step(TTR("Creating heightfield..."), 3);
+#ifdef TOOLS_ENABLED
+    if (ep)
+        ep->step(TTR("Creating heightfield..."), 3);
+#endif
 	hf = rcAllocHeightfield();
 
 	ERR_FAIL_COND(!hf);
 	ERR_FAIL_COND(!rcCreateHeightfield(&ctx, *hf, cfg.width, cfg.height, cfg.bmin, cfg.bmax, cfg.cs, cfg.ch));
 
-	ep->step(TTR("Marking walkable triangles..."), 4);
+#ifdef TOOLS_ENABLED
+    if (ep)
+        ep->step(TTR("Marking walkable triangles..."), 4);
+#endif
 	{
 		Vector<unsigned char> tri_areas;
 		tri_areas.resize(ntris);
@@ -365,7 +387,10 @@ void NavigationMeshGenerator::_build_recast_navigation_mesh(Ref<NavigationMesh> 
 	if (p_nav_mesh->get_filter_walkable_low_height_spans())
 		rcFilterWalkableLowHeightSpans(&ctx, cfg.walkableHeight, *hf);
 
-	ep->step(TTR("Constructing compact heightfield..."), 5);
+#ifdef TOOLS_ENABLED
+    if (ep)
+        ep->step(TTR("Constructing compact heightfield..."), 5);
+#endif
 
 	chf = rcAllocCompactHeightfield();
 
@@ -375,10 +400,18 @@ void NavigationMeshGenerator::_build_recast_navigation_mesh(Ref<NavigationMesh> 
 	rcFreeHeightField(hf);
 	hf = 0;
 
-	ep->step(TTR("Eroding walkable area..."), 6);
+#ifdef TOOLS_ENABLED
+    if (ep)
+        ep->step(TTR("Eroding walkable area..."), 6);
+#endif
+
 	ERR_FAIL_COND(!rcErodeWalkableArea(&ctx, cfg.walkableRadius, *chf));
 
-	ep->step(TTR("Partitioning..."), 7);
+#ifdef TOOLS_ENABLED
+    if (ep)
+        ep->step(TTR("Partitioning..."), 7);
+#endif
+
 	if (p_nav_mesh->get_sample_partition_type() == NavigationMesh::SAMPLE_PARTITION_WATERSHED) {
 		ERR_FAIL_COND(!rcBuildDistanceField(&ctx, *chf));
 		ERR_FAIL_COND(!rcBuildRegions(&ctx, *chf, 0, cfg.minRegionArea, cfg.mergeRegionArea));
@@ -388,14 +421,20 @@ void NavigationMeshGenerator::_build_recast_navigation_mesh(Ref<NavigationMesh> 
 		ERR_FAIL_COND(!rcBuildLayerRegions(&ctx, *chf, 0, cfg.minRegionArea));
 	}
 
-	ep->step(TTR("Creating contours..."), 8);
+#ifdef TOOLS_ENABLED
+    if (ep)
+        ep->step(TTR("Creating contours..."), 8);
+#endif
 
 	cset = rcAllocContourSet();
 
 	ERR_FAIL_COND(!cset);
 	ERR_FAIL_COND(!rcBuildContours(&ctx, *chf, cfg.maxSimplificationError, cfg.maxEdgeLen, *cset));
 
-	ep->step(TTR("Creating polymesh..."), 9);
+#ifdef TOOLS_ENABLED
+    if (ep)
+        ep->step(TTR("Creating polymesh..."), 9);
+#endif
 
 	poly_mesh = rcAllocPolyMesh();
 	ERR_FAIL_COND(!poly_mesh);
@@ -410,7 +449,10 @@ void NavigationMeshGenerator::_build_recast_navigation_mesh(Ref<NavigationMesh> 
 	rcFreeContourSet(cset);
 	cset = 0;
 
-	ep->step(TTR("Converting to native navigation mesh..."), 10);
+#ifdef TOOLS_ENABLED
+    if (ep)
+        ep->step(TTR("Converting to native navigation mesh..."), 10);
+#endif
 
 	_convert_detail_mesh_to_native_navigation_mesh(detail_mesh, p_nav_mesh);
 
@@ -435,8 +477,15 @@ void NavigationMeshGenerator::bake(Ref<NavigationMesh> p_nav_mesh, Node *p_node)
 
 	ERR_FAIL_COND(!p_nav_mesh.is_valid());
 
-	EditorProgress ep("bake", TTR("Navigation Mesh Generator Setup:"), 11);
-	ep.step(TTR("Parsing Geometry..."), 0);
+#ifdef TOOLS_ENABLED
+    EditorProgress *ep(NULL);
+    if (Engine::get_singleton()->is_editor_hint()) {
+        ep = memnew(EditorProgress("bake", TTR("Navigation Mesh Generator Setup:"), 11));
+    }
+
+    if (ep)
+        ep->step(TTR("Parsing Geometry..."), 0);
+#endif
 
 	Vector<float> vertices;
 	Vector<int> indices;
@@ -465,7 +514,18 @@ void NavigationMeshGenerator::bake(Ref<NavigationMesh> p_nav_mesh, Node *p_node)
 		rcPolyMesh *poly_mesh = NULL;
 		rcPolyMeshDetail *detail_mesh = NULL;
 
-		_build_recast_navigation_mesh(p_nav_mesh, &ep, hf, chf, cset, poly_mesh, detail_mesh, vertices, indices);
+        _build_recast_navigation_mesh(
+                p_nav_mesh,
+#ifdef TOOLS_ENABLED
+                ep,
+#endif
+                hf,
+                chf,
+                cset,
+                poly_mesh,
+                detail_mesh,
+                vertices,
+                indices);
 
 		rcFreeHeightField(hf);
 		hf = 0;
@@ -482,7 +542,14 @@ void NavigationMeshGenerator::bake(Ref<NavigationMesh> p_nav_mesh, Node *p_node)
 		rcFreePolyMeshDetail(detail_mesh);
 		detail_mesh = 0;
 	}
-	ep.step(TTR("Done!"), 11);
+
+#ifdef TOOLS_ENABLED
+    if (ep)
+        ep->step(TTR("Done!"), 11);
+
+    if (ep)
+        memdelete(ep);
+#endif
 }
 
 void NavigationMeshGenerator::clear(Ref<NavigationMesh> p_nav_mesh) {

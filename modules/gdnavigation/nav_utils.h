@@ -34,6 +34,10 @@
 #include "core/math/vector3.h"
 #include <vector>
 
+/**
+    @author AndreaCatania
+*/
+
 class NavRegion;
 struct Polygon;
 

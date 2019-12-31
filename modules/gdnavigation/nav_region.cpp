@@ -32,6 +32,10 @@
 
 #include "nav_map.h"
 
+/**
+    @author AndreaCatania
+*/
+
 NavRegion::NavRegion() :
         polygons_dirty(true),
         map(NULL) {
@@ -70,6 +74,9 @@ void NavRegion::update_polygons() {
     if (map == NULL) {
         return;
     }
+
+    if (mesh.is_null())
+        return;
 
     PoolVector<Vector3> vertices = mesh->get_vertices();
     int len = vertices.size();

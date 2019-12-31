@@ -116,6 +116,8 @@ public:
     real_t get_path_max_distance();
 
     void set_target_location(Vector3 p_location);
+    Vector3 get_target_location() const;
+
     Vector3 get_next_location();
 
     Vector<Vector3> get_nav_path() const {
@@ -125,6 +127,8 @@ public:
     uint get_nav_path_index() const {
         return nav_path_index;
     }
+
+    real_t distance_to_target() const;
 
     void set_velocity(Vector3 p_velocity);
     void _avoidance_done(Vector3 p_new_velocity);

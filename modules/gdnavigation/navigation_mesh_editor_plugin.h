@@ -35,6 +35,10 @@
 #include "editor/editor_plugin.h"
 #include "navigation_mesh_generator.h"
 
+/**
+    @author AndreaCatania
+*/
+
 class NavigationMeshEditor : public Control {
 	friend class NavigationMeshEditorPlugin;
 

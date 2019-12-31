@@ -28,6 +28,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
+/**
+    @author AndreaCatania
+*/
+
 #ifndef NAVIGATION_SERVER_H
 #define NAVIGATION_SERVER_H
 
@@ -35,6 +39,12 @@
 #include "core/rid.h"
 #include "scene/3d/navigation_mesh.h"
 
+/// This server uses the concept of internal mutability.
+/// All the constant functions can be called in multithread because internally
+/// the server takes care to schedule the functions access.
+///
+/// Note: All the `set` functions are commands executed during the `sync` phase,
+/// don't expect that a change is immediately propagated.
 class NavigationServer : public Object {
     GDCLASS(NavigationServer, Object);
 
@@ -44,106 +54,121 @@ protected:
     static void _bind_methods();
 
 public:
-    static NavigationServer *get_singleton();
+    /// Thread safe, can be used accross many threads.
+    static const NavigationServer *get_singleton();
 
-    virtual RID map_create() = 0;
+    /// MUST be used in single thread!
+    static NavigationServer *get_singleton_mut();
+
+    /// Create a new map.
+    virtual RID map_create() const = 0;
+
+    /// Set map active.
     virtual void map_set_active(RID p_map, bool p_active) const = 0;
+
+    /// Returns true if the map is active.
     virtual bool map_is_active(RID p_map) const = 0;
 
+    /// Set the map UP direction.
     virtual void map_set_up(RID p_map, Vector3 p_up) const = 0;
+
+    /// Returns the map UP direction.
     virtual Vector3 map_get_up(RID p_map) const = 0;
 
+    /// Set the map cell size used to weld the navigation mesh polygons.
     virtual void map_set_cell_size(RID p_map, real_t p_cell_size) const = 0;
+
+    /// Returns the map cell size.
     virtual real_t map_get_cell_size(RID p_map) const = 0;
 
+    /// Set the map edge connection margin used to weld the compatible region edges.
     virtual void map_set_edge_connection_margin(RID p_map, real_t p_connection_margin) const = 0;
+
+    /// Returns the edge connection margin of this map.
     virtual real_t map_get_edge_connection_margin(RID p_map) const = 0;
 
+    /// Returns the navigation path to reach the destination from the origin.
     virtual Vector<Vector3> map_get_path(RID p_map, Vector3 p_origin, Vector3 p_destination, bool p_optimize) const = 0;
 
-    virtual RID region_create() = 0;
+    /// Creates a new region.
+    virtual RID region_create() const = 0;
+
+    /// Set the map of this region.
     virtual void region_set_map(RID p_region, RID p_map) const = 0;
+
+    /// Set the global transformation of this region.
     virtual void region_set_transform(RID p_region, Transform p_transform) const = 0;
+
+    /// Set the navigation mesh of this region.
     virtual void region_set_navmesh(RID p_region, Ref<NavigationMesh> p_nav_mesh) const = 0;
 
-    /**
-     * Creates the agent.
-     */
-    virtual RID agent_create() = 0;
+    /// Bake the navigation mesh
+    virtual void region_bake_navmesh(Ref<NavigationMesh> r_mesh, Node *p_node) const = 0;
 
-    /**
-     * Put the agent in the map.
-     */
+    /// Creates the agent.
+    virtual RID agent_create() const = 0;
+
+    /// Put the agent in the map.
     virtual void agent_set_map(RID p_agent, RID p_map) const = 0;
 
-    /*
-     * The maximum distance (center point to
-     * center point) to other agents this agent
-     * takes into account in the navigation. The
-     * larger this number, the longer the running
-     * time of the simulation. If the number is too
-     * low, the simulation will not be safe.
-     * Must be non-negative.
-     */
+    /// The maximum distance (center point to
+    /// center point) to other agents this agent
+    /// takes into account in the navigation. The
+    /// larger this number, the longer the running
+    /// time of the simulation. If the number is too
+    /// low, the simulation will not be safe.
+    /// Must be non-negative.
     virtual void agent_set_neighbor_dist(RID p_agent, real_t p_dist) const = 0;
 
-    /**
-     * The maximum number of other agents this
-     * agent takes into account in the navigation.
-     * The larger this number, the longer the
-     * running time of the simulation. If the
-     * number is too low, the simulation will not
-     * be safe.
-     */
+    /// The maximum number of other agents this
+    /// agent takes into account in the navigation.
+    /// The larger this number, the longer the
+    /// running time of the simulation. If the
+    /// number is too low, the simulation will not
+    /// be safe.
     virtual void agent_set_max_neighbors(RID p_agent, int p_count) const = 0;
 
-    /**
-     * The minimal amount of time for which this
-     * agent's velocities that are computed by the
-     * simulation are safe with respect to other
-     * agents. The larger this number, the sooner
-     * this agent will respond to the presence of
-     * other agents, but the less freedom this
-     * agent has in choosing its velocities.
-     * Must be positive.
-     */
+    /// The minimal amount of time for which this
+    /// agent's velocities that are computed by the
+    /// simulation are safe with respect to other
+    /// agents. The larger this number, the sooner
+    /// this agent will respond to the presence of
+    /// other agents, but the less freedom this
+    /// agent has in choosing its velocities.
+    /// Must be positive.
     virtual void agent_set_time_horizon(RID p_agent, real_t p_time) const = 0;
 
-    /**
-     * The radius of this agent.
-     * Must be non-negative.
-     */
+    /// The radius of this agent.
+    /// Must be non-negative.
     virtual void agent_set_radius(RID p_agent, real_t p_radius) const = 0;
 
-    /**
-     * The maximum speed of this agent.
-     * Must be non-negative.
-     */
+    /// The maximum speed of this agent.
+    /// Must be non-negative.
     virtual void agent_set_max_speed(RID p_agent, real_t p_max_speed) const = 0;
 
-    /**
-     * Current velocity of the agent
-     */
+    /// Current velocity of the agent
     virtual void agent_set_velocity(RID p_agent, Vector3 p_velocity) const = 0;
 
-    /**
-     * The new target velocity.
-     */
+    /// The new target velocity.
     virtual void agent_set_target_velocity(RID p_agent, Vector3 p_velocity) const = 0;
 
-    /**
-     * Position of the agent in world space.
-     */
+    /// Position of the agent in world space.
     virtual void agent_set_position(RID p_agent, Vector3 p_position) const = 0;
 
-    /**
-     * Callback called at the end of the RVO process
-     */
+    /// Returns true if the map got changed the previous frame.
+    virtual bool agent_is_map_changed(RID p_agent) const = 0;
+
+    /// Callback called at the end of the RVO process
     virtual void agent_set_callback(RID p_agent, Object *p_receiver, StringName p_method, Variant p_udata = Variant()) const = 0;
 
-    virtual void free(RID p_object) = 0;
+    /// Destroy the `RID`
+    virtual void free(RID p_object) const = 0;
 
-    virtual void set_active(bool p_active) = 0;
+    /// Control activation of this server.
+    virtual void set_active(bool p_active) const = 0;
+
+    /// Step the server
+    /// NOTE: This function is not Threadsafe and MUST be called in single thread.
     virtual void step(real_t delta_time) = 0;
 
     NavigationServer();
@@ -152,6 +177,7 @@ public:
 
 typedef NavigationServer *(*NavigationServerCallback)();
 
+/// Manager used for the server singleton registration
 class NavigationServerManager {
     static NavigationServerCallback create_callback;
 

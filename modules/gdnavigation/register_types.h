@@ -28,5 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
+/**
+    @author AndreaCatania
+*/
+
 void register_gdnavigation_types();
 void unregister_gdnavigation_types();

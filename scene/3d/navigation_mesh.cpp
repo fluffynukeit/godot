@@ -29,6 +29,7 @@
 /*************************************************************************/
 
 #include "navigation_mesh.h"
+#include "core/os/thread.h"
 #include "mesh_instance.h"
 #include "navigation.h"
 #include "servers/navigation_server.h"
@@ -666,6 +667,8 @@ void NavigationMeshInstance::set_navigation_mesh(const Ref<NavigationMesh> &p_na
 		Object::cast_to<MeshInstance>(debug_view)->set_mesh(navmesh->get_debug_mesh());
 	}
 
+    emit_signal("navigation_mesh_changed");
+
 	update_gizmo();
 	update_configuration_warning();
 }
@@ -673,6 +676,42 @@ void NavigationMeshInstance::set_navigation_mesh(const Ref<NavigationMesh> &p_na
 Ref<NavigationMesh> NavigationMeshInstance::get_navigation_mesh() const {
 
 	return navmesh;
+}
+
+struct BakeThreadsArgs {
+    NavigationMeshInstance *nav_mesh_instance;
+};
+
+void _bake_navigation_mesh(void *p_user_data) {
+    BakeThreadsArgs *args = static_cast<BakeThreadsArgs *>(p_user_data);
+
+    if (args->nav_mesh_instance->get_navigation_mesh().is_valid()) {
+        Ref<NavigationMesh> nav_mesh = args->nav_mesh_instance->get_navigation_mesh()->duplicate();
+
+        NavigationServer::get_singleton()->region_bake_navmesh(nav_mesh, args->nav_mesh_instance);
+        args->nav_mesh_instance->call_deferred("_bake_done", nav_mesh);
+        memdelete(args);
+    } else {
+
+        ERR_PRINT("Can't bake the navigation mesh if the `NavigationMesh` resource doesn't exist");
+        args->nav_mesh_instance->call_deferred("_bake_done", Ref<NavigationMesh>());
+        memdelete(args);
+    }
+}
+
+void NavigationMeshInstance::bake_navigation_mesh() {
+    ERR_FAIL_COND(bake_thread != NULL);
+
+    BakeThreadsArgs *args = memnew(BakeThreadsArgs);
+    args->nav_mesh_instance = this;
+
+    bake_thread = Thread::create(_bake_navigation_mesh, args);
+    ERR_FAIL_COND(bake_thread == NULL);
+}
+
+void NavigationMeshInstance::_bake_done(Ref<NavigationMesh> p_nav_mesh) {
+    set_navigation_mesh(p_nav_mesh);
+    bake_thread = NULL;
 }
 
 String NavigationMeshInstance::get_configuration_warning() const {
@@ -703,8 +742,14 @@ void NavigationMeshInstance::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_enabled", "enabled"), &NavigationMeshInstance::set_enabled);
 	ClassDB::bind_method(D_METHOD("is_enabled"), &NavigationMeshInstance::is_enabled);
 
+    ClassDB::bind_method(D_METHOD("bake_navigation_mesh"), &NavigationMeshInstance::bake_navigation_mesh);
+    ClassDB::bind_method(D_METHOD("_bake_done", "nav_mesh"), &NavigationMeshInstance::_bake_done);
+
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "navmesh", PROPERTY_HINT_RESOURCE_TYPE, "NavigationMesh"), "set_navigation_mesh", "get_navigation_mesh");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "enabled"), "set_enabled", "is_enabled");
+
+    ADD_SIGNAL(MethodInfo("navigation_mesh_changed"));
+    ADD_SIGNAL(MethodInfo("bake_done"));
 }
 
 void NavigationMeshInstance::_changed_callback(Object *p_changed, const char *p_prop) {
@@ -720,6 +765,7 @@ NavigationMeshInstance::NavigationMeshInstance() {
 
     navigation = NULL;
     debug_view = NULL;
+    bake_thread = NULL;
 }
 
 NavigationMeshInstance::~NavigationMeshInstance() {

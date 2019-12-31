@@ -37,6 +37,10 @@
 #include "scene/3d/navigation.h"
 #include <vector>
 
+/**
+    @author AndreaCatania
+*/
+
 class NavMap;
 class NavRegion;
 

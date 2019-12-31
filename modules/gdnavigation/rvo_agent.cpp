@@ -32,6 +32,10 @@
 
 #include "nav_map.h"
 
+/**
+    @author AndreaCatania
+*/
+
 RvoAgent::RvoAgent() :
         map(NULL) {
     callback.id = ObjectID(0);
@@ -39,6 +43,16 @@ RvoAgent::RvoAgent() :
 
 void RvoAgent::set_map(NavMap *p_map) {
     map = p_map;
+}
+
+bool RvoAgent::is_map_changed() {
+    if (map) {
+        bool is_changed = map->get_map_update_id() != map_update_id;
+        map_update_id = map->get_map_update_id();
+        return is_changed;
+    } else {
+        return false;
+    }
 }
 
 void RvoAgent::set_callback(ObjectID p_id, const StringName p_method, const Variant p_udata) {

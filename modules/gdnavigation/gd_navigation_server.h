@@ -36,9 +36,16 @@
 #include "nav_map.h"
 #include "nav_region.h"
 #include "rvo_agent.h"
-#include "rvo_obstacle.h"
+
+/**
+    @author AndreaCatania
+*/
 
 /// The commands are functions executed during the `sync` phase.
+
+#define COMMAND_1(F_NAME, T_0, D_0)     \
+    virtual void F_NAME(T_0 D_0) const; \
+    void __CONCAT(_cmd_, F_NAME)(T_0 D_0)
 
 #define COMMAND_2(F_NAME, T_0, D_0, T_1, D_1)    \
     virtual void F_NAME(T_0 D_0, T_1 D_1) const; \
@@ -49,12 +56,17 @@
     void __CONCAT(_cmd_, F_NAME)(T_0 D_0, T_1 D_1, T_2 D_2, T_3 D_3)
 
 class GdNavigationServer;
+class Mutex;
 
 struct SetCommand {
     virtual void exec(GdNavigationServer *server) = 0;
 };
 
 class GdNavigationServer : public NavigationServer {
+    Mutex *commands_mutex;
+    /// Mutex used to make any operation threadsafe.
+    Mutex *operations_mutex;
+
     std::vector<SetCommand *> commands;
 
     mutable RID_Owner<NavMap> map_owner;
@@ -68,9 +80,9 @@ public:
     GdNavigationServer();
     virtual ~GdNavigationServer();
 
-    void add_command(SetCommand *command);
+    void add_command(SetCommand *command) const;
 
-    virtual RID map_create();
+    virtual RID map_create() const;
     COMMAND_2(map_set_active, RID, p_map, bool, p_active);
     virtual bool map_is_active(RID p_map) const;
 
@@ -85,12 +97,13 @@ public:
 
     virtual Vector<Vector3> map_get_path(RID p_map, Vector3 p_origin, Vector3 p_destination, bool p_optimize) const;
 
-    virtual RID region_create();
+    virtual RID region_create() const;
     COMMAND_2(region_set_map, RID, p_region, RID, p_map);
     COMMAND_2(region_set_transform, RID, p_region, Transform, p_transform);
     COMMAND_2(region_set_navmesh, RID, p_region, Ref<NavigationMesh>, p_nav_mesh);
+    virtual void region_bake_navmesh(Ref<NavigationMesh> r_mesh, Node *p_node) const;
 
-    virtual RID agent_create();
+    virtual RID agent_create() const;
     COMMAND_2(agent_set_map, RID, p_agent, RID, p_map);
     COMMAND_2(agent_set_neighbor_dist, RID, p_agent, real_t, p_dist);
     COMMAND_2(agent_set_max_neighbors, RID, p_agent, int, p_count);
@@ -100,11 +113,12 @@ public:
     COMMAND_2(agent_set_velocity, RID, p_agent, Vector3, p_velocity);
     COMMAND_2(agent_set_target_velocity, RID, p_agent, Vector3, p_velocity);
     COMMAND_2(agent_set_position, RID, p_agent, Vector3, p_position);
+    virtual bool agent_is_map_changed(RID p_agent) const;
     COMMAND_4_DEF(agent_set_callback, RID, p_agent, Object *, p_receiver, StringName, p_method, Variant, p_udata, Variant());
 
-    virtual void free(RID p_object);
+    COMMAND_1(free, RID, p_object);
 
-    virtual void set_active(bool p_active);
+    virtual void set_active(bool p_active) const;
     virtual void step(real_t p_delta_time);
 };
 

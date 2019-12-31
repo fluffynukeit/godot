@@ -28,6 +28,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
+/**
+    @author AndreaCatania
+*/
+
 #include "navigation_server.h"
 
 NavigationServer *NavigationServer::singleton = NULL;
@@ -45,6 +49,12 @@ void NavigationServer::_bind_methods() {
     ClassDB::bind_method(D_METHOD("map_get_edge_connection_margin", "map"), &NavigationServer::map_get_edge_connection_margin);
     ClassDB::bind_method(D_METHOD("map_get_path", "map", "origin", "destination", "optimize"), &NavigationServer::map_get_path);
 
+    ClassDB::bind_method(D_METHOD("region_create"), &NavigationServer::region_create);
+    ClassDB::bind_method(D_METHOD("region_set_map", "region", "map"), &NavigationServer::region_set_map);
+    ClassDB::bind_method(D_METHOD("region_set_transform", "region", "transform"), &NavigationServer::region_set_transform);
+    ClassDB::bind_method(D_METHOD("region_set_navmesh", "region", "nav_mesh"), &NavigationServer::region_set_navmesh);
+    ClassDB::bind_method(D_METHOD("region_bake_navmesh", "mesh", "node"), &NavigationServer::region_bake_navmesh);
+
     ClassDB::bind_method(D_METHOD("agent_create"), &NavigationServer::agent_create);
     ClassDB::bind_method(D_METHOD("agent_set_map", "agent", "map"), &NavigationServer::agent_set_map);
     ClassDB::bind_method(D_METHOD("agent_set_neighbor_dist", "agent", "dist"), &NavigationServer::agent_set_neighbor_dist);
@@ -55,6 +65,7 @@ void NavigationServer::_bind_methods() {
     ClassDB::bind_method(D_METHOD("agent_set_velocity", "agent", "velocity"), &NavigationServer::agent_set_velocity);
     ClassDB::bind_method(D_METHOD("agent_set_velocity_target", "agent", "target_velocity"), &NavigationServer::agent_set_target_velocity);
     ClassDB::bind_method(D_METHOD("agent_set_position", "agent", "position"), &NavigationServer::agent_set_position);
+    ClassDB::bind_method(D_METHOD("agent_is_map_changed", "agent"), &NavigationServer::agent_is_map_changed);
     ClassDB::bind_method(D_METHOD("agent_set_callback", "agent", "receiver", "method", "userdata"), &NavigationServer::agent_set_callback, DEFVAL(Variant()));
 
     ClassDB::bind_method(D_METHOD("free", "object"), &NavigationServer::free);
@@ -63,7 +74,11 @@ void NavigationServer::_bind_methods() {
     ClassDB::bind_method(D_METHOD("step", "delta_time"), &NavigationServer::step);
 }
 
-NavigationServer *NavigationServer::get_singleton() {
+const NavigationServer *NavigationServer::get_singleton() {
+    return singleton;
+}
+
+NavigationServer *NavigationServer::get_singleton_mut() {
     return singleton;
 }
 

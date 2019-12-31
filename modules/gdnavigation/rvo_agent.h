@@ -35,6 +35,10 @@
 #include "nav_rid.h"
 #include <Agent.h>
 
+/**
+    @author AndreaCatania
+*/
+
 class NavMap;
 
 class RvoAgent : public NavRid {
@@ -48,6 +52,7 @@ class RvoAgent : public NavRid {
     NavMap *map;
     RVO::Agent agent;
     AvoidanceComputedCallback callback;
+    uint map_update_id;
 
 public:
     RvoAgent();
@@ -60,6 +65,8 @@ public:
     RVO::Agent *get_agent() {
         return &agent;
     }
+
+    bool is_map_changed();
 
     void set_callback(ObjectID p_id, const StringName p_method, const Variant p_udata = Variant());
     bool has_callback() const;

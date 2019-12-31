@@ -213,7 +213,7 @@ void register_server_singletons() {
 	Engine::get_singleton()->add_singleton(Engine::Singleton("AudioServer", AudioServer::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("PhysicsServer", PhysicsServer::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("Physics2DServer", Physics2DServer::get_singleton()));
-    Engine::get_singleton()->add_singleton(Engine::Singleton("NavigationServer", NavigationServer::get_singleton()));
+    Engine::get_singleton()->add_singleton(Engine::Singleton("NavigationServer", NavigationServer::get_singleton_mut()));
     Engine::get_singleton()->add_singleton(Engine::Singleton("ARVRServer", ARVRServer::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("CameraServer", CameraServer::get_singleton()));
 }

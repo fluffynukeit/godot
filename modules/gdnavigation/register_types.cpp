@@ -34,6 +34,10 @@
 #include "navigation_mesh_editor_plugin.h"
 #include "servers/navigation_server.h"
 
+/**
+    @author AndreaCatania
+*/
+
 NavigationMeshGenerator *_nav_mesh_generator = NULL;
 
 NavigationServer *new_server() {
