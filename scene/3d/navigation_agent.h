@@ -45,9 +45,10 @@ class NavigationAgent : public Node {
 
     RID agent;
 
+    real_t target_desired_distance;
+    real_t radius;
     real_t half_height;
     bool ignore_y;
-    real_t radius;
     real_t neighbor_dist;
     int max_neighbors;
     real_t time_horizon;
@@ -83,6 +84,16 @@ public:
         return agent;
     }
 
+    void set_target_desired_distance(real_t p_dd);
+    real_t get_target_desired_distance() const {
+        return target_desired_distance;
+    }
+
+    void set_radius(real_t p_radius);
+    real_t get_radius() const {
+        return radius;
+    }
+
     void set_half_height(real_t p_hh);
     real_t get_half_height() const {
         return half_height;
@@ -91,11 +102,6 @@ public:
     void set_ignore_y(bool p_ignore_y);
     bool get_ignore_y() const {
         return ignore_y;
-    }
-
-    void set_radius(real_t p_radius);
-    real_t get_radius() const {
-        return radius;
     }
 
     void set_neighbor_dist(real_t p_dist);

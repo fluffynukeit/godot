@@ -106,7 +106,7 @@ size_t linearProgram3(const std::vector<Plane> &planes, float radius, const Vect
 void linearProgram4(const std::vector<Plane> &planes, size_t beginPlane, float radius, Vector3 &result);
 
 Agent::Agent() :
-        id_(0), maxNeighbors_(0), maxSpeed_(0.0f), neighborDist_(0.0f), radius_(0.0f), timeHorizon_(0.0f) {}
+        id_(0), maxNeighbors_(0), maxSpeed_(0.0f), neighborDist_(0.0f), radius_(0.0f), timeHorizon_(0.0f), ignore_y_(false) {}
 
 void Agent::computeNeighbors(KdTree *kdTree_) {
     agentNeighbors_.clear();
@@ -115,6 +115,7 @@ void Agent::computeNeighbors(KdTree *kdTree_) {
     }
 }
 
+#define ABS(m_v) (((m_v) < 0) ? (-(m_v)) : (m_v))
 void Agent::computeNewVelocity(float timeStep) {
     orcaPlanes_.clear();
     const float invTimeHorizon = 1.0f / timeHorizon_;
@@ -122,10 +123,23 @@ void Agent::computeNewVelocity(float timeStep) {
     /* Create agent ORCA planes. */
     for (size_t i = 0; i < agentNeighbors_.size(); ++i) {
         const Agent *const other = agentNeighbors_[i].second;
-        const Vector3 relativePosition = other->position_ - position_;
-        const Vector3 relativeVelocity = velocity_ - other->velocity_;
-        const float distSq = absSq(relativePosition);
+
+        Vector3 relativePosition = other->position_ - position_;
+        Vector3 relativeVelocity = velocity_ - other->velocity_;
         const float combinedRadius = radius_ + other->radius_;
+
+        // This is a Godot feature that allow the agents to avoid the collision
+        // by moving only on the horizontal plane relative to the player velocity.
+        if (ignore_y_) {
+            // Skip if these are in two different heights
+            if (ABS(relativePosition[1]) > combinedRadius * 2) {
+                continue;
+            }
+            relativePosition[1] = 0;
+            relativeVelocity[1] = 0;
+        }
+
+        const float distSq = absSq(relativePosition);
         const float combinedRadiusSq = sqr(combinedRadius);
 
         Plane plane;
@@ -178,7 +192,7 @@ void Agent::computeNewVelocity(float timeStep) {
 
     if (planeFail < orcaPlanes_.size()) {
         linearProgram4(orcaPlanes_, planeFail, maxSpeed_, newVelocity_);
-	}
+    }
 }
 
 void Agent::insertAgentNeighbor(const Agent *agent, float &rangeSq) {

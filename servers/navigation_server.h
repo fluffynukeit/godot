@@ -155,6 +155,9 @@ public:
     /// Position of the agent in world space.
     virtual void agent_set_position(RID p_agent, Vector3 p_position) const = 0;
 
+    /// Agent ignore the Y axis and avoid collisions by moving only on the horizontal plane
+    virtual void agent_set_ignore_y(RID p_agent, bool p_ignore) const = 0;
+
     /// Returns true if the map got changed the previous frame.
     virtual bool agent_is_map_changed(RID p_agent) const = 0;
 

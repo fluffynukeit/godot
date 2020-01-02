@@ -36,6 +36,9 @@
 
 void NavigationAgent::_bind_methods() {
 
+    ClassDB::bind_method(D_METHOD("set_target_desired_distance", "desired_distance"), &NavigationAgent::set_target_desired_distance);
+    ClassDB::bind_method(D_METHOD("get_target_desired_distance"), &NavigationAgent::get_target_desired_distance);
+
     ClassDB::bind_method(D_METHOD("set_radius", "radius"), &NavigationAgent::set_radius);
     ClassDB::bind_method(D_METHOD("get_radius"), &NavigationAgent::get_radius);
 
@@ -73,6 +76,7 @@ void NavigationAgent::_bind_methods() {
 
     ClassDB::bind_method(D_METHOD("_avoidance_done", "new_velocity"), &NavigationAgent::_avoidance_done);
 
+    ADD_PROPERTY(PropertyInfo(Variant::REAL, "target_desired_distance", PROPERTY_HINT_RANGE, "0.1,100,0.01"), "set_target_desired_distance", "get_target_desired_distance");
     ADD_PROPERTY(PropertyInfo(Variant::REAL, "radius", PROPERTY_HINT_RANGE, "0.1,100,0.01"), "set_radius", "get_radius");
     ADD_PROPERTY(PropertyInfo(Variant::REAL, "half_height", PROPERTY_HINT_RANGE, "0.1,100,0.01"), "set_half_height", "get_half_height");
     ADD_PROPERTY(PropertyInfo(Variant::REAL, "neighbor_dist", PROPERTY_HINT_RANGE, "0.1,10000,0.01"), "set_neighbor_dist", "get_neighbor_dist");
@@ -83,6 +87,7 @@ void NavigationAgent::_bind_methods() {
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "ignore_y"), "set_ignore_y", "get_ignore_y");
 
     ADD_SIGNAL(MethodInfo("path_changed"));
+    ADD_SIGNAL(MethodInfo("target_reached"));
     ADD_SIGNAL(MethodInfo("velocity_computed", PropertyInfo(Variant::VECTOR3, "safe_velocity")));
 }
 
@@ -119,13 +124,16 @@ void NavigationAgent::_notification(int p_what) {
         case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
             PhysicsBody *parent = Object::cast_to<PhysicsBody>(get_parent());
             NavigationServer::get_singleton()->agent_set_position(agent, parent->get_global_transform().origin);
+            if (distance_to_target() < target_desired_distance) {
+                emit_signal("target_reached");
+            }
         } break;
     }
 }
 
 NavigationAgent::NavigationAgent() :
+        target_desired_distance(1.0),
         half_height(1.5),
-        ignore_y(true),
         agent_node(NULL),
         navigation(NULL),
         agent(RID()),
@@ -137,6 +145,7 @@ NavigationAgent::NavigationAgent() :
     set_time_horizon(20.0);
     set_radius(1.0);
     set_max_speed(20.0);
+    set_ignore_y(true);
 }
 
 NavigationAgent::~NavigationAgent() {
@@ -162,17 +171,22 @@ Node *NavigationAgent::get_navigation_node() const {
     return Object::cast_to<Node>(navigation);
 }
 
+void NavigationAgent::set_target_desired_distance(real_t p_dd) {
+    target_desired_distance = p_dd;
+}
+
+void NavigationAgent::set_radius(real_t p_radius) {
+    radius = p_radius;
+    NavigationServer::get_singleton()->agent_set_radius(agent, radius);
+}
+
 void NavigationAgent::set_half_height(real_t p_hh) {
     half_height = p_hh;
 }
 
 void NavigationAgent::set_ignore_y(bool p_ignore_y) {
     ignore_y = p_ignore_y;
-}
-
-void NavigationAgent::set_radius(real_t p_radius) {
-    radius = p_radius;
-    NavigationServer::get_singleton()->agent_set_radius(agent, radius);
+    NavigationServer::get_singleton()->agent_set_ignore_y(agent, ignore_y);
 }
 
 void NavigationAgent::set_neighbor_dist(real_t p_dist) {
@@ -247,7 +261,7 @@ Vector3 NavigationAgent::get_next_location() {
     } else {
         // Check if we can advance the navigation path
         if (nav_path_index + 1 < navigation_path.size()) {
-            if (o.distance_to(navigation_path[nav_path_index] + Vector3(0, half_height, 0)) < radius) {
+            if (o.distance_to(navigation_path[nav_path_index] + Vector3(0, half_height, 0)) < target_desired_distance) {
                 nav_path_index += 1;
             }
         }
@@ -280,12 +294,7 @@ void NavigationAgent::_avoidance_done(Vector3 p_new_velocity) {
     }
     velocity_submitted = false;
 
-    if (ignore_y) {
-        Vector3 vel(p_new_velocity.x, target_velocity.y, p_new_velocity.y);
-        emit_signal("velocity_computed", vel);
-    } else {
-        emit_signal("velocity_computed", p_new_velocity);
-    }
+    emit_signal("velocity_computed", p_new_velocity);
 }
 
 String NavigationAgent::get_configuration_warning() const {

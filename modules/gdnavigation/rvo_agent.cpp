@@ -76,8 +76,7 @@ void RvoAgent::dispatch_callback() {
 
     Variant::CallError responseCallError;
 
-    // TODO Vector2 ?
-    callback.new_velocity = Vector3(agent.newVelocity_.x(), 0.0, agent.newVelocity_.y());
+    callback.new_velocity = Vector3(agent.newVelocity_.x(), agent.newVelocity_.y(), agent.newVelocity_.z());
 
     const Variant *vp[2] = { &callback.new_velocity, &callback.udata };
     int argc = (callback.udata.get_type() == Variant::NIL) ? 1 : 2;

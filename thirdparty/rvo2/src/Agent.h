@@ -109,6 +109,9 @@ public:
     float timeHorizon_;
     std::vector<std::pair<float, const Agent *> > agentNeighbors_;
     std::vector<Plane> orcaPlanes_;
+    /// This is a godot feature that allows the Agent to avoid collision by mooving
+    /// on the horizontal plane.
+    bool ignore_y_;
 
     friend class KdTree;
 };

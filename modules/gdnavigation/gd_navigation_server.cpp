@@ -355,6 +355,13 @@ COMMAND_2(agent_set_position, RID, p_agent, Vector3, p_position) {
     agent->get_agent()->position_ = RVO::Vector3(p_position.x, p_position.y, p_position.z);
 }
 
+COMMAND_2(agent_set_ignore_y, RID, p_agent, bool, p_ignore) {
+    RvoAgent *agent = agent_owner.get(p_agent);
+    ERR_FAIL_COND(agent == NULL);
+
+    agent->get_agent()->ignore_y_ = p_ignore;
+}
+
 bool GdNavigationServer::agent_is_map_changed(RID p_agent) const {
     RvoAgent *agent = agent_owner.get(p_agent);
     ERR_FAIL_COND_V(agent == NULL, false);
