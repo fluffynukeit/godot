@@ -89,7 +89,7 @@ class NavigationPolygonInstance : public Node2D {
 	GDCLASS(NavigationPolygonInstance, Node2D);
 
 	bool enabled;
-	int nav_id;
+    RID region;
 	Navigation2D *navigation;
 	Ref<NavigationPolygon> navpoly;
 
@@ -112,6 +112,7 @@ public:
 	String get_configuration_warning() const;
 
 	NavigationPolygonInstance();
+    ~NavigationPolygonInstance();
 };
 
 #endif // NAVIGATIONPOLYGON_H

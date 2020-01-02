@@ -33,6 +33,7 @@
 #include "core/core_string_names.h"
 #include "core/engine.h"
 #include "navigation_2d.h"
+#include "servers/navigation_2d_server.h"
 
 #include "thirdparty/misc/triangulator.h"
 
@@ -332,18 +333,12 @@ void NavigationPolygonInstance::set_enabled(bool p_enabled) {
 
 	if (!enabled) {
 
-		if (nav_id != -1) {
-			navigation->navpoly_remove(nav_id);
-			nav_id = -1;
-		}
+        Navigation2DServer::get_singleton()->region_set_map(region, RID());
 	} else {
 
 		if (navigation) {
 
-			if (navpoly.is_valid()) {
-
-				nav_id = navigation->navpoly_add(navpoly, get_relative_transform_to_parent(navigation), this);
-			}
+            Navigation2DServer::get_singleton()->region_set_map(region, navigation->get_rid());
 		}
 	}
 
@@ -379,9 +374,9 @@ void NavigationPolygonInstance::_notification(int p_what) {
 				navigation = Object::cast_to<Navigation2D>(c);
 				if (navigation) {
 
-					if (enabled && navpoly.is_valid()) {
+                    if (enabled) {
 
-						nav_id = navigation->navpoly_add(navpoly, get_relative_transform_to_parent(navigation), this);
+                        Navigation2DServer::get_singleton()->region_set_map(region, navigation->get_rid());
 					}
 					break;
 				}
@@ -392,19 +387,14 @@ void NavigationPolygonInstance::_notification(int p_what) {
 		} break;
 		case NOTIFICATION_TRANSFORM_CHANGED: {
 
-			if (navigation && nav_id != -1) {
-				navigation->navpoly_set_transform(nav_id, get_relative_transform_to_parent(navigation));
-			}
+            Navigation2DServer::get_singleton()->region_set_transform(region, get_global_transform());
 
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
 
 			if (navigation) {
 
-				if (nav_id != -1) {
-					navigation->navpoly_remove(nav_id);
-					nav_id = -1;
-				}
+                Navigation2DServer::get_singleton()->region_set_map(region, RID());
 			}
 			navigation = NULL;
 		} break;
@@ -463,23 +453,17 @@ void NavigationPolygonInstance::set_navigation_polygon(const Ref<NavigationPolyg
 		return;
 	}
 
-	if (navigation && nav_id != -1) {
-		navigation->navpoly_remove(nav_id);
-		nav_id = -1;
-	}
-
 	if (navpoly.is_valid()) {
 		navpoly->disconnect(CoreStringNames::get_singleton()->changed, this, "_navpoly_changed");
 	}
+
 	navpoly = p_navpoly;
+    Navigation2DServer::get_singleton()->region_set_navpoly(region, p_navpoly);
+
 	if (navpoly.is_valid()) {
 		navpoly->connect(CoreStringNames::get_singleton()->changed, this, "_navpoly_changed");
 	}
 	_navpoly_changed();
-
-	if (navigation && navpoly.is_valid() && enabled) {
-		nav_id = navigation->navpoly_add(navpoly, get_relative_transform_to_parent(navigation), this);
-	}
 
 	_change_notify("navpoly");
 	update_configuration_warning();
@@ -533,8 +517,13 @@ void NavigationPolygonInstance::_bind_methods() {
 
 NavigationPolygonInstance::NavigationPolygonInstance() {
 
-	navigation = NULL;
-	nav_id = -1;
 	enabled = true;
 	set_notify_transform(true);
+    region = Navigation2DServer::get_singleton()->region_create();
+
+    navigation = NULL;
+}
+
+NavigationPolygonInstance::~NavigationPolygonInstance() {
+    Navigation2DServer::get_singleton()->free(region);
 }

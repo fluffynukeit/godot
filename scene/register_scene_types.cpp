@@ -50,6 +50,8 @@
 #include "scene/2d/mesh_instance_2d.h"
 #include "scene/2d/multimesh_instance_2d.h"
 #include "scene/2d/navigation_2d.h"
+#include "scene/2d/navigation_agent_2d.h"
+#include "scene/2d/navigation_obstacle_2d.h"
 #include "scene/2d/parallax_background.h"
 #include "scene/2d/parallax_layer.h"
 #include "scene/2d/particles_2d.h"
@@ -571,7 +573,9 @@ void register_scene_types() {
 	ClassDB::register_class<CollisionShape2D>();
 	ClassDB::register_class<CollisionPolygon2D>();
 	ClassDB::register_class<RayCast2D>();
-	ClassDB::register_class<VisibilityNotifier2D>();
+    ClassDB::register_class<NavigationAgent2D>();
+    ClassDB::register_class<NavigationObstacle2D>();
+    ClassDB::register_class<VisibilityNotifier2D>();
 	ClassDB::register_class<VisibilityEnabler2D>();
 	ClassDB::register_class<Polygon2D>();
 	ClassDB::register_class<Skeleton2D>();

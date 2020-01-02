@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  circle_shape_2d.cpp                                                  */
+/*  navigation_obstacle.h                                                */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,68 +28,44 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#include "circle_shape_2d.h"
+#ifndef NAVIGATION_OBSTACLE_2D_H
+#define NAVIGATION_OBSTACLE_2D_H
 
-#include "servers/physics_2d_server.h"
-#include "servers/visual_server.h"
+#include "scene/main/node.h"
 
-bool CircleShape2D::_edit_is_selected_on_click(const Point2 &p_point, double p_tolerance) const {
+class Navigation2D;
 
-	return p_point.length() < get_radius() + p_tolerance;
-}
+class NavigationObstacle2D : public Node {
+    GDCLASS(NavigationObstacle2D, Node);
 
-void CircleShape2D::_update_shape() {
+    Navigation2D *navigation;
 
-	Physics2DServer::get_singleton()->shape_set_data(get_rid(), radius);
-	emit_changed();
-}
+    RID agent;
 
-void CircleShape2D::set_radius(real_t p_radius) {
+protected:
+    static void _bind_methods();
+    void _notification(int p_what);
 
-	radius = p_radius;
-	_update_shape();
-}
+public:
+    NavigationObstacle2D();
+    virtual ~NavigationObstacle2D();
 
-real_t CircleShape2D::get_radius() const {
+    void set_navigation(Navigation2D *p_nav);
+    const Navigation2D *get_navigation() const {
+        return navigation;
+    }
 
-	return radius;
-}
+    void set_navigation_node(Node *p_nav);
+    Node *get_navigation_node() const;
 
-void CircleShape2D::_bind_methods() {
+    RID get_rid() const {
+        return agent;
+    }
 
-	ClassDB::bind_method(D_METHOD("set_radius", "radius"), &CircleShape2D::set_radius);
-	ClassDB::bind_method(D_METHOD("get_radius"), &CircleShape2D::get_radius);
+    virtual String get_configuration_warning() const;
 
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "radius", PROPERTY_HINT_RANGE, "0.01,16384,0.5"), "set_radius", "get_radius");
-}
+private:
+    void update_agent_shape();
+};
 
-Rect2 CircleShape2D::get_rect() const {
-	Rect2 rect;
-	rect.position = -Point2(get_radius(), get_radius());
-	rect.size = Point2(get_radius(), get_radius()) * 2.0;
-	return rect;
-}
-
-real_t CircleShape2D::get_enclosing_radius() const {
-    return radius;
-}
-
-void CircleShape2D::draw(const RID &p_to_rid, const Color &p_color) {
-
-	Vector<Vector2> points;
-	for (int i = 0; i < 24; i++) {
-
-		points.push_back(Vector2(Math::cos(i * Math_PI * 2 / 24.0), Math::sin(i * Math_PI * 2 / 24.0)) * get_radius());
-	}
-
-	Vector<Color> col;
-	col.push_back(p_color);
-	VisualServer::get_singleton()->canvas_item_add_polygon(p_to_rid, points, col);
-}
-
-CircleShape2D::CircleShape2D() :
-		Shape2D(Physics2DServer::get_singleton()->circle_shape_create()) {
-
-	radius = 10;
-	_update_shape();
-}
+#endif

@@ -60,7 +60,9 @@ void Navigation::set_edge_connection_margin(float p_edge_connection_margin) {
 
 void Navigation::_bind_methods() {
 
-	ClassDB::bind_method(D_METHOD("get_simple_path", "start", "end", "optimize"), &Navigation::get_simple_path, DEFVAL(true));
+    ClassDB::bind_method(D_METHOD("get_rid"), &Navigation::get_rid);
+
+    ClassDB::bind_method(D_METHOD("get_simple_path", "start", "end", "optimize"), &Navigation::get_simple_path, DEFVAL(true));
 
 	ClassDB::bind_method(D_METHOD("set_up_vector", "up"), &Navigation::set_up_vector);
 	ClassDB::bind_method(D_METHOD("get_up_vector"), &Navigation::get_up_vector);

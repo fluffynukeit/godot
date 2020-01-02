@@ -228,9 +228,10 @@ Vector3 NavigationAgent::get_target_location() const {
 
 Vector3 NavigationAgent::get_next_location() {
 
-    Vector3 o = agent_node->get_global_transform().origin;
+    ERR_FAIL_COND_V(agent_node == NULL, Vector3());
+    ERR_FAIL_COND_V(navigation == NULL, Vector3());
 
-    ERR_FAIL_COND_V(agent_node == NULL, o);
+    Vector3 o = agent_node->get_global_transform().origin;
 
     bool reload_path = false;
 
