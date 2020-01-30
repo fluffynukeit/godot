@@ -30,6 +30,8 @@
 
 #include "scene/main/node.h"
 
+#include "bit_array.h"
+
 #ifndef PLAYERPROTOCOL_H
 #define PLAYERPROTOCOL_H
 
@@ -87,7 +89,7 @@ public:
 private:
 	bool init_phase;
 	Vector<InputDataMeta> input_buffer_info;
-	Vector<uint8_t> cache_input_buffer;
+	BitArray input_buffer;
 
 public:
 	static void _bind_methods();
@@ -141,9 +143,6 @@ private:
 
 	int get_bit_taken(int p_input_data_index) const;
 	void init_input_buffer();
-
-	void store_bits(int p_index, uint64_t p_value, int p_bits);
-	uint64_t read_bits(int p_index, int p_bits) const;
 };
 
 VARIANT_ENUM_CAST(PlayerProtocol::InputDataType);

@@ -31,6 +31,7 @@
 #include "player_protocol.h"
 
 #include "core/io/marshalls.h"
+#include <stdint.h>
 
 void PlayerProtocol::_bind_methods() {
 
@@ -86,7 +87,7 @@ bool PlayerProtocol::input_buffer_set_bool(int p_index, bool p_input) {
 
 	init_input_buffer();
 
-	store_bits(p_index, p_input, 1);
+	input_buffer.store_bits(input_buffer_info[p_index].bit_offset, p_input, 1);
 
 	return p_input;
 }
@@ -96,7 +97,7 @@ bool PlayerProtocol::input_buffer_get_bool(int p_index) const {
 	ERR_FAIL_INDEX_V(p_index, input_buffer_info.size(), false);
 	ERR_FAIL_COND_V(input_buffer_info[p_index].type != INPUT_DATA_TYPE_BOOL, false);
 
-	return read_bits(p_index, 1);
+	return input_buffer.read_bits(input_buffer_info[p_index].bit_offset, 1);
 }
 
 int64_t PlayerProtocol::input_buffer_set_int(int p_index, int64_t p_input) {
@@ -106,11 +107,29 @@ int64_t PlayerProtocol::input_buffer_set_int(int p_index, int64_t p_input) {
 	init_input_buffer();
 
 	const int bits = get_bit_taken(p_index);
-	const uint64_t mask = ~(0xFFFFFFFFFFFFFFFF << bits);
+	int64_t value = p_input;
 
-	store_bits(p_index, p_input, bits);
+	if (bits == 8) {
+		value = MAX(MIN(value, INT8_MAX), INT8_MIN) & UINT8_MAX;
+	} else if (bits == 16) {
+		value = MAX(MIN(value, INT16_MAX), INT16_MIN) & UINT16_MAX;
+	} else if (bits == 32) {
+		value = MAX(MIN(value, INT32_MAX), INT32_MIN) & UINT32_MAX;
+	} else {
+		// Nothing to do here
+	}
 
-	return mask & p_input;
+	input_buffer.store_bits(input_buffer_info[p_index].bit_offset, value, bits);
+
+	if (bits == 8) {
+		return static_cast<int8_t>(value);
+	} else if (bits == 16) {
+		return static_cast<int16_t>(value);
+	} else if (bits == 32) {
+		return static_cast<int32_t>(value);
+	} else {
+		return value;
+	}
 }
 
 int64_t PlayerProtocol::input_buffer_get_int(int p_index) const {
@@ -119,7 +138,17 @@ int64_t PlayerProtocol::input_buffer_get_int(int p_index) const {
 	ERR_FAIL_COND_V(input_buffer_info[p_index].type != INPUT_DATA_TYPE_INT, 0);
 
 	const int bits = get_bit_taken(p_index);
-	return read_bits(p_index, bits);
+	const uint64_t value = input_buffer.read_bits(input_buffer_info[p_index].bit_offset, bits);
+
+	if (bits == 8) {
+		return static_cast<int8_t>(value);
+	} else if (bits == 16) {
+		return static_cast<int16_t>(value);
+	} else if (bits == 32) {
+		return static_cast<int32_t>(value);
+	} else {
+		return static_cast<int64_t>(value);
+	}
 }
 
 real_t PlayerProtocol::input_buffer_set_unit_real(int p_index, real_t p_input) {
@@ -129,10 +158,10 @@ real_t PlayerProtocol::input_buffer_set_unit_real(int p_index, real_t p_input) {
 	init_input_buffer();
 
 	const int bits = get_bit_taken(p_index);
-	const double max_value = ~(0xFFFFFFFFFFFFFFFF << bits);
+	const double max_value = ~(0xFFFFFFFF << bits);
 
 	const uint64_t compressed_val = compress_unit_float(p_input, max_value);
-	store_bits(p_index, compressed_val, bits);
+	input_buffer.store_bits(input_buffer_info[p_index].bit_offset, compressed_val, bits);
 
 	return decompress_unit_float(compressed_val, max_value);
 }
@@ -143,9 +172,9 @@ real_t PlayerProtocol::input_buffer_get_unit_real(int p_index) const {
 	ERR_FAIL_COND_V(input_buffer_info[p_index].type != INPUT_DATA_TYPE_UNIT_REAL, 0);
 
 	const int bits = get_bit_taken(p_index);
-	const double max_value = ~(0xFFFFFFFFFFFFFFFF << bits);
+	const double max_value = ~(0xFFFFFFFF << bits);
 
-	const uint64_t compressed_val = read_bits(p_index, bits);
+	const uint64_t compressed_val = input_buffer.read_bits(input_buffer_info[p_index].bit_offset, bits);
 
 	return decompress_unit_float(compressed_val, max_value);
 }
@@ -159,11 +188,11 @@ Vector2 PlayerProtocol::input_buffer_set_normalized_vector(int p_index, Vector2 
 	const double angle = p_input.angle();
 
 	const int bits = get_bit_taken(p_index);
-	const double max_value = ~(0xFFFFFFFFFFFFFFFF << bits);
+	const double max_value = ~(0xFFFFFFFF << bits);
 
 	const uint64_t compressed_angle = compress_unit_float((angle + Math_PI) / Math_TAU, max_value);
 
-	store_bits(p_index, compressed_angle, bits);
+	input_buffer.store_bits(input_buffer_info[p_index].bit_offset, compressed_angle, bits);
 
 	const real_t decompressed_angle = (decompress_unit_float(compressed_angle, max_value) * Math_TAU) - Math_PI;
 	const real_t x = Math::cos(decompressed_angle);
@@ -178,9 +207,9 @@ Vector2 PlayerProtocol::input_buffer_get_normalized_vector(int p_index) const {
 	ERR_FAIL_COND_V(input_buffer_info[p_index].type != INPUT_DATA_TYPE_NORMALIZED_VECTOR2, Vector2());
 
 	const int bits = get_bit_taken(p_index);
-	const double max_value = ~(0xFFFFFFFFFFFFFFFF << bits);
+	const double max_value = ~(0xFFFFFFFF << bits);
 
-	const uint64_t compressed_angle = read_bits(p_index, bits);
+	const uint64_t compressed_angle = input_buffer.read_bits(input_buffer_info[p_index].bit_offset, bits);
 
 	const real_t decompressed_angle = (decompress_unit_float(compressed_angle, max_value) * Math_TAU) - Math_PI;
 	const real_t x = Math::cos(decompressed_angle);
@@ -264,7 +293,6 @@ int PlayerProtocol::get_bit_taken(int p_input_data_index) const {
 void PlayerProtocol::init_input_buffer() {
 	if (!init_phase)
 		return;
-
 	init_phase = false;
 
 	int bits = 0;
@@ -273,64 +301,5 @@ void PlayerProtocol::init_input_buffer() {
 		bits += get_bit_taken(i);
 	}
 
-	int min_size = Math::ceil((static_cast<float>(bits)) / 8);
-	cache_input_buffer.resize(min_size);
-}
-
-void PlayerProtocol::store_bits(int p_index, uint64_t p_value, int p_bits) {
-
-	int bits = p_bits;
-	uint64_t val = p_value;
-
-	int buffer_bit_offset = input_buffer_info[p_index].bit_offset;
-
-	while (bits > 0) {
-		const int bits_to_write = MIN(bits, 8 - buffer_bit_offset % 8);
-		const int bits_to_jump = buffer_bit_offset % 8;
-		const int bits_to_skip = 8 - (bits_to_write + bits_to_jump);
-		const int byte_offset = Math::floor(static_cast<float>(buffer_bit_offset) / 8.0);
-
-		// Clear the bits that we have to write
-		//const uint8_t byte_clear = ~(((0xFF >> bits_to_jump) << (bits_to_jump + bits_to_skip)) >> bits_to_skip);
-		uint8_t byte_clear = 0xFF >> bits_to_jump;
-		byte_clear = byte_clear << (bits_to_jump + bits_to_skip);
-		byte_clear = ~(byte_clear >> bits_to_skip);
-		cache_input_buffer.write[byte_offset] &= byte_clear;
-
-		// Now we can continue to write bits
-		cache_input_buffer.write[byte_offset] |= (val & 0xFF) << bits_to_jump;
-
-		bits -= bits_to_write;
-		buffer_bit_offset += bits_to_write;
-
-		val >>= bits_to_write;
-	}
-
-	CRASH_COND_MSG(val != 0, "This is a bug, please open an issue");
-}
-
-uint64_t PlayerProtocol::read_bits(int p_index, int p_bits) const {
-	int bits = p_bits;
-	uint64_t val = 0;
-
-	int buffer_bit_offset = input_buffer_info[p_index].bit_offset;
-	int val_bits_to_jump = 0;
-	while (bits > 0) {
-		const int bits_to_read = MIN(bits, 8 - buffer_bit_offset % 8);
-		const int bits_to_jump = buffer_bit_offset % 8;
-		const int bits_to_skip = 8 - (bits_to_read + bits_to_jump);
-		const int byte_offset = Math::floor(static_cast<float>(buffer_bit_offset) / 8.0);
-
-		uint8_t byte_mask = 0xFF >> bits_to_jump;
-		byte_mask = byte_mask << (bits_to_skip + bits_to_jump);
-		byte_mask = byte_mask >> bits_to_skip;
-		const uint64_t byte_val = static_cast<uint64_t>((cache_input_buffer[byte_offset] & byte_mask) >> bits_to_jump);
-		val |= byte_val << val_bits_to_jump;
-
-		bits -= bits_to_read;
-		buffer_bit_offset += bits_to_read;
-		val_bits_to_jump += bits_to_read;
-	}
-
-	return val;
+	input_buffer.resize(bits);
 }
