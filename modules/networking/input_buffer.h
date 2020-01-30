@@ -32,18 +32,16 @@
 
 #include "bit_array.h"
 
-#ifndef PLAYERPROTOCOL_H
-#define PLAYERPROTOCOL_H
+#ifndef INPUT_BUFFER_H
+#define INPUT_BUFFER_H
 
-class PlayerProtocol : public Node {
-	GDCLASS(PlayerProtocol, Node);
-
+class InputBuffer {
 public:
-	enum InputDataType {
-		INPUT_DATA_TYPE_BOOL,
-		INPUT_DATA_TYPE_INT,
-		INPUT_DATA_TYPE_UNIT_REAL,
-		INPUT_DATA_TYPE_NORMALIZED_VECTOR2
+	enum DataType {
+		DATA_TYPE_BOOL,
+		DATA_TYPE_INT,
+		DATA_TYPE_UNIT_REAL,
+		DATA_TYPE_NORMALIZED_VECTOR2
 	};
 
 	/// Compression level for the stored input data.
@@ -81,50 +79,48 @@ public:
 	};
 
 	struct InputDataMeta {
-		InputDataType type;
+		DataType type;
 		CompressionLevel compression;
 		int bit_offset;
 	};
 
 private:
 	bool init_phase;
-	Vector<InputDataMeta> input_buffer_info;
-	BitArray input_buffer;
+	Vector<InputDataMeta> buffer_info;
+	BitArray buffer;
 
 public:
-	static void _bind_methods();
+	InputBuffer();
 
-public:
-	PlayerProtocol();
-
-	int input_buffer_add_data_type(InputDataType p_type, CompressionLevel p_compression = COMPRESSION_LEVEL_2);
-	void input_buffer_ready();
+	int add_data_type(DataType p_type, CompressionLevel p_compression);
+	void init_buffer();
 
 	/// Set bool
 	/// Returns the same data.
-	bool input_buffer_set_bool(int p_index, bool p_input);
+	bool set_bool(int p_index, bool p_input);
 
 	/// Get boolean value
-	bool input_buffer_get_bool(int p_index) const;
+	bool get_bool(int p_index) const;
 
 	/// Set integer
 	///
 	/// Returns the stored values, you can store up to the max value for the
 	/// compression.
-	int64_t input_buffer_set_int(int p_index, int64_t p_input);
+	int64_t set_int(int p_index, int64_t p_input);
 
 	/// Get integer
-	int64_t input_buffer_get_int(int p_index) const;
+	int64_t get_int(int p_index) const;
 
 	/// Set the unit real.
-	/// **Note:** set not unitary values produces unexpected behaviour.
+	///
+	/// **Note:** Not unitary values lead to unexpected behaviour.
 	///
 	/// Returns the compressed value so both the client and the peers can use
 	/// the same data.
-	real_t input_buffer_set_unit_real(int p_index, real_t p_input);
+	real_t set_unit_real(int p_index, real_t p_input);
 
 	/// Returns the unit real
-	real_t input_buffer_get_unit_real(int p_index) const;
+	real_t get_unit_real(int p_index) const;
 
 	/// Set a normalized vector.
 	/// Note: The compression algorithm rely on the fact that this is a
@@ -132,20 +128,16 @@ public:
 	///
 	/// Returns the decompressed vector so both the client and the peers can use
 	/// the same data.
-	Vector2 input_buffer_set_normalized_vector(int p_index, Vector2 p_input);
+	Vector2 set_normalized_vector(int p_index, Vector2 p_input);
 
 	/// Get the normalized vector from the input buffer.
-	Vector2 input_buffer_get_normalized_vector(int p_index) const;
+	Vector2 get_normalized_vector(int p_index) const;
 
 private:
 	static uint64_t compress_unit_float(double p_value, double p_scale_factor);
 	static double decompress_unit_float(uint64_t p_value, double p_scale_factor);
 
 	int get_bit_taken(int p_input_data_index) const;
-	void init_input_buffer();
 };
 
-VARIANT_ENUM_CAST(PlayerProtocol::InputDataType);
-VARIANT_ENUM_CAST(PlayerProtocol::CompressionLevel);
-
-#endif // PLAYERPROTOCOL_H
+#endif

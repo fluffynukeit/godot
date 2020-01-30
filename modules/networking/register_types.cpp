@@ -30,11 +30,11 @@
 
 #include "register_types.h"
 
-#include "player_protocol.h"
+#include "player_net_controller.h"
 
 void register_networking_types() {
 
-	ClassDB::register_class<PlayerProtocol>();
+	ClassDB::register_class<PlayerNetController>();
 }
 
 void unregister_networking_types() {
