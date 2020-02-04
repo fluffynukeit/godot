@@ -53,6 +53,9 @@ void PlayerNetController::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_player_node_path", "player_node_path"), &PlayerNetController::set_player_node_path);
 	ClassDB::bind_method(D_METHOD("get_player_node_path"), &PlayerNetController::get_player_node_path);
 
+	ClassDB::bind_method(D_METHOD("set_max_redundant_inputs", "max_redundand_inputs"), &PlayerNetController::set_max_redundant_inputs);
+	ClassDB::bind_method(D_METHOD("get_max_redundant_inputs"), &PlayerNetController::get_max_redundant_inputs);
+
 	ClassDB::bind_method(D_METHOD("input_buffer_add_data_type", "type", "compression"), &PlayerNetController::input_buffer_add_data_type, DEFVAL(InputsBuffer::COMPRESSION_LEVEL_2));
 	ClassDB::bind_method(D_METHOD("input_buffer_ready"), &PlayerNetController::input_buffer_ready);
 
@@ -69,7 +72,7 @@ void PlayerNetController::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("input_buffer_get_normalized_vector", "index"), &PlayerNetController::input_buffer_get_normalized_vector);
 
 	// Rpc to server
-	ClassDB::bind_method(D_METHOD("rpc_server_test"), &PlayerNetController::rpc_server_test);
+	ClassDB::bind_method(D_METHOD("rpc_server_send_frames_snapshot"), &PlayerNetController::rpc_server_send_frames_snapshot);
 
 	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "player_node_path"), "set_player_node_path", "get_player_node_path");
 
@@ -80,6 +83,7 @@ void PlayerNetController::_bind_methods() {
 
 PlayerNetController::PlayerNetController() :
 		player_node_path(NodePath("../")),
+		max_redundant_inputs(10),
 		controller(NULL),
 		cached_player(NULL) {
 
@@ -97,6 +101,14 @@ NodePath PlayerNetController::get_player_node_path() const {
 
 Spatial *PlayerNetController::get_player() const {
 	return cached_player;
+}
+
+void PlayerNetController::set_max_redundant_inputs(int p_max) {
+	max_redundant_inputs = p_max;
+}
+
+int PlayerNetController::get_max_redundant_inputs() const {
+	return max_redundant_inputs;
 }
 
 int PlayerNetController::input_buffer_add_data_type(InputDataType p_type, InputCompressionLevel p_compression) {
@@ -139,7 +151,7 @@ Vector2 PlayerNetController::input_buffer_get_normalized_vector(int p_index) con
 	return input_buffer.get_normalized_vector(p_index);
 }
 
-void PlayerNetController::rpc_server_test() {
+void PlayerNetController::rpc_server_send_frames_snapshot() {
 	ERR_FAIL_COND(get_tree()->is_network_server() != true);
 
 	// TODO Propagates to the other puppets?
@@ -196,8 +208,6 @@ void ServerController::receive_snapshots() {
 MasterController::MasterController() :
 		time_bank(0.0),
 		tick_additional_speed(0.0) {
-
-	processed_frames = std::deque<FramesSnapshot>();
 }
 
 void MasterController::physics_process(real_t p_delta) {
@@ -256,7 +266,13 @@ real_t MasterController::get_pretended_delta() const {
 }
 
 void MasterController::send_frame_snapshots_to_server() const {
-	node->rpc_unreliable_id(0, "rpc_server_test");
+	int snapshots_count = MAX(processed_frames.size(), node->get_max_redundant_inputs());
+
+	// Compose the packets
+	for (int i = 0; i < snapshots_count; i += 1) {
+	}
+
+	node->rpc_unreliable_id(0, "rpc_server_send_frames_snapshot");
 }
 
 void PuppetController::physics_process(real_t p_delta) {

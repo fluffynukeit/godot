@@ -66,7 +66,14 @@ public:
 	};
 
 private:
+	/// The controlled player node path
 	NodePath player_node_path;
+
+	/// Amount of time an inputs is re-sent to each node.
+	/// Resend inputs is necessary because the packets may be lost since they
+	/// are sent in an unreliable way.
+	int max_redundant_inputs;
+
 	Controller *controller;
 	InputsBuffer input_buffer;
 
@@ -83,6 +90,9 @@ public:
 
 	// Returns the valid pointer of the player.
 	Spatial *get_player() const;
+
+	void set_max_redundant_inputs(int p_max);
+	int get_max_redundant_inputs() const;
 
 	int input_buffer_add_data_type(InputDataType p_type, InputCompressionLevel p_compression = INPUT_COMPRESSION_LEVEL_2);
 	void input_buffer_ready();
@@ -131,7 +141,7 @@ public:
 
 public:
 	// On server rpc functions.
-	void rpc_server_test();
+	void rpc_server_send_frames_snapshot();
 
 private:
 	virtual void _notification(int p_what);
@@ -156,6 +166,8 @@ struct FramesSnapshot {
 };
 
 struct ServerController : public Controller {
+	// TODO Use deque here?
+
 	virtual void physics_process(real_t p_delta);
 	virtual void receive_snapshots();
 };
@@ -164,7 +176,7 @@ struct MasterController : public Controller {
 	real_t time_bank;
 	real_t tick_additional_speed;
 	LocalIdGenerator id_generator;
-	std::deque<FramesSnapshot> processed_frames;
+	Vector<FramesSnapshot> processed_frames;
 
 	MasterController();
 
@@ -179,6 +191,8 @@ struct MasterController : public Controller {
 };
 
 struct PuppetController : public Controller {
+	// TODO Use deque here?
+
 	virtual void physics_process(real_t p_delta);
 	virtual void receive_snapshots();
 };
