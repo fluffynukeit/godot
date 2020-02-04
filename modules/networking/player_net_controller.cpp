@@ -32,6 +32,7 @@
 
 #include "core/engine.h"
 #include "core/io/marshalls.h"
+#include "unsync_id_generator.h"
 #include <stdint.h>
 
 // TODO make sure 200 is correct
@@ -149,12 +150,11 @@ void PlayerNetController::_notification(int p_what) {
 					emit_signal("master_physics_process", delta, input_buffer_free);
 					if (input_buffer_free) {
 						// TODO here we can send the inputs to the server
-						const uint64_t input_index = input_counter;
+						//const uint64_t input_index = input_counter;
 						input_counter += 1;
-					// TODO I'm arrived here: This is an algorithm to avoid using
-					// 32bit int. This algorithm let me use a ring ID on client
-					// that on remote is able to keep counting.
-					https: //play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=4740611b06e078a91e7345d6a6e21171
+						// TODO I'm arrived here: This is an algorithm to avoid using
+						// 32bit int. This algorithm let me use a ring ID on client
+						// that on remote is able to keep counting.
 					}
 				}
 
@@ -166,6 +166,30 @@ void PlayerNetController::_notification(int p_what) {
 			}
 		} break;
 		case NOTIFICATION_ENTER_TREE:
+			// TODO just a test for the unsync ids.
+			LocalIdGenerator lig;
+			RemoteIdReceptor rir;
+
+			for (int i = 0; i < 140000; i += 1) {
+				GeneratedData gd = lig.next();
+
+				bool skip_receive = Math::random(0.0, 1.0) > 0.5;
+				if (!skip_receive) {
+					DecompressionResult s = rir.receive(gd.compressed_id);
+					if (s.success) {
+						print_line("Success: " + itos(gd.id) + " => " + itos(gd.compressed_id) + " --> " + itos(s.id));
+					} else {
+						print_line("Failed.");
+					}
+					//s = rir.receive((gd.compressed_id + 100) % 65535);
+					//if (s.success) {
+					//	print_line("Success: " + itos(gd.id) + " => " + itos((gd.compressed_id + 100) % 65535) + " --> " + itos(s.id));
+					//} else {
+					//	print_line("Failed.");
+					//}
+				}
+			}
+
 			if (Engine::get_singleton()->is_editor_hint())
 				return;
 
