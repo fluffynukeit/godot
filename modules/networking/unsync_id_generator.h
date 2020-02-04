@@ -89,4 +89,6 @@ public:
 	DecompressionResult receive(CompressedId p_local_id);
 };
 
+// TODO write a unit test would be awesome!!!!!
+
 #endif

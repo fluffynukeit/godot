@@ -30,28 +30,34 @@
 
 #include "scene/main/node.h"
 
+#include "core/math/transform.h"
+#include "core/node_path.h"
 #include "input_buffer.h"
+#include "unsync_id_generator.h"
 #include <deque>
 
 #ifndef PLAYERPNETCONTROLLER_H
 #define PLAYERPNETCONTROLLER_H
+
+struct Controller;
+class Spatial;
 
 class PlayerNetController : public Node {
 	GDCLASS(PlayerNetController, Node);
 
 public:
 	enum InputDataType {
-		INPUT_DATA_TYPE_BOOL = InputBuffer::DATA_TYPE_BOOL,
-		INPUT_DATA_TYPE_INT = InputBuffer::DATA_TYPE_INT,
-		INPUT_DATA_TYPE_UNIT_REAL = InputBuffer::DATA_TYPE_UNIT_REAL,
-		INPUT_DATA_TYPE_NORMALIZED_VECTOR2 = InputBuffer::DATA_TYPE_NORMALIZED_VECTOR2
+		INPUT_DATA_TYPE_BOOL = InputsBuffer::DATA_TYPE_BOOL,
+		INPUT_DATA_TYPE_INT = InputsBuffer::DATA_TYPE_INT,
+		INPUT_DATA_TYPE_UNIT_REAL = InputsBuffer::DATA_TYPE_UNIT_REAL,
+		INPUT_DATA_TYPE_NORMALIZED_VECTOR2 = InputsBuffer::DATA_TYPE_NORMALIZED_VECTOR2
 	};
 
 	enum InputCompressionLevel {
-		INPUT_COMPRESSION_LEVEL_0 = InputBuffer::COMPRESSION_LEVEL_0,
-		INPUT_COMPRESSION_LEVEL_1 = InputBuffer::COMPRESSION_LEVEL_1,
-		INPUT_COMPRESSION_LEVEL_2 = InputBuffer::COMPRESSION_LEVEL_2,
-		INPUT_COMPRESSION_LEVEL_3 = InputBuffer::COMPRESSION_LEVEL_3
+		INPUT_COMPRESSION_LEVEL_0 = InputsBuffer::COMPRESSION_LEVEL_0,
+		INPUT_COMPRESSION_LEVEL_1 = InputsBuffer::COMPRESSION_LEVEL_1,
+		INPUT_COMPRESSION_LEVEL_2 = InputsBuffer::COMPRESSION_LEVEL_2,
+		INPUT_COMPRESSION_LEVEL_3 = InputsBuffer::COMPRESSION_LEVEL_3
 	};
 
 	struct InputData {
@@ -60,20 +66,23 @@ public:
 	};
 
 private:
-	uint64_t input_counter;
-	InputBuffer input_buffer;
-	std::deque<InputData> a;
+	NodePath player_node_path;
+	Controller *controller;
+	InputsBuffer input_buffer;
 
-	// Used by the `Master` to control the tick speed.
-	real_t time_bank;
-	// Used by the `Master` to control the tick speed.
-	real_t tick_additional_speed;
+	Spatial *cached_player;
 
 public:
 	static void _bind_methods();
 
 public:
 	PlayerNetController();
+
+	void set_player_node_path(NodePath p_path);
+	NodePath get_player_node_path() const;
+
+	// Returns the valid pointer of the player.
+	Spatial *get_player() const;
 
 	int input_buffer_add_data_type(InputDataType p_type, InputCompressionLevel p_compression = INPUT_COMPRESSION_LEVEL_2);
 	void input_buffer_ready();
@@ -116,13 +125,61 @@ public:
 	/// Get the normalized vector from the input buffer.
 	Vector2 input_buffer_get_normalized_vector(int p_index) const;
 
+	const InputsBuffer &get_inputs_buffer() const {
+		return input_buffer;
+	}
+
+public:
+	// On server rpc functions.
+	void rpc_server_test();
+
 private:
 	virtual void _notification(int p_what);
-
-	real_t get_pretended_delta() const;
 };
 
 VARIANT_ENUM_CAST(PlayerNetController::InputDataType)
 VARIANT_ENUM_CAST(PlayerNetController::InputCompressionLevel)
 
+struct Controller {
+	PlayerNetController *node;
+
+	virtual ~Controller() {}
+
+	virtual void physics_process(real_t p_delta) = 0;
+	virtual void receive_snapshots() = 0;
+};
+
+struct FramesSnapshot {
+	uint64_t id;
+	BitArray inputs_buffer;
+	Transform character_transform;
+};
+
+struct ServerController : public Controller {
+	virtual void physics_process(real_t p_delta);
+	virtual void receive_snapshots();
+};
+
+struct MasterController : public Controller {
+	real_t time_bank;
+	real_t tick_additional_speed;
+	LocalIdGenerator id_generator;
+	std::deque<FramesSnapshot> processed_frames;
+
+	MasterController();
+
+	virtual void physics_process(real_t p_delta);
+	virtual void receive_snapshots();
+
+	real_t get_pretended_delta() const;
+
+	/// Sends an unreliable packet to the server, containing a packed array of
+	/// frame snapshots.
+	void send_frame_snapshots_to_server() const;
+};
+
+struct PuppetController : public Controller {
+	virtual void physics_process(real_t p_delta);
+	virtual void receive_snapshots();
+};
 #endif

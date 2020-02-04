@@ -35,7 +35,7 @@
 #ifndef INPUT_BUFFER_H
 #define INPUT_BUFFER_H
 
-class InputBuffer {
+class InputsBuffer {
 public:
 	enum DataType {
 		DATA_TYPE_BOOL,
@@ -90,7 +90,7 @@ private:
 	BitArray buffer;
 
 public:
-	InputBuffer();
+	InputsBuffer();
 
 	int add_data_type(DataType p_type, CompressionLevel p_compression);
 	void init_buffer();
@@ -132,6 +132,10 @@ public:
 
 	/// Get the normalized vector from the input buffer.
 	Vector2 get_normalized_vector(int p_index) const;
+
+	BitArray get_buffer() const {
+		return buffer;
+	}
 
 private:
 	static uint64_t compress_unit_float(double p_value, double p_scale_factor);

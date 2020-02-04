@@ -33,10 +33,10 @@
 #include "core/io/marshalls.h"
 #include <stdint.h>
 
-InputBuffer::InputBuffer() :
+InputsBuffer::InputsBuffer() :
 		init_phase(true) {}
 
-int InputBuffer::add_data_type(DataType p_type, CompressionLevel p_compression) {
+int InputsBuffer::add_data_type(DataType p_type, CompressionLevel p_compression) {
 	ERR_FAIL_COND_V(init_phase == false, -1);
 
 	const int index = buffer_info.size();
@@ -49,7 +49,7 @@ int InputBuffer::add_data_type(DataType p_type, CompressionLevel p_compression) 
 	return index;
 }
 
-void InputBuffer::init_buffer() {
+void InputsBuffer::init_buffer() {
 	if (!init_phase)
 		return;
 	init_phase = false;
@@ -63,7 +63,7 @@ void InputBuffer::init_buffer() {
 	buffer.resize(bits);
 }
 
-bool InputBuffer::set_bool(int p_index, bool p_input) {
+bool InputsBuffer::set_bool(int p_index, bool p_input) {
 	ERR_FAIL_INDEX_V(p_index, buffer_info.size(), false);
 	ERR_FAIL_COND_V(buffer_info[p_index].type != DATA_TYPE_BOOL, false);
 
@@ -74,7 +74,7 @@ bool InputBuffer::set_bool(int p_index, bool p_input) {
 	return p_input;
 }
 
-bool InputBuffer::get_bool(int p_index) const {
+bool InputsBuffer::get_bool(int p_index) const {
 	ERR_FAIL_COND_V(init_phase != false, false);
 	ERR_FAIL_INDEX_V(p_index, buffer_info.size(), false);
 	ERR_FAIL_COND_V(buffer_info[p_index].type != DATA_TYPE_BOOL, false);
@@ -82,7 +82,7 @@ bool InputBuffer::get_bool(int p_index) const {
 	return buffer.read_bits(buffer_info[p_index].bit_offset, 1);
 }
 
-int64_t InputBuffer::set_int(int p_index, int64_t p_input) {
+int64_t InputsBuffer::set_int(int p_index, int64_t p_input) {
 	ERR_FAIL_INDEX_V(p_index, buffer_info.size(), 0);
 	ERR_FAIL_COND_V(buffer_info[p_index].type != DATA_TYPE_INT, 0);
 
@@ -114,7 +114,7 @@ int64_t InputBuffer::set_int(int p_index, int64_t p_input) {
 	}
 }
 
-int64_t InputBuffer::get_int(int p_index) const {
+int64_t InputsBuffer::get_int(int p_index) const {
 	ERR_FAIL_COND_V(init_phase != false, 0);
 	ERR_FAIL_INDEX_V(p_index, buffer_info.size(), 0);
 	ERR_FAIL_COND_V(buffer_info[p_index].type != DATA_TYPE_INT, 0);
@@ -133,7 +133,7 @@ int64_t InputBuffer::get_int(int p_index) const {
 	}
 }
 
-real_t InputBuffer::set_unit_real(int p_index, real_t p_input) {
+real_t InputsBuffer::set_unit_real(int p_index, real_t p_input) {
 	ERR_FAIL_INDEX_V(p_index, buffer_info.size(), 0);
 	ERR_FAIL_COND_V(buffer_info[p_index].type != DATA_TYPE_UNIT_REAL, 0);
 
@@ -148,7 +148,7 @@ real_t InputBuffer::set_unit_real(int p_index, real_t p_input) {
 	return decompress_unit_float(compressed_val, max_value);
 }
 
-real_t InputBuffer::get_unit_real(int p_index) const {
+real_t InputsBuffer::get_unit_real(int p_index) const {
 	ERR_FAIL_COND_V(init_phase != false, 0);
 	ERR_FAIL_INDEX_V(p_index, buffer_info.size(), 0);
 	ERR_FAIL_COND_V(buffer_info[p_index].type != DATA_TYPE_UNIT_REAL, 0);
@@ -161,7 +161,7 @@ real_t InputBuffer::get_unit_real(int p_index) const {
 	return decompress_unit_float(compressed_val, max_value);
 }
 
-Vector2 InputBuffer::set_normalized_vector(int p_index, Vector2 p_input) {
+Vector2 InputsBuffer::set_normalized_vector(int p_index, Vector2 p_input) {
 	ERR_FAIL_INDEX_V(p_index, buffer_info.size(), Vector2());
 	ERR_FAIL_COND_V(buffer_info[p_index].type != DATA_TYPE_NORMALIZED_VECTOR2, Vector2());
 
@@ -186,7 +186,7 @@ Vector2 InputBuffer::set_normalized_vector(int p_index, Vector2 p_input) {
 	return Vector2(x, y) * is_not_zero;
 }
 
-Vector2 InputBuffer::get_normalized_vector(int p_index) const {
+Vector2 InputsBuffer::get_normalized_vector(int p_index) const {
 	ERR_FAIL_COND_V(init_phase != false, Vector2());
 	ERR_FAIL_INDEX_V(p_index, buffer_info.size(), Vector2());
 	ERR_FAIL_COND_V(buffer_info[p_index].type != DATA_TYPE_NORMALIZED_VECTOR2, Vector2());
@@ -205,15 +205,15 @@ Vector2 InputBuffer::get_normalized_vector(int p_index) const {
 	return Vector2(x, y) * is_not_zero;
 }
 
-uint64_t InputBuffer::compress_unit_float(double p_value, double p_scale_factor) {
+uint64_t InputsBuffer::compress_unit_float(double p_value, double p_scale_factor) {
 	return MIN(p_value * p_scale_factor, p_scale_factor);
 }
 
-double InputBuffer::decompress_unit_float(uint64_t p_value, double p_scale_factor) {
+double InputsBuffer::decompress_unit_float(uint64_t p_value, double p_scale_factor) {
 	return static_cast<double>(p_value) / p_scale_factor;
 }
 
-int InputBuffer::get_bit_taken(int p_input_data_index) const {
+int InputsBuffer::get_bit_taken(int p_input_data_index) const {
 	switch (buffer_info[p_input_data_index].type) {
 		case DATA_TYPE_BOOL:
 			// No matter what, 1 bit.
