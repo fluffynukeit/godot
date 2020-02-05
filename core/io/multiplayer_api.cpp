@@ -195,7 +195,8 @@ void MultiplayerAPI::_process_packet(int p_from, const uint8_t *p_packet, int p_
 		} break;
 
 		case NETWORK_COMMAND_REMOTE_CALL:
-		case NETWORK_COMMAND_REMOTE_SET: {
+		case NETWORK_COMMAND_REMOTE_SET:
+		case NETWORK_COMMAND_SEMI_RAW: {
 
 			ERR_FAIL_COND_MSG(p_packet_len < 6, "Invalid packet received. Size too small.");
 
@@ -216,16 +217,16 @@ void MultiplayerAPI::_process_packet(int p_from, const uint8_t *p_packet, int p_
 			StringName name = String::utf8((const char *)&p_packet[5]);
 
 			if (packet_type == NETWORK_COMMAND_REMOTE_CALL) {
-
 				_process_rpc(node, name, p_from, p_packet, p_packet_len, len_end + 1);
-
-			} else {
+			} else if (packet_type == NETWORK_COMMAND_REMOTE_SET) {
 
 				_process_rset(node, name, p_from, p_packet, p_packet_len, len_end + 1);
+			} else {
+				// Raw
+				_process_semi_raw(node, name, p_from, p_packet, p_packet_len, len_end + 1);
 			}
 
 		} break;
-
 		case NETWORK_COMMAND_RAW: {
 
 			_process_raw(p_from, p_packet, p_packet_len);
@@ -807,6 +808,131 @@ void MultiplayerAPI::_process_raw(int p_from, const uint8_t *p_packet, int p_pac
 		memcpy(&w[0], &p_packet[1], len);
 	}
 	emit_signal("network_peer_packet", p_from, out);
+}
+
+void MultiplayerAPI::send_bytes_to(Node *p_from, int p_peer_id, bool p_unreliable, const StringName &p_method, PoolVector<uint8_t> p_data) {
+	ERR_FAIL_COND_MSG(p_data.size() < 1, "Trying to send an empty raw packet.");
+	ERR_FAIL_COND_MSG(!network_peer.is_valid(), "Trying to send a raw packet while no network peer is active.");
+	ERR_FAIL_COND_MSG(network_peer->get_connection_status() != NetworkedMultiplayerPeer::CONNECTION_CONNECTED, "Trying to send a raw packet via a network peer which is not connected.");
+
+	if (p_peer_id != 0 && !connected_peers.has(ABS(p_peer_id))) {
+		ERR_FAIL_COND_MSG(p_peer_id == network_peer->get_unique_id(), "Attempt to remote call/set yourself! unique ID: " + itos(network_peer->get_unique_id()) + ".");
+
+		ERR_FAIL_MSG("Attempt to remote call unexisting ID: " + itos(p_peer_id) + ".");
+	}
+
+	NodePath from_path = (root_node->get_path()).rel_path_to(p_from->get_path());
+	ERR_FAIL_COND_MSG(from_path.is_empty(), "Unable to send RPC. Relative path is empty. THIS IS LIKELY A BUG IN THE ENGINE!");
+
+	// See if the path is cached.
+	PathSentCache *psc = path_send_cache.getptr(from_path);
+	if (!psc) {
+		// Path is not cached, create.
+		path_send_cache[from_path] = PathSentCache();
+		psc = path_send_cache.getptr(from_path);
+		psc->id = last_send_cache_id++;
+	}
+
+	int ofs = 0;
+
+#define MAKE_ROOM(m_amount) \
+	if (packet_cache.size() < m_amount) packet_cache.resize(m_amount);
+
+	// Encode type.
+	MAKE_ROOM(1);
+	packet_cache.write[0] = NETWORK_COMMAND_SEMI_RAW;
+	ofs += 1;
+
+	// Encode ID.
+	MAKE_ROOM(ofs + 4);
+	encode_uint32(psc->id, &(packet_cache.write[ofs]));
+	ofs += 4;
+
+	// Encode function name.
+	CharString name = String(p_method).utf8();
+	int len = encode_cstring(name.get_data(), NULL);
+	MAKE_ROOM(ofs + len);
+	encode_cstring(name.get_data(), &(packet_cache.write[ofs]));
+	ofs += len;
+
+	MAKE_ROOM(ofs + p_data.size());
+	{
+		PoolVector<uint8_t>::Read r = p_data.read();
+		copymem(&(packet_cache.write[ofs]), r.ptr(), sizeof(uint8_t) * p_data.size());
+	}
+	ofs += p_data.size();
+
+	// See if all peers have cached path (is so, call can be fast).
+	bool has_all_peers = _send_confirm_path(from_path, psc, p_peer_id);
+
+	// Take chance and set transfer mode, since all send methods will use it.
+	network_peer->set_transfer_mode(p_unreliable ? NetworkedMultiplayerPeer::TRANSFER_MODE_UNRELIABLE : NetworkedMultiplayerPeer::TRANSFER_MODE_RELIABLE);
+
+	if (has_all_peers) {
+
+		// They all have verified paths, so send fast.
+		network_peer->set_target_peer(p_peer_id); // To all of you.
+		network_peer->put_packet(packet_cache.ptr(), ofs); // A message with love.
+	} else {
+		// Not all verified path, so send one by one.
+
+		// Append path at the end, since we will need it for some packets.
+		CharString pname = String(from_path).utf8();
+		int path_len = encode_cstring(pname.get_data(), NULL);
+		MAKE_ROOM(ofs + path_len);
+		encode_cstring(pname.get_data(), &(packet_cache.write[ofs]));
+
+		for (Set<int>::Element *E = connected_peers.front(); E; E = E->next()) {
+
+			if (p_peer_id < 0 && E->get() == -p_peer_id)
+				continue; // Continue, excluded.
+
+			if (p_peer_id > 0 && E->get() != p_peer_id)
+				continue; // Continue, not for this peer.
+
+			Map<int, bool>::Element *F = psc->confirmed_peers.find(E->get());
+			ERR_CONTINUE(!F); // Should never happen.
+
+			network_peer->set_target_peer(E->get()); // To this one specifically.
+
+			if (F->get()) {
+				// This one confirmed path, so use id.
+				encode_uint32(psc->id, &(packet_cache.write[1]));
+				network_peer->put_packet(packet_cache.ptr(), ofs);
+			} else {
+				// This one did not confirm path yet, so use entire path (sorry!).
+				encode_uint32(0x80000000 | ofs, &(packet_cache.write[1])); // Offset to path and flag.
+				network_peer->put_packet(packet_cache.ptr(), ofs + path_len);
+			}
+		}
+	}
+}
+
+void MultiplayerAPI::_process_semi_raw(Node *p_node, const StringName &p_name, int p_from, const uint8_t *p_packet, int p_packet_len, int p_offset) {
+
+	ERR_FAIL_COND_MSG(p_offset >= p_packet_len, "Invalid packet received. Size too small.");
+
+	// Check that remote can call the RPC on this node.
+	RPCMode rpc_mode = RPC_MODE_DISABLED;
+	const Map<StringName, RPCMode>::Element *E = p_node->get_node_rpc_mode(p_name);
+	if (E) {
+		rpc_mode = E->get();
+	} else if (p_node->get_script_instance()) {
+		rpc_mode = p_node->get_script_instance()->get_rpc_mode(p_name);
+	}
+
+	bool can_call = _can_call_mode(p_node, rpc_mode, p_from);
+	ERR_FAIL_COND_MSG(!can_call, "RPC '" + String(p_name) + "' is not allowed on node " + p_node->get_path() + " from: " + itos(p_from) + ". Mode is " + itos((int)rpc_mode) + ", master is " + itos(p_node->get_network_master()) + ".");
+
+	PoolVector<uint8_t> out;
+	int len = p_packet_len - p_offset;
+	out.resize(len);
+	{
+		PoolVector<uint8_t>::Write w = out.write();
+		memcpy(&w[0], &p_packet[p_offset], len);
+	}
+
+	p_node->call(p_name, out);
 }
 
 int MultiplayerAPI::get_network_unique_id() const {

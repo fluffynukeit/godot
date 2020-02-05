@@ -101,6 +101,7 @@ protected:
 	Node *_process_get_node(int p_from, const uint8_t *p_packet, int p_packet_len);
 	void _process_rpc(Node *p_node, const StringName &p_name, int p_from, const uint8_t *p_packet, int p_packet_len, int p_offset);
 	void _process_rset(Node *p_node, const StringName &p_name, int p_from, const uint8_t *p_packet, int p_packet_len, int p_offset);
+	void _process_semi_raw(Node *p_node, const StringName &p_name, int p_from, const uint8_t *p_packet, int p_packet_len, int p_offset);
 	void _process_raw(int p_from, const uint8_t *p_packet, int p_packet_len);
 
 	void _send_rpc(Node *p_from, int p_to, bool p_unreliable, bool p_set, const StringName &p_name, const Variant **p_arg, int p_argcount);
@@ -112,6 +113,7 @@ public:
 		NETWORK_COMMAND_REMOTE_SET,
 		NETWORK_COMMAND_SIMPLIFY_PATH,
 		NETWORK_COMMAND_CONFIRM_PATH,
+		NETWORK_COMMAND_SEMI_RAW,
 		NETWORK_COMMAND_RAW,
 	};
 
@@ -134,6 +136,8 @@ public:
 	void set_network_peer(const Ref<NetworkedMultiplayerPeer> &p_peer);
 	Ref<NetworkedMultiplayerPeer> get_network_peer() const;
 	Error send_bytes(PoolVector<uint8_t> p_data, int p_to = NetworkedMultiplayerPeer::TARGET_PEER_BROADCAST, NetworkedMultiplayerPeer::TransferMode p_mode = NetworkedMultiplayerPeer::TRANSFER_MODE_RELIABLE);
+
+	void send_bytes_to(Node *p_node, int p_peer_id, bool p_unreliable, const StringName &p_method, PoolVector<uint8_t> p_data);
 
 	// Called by Node.rpc
 	void rpcp(Node *p_node, int p_peer_id, bool p_unreliable, const StringName &p_method, const Variant **p_arg, int p_argcount);
