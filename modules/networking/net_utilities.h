@@ -46,7 +46,7 @@ public:
 
 	/// Returns the amount of missing packets.
 	/// The value can go from 0 to `p_packets_to_track`.
-	int get_loss() const;
+	int get_missing_packets() const;
 };
 
 #endif

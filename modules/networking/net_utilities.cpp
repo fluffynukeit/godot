@@ -50,7 +50,7 @@ void NetworkTracer::notify_missing_packet() {
 	flags.write[id] = false;
 }
 
-int NetworkTracer::get_loss() const {
+int NetworkTracer::get_missing_packets() const {
 	int l = 0;
 	for (int i = 0; i < flags.size(); i += 1) {
 		if (flags[i] == false) {

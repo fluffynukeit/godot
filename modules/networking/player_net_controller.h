@@ -168,7 +168,7 @@ private:
 VARIANT_ENUM_CAST(PlayerNetController::InputDataType)
 VARIANT_ENUM_CAST(PlayerNetController::InputCompressionLevel)
 
-struct PlayerInputs {
+struct FrameSnapshotSkinny {
 	uint64_t id;
 	BitArray inputs_buffer;
 };
@@ -194,7 +194,9 @@ struct ServerController : public Controller {
 	uint32_t ghost_input_count;
 	TemporalIdDecoder input_id_decoder;
 	NetworkTracer network_tracer;
-	std::deque<PlayerInputs> player_inputs;
+	std::deque<FrameSnapshotSkinny> snapshots;
+	real_t optimal_snapshots_size;
+	real_t client_tick_additional_speed;
 
 	ServerController();
 
@@ -204,6 +206,19 @@ struct ServerController : public Controller {
 private:
 	/// Fetch the next inputs, returns true if the input is new.
 	bool fetch_next_input();
+
+	/// This function updates the `tick_additional_speed` so that the `frames_inputs`
+	/// size is enough to reduce the missing packets to 0.
+	///
+	/// When the internet connection is bad, the packets need more time to arrive.
+	/// To heal this problem, the server tells the client to speed up a little bit
+	/// so it send the inputs a bit earlier than the usual.
+	///
+	/// If the `frames_inputs` size is too big the input lag between the client and
+	/// the server is artificial and no more dependent on the internet. For this
+	/// reason the server tells the client to slowdown so to keep the `frames_inputs`
+	/// size moderate to the needs.
+	void adjust_master_tick_rate(real_t delta);
 };
 
 struct MasterController : public Controller {

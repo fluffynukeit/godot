@@ -43,6 +43,23 @@
 // Take into consideration the last 20sec to decide the `optimal_buffer_size`.
 #define PACKETS_TO_TRACK 1200
 
+// Don't go below 2 so to take into account internet latency
+#define MIN_SNAPSHOTS_SIZE 2
+
+// This parameter is used to amortise packet loss.
+// This parameter is already really high and tests showed that 10 is already
+// enough to heal 5% of packet loss (Connections with Packet loss above 1% are
+// considered broken).
+#define MAX_SNAPSHOTS_SIZE 30
+
+#define SNAPSHOTS_SIZE_ACCELERATION 2.5
+
+#define MISSING_SNAPSHOTS_MAX_TOLLERANCE 4
+
+#define TICK_ACCELERATION 2.0
+
+#define MAX_ADDITIONAL_TICK_SPEED 2.0
+
 void PlayerInputsReference::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_bool", "index"), &PlayerInputsReference::get_bool);
 	ClassDB::bind_method(D_METHOD("get_int", "index"), &PlayerInputsReference::get_int);
@@ -233,15 +250,19 @@ void PlayerNetController::_notification(int p_what) {
 ServerController::ServerController() :
 		current_packet_id(UINT64_MAX),
 		ghost_input_count(0),
-		network_tracer(PACKETS_TO_TRACK) {
+		network_tracer(PACKETS_TO_TRACK),
+		optimal_snapshots_size(0.0),
+		client_tick_additional_speed(0.0) {
 }
 
 void ServerController::physics_process(real_t p_delta) {
 	fetch_next_input();
 	node->emit_signal("server_physics_process", p_delta);
+	adjust_master_tick_rate(p_delta);
+	// TODO process client position check.
 }
 
-bool is_remote_frame_A_older(const PlayerInputs &p_snap_a, const PlayerInputs &p_snap_b) {
+bool is_remote_frame_A_older(const FrameSnapshotSkinny &p_snap_a, const FrameSnapshotSkinny &p_snap_b) {
 	return p_snap_a.id < p_snap_b.id;
 }
 
@@ -289,20 +310,20 @@ void ServerController::receive_snapshots(PoolVector<uint8_t> p_data) {
 		if (current_packet_id >= dec_res.id)
 			continue;
 
-		PlayerInputs rfs;
+		FrameSnapshotSkinny rfs;
 		rfs.id = dec_res.id;
 
-		const bool found = std::binary_search(player_inputs.begin(), player_inputs.end(), rfs, is_remote_frame_A_older);
+		const bool found = std::binary_search(snapshots.begin(), snapshots.end(), rfs, is_remote_frame_A_older);
 
 		if (!found) {
 			rfs.inputs_buffer.get_bytes_mut().resize(buffer_size);
 			copymem(rfs.inputs_buffer.get_bytes_mut().ptrw(), r.ptr() + ofs, buffer_size);
 			ofs += buffer_size;
 
-			player_inputs.push_back(rfs);
+			snapshots.push_back(rfs);
 
 			// Sort the new inserted snapshot.
-			std::sort(player_inputs.begin(), player_inputs.end(), is_remote_frame_A_older);
+			std::sort(snapshots.begin(), snapshots.end(), is_remote_frame_A_older);
 		}
 	}
 }
@@ -312,10 +333,10 @@ bool ServerController::fetch_next_input() {
 
 	if (unlikely(current_packet_id == UINT64_MAX)) {
 		// As initial packet, anything is good.
-		if (player_inputs.empty() == false) {
-			node->get_inputs_buffer_mut().get_buffer_mut().get_bytes_mut() = player_inputs.front().inputs_buffer.get_bytes();
-			current_packet_id = player_inputs.front().id;
-			player_inputs.pop_front();
+		if (snapshots.empty() == false) {
+			node->get_inputs_buffer_mut().get_buffer_mut().get_bytes_mut() = snapshots.front().inputs_buffer.get_bytes();
+			current_packet_id = snapshots.front().id;
+			snapshots.pop_front();
 			network_tracer.notify_packet_arrived();
 		} else {
 			is_new_input = false;
@@ -327,7 +348,7 @@ bool ServerController::fetch_next_input() {
 
 		const uint64_t next_packet_id = current_packet_id + 1;
 
-		if (unlikely(player_inputs.empty() == true)) {
+		if (unlikely(snapshots.empty() == true)) {
 			// The input buffer is empty!
 			is_new_input = false;
 			network_tracer.notify_missing_packet();
@@ -336,12 +357,12 @@ bool ServerController::fetch_next_input() {
 
 		} else {
 			// The input buffer is not empty, search the new input.
-			if (next_packet_id == player_inputs.front().id) {
+			if (next_packet_id == snapshots.front().id) {
 				// Wow, the next input is perfect!
 
-				node->get_inputs_buffer_mut().get_buffer_mut().get_bytes_mut() = player_inputs.front().inputs_buffer.get_bytes();
-				current_packet_id = player_inputs.front().id;
-				player_inputs.pop_front();
+				node->get_inputs_buffer_mut().get_buffer_mut().get_bytes_mut() = snapshots.front().inputs_buffer.get_bytes();
+				current_packet_id = snapshots.front().id;
+				snapshots.pop_front();
 
 				ghost_input_count = 0;
 				network_tracer.notify_packet_arrived();
@@ -384,22 +405,22 @@ bool ServerController::fetch_next_input() {
 				network_tracer.notify_missing_packet();
 				ghost_input_count += 1;
 
-				const int size = MIN(ghost_input_count, player_inputs.size());
+				const int size = MIN(ghost_input_count, snapshots.size());
 				const uint64_t ghost_packet_id = next_packet_id + ghost_input_count;
 
 				bool recovered = false;
-				PlayerInputs pi;
+				FrameSnapshotSkinny pi;
 
 				const PlayerInputsReference pir_A(node->get_inputs_buffer());
 				// Copy from the node inputs so to copy the data info
 				PlayerInputsReference pir_B(node->get_inputs_buffer());
 
 				for (int i = 0; i < size; i += 1) {
-					if (ghost_packet_id < player_inputs.front().id) {
+					if (ghost_packet_id < snapshots.front().id) {
 						break;
 					} else {
-						pi = player_inputs.front();
-						player_inputs.pop_front();
+						pi = snapshots.front();
+						snapshots.pop_front();
 						recovered = true;
 
 						// If this input has some important changes compared to the last
@@ -433,6 +454,49 @@ bool ServerController::fetch_next_input() {
 	}
 
 	return is_new_input;
+}
+
+void ServerController::adjust_master_tick_rate(real_t p_delta) {
+	const int miss_packets = network_tracer.get_missing_packets();
+
+	{
+		// The first step to establish the client speed up amount is to define the
+		// optimal `frames_inputs` size.
+		// This size is increased and decreased using an acceleration, so any speed
+		// change is spread across a long period rather a little one.
+		// Keep in mind that internet may be really fluctuating.
+		const real_t acceleration_level = CLAMP(
+				(static_cast<real_t>(miss_packets) - static_cast<real_t>(snapshots.size())) /
+						static_cast<real_t>(MISSING_SNAPSHOTS_MAX_TOLLERANCE),
+				-2.0,
+				2.0);
+		optimal_snapshots_size += acceleration_level * SNAPSHOTS_SIZE_ACCELERATION * p_delta;
+		optimal_snapshots_size = CLAMP(optimal_snapshots_size, MIN_SNAPSHOTS_SIZE, MAX_SNAPSHOTS_SIZE);
+	}
+
+	{
+		// The client speed is determined using an acceleration so to have much more
+		// control over it and avoid nervous changes.
+		const real_t acceleration_level = CLAMP((optimal_snapshots_size - snapshots.size()) / MAX_SNAPSHOTS_SIZE, -1.0, 1.0);
+		const real_t acc = acceleration_level * TICK_ACCELERATION * p_delta;
+		const real_t damp = client_tick_additional_speed * -0.9;
+
+		// The damping is fully applyied only if it points in the opposite `acc`
+		// direction.
+		// I want to cut down the oscilations when the target is the same for a while,
+		// but I need to move fast toward new targets when they appear.
+		client_tick_additional_speed += acc + damp * ((SGN(acc) * SGN(damp) + 1) / 2.0);
+		client_tick_additional_speed = CLAMP(client_tick_additional_speed, -MAX_ADDITIONAL_TICK_SPEED, MAX_ADDITIONAL_TICK_SPEED);
+
+		// Unreliable call deserve to be sent each frame
+		// TODO But we could just send a `char` in reliable mode each time it change since
+		// we don't really need this precision
+		//rpc_unreliable_id(
+		//		get_network_master(),
+		//		"client_adjust_frame_rate",
+		//		client_tick_speed)
+		CRASH_NOW(); // DO THIS PLESE
+	}
 }
 
 MasterController::MasterController() :
