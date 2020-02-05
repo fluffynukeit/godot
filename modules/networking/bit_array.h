@@ -37,8 +37,13 @@ class BitArray {
 	Vector<uint8_t> bytes;
 
 public:
+	const Vector<uint8_t> &get_bytes() const {
+		return bytes;
+	}
+
 	void resize(int p_bits);
-	int size() const;
+	int size_in_bytes() const;
+	int size_in_bits() const;
 
 	void store_bits(int p_bit_offset, uint64_t p_value, int p_bits);
 	uint64_t read_bits(int p_bit_offset, int p_bits) const;

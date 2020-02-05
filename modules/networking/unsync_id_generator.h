@@ -83,9 +83,7 @@ public:
 	/// Try to decompress the ID. This may fail because of the mechanism to
 	/// prevent take into account too much faraway IDs.
 	//
-	// Is unlikely that this function fails due to bad internet connection,
-	// rather is much more understandable that the user is trying to hack
-	// the algorithm.
+	// Is unlikely that this function fails due to bad internet connection.
 	DecompressionResult receive(CompressedId p_local_id);
 };
 

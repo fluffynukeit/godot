@@ -37,7 +37,11 @@ void BitArray::resize(int p_bits) {
 	bytes.resize(min_size);
 }
 
-int BitArray::size() const {
+int BitArray::size_in_bytes() const {
+	return bytes.size();
+}
+
+int BitArray::size_in_bits() const {
 	return bytes.size() * 8;
 }
 

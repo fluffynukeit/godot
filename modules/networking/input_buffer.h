@@ -95,6 +95,13 @@ public:
 	int add_data_type(DataType p_type, CompressionLevel p_compression);
 	void init_buffer();
 
+	BitArray get_buffer() const {
+		return buffer;
+	}
+
+	// Returns the buffer size in bytes
+	int get_buffer_size() const;
+
 	/// Set bool
 	/// Returns the same data.
 	bool set_bool(int p_index, bool p_input);
@@ -132,10 +139,6 @@ public:
 
 	/// Get the normalized vector from the input buffer.
 	Vector2 get_normalized_vector(int p_index) const;
-
-	BitArray get_buffer() const {
-		return buffer;
-	}
 
 private:
 	static uint64_t compress_unit_float(double p_value, double p_scale_factor);

@@ -72,9 +72,9 @@ void PlayerNetController::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("input_buffer_get_normalized_vector", "index"), &PlayerNetController::input_buffer_get_normalized_vector);
 
 	// Rpc to server
-	ClassDB::bind_method(D_METHOD("rpc_server_send_frames_snapshot"), &PlayerNetController::rpc_server_send_frames_snapshot);
+	ClassDB::bind_method(D_METHOD("rpc_server_send_frames_snapshot", "data"), &PlayerNetController::rpc_server_send_frames_snapshot);
 
-	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "player_node_path"), "set_player_node_path", "get_player_node_path");
+	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "player_node_path", PROPERTY_HINT_RANGE, "0,254,1"), "set_player_node_path", "get_player_node_path");
 
 	ADD_SIGNAL(MethodInfo("server_physics_process", PropertyInfo(Variant::REAL, "delta")));
 	ADD_SIGNAL(MethodInfo("master_physics_process", PropertyInfo(Variant::REAL, "delta"), PropertyInfo(Variant::BOOL, "accept_new_inputs")));
@@ -83,11 +83,11 @@ void PlayerNetController::_bind_methods() {
 
 PlayerNetController::PlayerNetController() :
 		player_node_path(NodePath("../")),
-		max_redundant_inputs(10),
+		max_redundant_inputs(9),
 		controller(NULL),
 		cached_player(NULL) {
 
-	rpc_config("rpc_server_test", MultiplayerAPI::RPC_MODE_REMOTE);
+	rpc_config("rpc_server_send_frames_snapshot", MultiplayerAPI::RPC_MODE_REMOTE);
 }
 
 void PlayerNetController::set_player_node_path(NodePath p_path) {
@@ -151,19 +151,20 @@ Vector2 PlayerNetController::input_buffer_get_normalized_vector(int p_index) con
 	return input_buffer.get_normalized_vector(p_index);
 }
 
-void PlayerNetController::rpc_server_send_frames_snapshot() {
+void PlayerNetController::rpc_server_send_frames_snapshot(PoolVector<uint8_t> p_data) {
 	ERR_FAIL_COND(get_tree()->is_network_server() != true);
 
 	// TODO Propagates to the other puppets?
 	// Please add a mechanism to start / stop puppets propagation.
 
-	controller->receive_snapshots();
+	controller->receive_snapshots(p_data);
 }
 
 void PlayerNetController::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
 			ERR_FAIL_NULL_MSG(get_player(), "The `player_node_path` must point to a valid `Spatial` node.");
+			input_buffer.init_buffer();
 			controller->physics_process(get_process_delta_time());
 
 		} break;
@@ -202,7 +203,34 @@ void ServerController::physics_process(real_t p_delta) {
 	node->emit_signal("server_physics_process", p_delta);
 }
 
-void ServerController::receive_snapshots() {
+void ServerController::receive_snapshots(PoolVector<uint8_t> p_data) {
+	const int data_len = p_data.size();
+
+	if (p_data.size() < data_len)
+		// Just discard, the packet is corrupted.
+		// TODO Measure internet connection status here?
+		return;
+
+	PoolVector<uint8_t>::Read r = p_data.read();
+	int ofs = 0;
+
+	const int buffer_size = node->get_inputs_buffer().get_buffer_size();
+
+	const int snapshots_count = r[ofs];
+	ofs += 1;
+
+	const int packet_size = 0
+							// First byte is to store the size of the shapshots_count
+							+ sizeof(uint8_t)
+							// uint16_t is used to store the compressed packet ID.
+							+ snapshots_count * (sizeof(uint16_t) + buffer_size);
+
+	if (packet_size != data_len)
+		// Just discard, the packet is corrupted.
+		// TODO Measure internet connection status here?
+		return;
+
+	print_line("Received data seems fine, please process them");
 }
 
 MasterController::MasterController() :
@@ -238,11 +266,11 @@ void MasterController::physics_process(real_t p_delta) {
 
 		if (accept_new_inputs) {
 			GeneratedData id = id_generator.next();
-			BitArray buffer = node->get_inputs_buffer().get_buffer();
 
 			FramesSnapshot inputs;
 			inputs.id = id.id;
-			inputs.inputs_buffer = buffer;
+			inputs.compressed_id = id.compressed_id;
+			inputs.inputs_buffer = node->get_inputs_buffer().get_buffer();
 			inputs.character_transform = node->get_player()->get_global_transform();
 			processed_frames.push_back(inputs);
 
@@ -257,7 +285,7 @@ void MasterController::physics_process(real_t p_delta) {
 	// TODO recover server discrepancy here?
 }
 
-void MasterController::receive_snapshots() {
+void MasterController::receive_snapshots(PoolVector<uint8_t> p_data) {
 	ERR_PRINTS("The master is not supposed to receive snapshots");
 }
 
@@ -265,19 +293,50 @@ real_t MasterController::get_pretended_delta() const {
 	return 1.0 / (Engine::get_singleton()->get_iterations_per_second() + tick_additional_speed);
 }
 
-void MasterController::send_frame_snapshots_to_server() const {
-	int snapshots_count = MAX(processed_frames.size(), node->get_max_redundant_inputs());
+void MasterController::send_frame_snapshots_to_server() {
+	const int snapshots_count = MIN(processed_frames.size(), node->get_max_redundant_inputs() + 1);
+	ERR_FAIL_COND_MSG(snapshots_count >= UINT8_MAX, "Is not allow to send more than 254 redundant packets.");
 
-	// Compose the packets
-	for (int i = 0; i < snapshots_count; i += 1) {
+	const int buffer_size = node->get_inputs_buffer().get_buffer_size();
+
+	const int packet_size = 0
+							// First byte is to store the size of the shapshots_count
+							+ sizeof(uint8_t)
+							// uint16_t is used to store the compressed packet ID.
+							+ snapshots_count * (sizeof(uint16_t) + buffer_size);
+
+	cached_packet_data.resize(packet_size);
+
+	{
+		PoolVector<uint8_t>::Write w = cached_packet_data.write();
+
+		int ofs = 0;
+		w[ofs] = snapshots_count;
+		ofs += 1;
+
+		// Compose the packets
+		for (int i = processed_frames.size() - snapshots_count; i < processed_frames.size(); i += 1) {
+			// Unreachable.
+			CRASH_COND(processed_frames[i].inputs_buffer.size_in_bytes() != buffer_size);
+			// First available byte used for the compressed input
+			encode_uint16(processed_frames[i].compressed_id, w.ptr() + ofs);
+			ofs += 2;
+			copymem(w.ptr() + ofs, processed_frames[i].inputs_buffer.get_bytes().ptr(), buffer_size);
+			ofs += buffer_size;
+		}
+
+		// Unreachable.
+		CRASH_COND(ofs != packet_size);
 	}
 
-	node->rpc_unreliable_id(0, "rpc_server_send_frames_snapshot");
+	const int server_peer_id = 0;
+	const bool unreliable = true;
+	node->get_multiplayer()->send_bytes_to(node, server_peer_id, unreliable, "rpc_server_send_frames_snapshot", cached_packet_data);
 }
 
 void PuppetController::physics_process(real_t p_delta) {
 	node->emit_signal("puppet_physics_process", p_delta);
 }
 
-void PuppetController::receive_snapshots() {
+void PuppetController::receive_snapshots(PoolVector<uint8_t> p_data) {
 }

@@ -63,6 +63,11 @@ void InputsBuffer::init_buffer() {
 	buffer.resize(bits);
 }
 
+int InputsBuffer::get_buffer_size() const {
+	ERR_FAIL_COND_V_MSG(init_phase != false, 0, "The buffer must be initialized to retrieve this information");
+	return buffer.size_in_bytes();
+}
+
 bool InputsBuffer::set_bool(int p_index, bool p_input) {
 	ERR_FAIL_INDEX_V(p_index, buffer_info.size(), false);
 	ERR_FAIL_COND_V(buffer_info[p_index].type != DATA_TYPE_BOOL, false);

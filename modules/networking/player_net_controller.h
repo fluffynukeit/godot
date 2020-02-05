@@ -141,7 +141,7 @@ public:
 
 public:
 	// On server rpc functions.
-	void rpc_server_send_frames_snapshot();
+	void rpc_server_send_frames_snapshot(PoolVector<uint8_t> p_data);
 
 private:
 	virtual void _notification(int p_what);
@@ -156,11 +156,12 @@ struct Controller {
 	virtual ~Controller() {}
 
 	virtual void physics_process(real_t p_delta) = 0;
-	virtual void receive_snapshots() = 0;
+	virtual void receive_snapshots(PoolVector<uint8_t> p_data) = 0;
 };
 
 struct FramesSnapshot {
 	uint64_t id;
+	uint16_t compressed_id; // Is not anymore valid after 1500 frames
 	BitArray inputs_buffer;
 	Transform character_transform;
 };
@@ -169,7 +170,7 @@ struct ServerController : public Controller {
 	// TODO Use deque here?
 
 	virtual void physics_process(real_t p_delta);
-	virtual void receive_snapshots();
+	virtual void receive_snapshots(PoolVector<uint8_t> p_data);
 };
 
 struct MasterController : public Controller {
@@ -177,23 +178,24 @@ struct MasterController : public Controller {
 	real_t tick_additional_speed;
 	LocalIdGenerator id_generator;
 	Vector<FramesSnapshot> processed_frames;
+	PoolVector<uint8_t> cached_packet_data;
 
 	MasterController();
 
 	virtual void physics_process(real_t p_delta);
-	virtual void receive_snapshots();
+	virtual void receive_snapshots(PoolVector<uint8_t> p_data);
 
 	real_t get_pretended_delta() const;
 
 	/// Sends an unreliable packet to the server, containing a packed array of
 	/// frame snapshots.
-	void send_frame_snapshots_to_server() const;
+	void send_frame_snapshots_to_server();
 };
 
 struct PuppetController : public Controller {
 	// TODO Use deque here?
 
 	virtual void physics_process(real_t p_delta);
-	virtual void receive_snapshots();
+	virtual void receive_snapshots(PoolVector<uint8_t> p_data);
 };
 #endif
