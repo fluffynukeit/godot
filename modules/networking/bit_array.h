@@ -41,8 +41,11 @@ public:
 		return bytes;
 	}
 
-	void resize(int p_bits);
-	int size_in_bytes() const;
+	Vector<uint8_t> &get_bytes_mut() {
+		return bytes;
+	}
+
+	void resize_in_bits(int p_bits);
 	int size_in_bits() const;
 
 	void store_bits(int p_bit_offset, uint64_t p_value, int p_bits);

@@ -34,9 +34,38 @@
 #include "core/io/marshalls.h"
 #include "scene/3d/spatial.h"
 #include <stdint.h>
+#include <algorithm>
 
 // TODO can we put this on the node?
 #define MAX_STORED_FRAMES 300
+
+// TODO can we put this on the node?
+// Take into consideration the last 20sec to decide the `optimal_buffer_size`.
+#define PACKETS_TO_TRACK 1200
+
+void PlayerInputsReference::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("get_bool", "index"), &PlayerInputsReference::get_bool);
+	ClassDB::bind_method(D_METHOD("get_int", "index"), &PlayerInputsReference::get_int);
+	ClassDB::bind_method(D_METHOD("get_unit_real", "index"), &PlayerInputsReference::get_unit_real);
+	ClassDB::bind_method(D_METHOD("get_normalized_vector", "index"), &PlayerInputsReference::get_normalized_vector);
+}
+
+bool PlayerInputsReference::get_bool(int p_index) const {
+	return input_buffer.get_bool(p_index);
+}
+
+int64_t PlayerInputsReference::get_int(int p_index) const {
+	return input_buffer.get_int(p_index);
+}
+
+real_t PlayerInputsReference::get_unit_real(int p_index) const {
+
+	return input_buffer.get_unit_real(p_index);
+}
+
+Vector2 PlayerInputsReference::get_normalized_vector(int p_index) const {
+	return input_buffer.get_normalized_vector(p_index);
+}
 
 void PlayerNetController::_bind_methods() {
 
@@ -70,6 +99,8 @@ void PlayerNetController::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("input_buffer_set_normalized_vector", "index", "vector"), &PlayerNetController::input_buffer_set_normalized_vector);
 	ClassDB::bind_method(D_METHOD("input_buffer_get_normalized_vector", "index"), &PlayerNetController::input_buffer_get_normalized_vector);
+
+	BIND_VMETHOD(MethodInfo(Variant::BOOL, "are_inputs_different", PropertyInfo(Variant::OBJECT, "inputs_A", PROPERTY_HINT_TYPE_STRING, "PlayerInputsReference"), PropertyInfo(Variant::OBJECT, "inputs_B", PROPERTY_HINT_TYPE_STRING, "PlayerInputsReference")));
 
 	// Rpc to server
 	ClassDB::bind_method(D_METHOD("rpc_server_send_frames_snapshot", "data"), &PlayerNetController::rpc_server_send_frames_snapshot);
@@ -199,8 +230,19 @@ void PlayerNetController::_notification(int p_what) {
 	}
 }
 
+ServerController::ServerController() :
+		current_packet_id(UINT64_MAX),
+		ghost_input_count(0),
+		network_tracer(PACKETS_TO_TRACK) {
+}
+
 void ServerController::physics_process(real_t p_delta) {
+	fetch_next_input();
 	node->emit_signal("server_physics_process", p_delta);
+}
+
+bool is_remote_frame_A_older(const PlayerInputs &p_snap_a, const PlayerInputs &p_snap_b) {
+	return p_snap_a.id < p_snap_b.id;
 }
 
 void ServerController::receive_snapshots(PoolVector<uint8_t> p_data) {
@@ -230,7 +272,167 @@ void ServerController::receive_snapshots(PoolVector<uint8_t> p_data) {
 		// TODO Measure internet connection status here?
 		return;
 
-	print_line("Received data seems fine, please process them");
+	// Received data seems fine.
+
+	for (int i = 0; i < snapshots_count; i += 1) {
+
+		// First available byte used for the compressed input
+		uint16_t compressed_packet_id = decode_uint16(r.ptr() + ofs);
+		ofs += 2;
+
+		DecompressionResult dec_res = input_id_decoder.receive(compressed_packet_id);
+		// Is unlikelly that this happens in case of really bad internet connect.
+		// - If this happens on production the reason is another.
+		// - If this happens during test phase open an issue please.
+		ERR_FAIL_COND_MSG(dec_res.success == false, "Was not possible to decode the id of the received packet.")
+
+		if (current_packet_id >= dec_res.id)
+			continue;
+
+		PlayerInputs rfs;
+		rfs.id = dec_res.id;
+
+		const bool found = std::binary_search(player_inputs.begin(), player_inputs.end(), rfs, is_remote_frame_A_older);
+
+		if (!found) {
+			rfs.inputs_buffer.get_bytes_mut().resize(buffer_size);
+			copymem(rfs.inputs_buffer.get_bytes_mut().ptrw(), r.ptr() + ofs, buffer_size);
+			ofs += buffer_size;
+
+			player_inputs.push_back(rfs);
+
+			// Sort the new inserted snapshot.
+			std::sort(player_inputs.begin(), player_inputs.end(), is_remote_frame_A_older);
+		}
+	}
+}
+
+bool ServerController::fetch_next_input() {
+	bool is_new_input = true;
+
+	if (unlikely(current_packet_id == UINT64_MAX)) {
+		// As initial packet, anything is good.
+		if (player_inputs.empty() == false) {
+			node->get_inputs_buffer_mut().get_buffer_mut().get_bytes_mut() = player_inputs.front().inputs_buffer.get_bytes();
+			current_packet_id = player_inputs.front().id;
+			player_inputs.pop_front();
+			network_tracer.notify_packet_arrived();
+		} else {
+			is_new_input = false;
+			network_tracer.notify_missing_packet();
+		}
+	} else {
+		// Search the next packet, the cycle is used to make sure to not stop
+		// with older packets arrived too late.
+
+		const uint64_t next_packet_id = current_packet_id + 1;
+
+		if (unlikely(player_inputs.empty() == true)) {
+			// The input buffer is empty!
+			is_new_input = false;
+			network_tracer.notify_missing_packet();
+			ghost_input_count += 1;
+			//print_line("Input buffer is void, i'm using the previous one!"); // TODO Replace with?
+
+		} else {
+			// The input buffer is not empty, search the new input.
+			if (next_packet_id == player_inputs.front().id) {
+				// Wow, the next input is perfect!
+
+				node->get_inputs_buffer_mut().get_buffer_mut().get_bytes_mut() = player_inputs.front().inputs_buffer.get_bytes();
+				current_packet_id = player_inputs.front().id;
+				player_inputs.pop_front();
+
+				ghost_input_count = 0;
+				network_tracer.notify_packet_arrived();
+			} else {
+				// The next packet is not here. This can happen when:
+				// - The packet is lost or not yet arrived.
+				// - The client for any reason desync with the server.
+				//
+				// In this cases, the server has the hard task to re-sync.
+				//
+				// # What it does, then?
+				// Initially it see that only 1 packet is missing so it just use
+				// the previous one and increase `ghost_inputs_count` to 1.
+				//
+				// The next iteration, if the packet is not yet arrived the
+				// server trys to take the next packet with the `id` less or
+				// equal to `next_packet_id + ghost_packet_id`.
+				//
+				// As you can see the server doesn't lose immediately the hope
+				// to find the missing packets, but at the same time deals with
+				// it so increases its search pool per each iteration.
+				//
+				// # Wise input search.
+				// Let's consider the case when a set of inputs arrive at the
+				// same time, while the server is struggling for the missing packets.
+				//
+				// In the meanwhile that the packets were chilling on the net,
+				// the server were simulating by guessing on their data; this
+				// mean that they don't have any longer room to be simulated
+				// when they arrive, and the right thing would be just forget
+				// about these.
+				//
+				// The thing is that these can still contain meaningful data, so
+				// instead to jump directly to the newest we restart the inputs
+				// from the next important packet.
+				//
+				// For this reason we keep track the amount of missing packets
+				// using `ghost_input_count`.
+
+				network_tracer.notify_missing_packet();
+				ghost_input_count += 1;
+
+				const int size = MIN(ghost_input_count, player_inputs.size());
+				const uint64_t ghost_packet_id = next_packet_id + ghost_input_count;
+
+				bool recovered = false;
+				PlayerInputs pi;
+
+				const PlayerInputsReference pir_A(node->get_inputs_buffer());
+				// Copy from the node inputs so to copy the data info
+				PlayerInputsReference pir_B(node->get_inputs_buffer());
+
+				for (int i = 0; i < size; i += 1) {
+					if (ghost_packet_id < player_inputs.front().id) {
+						break;
+					} else {
+						pi = player_inputs.front();
+						player_inputs.pop_front();
+						recovered = true;
+
+						// If this input has some important changes compared to the last
+						// good input, let's recover to this point otherwise skip it
+						// until the last one.
+						// Useful to avoid that the server stay too much behind the
+						// client.
+
+						pir_B.input_buffer.get_buffer_mut().get_bytes_mut() = pi.inputs_buffer.get_bytes();
+
+						bool is_meaningful = false;
+						if (node->get_script_instance() && node->get_script_instance()->has_method("are_inputs_different"))
+							is_meaningful = node->get_script_instance()->call("are_inputs_different", &pir_A, &pir_B);
+						if (is_meaningful) {
+							break;
+						}
+					}
+				}
+
+				if (recovered) {
+					node->get_inputs_buffer_mut().get_buffer_mut().get_bytes_mut() = pi.inputs_buffer.get_bytes();
+					current_packet_id = pi.id;
+					ghost_input_count = 0;
+					// print_line("Packet recovered"); // TODO how?
+				} else {
+					is_new_input = false;
+					// print_line("Packet still missing"); // TODO how?
+				}
+			}
+		}
+	}
+
+	return is_new_input;
 }
 
 MasterController::MasterController() :
@@ -265,9 +467,9 @@ void MasterController::physics_process(real_t p_delta) {
 		node->emit_signal("master_physics_process", p_delta, accept_new_inputs);
 
 		if (accept_new_inputs) {
-			GeneratedData id = id_generator.next();
+			GeneratedData id = input_id_generator.next();
 
-			FramesSnapshot inputs;
+			FrameSnapshot inputs;
 			inputs.id = id.id;
 			inputs.compressed_id = id.compressed_id;
 			inputs.inputs_buffer = node->get_inputs_buffer().get_buffer();
@@ -317,7 +519,7 @@ void MasterController::send_frame_snapshots_to_server() {
 		// Compose the packets
 		for (int i = processed_frames.size() - snapshots_count; i < processed_frames.size(); i += 1) {
 			// Unreachable.
-			CRASH_COND(processed_frames[i].inputs_buffer.size_in_bytes() != buffer_size);
+			CRASH_COND(processed_frames[i].inputs_buffer.get_bytes().size() != buffer_size);
 			// First available byte used for the compressed input
 			encode_uint16(processed_frames[i].compressed_id, w.ptr() + ofs);
 			ofs += 2;

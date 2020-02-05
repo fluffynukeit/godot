@@ -95,7 +95,11 @@ public:
 	int add_data_type(DataType p_type, CompressionLevel p_compression);
 	void init_buffer();
 
-	BitArray get_buffer() const {
+	const BitArray &get_buffer() const {
+		return buffer;
+	}
+
+	BitArray &get_buffer_mut() {
 		return buffer;
 	}
 

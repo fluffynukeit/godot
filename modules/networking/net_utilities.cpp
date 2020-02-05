@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  register_types.cpp                                                   */
+/*  net_utilities.cpp                                                    */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,15 +28,34 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#include "register_types.h"
+#include "net_utilities.h"
 
-#include "player_net_controller.h"
+NetworkTracer::NetworkTracer(int p_packets_to_track) :
+		id(0) {
+	flags.resize(p_packets_to_track);
 
-void register_networking_types() {
-
-	ClassDB::register_class<PlayerInputsReference>();
-	ClassDB::register_class<PlayerNetController>();
+	// Let's pretend that the connection is good.
+	for (int i = 0; i < flags.size(); i += 1) {
+		flags.write[i] = true;
+	}
 }
 
-void unregister_networking_types() {
+void NetworkTracer::notify_packet_arrived() {
+	id = (id + 1) % flags.size();
+	flags.write[id] = true;
+}
+
+void NetworkTracer::notify_missing_packet() {
+	id = (id + 1) % flags.size();
+	flags.write[id] = false;
+}
+
+int NetworkTracer::get_loss() const {
+	int l = 0;
+	for (int i = 0; i < flags.size(); i += 1) {
+		if (flags[i] == false) {
+			l += 1;
+		}
+	}
+	return l;
 }

@@ -33,7 +33,8 @@
 #include "core/math/transform.h"
 #include "core/node_path.h"
 #include "input_buffer.h"
-#include "unsync_id_generator.h"
+#include "net_utilities.h"
+#include "temporal_id_generator.h"
 #include <deque>
 
 #ifndef PLAYERPNETCONTROLLER_H
@@ -41,6 +42,24 @@
 
 struct Controller;
 class Spatial;
+
+class PlayerInputsReference : public Object {
+	GDCLASS(PlayerInputsReference, Object);
+
+public:
+	InputsBuffer input_buffer;
+
+	static void _bind_methods();
+
+	PlayerInputsReference() {}
+	PlayerInputsReference(const InputsBuffer &p_ib) :
+			input_buffer(p_ib) {}
+
+	bool get_bool(int p_index) const;
+	int64_t get_int(int p_index) const;
+	real_t get_unit_real(int p_index) const;
+	Vector2 get_normalized_vector(int p_index) const;
+};
 
 class PlayerNetController : public Node {
 	GDCLASS(PlayerNetController, Node);
@@ -58,11 +77,6 @@ public:
 		INPUT_COMPRESSION_LEVEL_1 = InputsBuffer::COMPRESSION_LEVEL_1,
 		INPUT_COMPRESSION_LEVEL_2 = InputsBuffer::COMPRESSION_LEVEL_2,
 		INPUT_COMPRESSION_LEVEL_3 = InputsBuffer::COMPRESSION_LEVEL_3
-	};
-
-	struct InputData {
-		uint64_t index;
-		Vector<uint8_t> input_buffer;
 	};
 
 private:
@@ -139,6 +153,10 @@ public:
 		return input_buffer;
 	}
 
+	InputsBuffer &get_inputs_buffer_mut() {
+		return input_buffer;
+	}
+
 public:
 	// On server rpc functions.
 	void rpc_server_send_frames_snapshot(PoolVector<uint8_t> p_data);
@@ -150,6 +168,18 @@ private:
 VARIANT_ENUM_CAST(PlayerNetController::InputDataType)
 VARIANT_ENUM_CAST(PlayerNetController::InputCompressionLevel)
 
+struct PlayerInputs {
+	uint64_t id;
+	BitArray inputs_buffer;
+};
+
+struct FrameSnapshot {
+	uint64_t id;
+	uint16_t compressed_id; // Is not anymore valid after 1500 frames
+	BitArray inputs_buffer;
+	Transform character_transform;
+};
+
 struct Controller {
 	PlayerNetController *node;
 
@@ -159,25 +189,28 @@ struct Controller {
 	virtual void receive_snapshots(PoolVector<uint8_t> p_data) = 0;
 };
 
-struct FramesSnapshot {
-	uint64_t id;
-	uint16_t compressed_id; // Is not anymore valid after 1500 frames
-	BitArray inputs_buffer;
-	Transform character_transform;
-};
-
 struct ServerController : public Controller {
-	// TODO Use deque here?
+	uint64_t current_packet_id;
+	uint32_t ghost_input_count;
+	TemporalIdDecoder input_id_decoder;
+	NetworkTracer network_tracer;
+	std::deque<PlayerInputs> player_inputs;
+
+	ServerController();
 
 	virtual void physics_process(real_t p_delta);
 	virtual void receive_snapshots(PoolVector<uint8_t> p_data);
+
+private:
+	/// Fetch the next inputs, returns true if the input is new.
+	bool fetch_next_input();
 };
 
 struct MasterController : public Controller {
 	real_t time_bank;
 	real_t tick_additional_speed;
-	LocalIdGenerator id_generator;
-	Vector<FramesSnapshot> processed_frames;
+	TemporalIdGenerator input_id_generator;
+	Vector<FrameSnapshot> processed_frames;
 	PoolVector<uint8_t> cached_packet_data;
 
 	MasterController();

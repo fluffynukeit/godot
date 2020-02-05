@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  unsync_id_generator.cpp                                              */
+/*  temporal_id_generator.cpp                                            */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,7 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#include "unsync_id_generator.h"
+#include "temporal_id_generator.h"
 
 #include "core/typedefs.h"
 #include <stdint.h>
@@ -36,11 +36,11 @@
 #define THRESHOLD 1500
 #define START_ID 0
 
-LocalIdGenerator::LocalIdGenerator() :
+TemporalIdGenerator::TemporalIdGenerator() :
 		id(START_ID) {
 }
 
-GeneratedData LocalIdGenerator::next() {
+GeneratedData TemporalIdGenerator::next() {
 	GeneratedData gd;
 	gd.id = id;
 	gd.compressed_id = static_cast<CompressedId>(id % UINT16_MAX) + 1;
@@ -48,13 +48,13 @@ GeneratedData LocalIdGenerator::next() {
 	return gd;
 }
 
-RemoteIdReceptor::RemoteIdReceptor() :
+TemporalIdDecoder::TemporalIdDecoder() :
 		local_id_head(START_ID),
 		generation_count(0),
 		highest_received_id(START_ID) {
 }
 
-DecompressionResult RemoteIdReceptor::receive(CompressedId p_local_id) {
+DecompressionResult TemporalIdDecoder::receive(CompressedId p_local_id) {
 
 	// This is how the ids are considered
 	// 0                                                    65535

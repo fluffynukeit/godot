@@ -60,12 +60,12 @@ void InputsBuffer::init_buffer() {
 		bits += get_bit_taken(i);
 	}
 
-	buffer.resize(bits);
+	buffer.resize_in_bits(bits);
 }
 
 int InputsBuffer::get_buffer_size() const {
 	ERR_FAIL_COND_V_MSG(init_phase != false, 0, "The buffer must be initialized to retrieve this information");
-	return buffer.size_in_bytes();
+	return buffer.get_bytes().size();
 }
 
 bool InputsBuffer::set_bool(int p_index, bool p_input) {

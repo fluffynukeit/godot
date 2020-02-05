@@ -32,13 +32,9 @@
 
 #include "core/math/math_funcs.h"
 
-void BitArray::resize(int p_bits) {
-	int min_size = Math::ceil((static_cast<float>(p_bits)) / 8);
+void BitArray::resize_in_bits(int p_bits) {
+	const int min_size = Math::ceil((static_cast<float>(p_bits)) / 8);
 	bytes.resize(min_size);
-}
-
-int BitArray::size_in_bytes() const {
-	return bytes.size();
 }
 
 int BitArray::size_in_bits() const {
