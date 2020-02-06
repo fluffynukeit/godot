@@ -158,8 +158,11 @@ public:
 	}
 
 public:
-	// On server rpc functions.
+	/* On server rpc functions. */
 	void rpc_server_send_frames_snapshot(PoolVector<uint8_t> p_data);
+
+	/* On client rpc functions. */
+	void rpc_master_send_tick_additional_speed(int p_additional_tick_speed);
 
 private:
 	virtual void _notification(int p_what);
@@ -197,6 +200,8 @@ struct ServerController : public Controller {
 	std::deque<FrameSnapshotSkinny> snapshots;
 	real_t optimal_snapshots_size;
 	real_t client_tick_additional_speed;
+	// It goes from -100 to 100
+	int client_tick_additional_speed_compressed;
 
 	ServerController();
 
@@ -238,6 +243,8 @@ struct MasterController : public Controller {
 	/// Sends an unreliable packet to the server, containing a packed array of
 	/// frame snapshots.
 	void send_frame_snapshots_to_server();
+
+	void receive_tick_additional_speed(int p_speed);
 };
 
 struct PuppetController : public Controller {

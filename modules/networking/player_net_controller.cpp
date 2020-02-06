@@ -60,6 +60,9 @@
 
 #define MAX_ADDITIONAL_TICK_SPEED 2.0
 
+// 2%
+#define TICK_SPEED_CHANGE_NOTIF_THRESHOLD 4
+
 void PlayerInputsReference::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_bool", "index"), &PlayerInputsReference::get_bool);
 	ClassDB::bind_method(D_METHOD("get_int", "index"), &PlayerInputsReference::get_int);
@@ -122,6 +125,9 @@ void PlayerNetController::_bind_methods() {
 	// Rpc to server
 	ClassDB::bind_method(D_METHOD("rpc_server_send_frames_snapshot", "data"), &PlayerNetController::rpc_server_send_frames_snapshot);
 
+	// Rpc to master
+	ClassDB::bind_method(D_METHOD("rpc_master_send_tick_additional_speed", "tick_speed"), &PlayerNetController::rpc_master_send_tick_additional_speed);
+
 	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "player_node_path", PROPERTY_HINT_RANGE, "0,254,1"), "set_player_node_path", "get_player_node_path");
 
 	ADD_SIGNAL(MethodInfo("server_physics_process", PropertyInfo(Variant::REAL, "delta")));
@@ -136,6 +142,8 @@ PlayerNetController::PlayerNetController() :
 		cached_player(NULL) {
 
 	rpc_config("rpc_server_send_frames_snapshot", MultiplayerAPI::RPC_MODE_REMOTE);
+
+	rpc_config("rpc_master_send_tick_additional_speed", MultiplayerAPI::RPC_MODE_MASTER);
 }
 
 void PlayerNetController::set_player_node_path(NodePath p_path) {
@@ -206,6 +214,12 @@ void PlayerNetController::rpc_server_send_frames_snapshot(PoolVector<uint8_t> p_
 	// Please add a mechanism to start / stop puppets propagation.
 
 	controller->receive_snapshots(p_data);
+}
+
+void PlayerNetController::rpc_master_send_tick_additional_speed(int p_additional_tick_speed) {
+	ERR_FAIL_COND(is_network_master() == false);
+
+	static_cast<MasterController *>(controller)->receive_tick_additional_speed(p_additional_tick_speed);
 }
 
 void PlayerNetController::_notification(int p_what) {
@@ -488,14 +502,16 @@ void ServerController::adjust_master_tick_rate(real_t p_delta) {
 		client_tick_additional_speed += acc + damp * ((SGN(acc) * SGN(damp) + 1) / 2.0);
 		client_tick_additional_speed = CLAMP(client_tick_additional_speed, -MAX_ADDITIONAL_TICK_SPEED, MAX_ADDITIONAL_TICK_SPEED);
 
-		// Unreliable call deserve to be sent each frame
-		// TODO But we could just send a `char` in reliable mode each time it change since
-		// we don't really need this precision
-		//rpc_unreliable_id(
-		//		get_network_master(),
-		//		"client_adjust_frame_rate",
-		//		client_tick_speed)
-		CRASH_NOW(); // DO THIS PLESE
+		int new_speed = 100 * (client_tick_additional_speed / MAX_ADDITIONAL_TICK_SPEED);
+
+		if (ABS(client_tick_additional_speed_compressed - new_speed) >= TICK_SPEED_CHANGE_NOTIF_THRESHOLD) {
+			client_tick_additional_speed_compressed = new_speed;
+
+			node->rpc_id(
+					node->get_network_master(),
+					"rpc_master_send_tick_additional_speed",
+					client_tick_additional_speed_compressed);
+		}
 	}
 }
 
@@ -598,6 +614,11 @@ void MasterController::send_frame_snapshots_to_server() {
 	const int server_peer_id = 0;
 	const bool unreliable = true;
 	node->get_multiplayer()->send_bytes_to(node, server_peer_id, unreliable, "rpc_server_send_frames_snapshot", cached_packet_data);
+}
+
+void MasterController::receive_tick_additional_speed(int p_speed) {
+	tick_additional_speed = (p_speed / 100) * MAX_ADDITIONAL_TICK_SPEED;
+	tick_additional_speed = CLAMP(tick_additional_speed, -MAX_ADDITIONAL_TICK_SPEED, MAX_ADDITIONAL_TICK_SPEED);
 }
 
 void PuppetController::physics_process(real_t p_delta) {
