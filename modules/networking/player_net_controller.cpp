@@ -108,6 +108,12 @@ void PlayerNetController::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_max_redundant_inputs", "max_redundand_inputs"), &PlayerNetController::set_max_redundant_inputs);
 	ClassDB::bind_method(D_METHOD("get_max_redundant_inputs"), &PlayerNetController::get_max_redundant_inputs);
 
+	ClassDB::bind_method(D_METHOD("set_check_state_position_only", "check_type"), &PlayerNetController::set_check_state_position_only);
+	ClassDB::bind_method(D_METHOD("get_check_state_position_only"), &PlayerNetController::get_check_state_position_only);
+
+	ClassDB::bind_method(D_METHOD("set_discrepancy_recover_velocity", "velocity"), &PlayerNetController::set_discrepancy_recover_velocity);
+	ClassDB::bind_method(D_METHOD("get_discrepancy_recover_velocity"), &PlayerNetController::get_discrepancy_recover_velocity);
+
 	ClassDB::bind_method(D_METHOD("input_buffer_add_data_type", "type", "compression"), &PlayerNetController::input_buffer_add_data_type, DEFVAL(InputsBuffer::COMPRESSION_LEVEL_2));
 	ClassDB::bind_method(D_METHOD("input_buffer_ready"), &PlayerNetController::input_buffer_ready);
 
@@ -124,7 +130,6 @@ void PlayerNetController::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("input_buffer_get_normalized_vector", "index"), &PlayerNetController::input_buffer_get_normalized_vector);
 
 	BIND_VMETHOD(MethodInfo(Variant::BOOL, "are_inputs_different", PropertyInfo(Variant::OBJECT, "inputs_A", PROPERTY_HINT_TYPE_STRING, "PlayerInputsReference"), PropertyInfo(Variant::OBJECT, "inputs_B", PROPERTY_HINT_TYPE_STRING, "PlayerInputsReference")));
-	BIND_VMETHOD(MethodInfo(Variant::NIL, "custom_check_data"));
 
 	// Rpc to server
 	ClassDB::bind_method(D_METHOD("rpc_server_send_frames_snapshot", "data"), &PlayerNetController::rpc_server_send_frames_snapshot);
@@ -135,7 +140,10 @@ void PlayerNetController::_bind_methods() {
 	// Rpc to master and puppets
 	ClassDB::bind_method(D_METHOD("rpc_send_player_state", "snapshot_id", "data"), &PlayerNetController::rpc_send_player_state);
 
-	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "player_node_path", PROPERTY_HINT_RANGE, "0,254,1"), "set_player_node_path", "get_player_node_path");
+	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "player_node_path"), "set_player_node_path", "get_player_node_path");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "max_redundant_inputs", PROPERTY_HINT_RANGE, "0,254,1"), "set_max_redundant_inputs", "get_max_redundant_inputs");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "check_state_position_only"), "set_check_state_position_only", "get_check_state_position_only");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "discrepancy_recover_velocity", PROPERTY_HINT_RANGE, "0.0,1000.0,0.1"), "set_discrepancy_recover_velocity", "get_discrepancy_recover_velocity");
 
 	ADD_SIGNAL(MethodInfo("server_physics_process", PropertyInfo(Variant::REAL, "delta")));
 	ADD_SIGNAL(MethodInfo("master_physics_process", PropertyInfo(Variant::REAL, "delta"), PropertyInfo(Variant::BOOL, "accept_new_inputs")));
@@ -145,6 +153,8 @@ void PlayerNetController::_bind_methods() {
 PlayerNetController::PlayerNetController() :
 		player_node_path(NodePath("../")),
 		max_redundant_inputs(9),
+		check_state_position_only(true),
+		discrepancy_recover_velocity(25.0),
 		controller(NULL),
 		cached_player(NULL) {
 
@@ -176,44 +186,64 @@ int PlayerNetController::get_max_redundant_inputs() const {
 	return max_redundant_inputs;
 }
 
+void PlayerNetController::set_check_state_position_only(bool p_check_position_only) {
+	check_state_position_only = p_check_position_only;
+}
+
+bool PlayerNetController::get_check_state_position_only() const {
+	return check_state_position_only;
+}
+
+void PlayerNetController::set_discrepancy_recover_velocity(real_t p_velocity) {
+	discrepancy_recover_velocity = p_velocity;
+}
+
+real_t PlayerNetController::get_discrepancy_recover_velocity() const {
+	return discrepancy_recover_velocity;
+}
+
 int PlayerNetController::input_buffer_add_data_type(InputDataType p_type, InputCompressionLevel p_compression) {
-	return input_buffer.add_data_type((InputsBuffer::DataType)p_type, (InputsBuffer::CompressionLevel)p_compression);
+	return inputs_buffer.add_data_type((InputsBuffer::DataType)p_type, (InputsBuffer::CompressionLevel)p_compression);
 }
 
 void PlayerNetController::input_buffer_ready() {
-	input_buffer.init_buffer();
+	inputs_buffer.init_buffer();
 }
 
 bool PlayerNetController::input_buffer_set_bool(int p_index, bool p_input) {
-	return input_buffer.set_bool(p_index, p_input);
+	return inputs_buffer.set_bool(p_index, p_input);
 }
 
 bool PlayerNetController::input_buffer_get_bool(int p_index) const {
-	return input_buffer.get_bool(p_index);
+	return inputs_buffer.get_bool(p_index);
 }
 
 int64_t PlayerNetController::input_buffer_set_int(int p_index, int64_t p_input) {
-	return input_buffer.set_int(p_index, p_input);
+	return inputs_buffer.set_int(p_index, p_input);
 }
 
 int64_t PlayerNetController::input_buffer_get_int(int p_index) const {
-	return input_buffer.get_int(p_index);
+	return inputs_buffer.get_int(p_index);
 }
 
 real_t PlayerNetController::input_buffer_set_unit_real(int p_index, real_t p_input) {
-	return input_buffer.set_unit_real(p_index, p_input);
+	return inputs_buffer.set_unit_real(p_index, p_input);
 }
 
 real_t PlayerNetController::input_buffer_get_unit_real(int p_index) const {
-	return input_buffer.get_unit_real(p_index);
+	return inputs_buffer.get_unit_real(p_index);
 }
 
 Vector2 PlayerNetController::input_buffer_set_normalized_vector(int p_index, Vector2 p_input) {
-	return input_buffer.set_normalized_vector(p_index, p_input);
+	return inputs_buffer.set_normalized_vector(p_index, p_input);
 }
 
 Vector2 PlayerNetController::input_buffer_get_normalized_vector(int p_index) const {
-	return input_buffer.get_normalized_vector(p_index);
+	return inputs_buffer.get_normalized_vector(p_index);
+}
+
+void PlayerNetController::set_inputs_buffer(const BitArray &p_new_buffer) {
+	inputs_buffer.get_buffer_mut().get_bytes_mut() = p_new_buffer.get_bytes();
 }
 
 void PlayerNetController::rpc_server_send_frames_snapshot(PoolVector<uint8_t> p_data) {
@@ -234,14 +264,14 @@ void PlayerNetController::rpc_master_send_tick_additional_speed(int p_additional
 void PlayerNetController::rpc_send_player_state(uint64_t p_snapshot_id, Variant p_data) {
 	ERR_FAIL_COND(get_tree()->is_network_server() == true);
 
-	print_line(itos(p_snapshot_id) + " -- " + p_data);
+	controller->player_state_check(p_snapshot_id, p_data);
 }
 
 void PlayerNetController::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
 			ERR_FAIL_NULL_MSG(get_player(), "The `player_node_path` must point to a valid `Spatial` node.");
-			input_buffer.init_buffer();
+			inputs_buffer.init_buffer();
 			controller->physics_process(get_process_delta_time());
 
 		} break;
@@ -359,13 +389,17 @@ void ServerController::receive_snapshots(PoolVector<uint8_t> p_data) {
 	}
 }
 
+void ServerController::player_state_check(uint64_t p_id, Variant p_data) {
+	ERR_PRINTS("The method `player_state_check` must not be called on server. Be sure why it happened.");
+}
+
 bool ServerController::fetch_next_input() {
 	bool is_new_input = true;
 
 	if (unlikely(current_packet_id == UINT64_MAX)) {
 		// As initial packet, anything is good.
 		if (snapshots.empty() == false) {
-			node->get_inputs_buffer_mut().get_buffer_mut().get_bytes_mut() = snapshots.front().inputs_buffer.get_bytes();
+			node->set_inputs_buffer(snapshots.front().inputs_buffer);
 			current_packet_id = snapshots.front().id;
 			snapshots.pop_front();
 			network_tracer.notify_packet_arrived();
@@ -391,7 +425,7 @@ bool ServerController::fetch_next_input() {
 			if (next_packet_id == snapshots.front().id) {
 				// Wow, the next input is perfect!
 
-				node->get_inputs_buffer_mut().get_buffer_mut().get_bytes_mut() = snapshots.front().inputs_buffer.get_bytes();
+				node->set_inputs_buffer(snapshots.front().inputs_buffer);
 				current_packet_id = snapshots.front().id;
 				snapshots.pop_front();
 
@@ -472,7 +506,7 @@ bool ServerController::fetch_next_input() {
 				}
 
 				if (recovered) {
-					node->get_inputs_buffer_mut().get_buffer_mut().get_bytes_mut() = pi.inputs_buffer.get_bytes();
+					node->set_inputs_buffer(pi.inputs_buffer);
 					current_packet_id = pi.id;
 					ghost_input_count = 0;
 					// print_line("Packet recovered"); // TODO how?
@@ -547,14 +581,15 @@ void ServerController::check_peers_player_state(real_t p_delta) {
 	peers_state_checker_time = 0.0;
 
 	Variant data;
-	if (node->get_script_instance() && node->get_script_instance()->has_method("custom_check_data")) {
-		data = node->get_script_instance()->call("custom_check_data");
+	if (node->get_check_state_position_only()) {
+		data = node->get_player()->get_global_transform().origin;
 	} else {
 		data = node->get_player()->get_global_transform();
 	}
 
-	// Notify the clients with the result.
+	// TODO please don't use variant and encode everything inside a more tiny packet.
 	// TODO Please make sure to notify the puppets only when they require it!
+	// Notify the clients with the result.
 	node->rpc("rpc_send_player_state",
 			current_packet_id,
 			data);
@@ -562,7 +597,9 @@ void ServerController::check_peers_player_state(real_t p_delta) {
 
 MasterController::MasterController() :
 		time_bank(0.0),
-		tick_additional_speed(0.0) {
+		tick_additional_speed(0.0),
+		recover_snapshot_id(0),
+		recovered_snapshot_id(0) {
 }
 
 void MasterController::physics_process(real_t p_delta) {
@@ -585,7 +622,7 @@ void MasterController::physics_process(real_t p_delta) {
 		// bad.
 		// Is better to not accumulate any other input, in this cases so to avoid
 		// difer too much from the server.
-		const bool accept_new_inputs = processed_frames.size() < MAX_STORED_FRAMES;
+		const bool accept_new_inputs = frames_snapshot.size() < MAX_STORED_FRAMES;
 
 		// The physics process is always emitted, because we still need to simulate
 		// the character motion even if we don't store the player inputs.
@@ -599,7 +636,7 @@ void MasterController::physics_process(real_t p_delta) {
 			inputs.compressed_id = id.compressed_id;
 			inputs.inputs_buffer = node->get_inputs_buffer().get_buffer();
 			inputs.character_transform = node->get_player()->get_global_transform();
-			processed_frames.push_back(inputs);
+			frames_snapshot.push_back(inputs);
 
 			// This must happens here because in case of bad internet connection
 			// the client accelerates the execution producing much more packets
@@ -608,12 +645,19 @@ void MasterController::physics_process(real_t p_delta) {
 		}
 	}
 
-	// TODO compute server discrepancy here?
-	// TODO recover server discrepancy here?
+	compute_server_discrepancy();
+	recover_server_discrepancy(p_delta);
 }
 
 void MasterController::receive_snapshots(PoolVector<uint8_t> p_data) {
-	ERR_PRINTS("The master is not supposed to receive snapshots");
+	ERR_PRINTS("The master is not supposed to receive snapshots. Check why this happened.");
+}
+
+void MasterController::player_state_check(uint64_t p_snapshot_id, Variant p_data) {
+	if (p_snapshot_id > recover_snapshot_id && p_snapshot_id > recovered_snapshot_id) {
+		recover_snapshot_id = p_snapshot_id;
+		recover_state_data = p_data;
+	}
 }
 
 real_t MasterController::get_pretended_delta() const {
@@ -621,7 +665,7 @@ real_t MasterController::get_pretended_delta() const {
 }
 
 void MasterController::send_frame_snapshots_to_server() {
-	const int snapshots_count = MIN(processed_frames.size(), node->get_max_redundant_inputs() + 1);
+	const int snapshots_count = MIN(frames_snapshot.size(), static_cast<size_t>(node->get_max_redundant_inputs() + 1));
 	ERR_FAIL_COND_MSG(snapshots_count >= UINT8_MAX, "Is not allow to send more than 254 redundant packets.");
 
 	const int buffer_size = node->get_inputs_buffer().get_buffer_size();
@@ -642,13 +686,13 @@ void MasterController::send_frame_snapshots_to_server() {
 		ofs += 1;
 
 		// Compose the packets
-		for (int i = processed_frames.size() - snapshots_count; i < processed_frames.size(); i += 1) {
+		for (size_t i = frames_snapshot.size() - snapshots_count; i < frames_snapshot.size(); i += 1) {
 			// Unreachable.
-			CRASH_COND(processed_frames[i].inputs_buffer.get_bytes().size() != buffer_size);
+			CRASH_COND(frames_snapshot[i].inputs_buffer.get_bytes().size() != buffer_size);
 			// First available byte used for the compressed input
-			encode_uint16(processed_frames[i].compressed_id, w.ptr() + ofs);
+			encode_uint16(frames_snapshot[i].compressed_id, w.ptr() + ofs);
 			ofs += 2;
-			copymem(w.ptr() + ofs, processed_frames[i].inputs_buffer.get_bytes().ptr(), buffer_size);
+			copymem(w.ptr() + ofs, frames_snapshot[i].inputs_buffer.get_bytes().ptr(), buffer_size);
 			ofs += buffer_size;
 		}
 
@@ -659,6 +703,85 @@ void MasterController::send_frame_snapshots_to_server() {
 	const int server_peer_id = 0;
 	const bool unreliable = true;
 	node->get_multiplayer()->send_bytes_to(node, server_peer_id, unreliable, "rpc_server_send_frames_snapshot", cached_packet_data);
+}
+
+void MasterController::compute_server_discrepancy() {
+	if (recover_snapshot_id > recovered_snapshot_id) {
+		// Nothing to do.
+		return;
+	}
+
+	FrameSnapshot fs;
+	fs.id = 0;
+
+	// Takes the snapshot that we have to recover and remove all the old snapshots.
+	while (frames_snapshot.empty() == false && frames_snapshot.front().id <= recover_snapshot_id) {
+		fs = frames_snapshot.front();
+	}
+
+	if (fs.id != recover_snapshot_id) {
+		// `recover_snapshot_id` is already checked
+		// or not yet received if this is the pupped, so just pospone this.
+		return;
+	}
+
+	Transform server_transform = node->get_player()->get_global_transform();
+	if (node->get_check_state_position_only()) {
+		ERR_FAIL_COND(recover_state_data.get_type() != Variant::VECTOR3);
+		server_transform.origin = recover_state_data;
+	} else {
+		ERR_FAIL_COND(recover_state_data.get_type() != Variant::TRANSFORM);
+		server_transform = recover_state_data;
+	}
+
+	const Transform unrecovered_transform = node->get_player()->get_global_transform();
+
+	const Transform delta_transform = fs.character_transform.inverse() * server_transform;
+
+	if (delta_transform.origin.length_squared() > CMP_EPSILON || delta_transform.basis.get_euler().length_squared() > CMP_EPSILON) {
+		// Calculates the discrepancy motion by rewinding all inputs.
+		node->get_player()->set_global_transform(server_transform);
+		for (size_t i = 0; i < frames_snapshot.size(); i += 1) {
+
+			// Set snapshot inputs.
+			node->set_inputs_buffer(frames_snapshot[i].inputs_buffer);
+
+			// Always true because we want to rewind client commands.
+			const bool accept_new_inputs = true;
+			node->emit_signal("master_physics_process", 1.0 / Engine::get_singleton()->get_iterations_per_second(), accept_new_inputs);
+
+			// Update snapshot transform
+			frames_snapshot[i].character_transform = node->get_player()->get_global_transform();
+		}
+
+		delta_discrepancy = node->get_player()->get_global_transform().inverse() * unrecovered_transform;
+
+		// Sets the unrecovered transform so we can interpolate the discrepancy
+		// and make this transition a bit more soft.
+		node->get_player()->set_global_transform(unrecovered_transform);
+	}
+}
+
+void MasterController::recover_server_discrepancy(real_t p_delta) {
+	Transform recovered_transform = node->get_player()->get_global_transform();
+
+	{
+		const real_t rlen = delta_discrepancy.origin.length();
+		const Vector3 frame_recover =
+				delta_discrepancy.origin.normalized() *
+				MIN(rlen * p_delta * node->get_discrepancy_recover_velocity(), rlen);
+
+		delta_discrepancy.origin -= frame_recover;
+		recovered_transform.origin += frame_recover;
+	}
+
+	if (node->get_check_state_position_only() == false) {
+		// TODO please recover rotation.
+		recovered_transform.basis *= delta_discrepancy.basis;
+		delta_discrepancy.basis = Basis();
+	}
+
+	node->get_player()->set_global_transform(recovered_transform);
 }
 
 void MasterController::receive_tick_additional_speed(int p_speed) {
@@ -672,3 +795,5 @@ void PuppetController::physics_process(real_t p_delta) {
 
 void PuppetController::receive_snapshots(PoolVector<uint8_t> p_data) {
 }
+
+void PuppetController::player_state_check(uint64_t p_snapshot_id, Variant p_data) {}

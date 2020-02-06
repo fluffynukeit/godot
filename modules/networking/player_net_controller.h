@@ -88,8 +88,15 @@ private:
 	/// are sent in an unreliable way.
 	int max_redundant_inputs;
 
+	/// When `true` the server sends only the global space position to check the
+	/// client status; otherwise sends the full `Transform`.
+	bool check_state_position_only;
+
+	/// Discrepancy recover velocity
+	real_t discrepancy_recover_velocity;
+
 	Controller *controller;
-	InputsBuffer input_buffer;
+	InputsBuffer inputs_buffer;
 
 	Spatial *cached_player;
 
@@ -107,6 +114,12 @@ public:
 
 	void set_max_redundant_inputs(int p_max);
 	int get_max_redundant_inputs() const;
+
+	void set_check_state_position_only(bool p_check_position_only);
+	bool get_check_state_position_only() const;
+
+	void set_discrepancy_recover_velocity(real_t p_velocity);
+	real_t get_discrepancy_recover_velocity() const;
 
 	int input_buffer_add_data_type(InputDataType p_type, InputCompressionLevel p_compression = INPUT_COMPRESSION_LEVEL_2);
 	void input_buffer_ready();
@@ -150,14 +163,16 @@ public:
 	Vector2 input_buffer_get_normalized_vector(int p_index) const;
 
 	const InputsBuffer &get_inputs_buffer() const {
-		return input_buffer;
+		return inputs_buffer;
 	}
 
 	InputsBuffer &get_inputs_buffer_mut() {
-		return input_buffer;
+		return inputs_buffer;
 	}
 
 public:
+	void set_inputs_buffer(const BitArray &p_new_buffer);
+
 	/* On server rpc functions. */
 	void rpc_server_send_frames_snapshot(PoolVector<uint8_t> p_data);
 
@@ -193,6 +208,11 @@ struct Controller {
 
 	virtual void physics_process(real_t p_delta) = 0;
 	virtual void receive_snapshots(PoolVector<uint8_t> p_data) = 0;
+
+	/// The server call this function on all peers with on server state.
+	/// The peers can check if the state is the same or not and in this case
+	/// recover its player state.
+	virtual void player_state_check(uint64_t p_id, Variant p_data) = 0;
 };
 
 struct ServerController : public Controller {
@@ -211,6 +231,7 @@ struct ServerController : public Controller {
 
 	virtual void physics_process(real_t p_delta);
 	virtual void receive_snapshots(PoolVector<uint8_t> p_data);
+	virtual void player_state_check(uint64_t p_snapshot_id, Variant p_data);
 
 private:
 	/// Fetch the next inputs, returns true if the input is new.
@@ -238,19 +259,31 @@ struct MasterController : public Controller {
 	real_t time_bank;
 	real_t tick_additional_speed;
 	TemporalIdGenerator input_id_generator;
-	Vector<FrameSnapshot> processed_frames;
+	std::deque<FrameSnapshot> frames_snapshot;
 	PoolVector<uint8_t> cached_packet_data;
+	uint64_t recover_snapshot_id;
+	uint64_t recovered_snapshot_id;
+	Variant recover_state_data;
+	Transform delta_discrepancy;
 
 	MasterController();
 
 	virtual void physics_process(real_t p_delta);
 	virtual void receive_snapshots(PoolVector<uint8_t> p_data);
+	virtual void player_state_check(uint64_t p_snapshot_id, Variant p_data);
 
 	real_t get_pretended_delta() const;
 
 	/// Sends an unreliable packet to the server, containing a packed array of
 	/// frame snapshots.
 	void send_frame_snapshots_to_server();
+
+	/// Computes the motion to recover the discrepancy between client and server.
+	/// Removes all the checked snapshots.
+	void compute_server_discrepancy();
+
+	/// Resets the client motion so to conbenzate the server discrepancy.
+	void recover_server_discrepancy(real_t p_delta);
 
 	void receive_tick_additional_speed(int p_speed);
 };
@@ -260,5 +293,6 @@ struct PuppetController : public Controller {
 
 	virtual void physics_process(real_t p_delta);
 	virtual void receive_snapshots(PoolVector<uint8_t> p_data);
+	virtual void player_state_check(uint64_t p_snapshot_id, Variant p_data);
 };
 #endif
