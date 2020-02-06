@@ -810,7 +810,7 @@ void MultiplayerAPI::_process_raw(int p_from, const uint8_t *p_packet, int p_pac
 	emit_signal("network_peer_packet", p_from, out);
 }
 
-void MultiplayerAPI::send_bytes_to(Node *p_from, int p_peer_id, bool p_unreliable, const StringName &p_method, PoolVector<uint8_t> p_data) {
+void MultiplayerAPI::send_bytes_to(Node *p_from, int p_peer_id, bool p_unreliable, const StringName &p_method, PoolVector<uint8_t> p_data, int custom_data_size) {
 	ERR_FAIL_COND_MSG(p_data.size() < 1, "Trying to send an empty raw packet.");
 	ERR_FAIL_COND_MSG(!network_peer.is_valid(), "Trying to send a raw packet while no network peer is active.");
 	ERR_FAIL_COND_MSG(network_peer->get_connection_status() != NetworkedMultiplayerPeer::CONNECTION_CONNECTED, "Trying to send a raw packet via a network peer which is not connected.");
@@ -832,6 +832,9 @@ void MultiplayerAPI::send_bytes_to(Node *p_from, int p_peer_id, bool p_unreliabl
 		psc = path_send_cache.getptr(from_path);
 		psc->id = last_send_cache_id++;
 	}
+
+	const int data_size = custom_data_size > 1 ? custom_data_size : p_data.size();
+	ERR_FAIL_COND(data_size > p_data.size());
 
 	int ofs = 0;
 
@@ -855,12 +858,12 @@ void MultiplayerAPI::send_bytes_to(Node *p_from, int p_peer_id, bool p_unreliabl
 	encode_cstring(name.get_data(), &(packet_cache.write[ofs]));
 	ofs += len;
 
-	MAKE_ROOM(ofs + p_data.size());
+	MAKE_ROOM(ofs + data_size);
 	{
 		PoolVector<uint8_t>::Read r = p_data.read();
-		copymem(&(packet_cache.write[ofs]), r.ptr(), sizeof(uint8_t) * p_data.size());
+		copymem(&(packet_cache.write[ofs]), r.ptr(), sizeof(uint8_t) * data_size);
 	}
-	ofs += p_data.size();
+	ofs += data_size;
 
 	// See if all peers have cached path (is so, call can be fast).
 	bool has_all_peers = _send_confirm_path(from_path, psc, p_peer_id);

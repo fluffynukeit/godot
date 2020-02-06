@@ -34,7 +34,6 @@
 #include "core/node_path.h"
 #include "input_buffer.h"
 #include "net_utilities.h"
-#include "temporal_id_generator.h"
 #include <deque>
 
 #ifndef PLAYERPNETCONTROLLER_H
@@ -47,18 +46,20 @@ class PlayerInputsReference : public Object {
 	GDCLASS(PlayerInputsReference, Object);
 
 public:
-	InputsBuffer input_buffer;
+	InputsBuffer inputs_buffer;
 
 	static void _bind_methods();
 
 	PlayerInputsReference() {}
 	PlayerInputsReference(const InputsBuffer &p_ib) :
-			input_buffer(p_ib) {}
+			inputs_buffer(p_ib) {}
 
 	bool get_bool(int p_index) const;
 	int64_t get_int(int p_index) const;
 	real_t get_unit_real(int p_index) const;
 	Vector2 get_normalized_vector(int p_index) const;
+
+	void set_inputs_buffer(const BitArray &p_new_buffer);
 };
 
 class PlayerNetController : public Node {
@@ -196,9 +197,9 @@ struct FrameSnapshotSkinny {
 
 struct FrameSnapshot {
 	uint64_t id;
-	uint16_t compressed_id; // Is not anymore valid after 1500 frames
 	BitArray inputs_buffer;
 	Transform character_transform;
+	uint64_t similarity;
 };
 
 struct Controller {
@@ -218,7 +219,6 @@ struct Controller {
 struct ServerController : public Controller {
 	uint64_t current_packet_id;
 	uint32_t ghost_input_count;
-	TemporalIdDecoder input_id_decoder;
 	NetworkTracer network_tracer;
 	std::deque<FrameSnapshotSkinny> snapshots;
 	real_t optimal_snapshots_size;
@@ -258,7 +258,7 @@ private:
 struct MasterController : public Controller {
 	real_t time_bank;
 	real_t tick_additional_speed;
-	TemporalIdGenerator input_id_generator;
+	uint64_t snapshot_counter;
 	std::deque<FrameSnapshot> frames_snapshot;
 	PoolVector<uint8_t> cached_packet_data;
 	uint64_t recover_snapshot_id;

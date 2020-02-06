@@ -73,20 +73,24 @@ void PlayerInputsReference::_bind_methods() {
 }
 
 bool PlayerInputsReference::get_bool(int p_index) const {
-	return input_buffer.get_bool(p_index);
+	return inputs_buffer.get_bool(p_index);
 }
 
 int64_t PlayerInputsReference::get_int(int p_index) const {
-	return input_buffer.get_int(p_index);
+	return inputs_buffer.get_int(p_index);
 }
 
 real_t PlayerInputsReference::get_unit_real(int p_index) const {
 
-	return input_buffer.get_unit_real(p_index);
+	return inputs_buffer.get_unit_real(p_index);
 }
 
 Vector2 PlayerInputsReference::get_normalized_vector(int p_index) const {
-	return input_buffer.get_normalized_vector(p_index);
+	return inputs_buffer.get_normalized_vector(p_index);
+}
+
+void PlayerInputsReference::set_inputs_buffer(const BitArray &p_new_buffer) {
+	inputs_buffer.get_buffer_mut().get_bytes_mut() = p_new_buffer.get_bytes();
 }
 
 void PlayerNetController::_bind_methods() {
@@ -331,17 +335,27 @@ bool is_remote_frame_A_older(const FrameSnapshotSkinny &p_snap_a, const FrameSna
 }
 
 void ServerController::receive_snapshots(PoolVector<uint8_t> p_data) {
+
+	// The packet is composed as follow:
+	// - First byte the quantity of sent snapshots.
+	// - The following four bytes for the first snapshot ID.
+	// - Array of snapshots:
+	// |-- First byte the amount of times this snapshot is duplicated in the packet.
+	// |-- snapshot inputs buffer.
+	//
+	// Let's decode it!
+
 	const int data_len = p_data.size();
 
-	if (p_data.size() < data_len)
+	if (data_len < 1)
 		// Just discard, the packet is corrupted.
 		// TODO Measure internet connection status here?
 		return;
 
+	const int buffer_size = node->get_inputs_buffer().get_buffer_size();
+
 	PoolVector<uint8_t>::Read r = p_data.read();
 	int ofs = 0;
-
-	const int buffer_size = node->get_inputs_buffer().get_buffer_size();
 
 	const int snapshots_count = r[ofs];
 	ofs += 1;
@@ -349,46 +363,55 @@ void ServerController::receive_snapshots(PoolVector<uint8_t> p_data) {
 	const int packet_size = 0
 							// First byte is to store the size of the shapshots_count
 							+ sizeof(uint8_t)
-							// uint16_t is used to store the compressed packet ID.
-							+ snapshots_count * (sizeof(uint16_t) + buffer_size);
+							// Then, the first snapshot id in the packet.
+							+ sizeof(uint32_t)
+							// Array of snapshots.
+							+ (sizeof(uint8_t) + buffer_size) * snapshots_count;
 
 	if (packet_size != data_len)
 		// Just discard, the packet is corrupted.
 		// TODO Measure internet connection status here?
 		return;
 
-	// Received data seems fine.
+	// Received data seems fine, let's decode.
+
+	const uint32_t first_snapshot_id = decode_uint32(r.ptr() + ofs);
+	ofs += 4;
+
+	uint64_t inserted_snapshot_count = 0;
 
 	for (int i = 0; i < snapshots_count; i += 1) {
 
-		// First available byte used for the compressed input
-		uint16_t compressed_packet_id = decode_uint16(r.ptr() + ofs);
-		ofs += 2;
+		// First byte is used for the duplication count.
+		const uint8_t duplication = r[ofs];
+		ofs += 1;
 
-		DecompressionResult dec_res = input_id_decoder.receive(compressed_packet_id);
-		// Is unlikelly that this happens in case of really bad internet connect.
-		// - If this happens on production the reason is another.
-		// - If this happens during test phase open an issue please.
-		ERR_FAIL_COND_MSG(dec_res.success == false, "Was not possible to decode the id of the received packet.")
+		for (int sub = 0; sub <= duplication; sub += 1) {
 
-		if (current_packet_id != UINT64_MAX && current_packet_id >= dec_res.id)
-			continue;
+			const uint64_t snapshot_id = first_snapshot_id + inserted_snapshot_count;
+			inserted_snapshot_count += 1;
 
-		FrameSnapshotSkinny rfs;
-		rfs.id = dec_res.id;
+			if (current_packet_id != UINT64_MAX && current_packet_id >= snapshot_id)
+				continue;
 
-		const bool found = std::binary_search(snapshots.begin(), snapshots.end(), rfs, is_remote_frame_A_older);
+			FrameSnapshotSkinny rfs;
+			rfs.id = snapshot_id;
 
-		if (!found) {
-			rfs.inputs_buffer.get_bytes_mut().resize(buffer_size);
-			copymem(rfs.inputs_buffer.get_bytes_mut().ptrw(), r.ptr() + ofs, buffer_size);
-			ofs += buffer_size;
+			const bool found = std::binary_search(snapshots.begin(), snapshots.end(), rfs, is_remote_frame_A_older);
 
-			snapshots.push_back(rfs);
+			if (!found) {
+				rfs.inputs_buffer.get_bytes_mut().resize(buffer_size);
+				copymem(rfs.inputs_buffer.get_bytes_mut().ptrw(), r.ptr() + ofs, buffer_size);
 
-			// Sort the new inserted snapshot.
-			std::sort(snapshots.begin(), snapshots.end(), is_remote_frame_A_older);
+				snapshots.push_back(rfs);
+
+				// Sort the new inserted snapshot.
+				std::sort(snapshots.begin(), snapshots.end(), is_remote_frame_A_older);
+			}
 		}
+
+		// We can now advance the offset.
+		ofs += buffer_size;
 	}
 }
 
@@ -398,6 +421,9 @@ void ServerController::player_state_check(uint64_t p_id, Variant p_data) {
 
 bool ServerController::fetch_next_input() {
 	bool is_new_input = true;
+
+	// Unreachable
+	CRASH_COND(node->get_script_instance() == NULL);
 
 	if (unlikely(current_packet_id == UINT64_MAX)) {
 		// As initial packet, anything is good.
@@ -497,10 +523,8 @@ bool ServerController::fetch_next_input() {
 						// Useful to avoid that the server stay too much behind the
 						// client.
 
-						pir_B.input_buffer.get_buffer_mut().get_bytes_mut() = pi.inputs_buffer.get_bytes();
+						pir_B.set_inputs_buffer(pi.inputs_buffer);
 
-						// Unreachable
-						CRASH_COND(node->get_script_instance() == NULL);
 						const bool is_meaningful = node->get_script_instance()->call("are_inputs_different", &pir_A, &pir_B);
 
 						if (is_meaningful) {
@@ -602,6 +626,7 @@ void ServerController::check_peers_player_state(real_t p_delta) {
 MasterController::MasterController() :
 		time_bank(0.0),
 		tick_additional_speed(0.0),
+		snapshot_counter(0),
 		recover_snapshot_id(0),
 		recovered_snapshot_id(0) {
 }
@@ -642,14 +667,14 @@ void MasterController::physics_process(real_t p_delta) {
 		node->get_script_instance()->call("step_player", p_delta);
 
 		if (accept_new_inputs) {
-			GeneratedData id = input_id_generator.next();
-
 			FrameSnapshot inputs;
-			inputs.id = id.id;
-			inputs.compressed_id = id.compressed_id;
+			inputs.id = snapshot_counter;
 			inputs.inputs_buffer = node->get_inputs_buffer().get_buffer();
 			inputs.character_transform = node->get_player()->get_global_transform();
+			inputs.similarity = UINT64_MAX;
 			frames_snapshot.push_back(inputs);
+
+			snapshot_counter += 1;
 
 			// This must happens here because in case of bad internet connection
 			// the client accelerates the execution producing much more packets
@@ -678,44 +703,149 @@ real_t MasterController::get_pretended_delta() const {
 }
 
 void MasterController::send_frame_snapshots_to_server() {
-	const int snapshots_count = MIN(frames_snapshot.size(), static_cast<size_t>(node->get_max_redundant_inputs() + 1));
+
+	// The packet is composed as follow:
+	// - First byte the quantity of sent snapshots.
+	// - The following four bytes for the first snapshot ID.
+	// - Array of snapshots:
+	// |-- First byte the amount of times this snapshot is duplicated in the packet.
+	// |-- snapshot inputs buffer.
+
+	// Unreachable
+	CRASH_COND(node->get_script_instance() == NULL);
+
+	const size_t snapshots_count = MIN(frames_snapshot.size(), static_cast<size_t>(node->get_max_redundant_inputs() + 1));
 	ERR_FAIL_COND_MSG(snapshots_count >= UINT8_MAX, "Is not allow to send more than 254 redundant packets.");
+	CRASH_COND(snapshots_count < 1); // Unreachable
 
 	const int buffer_size = node->get_inputs_buffer().get_buffer_size();
 
 	const int packet_size = 0
 							// First byte is to store the size of the shapshots_count
 							+ sizeof(uint8_t)
-							// uint16_t is used to store the compressed packet ID.
-							+ snapshots_count * (sizeof(uint16_t) + buffer_size);
+							// Then, the first snapshot id in the packet.
+							+ sizeof(uint32_t)
+							// Array of snapshots.
+							+ (sizeof(uint8_t) + buffer_size) * snapshots_count;
 
-	cached_packet_data.resize(packet_size);
+	int final_packet_size = 0;
+
+	if (cached_packet_data.size() < packet_size)
+		cached_packet_data.resize(packet_size);
 
 	{
 		PoolVector<uint8_t>::Write w = cached_packet_data.write();
 
 		int ofs = 0;
-		w[ofs] = snapshots_count;
+
+		// The Array of snapshot size is written at the end.
 		ofs += 1;
+
+		// Let's store the ID of the first snapshot.
+		const uint64_t first_snapshot_id = frames_snapshot[frames_snapshot.size() - snapshots_count].id;
+		ofs += encode_uint32(first_snapshot_id, w.ptr() + ofs);
+
+		uint8_t in_packet_snapshots = 0;
+		uint64_t previous_snapshot_id = UINT64_MAX;
+		uint64_t previous_snapshot_similarity = UINT64_MAX;
+		uint8_t duplication_count = 0;
+
+		PlayerInputsReference pir_A(node->get_inputs_buffer());
+		// Copy from the node inputs so to copy the data info.
+		PlayerInputsReference pir_B(node->get_inputs_buffer());
 
 		// Compose the packets
 		for (size_t i = frames_snapshot.size() - snapshots_count; i < frames_snapshot.size(); i += 1) {
 			// Unreachable.
 			CRASH_COND(frames_snapshot[i].inputs_buffer.get_bytes().size() != buffer_size);
-			// First available byte used for the compressed input
-			encode_uint16(frames_snapshot[i].compressed_id, w.ptr() + ofs);
-			ofs += 2;
-			copymem(w.ptr() + ofs, frames_snapshot[i].inputs_buffer.get_bytes().ptr(), buffer_size);
-			ofs += buffer_size;
+
+			bool is_similar = false;
+
+			if (previous_snapshot_id == UINT64_MAX) {
+				// This happens for the first snapshot of the packet.
+				// Just write it.
+				is_similar = false;
+			} else {
+				if (frames_snapshot[i].similarity != previous_snapshot_id) {
+					if (frames_snapshot[i].similarity == UINT64_MAX) {
+						// This snapshot was never compared, let's do it now.
+						pir_B.set_inputs_buffer(frames_snapshot[i].inputs_buffer);
+						const bool are_different = node->get_script_instance()->call("are_inputs_different", &pir_A, &pir_B);
+						is_similar = are_different == false;
+
+					} else if (frames_snapshot[i].similarity == previous_snapshot_similarity) {
+						// This snapshot is similar to the previous one, the thing is
+						// that the similarity check was done on an older snapshot.
+						// Fortunatelly we are able to compare the similarity id
+						// and detect its similarity correctly.
+						is_similar = true;
+
+					} else {
+						// This snapshot is simply different from the previous one.
+						is_similar = false;
+					}
+				} else {
+					// These are the same, let's save some space.
+					is_similar = true;
+				}
+			}
+
+			if (is_similar) {
+				duplication_count += 1;
+				// In this way, the frame we don't need to compare this again.
+				frames_snapshot[i].similarity = previous_snapshot_id;
+
+			} else {
+				if (previous_snapshot_id == UINT64_MAX) {
+					// The first snapshot is special
+					// Nothing to do
+				} else {
+					// We can finally write the duplicated snapshots count.
+					w[ofs - buffer_size - 1] = duplication_count;
+				}
+
+				// Resets the duplication count.
+				duplication_count = 0;
+
+				// Writes the duplication_count, now is simply 0.
+				w[ofs] = 0;
+				ofs += 1;
+
+				// Write the inputs
+				copymem(w.ptr() + ofs, frames_snapshot[i].inputs_buffer.get_bytes().ptr(), buffer_size);
+				ofs += buffer_size;
+
+				in_packet_snapshots += 1;
+
+				// Let's see if we can duplicate this snapshot.
+				previous_snapshot_id = frames_snapshot[i].id;
+				previous_snapshot_similarity = frames_snapshot[i].similarity;
+				pir_A.set_inputs_buffer(frames_snapshot[i].inputs_buffer);
+			}
 		}
 
+		// Write the last duplication count
+		w[ofs - buffer_size - 1] = duplication_count;
+
+		// Write the snapshot array size.
+		w[0] = in_packet_snapshots;
+
+		// Size after the compression.
+		final_packet_size = 0
+							// First byte is to store the size of the shapshots_count
+							+ sizeof(uint8_t)
+							// Then, the first snapshot id in the packet.
+							+ sizeof(uint32_t)
+							// Array of snapshots.
+							+ (sizeof(uint8_t) + buffer_size) * in_packet_snapshots;
+
 		// Unreachable.
-		CRASH_COND(ofs != packet_size);
+		CRASH_COND(ofs != final_packet_size);
 	}
 
 	const int server_peer_id = 0;
 	const bool unreliable = true;
-	node->get_multiplayer()->send_bytes_to(node, server_peer_id, unreliable, "rpc_server_send_frames_snapshot", cached_packet_data);
+	node->get_multiplayer()->send_bytes_to(node, server_peer_id, unreliable, "rpc_server_send_frames_snapshot", cached_packet_data, final_packet_size);
 }
 
 // TODO I'm pretty sure this is not good because any game may want to send
