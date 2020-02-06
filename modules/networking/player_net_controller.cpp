@@ -36,10 +36,10 @@
 #include <stdint.h>
 #include <algorithm>
 
-// TODO can we put this on the node?
+// TODO can we put all these as node parameters???
+
 #define MAX_STORED_FRAMES 300
 
-// TODO can we put this on the node?
 // Take into consideration the last 20sec to decide the `optimal_buffer_size`.
 #define PACKETS_TO_TRACK 1200
 
@@ -62,6 +62,8 @@
 
 // 2%
 #define TICK_SPEED_CHANGE_NOTIF_THRESHOLD 4
+
+#define PEERS_STATE_CHECK_INTERVAL 10.0 / 60.0
 
 void PlayerInputsReference::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_bool", "index"), &PlayerInputsReference::get_bool);
@@ -101,6 +103,7 @@ void PlayerNetController::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("set_player_node_path", "player_node_path"), &PlayerNetController::set_player_node_path);
 	ClassDB::bind_method(D_METHOD("get_player_node_path"), &PlayerNetController::get_player_node_path);
+	ClassDB::bind_method(D_METHOD("get_player"), &PlayerNetController::get_player);
 
 	ClassDB::bind_method(D_METHOD("set_max_redundant_inputs", "max_redundand_inputs"), &PlayerNetController::set_max_redundant_inputs);
 	ClassDB::bind_method(D_METHOD("get_max_redundant_inputs"), &PlayerNetController::get_max_redundant_inputs);
@@ -121,12 +124,16 @@ void PlayerNetController::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("input_buffer_get_normalized_vector", "index"), &PlayerNetController::input_buffer_get_normalized_vector);
 
 	BIND_VMETHOD(MethodInfo(Variant::BOOL, "are_inputs_different", PropertyInfo(Variant::OBJECT, "inputs_A", PROPERTY_HINT_TYPE_STRING, "PlayerInputsReference"), PropertyInfo(Variant::OBJECT, "inputs_B", PROPERTY_HINT_TYPE_STRING, "PlayerInputsReference")));
+	BIND_VMETHOD(MethodInfo(Variant::NIL, "custom_check_data"));
 
 	// Rpc to server
 	ClassDB::bind_method(D_METHOD("rpc_server_send_frames_snapshot", "data"), &PlayerNetController::rpc_server_send_frames_snapshot);
 
 	// Rpc to master
 	ClassDB::bind_method(D_METHOD("rpc_master_send_tick_additional_speed", "tick_speed"), &PlayerNetController::rpc_master_send_tick_additional_speed);
+
+	// Rpc to master and puppets
+	ClassDB::bind_method(D_METHOD("rpc_send_player_state", "snapshot_id", "data"), &PlayerNetController::rpc_send_player_state);
 
 	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "player_node_path", PROPERTY_HINT_RANGE, "0,254,1"), "set_player_node_path", "get_player_node_path");
 
@@ -144,6 +151,8 @@ PlayerNetController::PlayerNetController() :
 	rpc_config("rpc_server_send_frames_snapshot", MultiplayerAPI::RPC_MODE_REMOTE);
 
 	rpc_config("rpc_master_send_tick_additional_speed", MultiplayerAPI::RPC_MODE_MASTER);
+
+	rpc_config("rpc_send_player_state", MultiplayerAPI::RPC_MODE_REMOTE);
 }
 
 void PlayerNetController::set_player_node_path(NodePath p_path) {
@@ -222,6 +231,12 @@ void PlayerNetController::rpc_master_send_tick_additional_speed(int p_additional
 	static_cast<MasterController *>(controller)->receive_tick_additional_speed(p_additional_tick_speed);
 }
 
+void PlayerNetController::rpc_send_player_state(uint64_t p_snapshot_id, Variant p_data) {
+	ERR_FAIL_COND(get_tree()->is_network_server() == true);
+
+	print_line(itos(p_snapshot_id) + " -- " + p_data);
+}
+
 void PlayerNetController::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
@@ -266,14 +281,16 @@ ServerController::ServerController() :
 		ghost_input_count(0),
 		network_tracer(PACKETS_TO_TRACK),
 		optimal_snapshots_size(0.0),
-		client_tick_additional_speed(0.0) {
+		client_tick_additional_speed(0.0),
+		client_tick_additional_speed_compressed(0),
+		peers_state_checker_time(0.0) {
 }
 
 void ServerController::physics_process(real_t p_delta) {
 	fetch_next_input();
 	node->emit_signal("server_physics_process", p_delta);
 	adjust_master_tick_rate(p_delta);
-	// TODO process client position check.
+	check_peers_player_state(p_delta);
 }
 
 bool is_remote_frame_A_older(const FrameSnapshotSkinny &p_snap_a, const FrameSnapshotSkinny &p_snap_b) {
@@ -321,7 +338,7 @@ void ServerController::receive_snapshots(PoolVector<uint8_t> p_data) {
 		// - If this happens during test phase open an issue please.
 		ERR_FAIL_COND_MSG(dec_res.success == false, "Was not possible to decode the id of the received packet.")
 
-		if (current_packet_id >= dec_res.id)
+		if (current_packet_id != UINT64_MAX && current_packet_id >= dec_res.id)
 			continue;
 
 		FrameSnapshotSkinny rfs;
@@ -513,6 +530,34 @@ void ServerController::adjust_master_tick_rate(real_t p_delta) {
 					client_tick_additional_speed_compressed);
 		}
 	}
+}
+
+void ServerController::check_peers_player_state(real_t p_delta) {
+	if (current_packet_id == UINT64_MAX) {
+		// Skip this until the first input arrive.
+		return;
+	}
+
+	peers_state_checker_time += p_delta;
+	if (peers_state_checker_time < PEERS_STATE_CHECK_INTERVAL) {
+		// Not yet the time to check
+		return;
+	}
+
+	peers_state_checker_time = 0.0;
+
+	Variant data;
+	if (node->get_script_instance() && node->get_script_instance()->has_method("custom_check_data")) {
+		data = node->get_script_instance()->call("custom_check_data");
+	} else {
+		data = node->get_player()->get_global_transform();
+	}
+
+	// Notify the clients with the result.
+	// TODO Please make sure to notify the puppets only when they require it!
+	node->rpc("rpc_send_player_state",
+			current_packet_id,
+			data);
 }
 
 MasterController::MasterController() :

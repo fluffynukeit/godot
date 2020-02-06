@@ -161,8 +161,11 @@ public:
 	/* On server rpc functions. */
 	void rpc_server_send_frames_snapshot(PoolVector<uint8_t> p_data);
 
-	/* On client rpc functions. */
+	/* On master rpc functions. */
 	void rpc_master_send_tick_additional_speed(int p_additional_tick_speed);
+
+	/* On all peers rpc functions. */
+	void rpc_send_player_state(uint64_t p_snapshot_id, Variant p_data);
 
 private:
 	virtual void _notification(int p_what);
@@ -202,6 +205,7 @@ struct ServerController : public Controller {
 	real_t client_tick_additional_speed;
 	// It goes from -100 to 100
 	int client_tick_additional_speed_compressed;
+	real_t peers_state_checker_time;
 
 	ServerController();
 
@@ -223,7 +227,11 @@ private:
 	/// the server is artificial and no more dependent on the internet. For this
 	/// reason the server tells the client to slowdown so to keep the `frames_inputs`
 	/// size moderate to the needs.
-	void adjust_master_tick_rate(real_t delta);
+	void adjust_master_tick_rate(real_t p_delta);
+
+	/// This function is executed on server, and call a client function that
+	/// checks if the player state is consistent between client and server.
+	void check_peers_player_state(real_t p_delta);
 };
 
 struct MasterController : public Controller {
