@@ -97,3 +97,9 @@ uint64_t BitArray::read_bits(int p_bit_offset, int p_bits) const {
 
 	return val;
 }
+
+void BitArray::zero() {
+	for (int i = 0; i < bytes.size(); i += 1) {
+		bytes.write[i] = 0;
+	}
+}

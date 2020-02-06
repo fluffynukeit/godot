@@ -129,6 +129,8 @@ void PlayerNetController::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("input_buffer_set_normalized_vector", "index", "vector"), &PlayerNetController::input_buffer_set_normalized_vector);
 	ClassDB::bind_method(D_METHOD("input_buffer_get_normalized_vector", "index"), &PlayerNetController::input_buffer_get_normalized_vector);
 
+	BIND_VMETHOD(MethodInfo("collect_inputs"));
+	BIND_VMETHOD(MethodInfo("step_player", PropertyInfo(Variant::REAL, "delta")));
 	BIND_VMETHOD(MethodInfo(Variant::BOOL, "are_inputs_different", PropertyInfo(Variant::OBJECT, "inputs_A", PROPERTY_HINT_TYPE_STRING, "PlayerInputsReference"), PropertyInfo(Variant::OBJECT, "inputs_B", PROPERTY_HINT_TYPE_STRING, "PlayerInputsReference")));
 
 	// Rpc to server
@@ -144,10 +146,6 @@ void PlayerNetController::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "max_redundant_inputs", PROPERTY_HINT_RANGE, "0,254,1"), "set_max_redundant_inputs", "get_max_redundant_inputs");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "check_state_position_only"), "set_check_state_position_only", "get_check_state_position_only");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "discrepancy_recover_velocity", PROPERTY_HINT_RANGE, "0.0,1000.0,0.1"), "set_discrepancy_recover_velocity", "get_discrepancy_recover_velocity");
-
-	ADD_SIGNAL(MethodInfo("server_physics_process", PropertyInfo(Variant::REAL, "delta")));
-	ADD_SIGNAL(MethodInfo("master_physics_process", PropertyInfo(Variant::REAL, "delta"), PropertyInfo(Variant::BOOL, "accept_new_inputs")));
-	ADD_SIGNAL(MethodInfo("puppet_physics_process", PropertyInfo(Variant::REAL, "delta")));
 }
 
 PlayerNetController::PlayerNetController() :
@@ -270,9 +268,14 @@ void PlayerNetController::rpc_send_player_state(uint64_t p_snapshot_id, Variant 
 void PlayerNetController::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
+			ERR_FAIL_NULL_MSG(get_script_instance(), "You Must have a script to use correctly the `PlayerNetController`.");
+			ERR_FAIL_COND_MSG(get_script_instance()->has_method("collect_inputs") == false, "In your script you must inherit the virtual method `collect_inputs` to correctly use the `PlayerNetController`.");
+			ERR_FAIL_COND_MSG(get_script_instance()->has_method("step_player") == false, "In your script you must inherit the virtual method `step_player` to correctly use the `PlayerNetController`.");
+			ERR_FAIL_COND_MSG(get_script_instance()->has_method("are_inputs_different") == false, "In your script you must inherit the virtual method `are_inputs_different` to correctly use the `PlayerNetController`.");
 			ERR_FAIL_NULL_MSG(get_player(), "The `player_node_path` must point to a valid `Spatial` node.");
+
 			inputs_buffer.init_buffer();
-			controller->physics_process(get_process_delta_time());
+			controller->physics_process(get_physics_process_delta_time());
 
 		} break;
 		case NOTIFICATION_ENTER_TREE: {
@@ -318,7 +321,7 @@ ServerController::ServerController() :
 
 void ServerController::physics_process(real_t p_delta) {
 	fetch_next_input();
-	node->emit_signal("server_physics_process", p_delta);
+	node->get_script_instance()->call("step_player", p_delta);
 	adjust_master_tick_rate(p_delta);
 	check_peers_player_state(p_delta);
 }
@@ -496,9 +499,10 @@ bool ServerController::fetch_next_input() {
 
 						pir_B.input_buffer.get_buffer_mut().get_bytes_mut() = pi.inputs_buffer.get_bytes();
 
-						bool is_meaningful = false;
-						if (node->get_script_instance() && node->get_script_instance()->has_method("are_inputs_different"))
-							is_meaningful = node->get_script_instance()->call("are_inputs_different", &pir_A, &pir_B);
+						// Unreachable
+						CRASH_COND(node->get_script_instance() == NULL);
+						const bool is_meaningful = node->get_script_instance()->call("are_inputs_different", &pir_A, &pir_B);
+
 						if (is_meaningful) {
 							break;
 						}
@@ -610,6 +614,9 @@ void MasterController::physics_process(real_t p_delta) {
 	// is advancing faster, for this reason we are still using
 	// delta to move the player.
 
+	// Unreachable
+	CRASH_COND(node->get_script_instance() == NULL);
+
 	const real_t pretended_delta = get_pretended_delta();
 
 	time_bank += p_delta;
@@ -624,9 +631,15 @@ void MasterController::physics_process(real_t p_delta) {
 		// difer too much from the server.
 		const bool accept_new_inputs = frames_snapshot.size() < MAX_STORED_FRAMES;
 
+		if (accept_new_inputs) {
+			node->get_script_instance()->call("collect_inputs");
+		} else {
+			node->get_inputs_buffer_mut().zero();
+		}
+
 		// The physics process is always emitted, because we still need to simulate
 		// the character motion even if we don't store the player inputs.
-		node->emit_signal("master_physics_process", p_delta, accept_new_inputs);
+		node->get_script_instance()->call("step_player", p_delta);
 
 		if (accept_new_inputs) {
 			GeneratedData id = input_id_generator.next();
@@ -661,7 +674,7 @@ void MasterController::player_state_check(uint64_t p_snapshot_id, Variant p_data
 }
 
 real_t MasterController::get_pretended_delta() const {
-	return 1.0 / (Engine::get_singleton()->get_iterations_per_second() + tick_additional_speed);
+	return 1.0 / (static_cast<real_t>(Engine::get_singleton()->get_iterations_per_second()) + tick_additional_speed);
 }
 
 void MasterController::send_frame_snapshots_to_server() {
@@ -705,8 +718,10 @@ void MasterController::send_frame_snapshots_to_server() {
 	node->get_multiplayer()->send_bytes_to(node, server_peer_id, unreliable, "rpc_server_send_frames_snapshot", cached_packet_data);
 }
 
+// TODO I'm pretty sure this is not good because any game may want to send
+// custom data and recovere in a different way.
 void MasterController::compute_server_discrepancy() {
-	if (recover_snapshot_id > recovered_snapshot_id) {
+	if (recover_snapshot_id <= recovered_snapshot_id) {
 		// Nothing to do.
 		return;
 	}
@@ -717,6 +732,7 @@ void MasterController::compute_server_discrepancy() {
 	// Takes the snapshot that we have to recover and remove all the old snapshots.
 	while (frames_snapshot.empty() == false && frames_snapshot.front().id <= recover_snapshot_id) {
 		fs = frames_snapshot.front();
+		frames_snapshot.pop_front();
 	}
 
 	if (fs.id != recover_snapshot_id) {
@@ -734,32 +750,34 @@ void MasterController::compute_server_discrepancy() {
 		server_transform = recover_state_data;
 	}
 
+	const real_t delta = 1.0 / Engine::get_singleton()->get_iterations_per_second();
 	const Transform unrecovered_transform = node->get_player()->get_global_transform();
-
 	const Transform delta_transform = fs.character_transform.inverse() * server_transform;
 
 	if (delta_transform.origin.length_squared() > CMP_EPSILON || delta_transform.basis.get_euler().length_squared() > CMP_EPSILON) {
 		// Calculates the discrepancy motion by rewinding all inputs.
 		node->get_player()->set_global_transform(server_transform);
+
 		for (size_t i = 0; i < frames_snapshot.size(); i += 1) {
 
 			// Set snapshot inputs.
 			node->set_inputs_buffer(frames_snapshot[i].inputs_buffer);
 
-			// Always true because we want to rewind client commands.
-			const bool accept_new_inputs = true;
-			node->emit_signal("master_physics_process", 1.0 / Engine::get_singleton()->get_iterations_per_second(), accept_new_inputs);
+			node->get_script_instance()->call("step_player", delta);
 
 			// Update snapshot transform
 			frames_snapshot[i].character_transform = node->get_player()->get_global_transform();
 		}
 
-		delta_discrepancy = node->get_player()->get_global_transform().inverse() * unrecovered_transform;
+		const Transform recovered_transform = node->get_player()->get_global_transform();
+		delta_discrepancy = unrecovered_transform.inverse() * recovered_transform;
 
 		// Sets the unrecovered transform so we can interpolate the discrepancy
 		// and make this transition a bit more soft.
 		node->get_player()->set_global_transform(unrecovered_transform);
 	}
+
+	recovered_snapshot_id = recover_snapshot_id;
 }
 
 void MasterController::recover_server_discrepancy(real_t p_delta) {
@@ -790,7 +808,7 @@ void MasterController::receive_tick_additional_speed(int p_speed) {
 }
 
 void PuppetController::physics_process(real_t p_delta) {
-	node->emit_signal("puppet_physics_process", p_delta);
+	node->get_script_instance()->call("step_player", p_delta);
 }
 
 void PuppetController::receive_snapshots(PoolVector<uint8_t> p_data) {

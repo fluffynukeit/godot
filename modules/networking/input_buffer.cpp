@@ -210,6 +210,10 @@ Vector2 InputsBuffer::get_normalized_vector(int p_index) const {
 	return Vector2(x, y) * is_not_zero;
 }
 
+void InputsBuffer::zero() {
+	buffer.zero();
+}
+
 uint64_t InputsBuffer::compress_unit_float(double p_value, double p_scale_factor) {
 	return MIN(p_value * p_scale_factor, p_scale_factor);
 }

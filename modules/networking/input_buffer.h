@@ -144,6 +144,9 @@ public:
 	/// Get the normalized vector from the input buffer.
 	Vector2 get_normalized_vector(int p_index) const;
 
+	// Puts all the bytes to 0.
+	void zero();
+
 private:
 	static uint64_t compress_unit_float(double p_value, double p_scale_factor);
 	static double decompress_unit_float(uint64_t p_value, double p_scale_factor);

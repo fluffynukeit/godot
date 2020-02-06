@@ -50,6 +50,9 @@ public:
 
 	void store_bits(int p_bit_offset, uint64_t p_value, int p_bits);
 	uint64_t read_bits(int p_bit_offset, int p_bits) const;
+
+	// Puts all the bytes to 0.
+	void zero();
 };
 
 #endif

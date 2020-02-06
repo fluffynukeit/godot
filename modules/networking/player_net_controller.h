@@ -289,7 +289,6 @@ struct MasterController : public Controller {
 };
 
 struct PuppetController : public Controller {
-	// TODO Use deque here?
 
 	virtual void physics_process(real_t p_delta);
 	virtual void receive_snapshots(PoolVector<uint8_t> p_data);
