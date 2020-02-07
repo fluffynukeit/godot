@@ -148,6 +148,7 @@ void PlayerNetController::_bind_methods() {
 
 	// Rpc to puppets
 	ClassDB::bind_method(D_METHOD("rpc_puppet_send_frames_snapshot", "data"), &PlayerNetController::rpc_puppet_send_frames_snapshot);
+	ClassDB::bind_method(D_METHOD("rpc_puppet_notify_connection_status", "is_open"), &PlayerNetController::rpc_puppet_notify_connection_status);
 
 	// Rpc to master and puppets
 	ClassDB::bind_method(D_METHOD("rpc_send_player_state", "snapshot_id", "data"), &PlayerNetController::rpc_send_player_state);
@@ -174,6 +175,7 @@ PlayerNetController::PlayerNetController() :
 	rpc_config("rpc_master_send_tick_additional_speed", MultiplayerAPI::RPC_MODE_MASTER);
 
 	rpc_config("rpc_puppet_send_frames_snapshot", MultiplayerAPI::RPC_MODE_PUPPET);
+	rpc_config("rpc_puppet_notify_connection_status", MultiplayerAPI::RPC_MODE_PUPPET);
 
 	rpc_config("rpc_send_player_state", MultiplayerAPI::RPC_MODE_REMOTE);
 }
@@ -264,11 +266,13 @@ void PlayerNetController::set_puppet_active(int p_peer_id, bool p_active) {
 		if (index >= 0) {
 			disabled_puppets.remove(index);
 			update_active_puppets();
+			rpc_id(p_peer_id, "rpc_puppet_notify_connection_status", true);
 		}
 	} else {
 		if (index == -1) {
 			disabled_puppets.push_back(p_peer_id);
 			update_active_puppets();
+			rpc_id(p_peer_id, "rpc_puppet_notify_connection_status", false);
 		}
 	}
 }
@@ -323,6 +327,16 @@ void PlayerNetController::rpc_puppet_send_frames_snapshot(PoolVector<uint8_t> p_
 	ERR_FAIL_COND(is_network_master() == true);
 
 	controller->receive_snapshots(p_data);
+}
+void PlayerNetController::rpc_puppet_notify_connection_status(bool p_open) {
+	ERR_FAIL_COND(get_tree()->is_network_server() == true);
+	ERR_FAIL_COND(is_network_master() == true);
+
+	if (p_open) {
+		static_cast<PuppetController *>(controller)->open_flow();
+	} else {
+		static_cast<PuppetController *>(controller)->close_flow();
+	}
 }
 
 void PlayerNetController::rpc_send_player_state(uint64_t p_snapshot_id, Variant p_data) {
@@ -1031,35 +1045,22 @@ void MasterController::receive_tick_additional_speed(int p_speed) {
 }
 
 PuppetController::PuppetController() :
-		last_puppet_update(0),
 		is_server_communication_detected(false),
-		is_server_silence_detected(false),
-		is_server_state_update_received(false) {
+		is_server_state_update_received(false),
+		is_flow_open(true) {
 }
-
-// In seconds
-#define MAX_SERVER_SILENCE 2.0
 
 void PuppetController::physics_process(real_t p_delta) {
 
-	// Understand if the server stop communicating puppet information.
-	const uint64_t this_frame_id = Engine::get_singleton()->get_physics_frames();
-	const real_t last_server_update = p_delta * (static_cast<real_t>(this_frame_id) - static_cast<real_t>(last_puppet_update));
-	if (last_server_update > MAX_SERVER_SILENCE) {
-		if (is_server_silence_detected == false) {
-			is_server_communication_detected = false;
-			is_server_silence_detected = true;
-			node->emit_signal("puppet_server_comunication_closed");
-		}
-		is_server_state_update_received = false;
-		return;
-	} else {
-		if (is_server_communication_detected == false && is_server_state_update_received) {
+	if (is_flow_open && is_server_state_update_received) {
+		if (is_server_communication_detected == false) {
 			is_server_communication_detected = true;
-			is_server_silence_detected = false;
 			hard_reset_to_server_state();
 			node->emit_signal("puppet_server_comunication_opened");
 		}
+	} else {
+		// Locked
+		return;
 	}
 
 	server_controller.node = node;
@@ -1075,18 +1076,37 @@ void PuppetController::physics_process(real_t p_delta) {
 }
 
 void PuppetController::receive_snapshots(PoolVector<uint8_t> p_data) {
+	if (is_flow_open == false)
+		return;
 	server_controller.node = node;
 	server_controller.receive_snapshots(p_data);
-	last_puppet_update = Engine::get_singleton()->get_physics_frames();
 }
 
 void PuppetController::player_state_check(uint64_t p_snapshot_id, Variant p_data) {
+	if (is_flow_open == false)
+		return;
 	master_controller.node = node;
 	master_controller.player_state_check(p_snapshot_id, p_data);
 	is_server_state_update_received = true;
 }
 
+void PuppetController::open_flow() {
+	if (is_flow_open == true)
+		return;
+	is_flow_open = true;
+	is_server_communication_detected = false;
+	is_server_state_update_received = false;
+}
+
+void PuppetController::close_flow() {
+	if (is_flow_open == false)
+		return;
+	is_flow_open = false;
+	node->emit_signal("puppet_server_comunication_closed");
+}
+
 void PuppetController::hard_reset_to_server_state() {
+	// Teleport to server location
 	if (node->get_check_state_position_only()) {
 		ERR_FAIL_COND(master_controller.recover_state_data.get_type() != Variant::VECTOR3);
 		Transform new_transform = node->get_player()->get_global_transform();
@@ -1097,6 +1117,7 @@ void PuppetController::hard_reset_to_server_state() {
 		node->get_player()->set_global_transform(master_controller.recover_state_data);
 	}
 
+	// Discart all the old inputs
 	server_controller.current_packet_id = master_controller.recover_snapshot_id - 1;
 	if (server_controller.snapshots.size() > 0) {
 		// Consume all old inputs
