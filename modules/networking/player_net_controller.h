@@ -84,10 +84,60 @@ private:
 	/// The controlled player node path
 	NodePath player_node_path;
 
+	/// The snapshot storage size is used to cap the amount of inputs collected by
+	/// the `Master`.
+	///
+	/// The server sends a message, to all the connected peers, notifing its
+	/// status at a fixed interval.
+	/// The peers, after receiving this update, removes all the old inputs until
+	/// that moment.
+	///
+	/// If the `input_storage_size` is too small, the clients will collect inputs
+	/// intermittently, but on the other side, a too large value may introduce
+	/// virtual delay.
+	///
+	/// With 60 iteration per seconds a good value is `300`, but is adviced to
+	/// perform some tests until you find a better suitable value for your needs.
+	int master_snapshot_storage_size;
+
+	/// Used to set the amount of traced frames to determine the connection healt trend.
+	///
+	/// This parameter depends a lot on the physics iteration per second, and
+	/// an optimal parameter, with 60 physics iteration per second, is 1200;
+	/// that is equivalent of the latest 20 seconds frames.
+	///
+	/// A smaller value will make the recovery mechanism too noisy and so useless,
+	/// on the other hand a too big value will make the recovery mechanism too
+	/// slow.
+	int network_traced_frames;
+
 	/// Amount of time an inputs is re-sent to each node.
 	/// Resend inputs is necessary because the packets may be lost since they
 	/// are sent in an unreliable way.
 	int max_redundant_inputs;
+
+	/// The server is behing several frames behind the client, the maxim amount
+	/// of these frames is defined by the value of this parameter.
+	///
+	/// To prevent introducing virtual lag.
+	int server_snapshot_storage_size;
+
+	/// The `server_snapshot_storage_size` is dynamically updated and its size
+	/// change at a rate that can be controlled by this parameter.
+	real_t optimal_size_acceleration;
+
+	/// Max tollerance for missing snapshots in the `network_traced_frames`.
+	int missing_snapshots_max_tollerance;
+
+	/// Used to control the `Master` tick acceleration.
+	real_t tick_acceleration;
+
+	/// Interval in seconds of when the server sends the player states to the
+	/// peers.
+	///
+	/// This must be enough to allow the clients to adjust its position, so must
+	/// be tweek with the adjustment speed.
+	real_t state_notify_interval;
 
 	/// When `true` the server sends only the global space position to check the
 	/// client status; otherwise sends the full `Transform`.
@@ -117,8 +167,29 @@ public:
 	// Returns the valid pointer of the player.
 	Spatial *get_player() const;
 
+	void set_master_snapshot_storage_size(int p_size);
+	int get_master_snapshot_storage_size() const;
+
+	void set_network_traced_frames(int p_size);
+	int get_network_traced_frames() const;
+
 	void set_max_redundant_inputs(int p_max);
 	int get_max_redundant_inputs() const;
+
+	void set_server_snapshot_storage_size(int p_size);
+	int get_server_snapshot_storage_size() const;
+
+	void set_optimal_size_acceleration(real_t p_acceleration);
+	real_t get_optimal_size_acceleration() const;
+
+	void set_missing_snapshots_max_tollerance(int p_tollerance);
+	int get_missing_snapshots_max_tollerance() const;
+
+	void set_tick_acceleration(real_t p_acceleration);
+	real_t get_tick_acceleration() const;
+
+	void set_state_notify_interval(real_t p_interval);
+	real_t get_state_notify_interval() const;
 
 	void set_check_state_position_only(bool p_check_position_only);
 	bool get_check_state_position_only() const;
@@ -219,6 +290,9 @@ struct FrameSnapshot {
 struct Controller {
 	PlayerNetController *node;
 
+	Controller(PlayerNetController *p_node) :
+			node(p_node) {}
+
 	virtual ~Controller() {}
 
 	virtual void physics_process(real_t p_delta) = 0;
@@ -241,7 +315,7 @@ struct ServerController : public Controller {
 	int client_tick_additional_speed_compressed;
 	real_t peers_state_checker_time;
 
-	ServerController();
+	ServerController(PlayerNetController *p_node);
 
 	virtual void physics_process(real_t p_delta);
 	virtual void receive_snapshots(PoolVector<uint8_t> p_data);
@@ -279,7 +353,7 @@ struct MasterController : public Controller {
 	Variant recover_state_data;
 	Transform delta_discrepancy;
 
-	MasterController();
+	MasterController(PlayerNetController *p_node);
 
 	virtual void physics_process(real_t p_delta);
 	virtual void receive_snapshots(PoolVector<uint8_t> p_data);
@@ -318,7 +392,7 @@ struct PuppetController : public Controller {
 	bool is_server_state_update_received;
 	bool is_flow_open;
 
-	PuppetController();
+	PuppetController(PlayerNetController *p_node);
 
 	virtual void physics_process(real_t p_delta);
 	virtual void receive_snapshots(PoolVector<uint8_t> p_data);

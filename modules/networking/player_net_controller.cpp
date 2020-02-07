@@ -36,34 +36,13 @@
 #include <stdint.h>
 #include <algorithm>
 
-// TODO can we put all these as node parameters???
-
-#define MAX_STORED_FRAMES 300
-
-// Take into consideration the last 20sec to decide the `optimal_buffer_size`.
-#define PACKETS_TO_TRACK 1200
-
 // Don't go below 2 so to take into account internet latency
 #define MIN_SNAPSHOTS_SIZE 2
-
-// This parameter is used to amortise packet loss.
-// This parameter is already really high and tests showed that 10 is already
-// enough to heal 5% of packet loss (Connections with Packet loss above 1% are
-// considered broken).
-#define MAX_SNAPSHOTS_SIZE 30
-
-#define SNAPSHOTS_SIZE_ACCELERATION 2.5
-
-#define MISSING_SNAPSHOTS_MAX_TOLLERANCE 4
-
-#define TICK_ACCELERATION 2.0
 
 #define MAX_ADDITIONAL_TICK_SPEED 2.0
 
 // 2%
 #define TICK_SPEED_CHANGE_NOTIF_THRESHOLD 4
-
-#define PEERS_STATE_CHECK_INTERVAL 10.0 / 60.0
 
 void PlayerInputsReference::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_bool", "index"), &PlayerInputsReference::get_bool);
@@ -109,8 +88,29 @@ void PlayerNetController::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_player_node_path"), &PlayerNetController::get_player_node_path);
 	ClassDB::bind_method(D_METHOD("get_player"), &PlayerNetController::get_player);
 
+	ClassDB::bind_method(D_METHOD("set_master_snapshot_storage_size", "size"), &PlayerNetController::set_master_snapshot_storage_size);
+	ClassDB::bind_method(D_METHOD("get_master_snapshot_storage_size"), &PlayerNetController::get_master_snapshot_storage_size);
+
+	ClassDB::bind_method(D_METHOD("set_network_traced_frames", "size"), &PlayerNetController::set_network_traced_frames);
+	ClassDB::bind_method(D_METHOD("get_network_traced_frames"), &PlayerNetController::get_network_traced_frames);
+
 	ClassDB::bind_method(D_METHOD("set_max_redundant_inputs", "max_redundand_inputs"), &PlayerNetController::set_max_redundant_inputs);
 	ClassDB::bind_method(D_METHOD("get_max_redundant_inputs"), &PlayerNetController::get_max_redundant_inputs);
+
+	ClassDB::bind_method(D_METHOD("set_server_snapshot_storage_size", "size"), &PlayerNetController::set_server_snapshot_storage_size);
+	ClassDB::bind_method(D_METHOD("get_server_snapshot_storage_size"), &PlayerNetController::get_server_snapshot_storage_size);
+
+	ClassDB::bind_method(D_METHOD("set_optimal_size_acceleration", "acceleration"), &PlayerNetController::set_optimal_size_acceleration);
+	ClassDB::bind_method(D_METHOD("get_optimal_size_acceleration"), &PlayerNetController::get_optimal_size_acceleration);
+
+	ClassDB::bind_method(D_METHOD("set_missing_snapshots_max_tollerance", "tollerance"), &PlayerNetController::set_missing_snapshots_max_tollerance);
+	ClassDB::bind_method(D_METHOD("get_missing_snapshots_max_tollerance"), &PlayerNetController::get_missing_snapshots_max_tollerance);
+
+	ClassDB::bind_method(D_METHOD("set_tick_acceleration", "acceleration"), &PlayerNetController::set_tick_acceleration);
+	ClassDB::bind_method(D_METHOD("get_tick_acceleration"), &PlayerNetController::get_tick_acceleration);
+
+	ClassDB::bind_method(D_METHOD("set_state_notify_interval", "interval"), &PlayerNetController::set_state_notify_interval);
+	ClassDB::bind_method(D_METHOD("get_state_notify_interval"), &PlayerNetController::get_state_notify_interval);
 
 	ClassDB::bind_method(D_METHOD("set_check_state_position_only", "check_type"), &PlayerNetController::set_check_state_position_only);
 	ClassDB::bind_method(D_METHOD("get_check_state_position_only"), &PlayerNetController::get_check_state_position_only);
@@ -154,7 +154,14 @@ void PlayerNetController::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("rpc_send_player_state", "snapshot_id", "data"), &PlayerNetController::rpc_send_player_state);
 
 	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "player_node_path"), "set_player_node_path", "get_player_node_path");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "input_storage_size", PROPERTY_HINT_RANGE, "100,2000,1"), "set_master_snapshot_storage_size", "get_master_snapshot_storage_size");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "network_traced_frames", PROPERTY_HINT_RANGE, "100,10000,1"), "set_network_traced_frames", "get_network_traced_frames");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "max_redundant_inputs", PROPERTY_HINT_RANGE, "0,254,1"), "set_max_redundant_inputs", "get_max_redundant_inputs");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "server_snapshot_storage_size", PROPERTY_HINT_RANGE, "10,100,1"), "set_server_snapshot_storage_size", "get_server_snapshot_storage_size");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "optimal_size_acceleration", PROPERTY_HINT_RANGE, "0.1,20.0,0.01"), "set_optimal_size_acceleration", "get_optimal_size_acceleration");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "missing_snapshots_max_tollerance", PROPERTY_HINT_RANGE, "3,50,1"), "set_missing_snapshots_max_tollerance", "get_missing_snapshots_max_tollerance");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "tick_acceleration", PROPERTY_HINT_RANGE, "0.1,20.0,0.01"), "set_tick_acceleration", "get_tick_acceleration");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "state_notify_interval", PROPERTY_HINT_RANGE, "0.0001,1.0,0.0001"), "set_state_notify_interval", "get_state_notify_interval");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "check_state_position_only"), "set_check_state_position_only", "get_check_state_position_only");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "discrepancy_recover_velocity", PROPERTY_HINT_RANGE, "0.0,1000.0,0.1"), "set_discrepancy_recover_velocity", "get_discrepancy_recover_velocity");
 
@@ -164,7 +171,14 @@ void PlayerNetController::_bind_methods() {
 
 PlayerNetController::PlayerNetController() :
 		player_node_path(NodePath("../")),
+		master_snapshot_storage_size(300),
+		network_traced_frames(1200),
 		max_redundant_inputs(50),
+		server_snapshot_storage_size(30),
+		optimal_size_acceleration(2.5),
+		missing_snapshots_max_tollerance(4),
+		tick_acceleration(2.0),
+		state_notify_interval(10.0 / 60.0),
 		check_state_position_only(true),
 		discrepancy_recover_velocity(50.0),
 		controller(NULL),
@@ -193,12 +207,68 @@ Spatial *PlayerNetController::get_player() const {
 	return cached_player;
 }
 
+void PlayerNetController::set_master_snapshot_storage_size(int p_size) {
+	master_snapshot_storage_size = p_size;
+}
+
+int PlayerNetController::get_master_snapshot_storage_size() const {
+	return master_snapshot_storage_size;
+}
+
+void PlayerNetController::set_network_traced_frames(int p_size) {
+	network_traced_frames = p_size;
+}
+
+int PlayerNetController::get_network_traced_frames() const {
+	return network_traced_frames;
+}
+
 void PlayerNetController::set_max_redundant_inputs(int p_max) {
 	max_redundant_inputs = p_max;
 }
 
 int PlayerNetController::get_max_redundant_inputs() const {
 	return max_redundant_inputs;
+}
+
+void PlayerNetController::set_server_snapshot_storage_size(int p_size) {
+	server_snapshot_storage_size = p_size;
+}
+
+int PlayerNetController::get_server_snapshot_storage_size() const {
+	return server_snapshot_storage_size;
+}
+
+void PlayerNetController::set_optimal_size_acceleration(real_t p_acceleration) {
+	optimal_size_acceleration = p_acceleration;
+}
+
+real_t PlayerNetController::get_optimal_size_acceleration() const {
+	return optimal_size_acceleration;
+}
+
+void PlayerNetController::set_missing_snapshots_max_tollerance(int p_tollerance) {
+	missing_snapshots_max_tollerance = p_tollerance;
+}
+
+int PlayerNetController::get_missing_snapshots_max_tollerance() const {
+	return missing_snapshots_max_tollerance;
+}
+
+void PlayerNetController::set_tick_acceleration(real_t p_acceleration) {
+	tick_acceleration = p_acceleration;
+}
+
+real_t PlayerNetController::get_tick_acceleration() const {
+	return tick_acceleration;
+}
+
+void PlayerNetController::set_state_notify_interval(real_t p_interval) {
+	state_notify_interval = p_interval;
+}
+
+real_t PlayerNetController::get_state_notify_interval() const {
+	return state_notify_interval;
 }
 
 void PlayerNetController::set_check_state_position_only(bool p_check_position_only) {
@@ -366,16 +436,15 @@ void PlayerNetController::_notification(int p_what) {
 			CRASH_COND(get_tree() == NULL);
 
 			if (get_tree()->is_network_server()) {
-				controller = memnew(ServerController);
+				controller = memnew(ServerController(this));
 				get_multiplayer()->connect("network_peer_connected", this, "_on_peer_connection_change");
 				get_multiplayer()->connect("network_peer_disconnected", this, "_on_peer_connection_change");
 				update_active_puppets();
 			} else if (is_network_master()) {
-				controller = memnew(MasterController);
+				controller = memnew(MasterController(this));
 			} else {
-				controller = memnew(PuppetController);
+				controller = memnew(PuppetController(this));
 			}
-			controller->node = this;
 
 			set_physics_process_internal(true);
 			cached_player = Object::cast_to<Spatial>(get_node(player_node_path));
@@ -397,10 +466,11 @@ void PlayerNetController::_notification(int p_what) {
 	}
 }
 
-ServerController::ServerController() :
+ServerController::ServerController(PlayerNetController *p_node) :
+		Controller(p_node),
 		current_packet_id(UINT64_MAX),
 		ghost_input_count(0),
-		network_tracer(PACKETS_TO_TRACK),
+		network_tracer(p_node->get_network_traced_frames()),
 		optimal_snapshots_size(0.0),
 		client_tick_additional_speed(0.0),
 		client_tick_additional_speed_compressed(0),
@@ -644,18 +714,18 @@ void ServerController::adjust_master_tick_rate(real_t p_delta) {
 		// Keep in mind that internet may be really fluctuating.
 		const real_t acceleration_level = CLAMP(
 				(static_cast<real_t>(miss_packets) - static_cast<real_t>(snapshots.size())) /
-						static_cast<real_t>(MISSING_SNAPSHOTS_MAX_TOLLERANCE),
+						static_cast<real_t>(node->get_missing_snapshots_max_tollerance()),
 				-2.0,
 				2.0);
-		optimal_snapshots_size += acceleration_level * SNAPSHOTS_SIZE_ACCELERATION * p_delta;
-		optimal_snapshots_size = CLAMP(optimal_snapshots_size, MIN_SNAPSHOTS_SIZE, MAX_SNAPSHOTS_SIZE);
+		optimal_snapshots_size += acceleration_level * static_cast<real_t>(node->get_optimal_size_acceleration()) * p_delta;
+		optimal_snapshots_size = CLAMP(optimal_snapshots_size, MIN_SNAPSHOTS_SIZE, node->get_server_snapshot_storage_size());
 	}
 
 	{
 		// The client speed is determined using an acceleration so to have much more
 		// control over it and avoid nervous changes.
-		const real_t acceleration_level = CLAMP((optimal_snapshots_size - snapshots.size()) / MAX_SNAPSHOTS_SIZE, -1.0, 1.0);
-		const real_t acc = acceleration_level * TICK_ACCELERATION * p_delta;
+		const real_t acceleration_level = CLAMP((optimal_snapshots_size - snapshots.size()) / node->get_server_snapshot_storage_size(), -1.0, 1.0);
+		const real_t acc = acceleration_level * node->get_tick_acceleration() * p_delta;
 		const real_t damp = client_tick_additional_speed * -0.9;
 
 		// The damping is fully applyied only if it points in the opposite `acc`
@@ -685,7 +755,7 @@ void ServerController::check_peers_player_state(real_t p_delta) {
 	}
 
 	peers_state_checker_time += p_delta;
-	if (peers_state_checker_time < PEERS_STATE_CHECK_INTERVAL) {
+	if (peers_state_checker_time < node->get_state_notify_interval()) {
 		// Not yet the time to check
 		return;
 	}
@@ -726,7 +796,8 @@ void ServerController::check_peers_player_state(real_t p_delta) {
 			data);
 }
 
-MasterController::MasterController() :
+MasterController::MasterController(PlayerNetController *p_node) :
+		Controller(p_node),
 		time_bank(0.0),
 		tick_additional_speed(0.0),
 		snapshot_counter(0),
@@ -757,7 +828,7 @@ void MasterController::physics_process(real_t p_delta) {
 		// bad.
 		// Is better to not accumulate any other input, in this cases so to avoid
 		// difer too much from the server.
-		const bool accept_new_inputs = frames_snapshot.size() < MAX_STORED_FRAMES;
+		const bool accept_new_inputs = frames_snapshot.size() < static_cast<size_t>(node->get_master_snapshot_storage_size());
 
 		if (accept_new_inputs) {
 			node->get_script_instance()->call("collect_inputs");
@@ -1044,7 +1115,10 @@ void MasterController::receive_tick_additional_speed(int p_speed) {
 	tick_additional_speed = CLAMP(tick_additional_speed, -MAX_ADDITIONAL_TICK_SPEED, MAX_ADDITIONAL_TICK_SPEED);
 }
 
-PuppetController::PuppetController() :
+PuppetController::PuppetController(PlayerNetController *p_node) :
+		Controller(p_node),
+		server_controller(p_node),
+		master_controller(p_node),
 		is_server_communication_detected(false),
 		is_server_state_update_received(false),
 		is_flow_open(true) {
@@ -1064,9 +1138,6 @@ void PuppetController::physics_process(real_t p_delta) {
 		return;
 	}
 
-	server_controller.node = node;
-	master_controller.node = node;
-
 	const bool is_new_input = server_controller.fetch_next_input();
 	node->get_script_instance()->call("step_player", p_delta);
 	if (is_new_input) {
@@ -1079,14 +1150,12 @@ void PuppetController::physics_process(real_t p_delta) {
 void PuppetController::receive_snapshots(PoolVector<uint8_t> p_data) {
 	if (is_flow_open == false)
 		return;
-	server_controller.node = node;
 	server_controller.receive_snapshots(p_data);
 }
 
 void PuppetController::player_state_check(uint64_t p_snapshot_id, Variant p_data) {
 	if (is_flow_open == false)
 		return;
-	master_controller.node = node;
 	master_controller.player_state_check(p_snapshot_id, p_data);
 	is_server_state_update_received = true;
 }
