@@ -101,6 +101,10 @@ private:
 
 	Spatial *cached_player;
 
+	Vector<int> active_puppets;
+	// Disabled peers is used to stop informatino propagation to a particular pear.
+	Vector<int> disabled_puppets;
+
 public:
 	static void _bind_methods();
 
@@ -171,6 +175,12 @@ public:
 		return inputs_buffer;
 	}
 
+	void set_puppet_active(int p_peer_id, bool p_active);
+	const Vector<int> &get_active_puppets() const;
+
+	void on_peer_connection_change(int p_peer_id);
+	void update_active_puppets();
+
 public:
 	void set_inputs_buffer(const BitArray &p_new_buffer);
 
@@ -179,6 +189,9 @@ public:
 
 	/* On master rpc functions. */
 	void rpc_master_send_tick_additional_speed(int p_additional_tick_speed);
+
+	/* On puppet rpc functions. */
+	void rpc_puppet_send_frames_snapshot(PoolVector<uint8_t> p_data);
 
 	/* On all peers rpc functions. */
 	void rpc_send_player_state(uint64_t p_snapshot_id, Variant p_data);
@@ -233,7 +246,6 @@ struct ServerController : public Controller {
 	virtual void receive_snapshots(PoolVector<uint8_t> p_data);
 	virtual void player_state_check(uint64_t p_snapshot_id, Variant p_data);
 
-private:
 	/// Fetch the next inputs, returns true if the input is new.
 	bool fetch_next_input();
 
@@ -274,6 +286,8 @@ struct MasterController : public Controller {
 
 	real_t get_pretended_delta() const;
 
+	void create_snapshot(uint64_t p_id);
+
 	/// Sends an unreliable packet to the server, containing a packed array of
 	/// frame snapshots.
 	void send_frame_snapshots_to_server();
@@ -288,7 +302,19 @@ struct MasterController : public Controller {
 	void receive_tick_additional_speed(int p_speed);
 };
 
+/// The puppets is kind of special controller, indeed you can see that it used
+/// a `ServerController` + `MastertController`.
+/// The `PuppetController` receive inputs from the client as the server does,
+/// and fetch them exactly like the server.
+/// After the execution of the inputs, the puppet start to act like the master,
+/// because it wait the player status from the server to correct its motion.
 struct PuppetController : public Controller {
+	/// Used to perform server like operations
+	ServerController server_controller;
+	/// Used to perform master like operations
+	MasterController master_controller;
+
+	PuppetController();
 
 	virtual void physics_process(real_t p_delta);
 	virtual void receive_snapshots(PoolVector<uint8_t> p_data);

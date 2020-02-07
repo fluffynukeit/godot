@@ -133,6 +133,9 @@ void PlayerNetController::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("input_buffer_set_normalized_vector", "index", "vector"), &PlayerNetController::input_buffer_set_normalized_vector);
 	ClassDB::bind_method(D_METHOD("input_buffer_get_normalized_vector", "index"), &PlayerNetController::input_buffer_get_normalized_vector);
 
+	ClassDB::bind_method(D_METHOD("set_puppet_active", "peer_id", "active"), &PlayerNetController::set_puppet_active);
+	ClassDB::bind_method(D_METHOD("_on_peer_connection_change", "peer_id"), &PlayerNetController::on_peer_connection_change);
+
 	BIND_VMETHOD(MethodInfo("collect_inputs"));
 	BIND_VMETHOD(MethodInfo("step_player", PropertyInfo(Variant::REAL, "delta")));
 	BIND_VMETHOD(MethodInfo(Variant::BOOL, "are_inputs_different", PropertyInfo(Variant::OBJECT, "inputs_A", PROPERTY_HINT_TYPE_STRING, "PlayerInputsReference"), PropertyInfo(Variant::OBJECT, "inputs_B", PROPERTY_HINT_TYPE_STRING, "PlayerInputsReference")));
@@ -142,6 +145,9 @@ void PlayerNetController::_bind_methods() {
 
 	// Rpc to master
 	ClassDB::bind_method(D_METHOD("rpc_master_send_tick_additional_speed", "tick_speed"), &PlayerNetController::rpc_master_send_tick_additional_speed);
+
+	// Rpc to puppets
+	ClassDB::bind_method(D_METHOD("rpc_puppet_send_frames_snapshot", "data"), &PlayerNetController::rpc_puppet_send_frames_snapshot);
 
 	// Rpc to master and puppets
 	ClassDB::bind_method(D_METHOD("rpc_send_player_state", "snapshot_id", "data"), &PlayerNetController::rpc_send_player_state);
@@ -154,15 +160,17 @@ void PlayerNetController::_bind_methods() {
 
 PlayerNetController::PlayerNetController() :
 		player_node_path(NodePath("../")),
-		max_redundant_inputs(9),
+		max_redundant_inputs(50),
 		check_state_position_only(true),
-		discrepancy_recover_velocity(25.0),
+		discrepancy_recover_velocity(50.0),
 		controller(NULL),
 		cached_player(NULL) {
 
 	rpc_config("rpc_server_send_frames_snapshot", MultiplayerAPI::RPC_MODE_REMOTE);
 
 	rpc_config("rpc_master_send_tick_additional_speed", MultiplayerAPI::RPC_MODE_MASTER);
+
+	rpc_config("rpc_puppet_send_frames_snapshot", MultiplayerAPI::RPC_MODE_PUPPET);
 
 	rpc_config("rpc_send_player_state", MultiplayerAPI::RPC_MODE_REMOTE);
 }
@@ -244,15 +252,59 @@ Vector2 PlayerNetController::input_buffer_get_normalized_vector(int p_index) con
 	return inputs_buffer.get_normalized_vector(p_index);
 }
 
+void PlayerNetController::set_puppet_active(int p_peer_id, bool p_active) {
+	ERR_FAIL_COND_MSG(get_tree()->is_network_server() == false, "You can set puppet activation only on server");
+	ERR_FAIL_COND_MSG(p_peer_id == get_network_master(), "This `peer_id` is equals to the Master `peer_id`, so it's not allowed.");
+
+	const int index = disabled_puppets.find(p_peer_id);
+	if (p_active) {
+		if (index >= 0) {
+			disabled_puppets.remove(p_peer_id);
+			update_active_puppets();
+		}
+	} else {
+		if (index == -1) {
+			disabled_puppets.push_back(p_peer_id);
+			update_active_puppets();
+		}
+	}
+}
+
+const Vector<int> &PlayerNetController::get_active_puppets() const {
+	return active_puppets;
+}
+
+void PlayerNetController::on_peer_connection_change(int p_peer_id) {
+	update_active_puppets();
+}
+
+void PlayerNetController::update_active_puppets() {
+	// Unreachable
+	CRASH_COND(get_tree()->is_network_server() == false);
+	active_puppets.clear();
+	const Vector<int> peers = get_tree()->get_network_connected_peers();
+	for (int i = 0; i < peers.size(); i += 1) {
+		const int peer_id = peers[i];
+		if (peer_id != get_network_master() && disabled_puppets.find(peer_id) == -1) {
+			active_puppets.push_back(peer_id);
+		}
+	}
+}
+
 void PlayerNetController::set_inputs_buffer(const BitArray &p_new_buffer) {
 	inputs_buffer.get_buffer_mut().get_bytes_mut() = p_new_buffer.get_bytes();
 }
 
 void PlayerNetController::rpc_server_send_frames_snapshot(PoolVector<uint8_t> p_data) {
-	ERR_FAIL_COND(get_tree()->is_network_server() != true);
+	ERR_FAIL_COND(get_tree()->is_network_server() == false);
 
-	// TODO Propagates to the other puppets?
-	// Please add a mechanism to start / stop puppets propagation.
+	const Vector<int> &peers = get_active_puppets();
+	for (int i = 0; i < peers.size(); i += 1) {
+		// This is an active puppet, Let's send the data.
+		const int peer_id = peers[i];
+		const bool unreliable = true;
+		get_multiplayer()->send_bytes_to(this, peer_id, unreliable, "rpc_puppet_send_frames_snapshot", p_data);
+	}
 
 	controller->receive_snapshots(p_data);
 }
@@ -261,6 +313,13 @@ void PlayerNetController::rpc_master_send_tick_additional_speed(int p_additional
 	ERR_FAIL_COND(is_network_master() == false);
 
 	static_cast<MasterController *>(controller)->receive_tick_additional_speed(p_additional_tick_speed);
+}
+
+void PlayerNetController::rpc_puppet_send_frames_snapshot(PoolVector<uint8_t> p_data) {
+	ERR_FAIL_COND(get_tree()->is_network_server() == true);
+	ERR_FAIL_COND(is_network_master() == true);
+
+	controller->receive_snapshots(p_data);
 }
 
 void PlayerNetController::rpc_send_player_state(uint64_t p_snapshot_id, Variant p_data) {
@@ -291,6 +350,9 @@ void PlayerNetController::_notification(int p_what) {
 
 			if (get_tree()->is_network_server()) {
 				controller = memnew(ServerController);
+				get_multiplayer()->connect("network_peer_connected", this, "_on_peer_connection_change");
+				get_multiplayer()->connect("network_peer_disconnected", this, "_on_peer_connection_change");
+				update_active_puppets();
 			} else if (is_network_master()) {
 				controller = memnew(MasterController);
 			} else {
@@ -309,6 +371,11 @@ void PlayerNetController::_notification(int p_what) {
 			set_physics_process_internal(false);
 			memdelete(controller);
 			controller = NULL;
+
+			if (get_tree()->is_network_server()) {
+				get_multiplayer()->disconnect("network_peer_connected", this, "_on_peer_connection_change");
+				get_multiplayer()->disconnect("network_peer_disconnected", this, "_on_peer_connection_change");
+			}
 		} break;
 	}
 }
@@ -615,10 +682,29 @@ void ServerController::check_peers_player_state(real_t p_delta) {
 		data = node->get_player()->get_global_transform();
 	}
 
+	// Notify the active puppets.
+	const Vector<int> &peers = node->get_active_puppets();
+	for (int i = 0; i < peers.size(); i += 1) {
+
+		// This is an active peer, Let's send the data.
+		const int peer_id = peers[i];
+
+		// TODO please don't use variant and encode everything inside a more tiny packet.
+		// TODO Please make sure to notify the puppets only when they require it!
+		// Notify the puppets.
+		node->rpc_id(
+				peer_id,
+				"rpc_send_player_state",
+				current_packet_id,
+				data);
+	}
+
 	// TODO please don't use variant and encode everything inside a more tiny packet.
 	// TODO Please make sure to notify the puppets only when they require it!
-	// Notify the clients with the result.
-	node->rpc("rpc_send_player_state",
+	// Notify the master
+	node->rpc_id(
+			node->get_network_master(),
+			"rpc_send_player_state",
 			current_packet_id,
 			data);
 }
@@ -667,13 +753,8 @@ void MasterController::physics_process(real_t p_delta) {
 		node->get_script_instance()->call("step_player", p_delta);
 
 		if (accept_new_inputs) {
-			FrameSnapshot inputs;
-			inputs.id = snapshot_counter;
-			inputs.inputs_buffer = node->get_inputs_buffer().get_buffer();
-			inputs.character_transform = node->get_player()->get_global_transform();
-			inputs.similarity = UINT64_MAX;
-			frames_snapshot.push_back(inputs);
 
+			create_snapshot(snapshot_counter);
 			snapshot_counter += 1;
 
 			// This must happens here because in case of bad internet connection
@@ -700,6 +781,15 @@ void MasterController::player_state_check(uint64_t p_snapshot_id, Variant p_data
 
 real_t MasterController::get_pretended_delta() const {
 	return 1.0 / (static_cast<real_t>(Engine::get_singleton()->get_iterations_per_second()) + tick_additional_speed);
+}
+
+void MasterController::create_snapshot(uint64_t p_id) {
+	FrameSnapshot inputs;
+	inputs.id = p_id;
+	inputs.inputs_buffer = node->get_inputs_buffer().get_buffer();
+	inputs.character_transform = node->get_player()->get_global_transform();
+	inputs.similarity = UINT64_MAX;
+	frames_snapshot.push_back(inputs);
 }
 
 void MasterController::send_frame_snapshots_to_server() {
@@ -843,7 +933,7 @@ void MasterController::send_frame_snapshots_to_server() {
 		CRASH_COND(ofs != final_packet_size);
 	}
 
-	const int server_peer_id = 0;
+	const int server_peer_id = 1;
 	const bool unreliable = true;
 	node->get_multiplayer()->send_bytes_to(node, server_peer_id, unreliable, "rpc_server_send_frames_snapshot", cached_packet_data, final_packet_size);
 }
@@ -937,11 +1027,28 @@ void MasterController::receive_tick_additional_speed(int p_speed) {
 	tick_additional_speed = CLAMP(tick_additional_speed, -MAX_ADDITIONAL_TICK_SPEED, MAX_ADDITIONAL_TICK_SPEED);
 }
 
+PuppetController::PuppetController() {
+}
+
 void PuppetController::physics_process(real_t p_delta) {
+	server_controller.node = node;
+	master_controller.node = node;
+
+	const bool is_new_input = server_controller.fetch_next_input();
 	node->get_script_instance()->call("step_player", p_delta);
+	if (is_new_input) {
+		master_controller.create_snapshot(server_controller.current_packet_id);
+	}
+	master_controller.compute_server_discrepancy();
+	master_controller.recover_server_discrepancy(p_delta);
 }
 
 void PuppetController::receive_snapshots(PoolVector<uint8_t> p_data) {
+	server_controller.node = node;
+	server_controller.receive_snapshots(p_data);
 }
 
-void PuppetController::player_state_check(uint64_t p_snapshot_id, Variant p_data) {}
+void PuppetController::player_state_check(uint64_t p_snapshot_id, Variant p_data) {
+	master_controller.node = node;
+	master_controller.player_state_check(p_snapshot_id, p_data);
+}
