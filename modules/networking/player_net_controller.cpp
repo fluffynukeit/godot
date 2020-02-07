@@ -156,6 +156,9 @@ void PlayerNetController::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "max_redundant_inputs", PROPERTY_HINT_RANGE, "0,254,1"), "set_max_redundant_inputs", "get_max_redundant_inputs");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "check_state_position_only"), "set_check_state_position_only", "get_check_state_position_only");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "discrepancy_recover_velocity", PROPERTY_HINT_RANGE, "0.0,1000.0,0.1"), "set_discrepancy_recover_velocity", "get_discrepancy_recover_velocity");
+
+	ADD_SIGNAL(MethodInfo("puppet_server_comunication_opened"));
+	ADD_SIGNAL(MethodInfo("puppet_server_comunication_closed"));
 }
 
 PlayerNetController::PlayerNetController() :
@@ -259,7 +262,7 @@ void PlayerNetController::set_puppet_active(int p_peer_id, bool p_active) {
 	const int index = disabled_puppets.find(p_peer_id);
 	if (p_active) {
 		if (index >= 0) {
-			disabled_puppets.remove(p_peer_id);
+			disabled_puppets.remove(index);
 			update_active_puppets();
 		}
 	} else {
@@ -1027,10 +1030,38 @@ void MasterController::receive_tick_additional_speed(int p_speed) {
 	tick_additional_speed = CLAMP(tick_additional_speed, -MAX_ADDITIONAL_TICK_SPEED, MAX_ADDITIONAL_TICK_SPEED);
 }
 
-PuppetController::PuppetController() {
+PuppetController::PuppetController() :
+		last_puppet_update(0),
+		is_server_communication_detected(false),
+		is_server_silence_detected(false),
+		is_server_state_update_received(false) {
 }
 
+// In seconds
+#define MAX_SERVER_SILENCE 2.0
+
 void PuppetController::physics_process(real_t p_delta) {
+
+	// Understand if the server stop communicating puppet information.
+	const uint64_t this_frame_id = Engine::get_singleton()->get_physics_frames();
+	const real_t last_server_update = p_delta * (static_cast<real_t>(this_frame_id) - static_cast<real_t>(last_puppet_update));
+	if (last_server_update > MAX_SERVER_SILENCE) {
+		if (is_server_silence_detected == false) {
+			is_server_communication_detected = false;
+			is_server_silence_detected = true;
+			node->emit_signal("puppet_server_comunication_closed");
+		}
+		is_server_state_update_received = false;
+		return;
+	} else {
+		if (is_server_communication_detected == false && is_server_state_update_received) {
+			is_server_communication_detected = true;
+			is_server_silence_detected = false;
+			hard_reset_to_server_state();
+			node->emit_signal("puppet_server_comunication_opened");
+		}
+	}
+
 	server_controller.node = node;
 	master_controller.node = node;
 
@@ -1046,9 +1077,30 @@ void PuppetController::physics_process(real_t p_delta) {
 void PuppetController::receive_snapshots(PoolVector<uint8_t> p_data) {
 	server_controller.node = node;
 	server_controller.receive_snapshots(p_data);
+	last_puppet_update = Engine::get_singleton()->get_physics_frames();
 }
 
 void PuppetController::player_state_check(uint64_t p_snapshot_id, Variant p_data) {
 	master_controller.node = node;
 	master_controller.player_state_check(p_snapshot_id, p_data);
+	is_server_state_update_received = true;
+}
+
+void PuppetController::hard_reset_to_server_state() {
+	if (node->get_check_state_position_only()) {
+		ERR_FAIL_COND(master_controller.recover_state_data.get_type() != Variant::VECTOR3);
+		Transform new_transform = node->get_player()->get_global_transform();
+		new_transform.origin = master_controller.recover_state_data;
+		node->get_player()->set_global_transform(new_transform);
+	} else {
+		ERR_FAIL_COND(master_controller.recover_state_data.get_type() != Variant::TRANSFORM);
+		node->get_player()->set_global_transform(master_controller.recover_state_data);
+	}
+
+	server_controller.current_packet_id = master_controller.recover_snapshot_id - 1;
+	if (server_controller.snapshots.size() > 0) {
+		// Consume all old inputs
+		while (master_controller.recover_snapshot_id > server_controller.snapshots.front().id)
+			server_controller.snapshots.pop_front();
+	}
 }

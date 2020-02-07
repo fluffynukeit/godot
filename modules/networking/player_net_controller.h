@@ -313,11 +313,17 @@ struct PuppetController : public Controller {
 	ServerController server_controller;
 	/// Used to perform master like operations
 	MasterController master_controller;
+	uint64_t last_puppet_update;
+	bool is_server_communication_detected;
+	bool is_server_silence_detected;
+	bool is_server_state_update_received;
 
 	PuppetController();
 
 	virtual void physics_process(real_t p_delta);
 	virtual void receive_snapshots(PoolVector<uint8_t> p_data);
 	virtual void player_state_check(uint64_t p_snapshot_id, Variant p_data);
+
+	void hard_reset_to_server_state();
 };
 #endif
