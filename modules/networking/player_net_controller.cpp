@@ -1040,7 +1040,7 @@ void MasterController::recover_server_discrepancy(real_t p_delta) {
 }
 
 void MasterController::receive_tick_additional_speed(int p_speed) {
-	tick_additional_speed = (p_speed / 100) * MAX_ADDITIONAL_TICK_SPEED;
+	tick_additional_speed = (static_cast<real_t>(p_speed) / 100.0) * MAX_ADDITIONAL_TICK_SPEED;
 	tick_additional_speed = CLAMP(tick_additional_speed, -MAX_ADDITIONAL_TICK_SPEED, MAX_ADDITIONAL_TICK_SPEED);
 }
 
@@ -1052,6 +1052,7 @@ PuppetController::PuppetController() :
 
 void PuppetController::physics_process(real_t p_delta) {
 
+	// Lock mechanism when the server don't update anymore this puppet!
 	if (is_flow_open && is_server_state_update_received) {
 		if (is_server_communication_detected == false) {
 			is_server_communication_detected = true;
