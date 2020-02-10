@@ -139,9 +139,6 @@ private:
 	/// be tweek with the adjustment speed.
 	real_t state_notify_interval;
 
-	/// Discrepancy recover velocity
-	real_t discrepancy_recover_velocity;
-
 	Controller *controller;
 	InputsBuffer inputs_buffer;
 
@@ -186,9 +183,6 @@ public:
 
 	void set_state_notify_interval(real_t p_interval);
 	real_t get_state_notify_interval() const;
-
-	void set_discrepancy_recover_velocity(real_t p_velocity);
-	real_t get_discrepancy_recover_velocity() const;
 
 	int input_buffer_add_data_type(InputDataType p_type, InputCompressionLevel p_compression = INPUT_COMPRESSION_LEVEL_2);
 	void input_buffer_ready();
@@ -245,6 +239,8 @@ public:
 	void on_peer_connection_change(int p_peer_id);
 	void update_active_puppets();
 
+	void replay_snapshots();
+
 public:
 	void set_inputs_buffer(const BitArray &p_new_buffer);
 
@@ -295,6 +291,7 @@ struct Controller {
 	/// The peers can check if the state is the same or not and in this case
 	/// recover its player state.
 	virtual void player_state_check(uint64_t p_id, Variant p_data) = 0;
+	virtual void replay_snapshots() = 0;
 };
 
 struct ServerController : public Controller {
@@ -313,6 +310,7 @@ struct ServerController : public Controller {
 	virtual void physics_process(real_t p_delta);
 	virtual void receive_snapshots(PoolVector<uint8_t> p_data);
 	virtual void player_state_check(uint64_t p_snapshot_id, Variant p_data);
+	virtual void replay_snapshots();
 
 	/// Fetch the next inputs, returns true if the input is new.
 	bool fetch_next_input();
@@ -344,13 +342,13 @@ struct MasterController : public Controller {
 	uint64_t recover_snapshot_id;
 	uint64_t recovered_snapshot_id;
 	Variant recover_state_data;
-	Transform delta_discrepancy;
 
 	MasterController(PlayerNetController *p_node);
 
 	virtual void physics_process(real_t p_delta);
 	virtual void receive_snapshots(PoolVector<uint8_t> p_data);
 	virtual void player_state_check(uint64_t p_snapshot_id, Variant p_data);
+	virtual void replay_snapshots();
 
 	real_t get_pretended_delta() const;
 
@@ -361,7 +359,6 @@ struct MasterController : public Controller {
 	void send_frame_snapshots_to_server();
 
 	void process_recovery();
-	void replay_snapshots();
 
 	void receive_tick_additional_speed(int p_speed);
 };
@@ -386,6 +383,7 @@ struct PuppetController : public Controller {
 	virtual void physics_process(real_t p_delta);
 	virtual void receive_snapshots(PoolVector<uint8_t> p_data);
 	virtual void player_state_check(uint64_t p_snapshot_id, Variant p_data);
+	virtual void replay_snapshots();
 
 	void open_flow();
 	void close_flow();

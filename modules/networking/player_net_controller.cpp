@@ -112,9 +112,6 @@ void PlayerNetController::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_state_notify_interval", "interval"), &PlayerNetController::set_state_notify_interval);
 	ClassDB::bind_method(D_METHOD("get_state_notify_interval"), &PlayerNetController::get_state_notify_interval);
 
-	ClassDB::bind_method(D_METHOD("set_discrepancy_recover_velocity", "velocity"), &PlayerNetController::set_discrepancy_recover_velocity);
-	ClassDB::bind_method(D_METHOD("get_discrepancy_recover_velocity"), &PlayerNetController::get_discrepancy_recover_velocity);
-
 	ClassDB::bind_method(D_METHOD("input_buffer_add_data_type", "type", "compression"), &PlayerNetController::input_buffer_add_data_type, DEFVAL(InputsBuffer::COMPRESSION_LEVEL_2));
 	ClassDB::bind_method(D_METHOD("input_buffer_ready"), &PlayerNetController::input_buffer_ready);
 
@@ -133,11 +130,13 @@ void PlayerNetController::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_puppet_active", "peer_id", "active"), &PlayerNetController::set_puppet_active);
 	ClassDB::bind_method(D_METHOD("_on_peer_connection_change", "peer_id"), &PlayerNetController::on_peer_connection_change);
 
+	ClassDB::bind_method(D_METHOD("replay_snapshots"), &PlayerNetController::replay_snapshots);
+
 	BIND_VMETHOD(MethodInfo("collect_inputs"));
 	BIND_VMETHOD(MethodInfo("step_player", PropertyInfo(Variant::REAL, "delta")));
 	BIND_VMETHOD(MethodInfo(Variant::BOOL, "are_inputs_different", PropertyInfo(Variant::OBJECT, "inputs_A", PROPERTY_HINT_TYPE_STRING, "PlayerInputsReference"), PropertyInfo(Variant::OBJECT, "inputs_B", PROPERTY_HINT_TYPE_STRING, "PlayerInputsReference")));
 	BIND_VMETHOD(MethodInfo(Variant::ARRAY, "create_snapshot"));
-	BIND_VMETHOD(MethodInfo("process_recovery", PropertyInfo(Variant::ARRAY, "server_snapshot"), PropertyInfo(Variant::ARRAY, "client_snapshot")))
+	BIND_VMETHOD(MethodInfo("process_recovery", PropertyInfo(Variant::INT, "snapshot_id"), PropertyInfo(Variant::ARRAY, "server_snapshot"), PropertyInfo(Variant::ARRAY, "client_snapshot")))
 
 	// Rpc to server
 	ClassDB::bind_method(D_METHOD("rpc_server_send_frames_snapshot", "data"), &PlayerNetController::rpc_server_send_frames_snapshot);
@@ -160,8 +159,7 @@ void PlayerNetController::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "optimal_size_acceleration", PROPERTY_HINT_RANGE, "0.1,20.0,0.01"), "set_optimal_size_acceleration", "get_optimal_size_acceleration");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "missing_snapshots_max_tollerance", PROPERTY_HINT_RANGE, "3,50,1"), "set_missing_snapshots_max_tollerance", "get_missing_snapshots_max_tollerance");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "tick_acceleration", PROPERTY_HINT_RANGE, "0.1,20.0,0.01"), "set_tick_acceleration", "get_tick_acceleration");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "state_notify_interval", PROPERTY_HINT_RANGE, "0.0001,1.0,0.0001"), "set_state_notify_interval", "get_state_notify_interval");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "discrepancy_recover_velocity", PROPERTY_HINT_RANGE, "0.0,1000.0,0.1"), "set_discrepancy_recover_velocity", "get_discrepancy_recover_velocity");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "state_notify_interval", PROPERTY_HINT_RANGE, "0.0001,10.0,0.0001"), "set_state_notify_interval", "get_state_notify_interval");
 
 	ADD_SIGNAL(MethodInfo("control_process_done"));
 	ADD_SIGNAL(MethodInfo("puppet_server_comunication_opened"));
@@ -177,8 +175,7 @@ PlayerNetController::PlayerNetController() :
 		optimal_size_acceleration(2.5),
 		missing_snapshots_max_tollerance(4),
 		tick_acceleration(2.0),
-		state_notify_interval(10.0 / 60.0),
-		discrepancy_recover_velocity(50.0),
+		state_notify_interval(1.0),
 		controller(NULL),
 		cached_player(NULL) {
 
@@ -269,14 +266,6 @@ real_t PlayerNetController::get_state_notify_interval() const {
 	return state_notify_interval;
 }
 
-void PlayerNetController::set_discrepancy_recover_velocity(real_t p_velocity) {
-	discrepancy_recover_velocity = p_velocity;
-}
-
-real_t PlayerNetController::get_discrepancy_recover_velocity() const {
-	return discrepancy_recover_velocity;
-}
-
 int PlayerNetController::input_buffer_add_data_type(InputDataType p_type, InputCompressionLevel p_compression) {
 	return inputs_buffer.add_data_type((InputsBuffer::DataType)p_type, (InputsBuffer::CompressionLevel)p_compression);
 }
@@ -356,6 +345,10 @@ void PlayerNetController::update_active_puppets() {
 			active_puppets.push_back(peer_id);
 		}
 	}
+}
+
+void PlayerNetController::replay_snapshots() {
+	controller->replay_snapshots();
 }
 
 void PlayerNetController::set_inputs_buffer(const BitArray &p_new_buffer) {
@@ -478,7 +471,6 @@ void ServerController::physics_process(real_t p_delta) {
 		return;
 	}
 
-	print_line(itos(current_packet_id));
 	node->get_script_instance()->call("step_player", p_delta);
 	adjust_master_tick_rate(p_delta);
 	check_peers_player_state(p_delta, is_new_input);
@@ -571,6 +563,10 @@ void ServerController::receive_snapshots(PoolVector<uint8_t> p_data) {
 
 void ServerController::player_state_check(uint64_t p_id, Variant p_data) {
 	ERR_PRINTS("The method `player_state_check` must not be called on server. Be sure why it happened.");
+}
+
+void ServerController::replay_snapshots() {
+	ERR_PRINTS("The method `replay_snapshots` must not be called on server. Be sure why it happened.");
 }
 
 bool ServerController::fetch_next_input() {
@@ -863,6 +859,20 @@ void MasterController::player_state_check(uint64_t p_snapshot_id, Variant p_data
 	}
 }
 
+void MasterController::replay_snapshots() {
+	const real_t delta = node->get_physics_process_delta_time();
+	for (size_t i = 0; i < frames_snapshot.size(); i += 1) {
+
+		// Set snapshot inputs.
+		node->set_inputs_buffer(frames_snapshot[i].inputs_buffer);
+
+		node->get_script_instance()->call("step_player", delta);
+
+		// Update snapshot transform
+		frames_snapshot[i].custom_data = node->get_script_instance()->call("create_snapshot");
+	}
+}
+
 real_t MasterController::get_pretended_delta() const {
 	return 1.0 / (static_cast<real_t>(Engine::get_singleton()->get_iterations_per_second()) + tick_additional_speed);
 }
@@ -1022,8 +1032,6 @@ void MasterController::send_frame_snapshots_to_server() {
 	node->get_multiplayer()->send_bytes_to(node, server_peer_id, unreliable, "rpc_server_send_frames_snapshot", cached_packet_data, final_packet_size);
 }
 
-// TODO I'm pretty sure this is not good because any game may want to send
-// custom data and recovere in a different way.
 void MasterController::process_recovery() {
 	if (recover_snapshot_id <= recovered_snapshot_id) {
 		// Nothing to do.
@@ -1047,27 +1055,12 @@ void MasterController::process_recovery() {
 
 	recovered_snapshot_id = recover_snapshot_id;
 
-	node->get_script_instance()->call("process_recovery", recover_state_data, fs.custom_data);
-}
-
-void MasterController::replay_snapshots() {
-	const real_t delta = node->get_physics_process_delta_time();
-	for (size_t i = 0; i < frames_snapshot.size(); i += 1) {
-
-		// Set snapshot inputs.
-		node->set_inputs_buffer(frames_snapshot[i].inputs_buffer);
-
-		node->get_script_instance()->call("step_player", delta);
-
-		// Update snapshot transform
-		frames_snapshot[i].custom_data = node->get_script_instance()->call("create_snapshot");
-	}
+	node->get_script_instance()->call("process_recovery", recover_snapshot_id, recover_state_data, fs.custom_data);
 }
 
 void MasterController::receive_tick_additional_speed(int p_speed) {
 	tick_additional_speed = (static_cast<real_t>(p_speed) / 100.0) * MAX_ADDITIONAL_TICK_SPEED;
 	tick_additional_speed = CLAMP(tick_additional_speed, -MAX_ADDITIONAL_TICK_SPEED, MAX_ADDITIONAL_TICK_SPEED);
-	// TODO print_line(rtos(tick_additional_speed));
 }
 
 PuppetController::PuppetController(PlayerNetController *p_node) :
@@ -1114,6 +1107,10 @@ void PuppetController::player_state_check(uint64_t p_snapshot_id, Variant p_data
 	is_server_state_update_received = true;
 }
 
+void PuppetController::replay_snapshots() {
+	master_controller.replay_snapshots();
+}
+
 void PuppetController::open_flow() {
 	if (is_flow_open == true)
 		return;
@@ -1130,24 +1127,11 @@ void PuppetController::close_flow() {
 }
 
 void PuppetController::hard_reset_to_server_state() {
-	// TODO redo this please
-
-	// Teleport to server location
-	//if (node->get_check_state_position_only()) {
-	//	ERR_FAIL_COND(master_controller.recover_state_data.get_type() != Variant::VECTOR3);
-	//	Transform new_transform = node->get_player()->get_global_transform();
-	//	new_transform.origin = master_controller.recover_state_data;
-	//	node->get_player()->set_global_transform(new_transform);
-	//} else {
-	//	ERR_FAIL_COND(master_controller.recover_state_data.get_type() != Variant::TRANSFORM);
-	//	node->get_player()->set_global_transform(master_controller.recover_state_data);
-	//}
-
-	//// Discart all the old inputs
-	//server_controller.current_packet_id = master_controller.recover_snapshot_id - 1;
-	//if (server_controller.snapshots.size() > 0) {
-	//	// Consume all old inputs
-	//	while (master_controller.recover_snapshot_id > server_controller.snapshots.front().id)
-	//		server_controller.snapshots.pop_front();
-	//}
+	// Discart all the old inputs
+	server_controller.current_packet_id = master_controller.recover_snapshot_id - 1;
+	if (server_controller.snapshots.size() > 0) {
+		// Consume all old inputs
+		while (master_controller.recover_snapshot_id > server_controller.snapshots.front().id)
+			server_controller.snapshots.pop_front();
+	}
 }
