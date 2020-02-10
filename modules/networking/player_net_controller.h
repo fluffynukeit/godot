@@ -139,10 +139,6 @@ private:
 	/// be tweek with the adjustment speed.
 	real_t state_notify_interval;
 
-	/// When `true` the server sends only the global space position to check the
-	/// client status; otherwise sends the full `Transform`.
-	bool check_state_position_only;
-
 	/// Discrepancy recover velocity
 	real_t discrepancy_recover_velocity;
 
@@ -190,9 +186,6 @@ public:
 
 	void set_state_notify_interval(real_t p_interval);
 	real_t get_state_notify_interval() const;
-
-	void set_check_state_position_only(bool p_check_position_only);
-	bool get_check_state_position_only() const;
 
 	void set_discrepancy_recover_velocity(real_t p_velocity);
 	real_t get_discrepancy_recover_velocity() const;
@@ -283,7 +276,7 @@ struct FrameSnapshotSkinny {
 struct FrameSnapshot {
 	uint64_t id;
 	BitArray inputs_buffer;
-	Transform character_transform;
+	Variant custom_data;
 	uint64_t similarity;
 };
 
@@ -367,12 +360,8 @@ struct MasterController : public Controller {
 	/// frame snapshots.
 	void send_frame_snapshots_to_server();
 
-	/// Computes the motion to recover the discrepancy between client and server.
-	/// Removes all the checked snapshots.
-	void compute_server_discrepancy();
-
-	/// Resets the client motion so to conbenzate the server discrepancy.
-	void recover_server_discrepancy(real_t p_delta);
+	void process_recovery();
+	void replay_snapshots();
 
 	void receive_tick_additional_speed(int p_speed);
 };

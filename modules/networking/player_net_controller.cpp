@@ -112,9 +112,6 @@ void PlayerNetController::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_state_notify_interval", "interval"), &PlayerNetController::set_state_notify_interval);
 	ClassDB::bind_method(D_METHOD("get_state_notify_interval"), &PlayerNetController::get_state_notify_interval);
 
-	ClassDB::bind_method(D_METHOD("set_check_state_position_only", "check_type"), &PlayerNetController::set_check_state_position_only);
-	ClassDB::bind_method(D_METHOD("get_check_state_position_only"), &PlayerNetController::get_check_state_position_only);
-
 	ClassDB::bind_method(D_METHOD("set_discrepancy_recover_velocity", "velocity"), &PlayerNetController::set_discrepancy_recover_velocity);
 	ClassDB::bind_method(D_METHOD("get_discrepancy_recover_velocity"), &PlayerNetController::get_discrepancy_recover_velocity);
 
@@ -139,6 +136,8 @@ void PlayerNetController::_bind_methods() {
 	BIND_VMETHOD(MethodInfo("collect_inputs"));
 	BIND_VMETHOD(MethodInfo("step_player", PropertyInfo(Variant::REAL, "delta")));
 	BIND_VMETHOD(MethodInfo(Variant::BOOL, "are_inputs_different", PropertyInfo(Variant::OBJECT, "inputs_A", PROPERTY_HINT_TYPE_STRING, "PlayerInputsReference"), PropertyInfo(Variant::OBJECT, "inputs_B", PROPERTY_HINT_TYPE_STRING, "PlayerInputsReference")));
+	BIND_VMETHOD(MethodInfo(Variant::ARRAY, "create_snapshot"));
+	BIND_VMETHOD(MethodInfo("process_recovery", PropertyInfo(Variant::ARRAY, "server_snapshot"), PropertyInfo(Variant::ARRAY, "client_snapshot")))
 
 	// Rpc to server
 	ClassDB::bind_method(D_METHOD("rpc_server_send_frames_snapshot", "data"), &PlayerNetController::rpc_server_send_frames_snapshot);
@@ -162,9 +161,9 @@ void PlayerNetController::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "missing_snapshots_max_tollerance", PROPERTY_HINT_RANGE, "3,50,1"), "set_missing_snapshots_max_tollerance", "get_missing_snapshots_max_tollerance");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "tick_acceleration", PROPERTY_HINT_RANGE, "0.1,20.0,0.01"), "set_tick_acceleration", "get_tick_acceleration");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "state_notify_interval", PROPERTY_HINT_RANGE, "0.0001,1.0,0.0001"), "set_state_notify_interval", "get_state_notify_interval");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "check_state_position_only"), "set_check_state_position_only", "get_check_state_position_only");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "discrepancy_recover_velocity", PROPERTY_HINT_RANGE, "0.0,1000.0,0.1"), "set_discrepancy_recover_velocity", "get_discrepancy_recover_velocity");
 
+	ADD_SIGNAL(MethodInfo("control_process_done"));
 	ADD_SIGNAL(MethodInfo("puppet_server_comunication_opened"));
 	ADD_SIGNAL(MethodInfo("puppet_server_comunication_closed"));
 }
@@ -179,7 +178,6 @@ PlayerNetController::PlayerNetController() :
 		missing_snapshots_max_tollerance(4),
 		tick_acceleration(2.0),
 		state_notify_interval(10.0 / 60.0),
-		check_state_position_only(true),
 		discrepancy_recover_velocity(50.0),
 		controller(NULL),
 		cached_player(NULL) {
@@ -269,14 +267,6 @@ void PlayerNetController::set_state_notify_interval(real_t p_interval) {
 
 real_t PlayerNetController::get_state_notify_interval() const {
 	return state_notify_interval;
-}
-
-void PlayerNetController::set_check_state_position_only(bool p_check_position_only) {
-	check_state_position_only = p_check_position_only;
-}
-
-bool PlayerNetController::get_check_state_position_only() const {
-	return check_state_position_only;
 }
 
 void PlayerNetController::set_discrepancy_recover_velocity(real_t p_velocity) {
@@ -422,10 +412,13 @@ void PlayerNetController::_notification(int p_what) {
 			ERR_FAIL_COND_MSG(get_script_instance()->has_method("collect_inputs") == false, "In your script you must inherit the virtual method `collect_inputs` to correctly use the `PlayerNetController`.");
 			ERR_FAIL_COND_MSG(get_script_instance()->has_method("step_player") == false, "In your script you must inherit the virtual method `step_player` to correctly use the `PlayerNetController`.");
 			ERR_FAIL_COND_MSG(get_script_instance()->has_method("are_inputs_different") == false, "In your script you must inherit the virtual method `are_inputs_different` to correctly use the `PlayerNetController`.");
+			ERR_FAIL_COND_MSG(get_script_instance()->has_method("create_snapshot") == false, "In your script you must inherit the virtual method `create_snapshot` to correctly use the `PlayerNetController`.");
+			ERR_FAIL_COND_MSG(get_script_instance()->has_method("process_recovery") == false, "In your script you must inherit the virtual method `process_recovery` to correctly use the `PlayerNetController`.");
 			ERR_FAIL_NULL_MSG(get_player(), "The `player_node_path` must point to a valid `Spatial` node.");
 
 			inputs_buffer.init_buffer();
 			controller->physics_process(get_physics_process_delta_time());
+			emit_signal("control_process_done");
 
 		} break;
 		case NOTIFICATION_ENTER_TREE: {
@@ -771,12 +764,7 @@ void ServerController::check_peers_player_state(real_t p_delta, bool is_new_inpu
 
 	peers_state_checker_time = 0.0;
 
-	Variant data;
-	if (node->get_check_state_position_only()) {
-		data = node->get_player()->get_global_transform().origin;
-	} else {
-		data = node->get_player()->get_global_transform();
-	}
+	Variant data = node->get_script_instance()->call("create_snapshot");
 
 	// Notify the active puppets.
 	const Vector<int> &peers = node->get_active_puppets();
@@ -785,7 +773,7 @@ void ServerController::check_peers_player_state(real_t p_delta, bool is_new_inpu
 		// This is an active peer, Let's send the data.
 		const int peer_id = peers[i];
 
-		// TODO please don't use variant and encode everything inside a more tiny packet.
+		// TODO Try to encode things in a more compact form, or improve variant compression even more
 		// Notify the puppets.
 		node->rpc_id(
 				peer_id,
@@ -794,7 +782,7 @@ void ServerController::check_peers_player_state(real_t p_delta, bool is_new_inpu
 				data);
 	}
 
-	// TODO please don't use variant and encode everything inside a more tiny packet.
+	// TODO Try to encode things in a more compact form, or improve variant compression even more
 	// Notify the master
 	node->rpc_id(
 			node->get_network_master(),
@@ -861,8 +849,7 @@ void MasterController::physics_process(real_t p_delta) {
 		}
 	}
 
-	compute_server_discrepancy();
-	recover_server_discrepancy(p_delta);
+	process_recovery();
 }
 
 void MasterController::receive_snapshots(PoolVector<uint8_t> p_data) {
@@ -884,7 +871,7 @@ void MasterController::create_snapshot(uint64_t p_id) {
 	FrameSnapshot inputs;
 	inputs.id = p_id;
 	inputs.inputs_buffer = node->get_inputs_buffer().get_buffer();
-	inputs.character_transform = node->get_player()->get_global_transform();
+	inputs.custom_data = node->get_script_instance()->call("create_snapshot");
 	inputs.similarity = UINT64_MAX;
 	frames_snapshot.push_back(inputs);
 }
@@ -1037,7 +1024,7 @@ void MasterController::send_frame_snapshots_to_server() {
 
 // TODO I'm pretty sure this is not good because any game may want to send
 // custom data and recovere in a different way.
-void MasterController::compute_server_discrepancy() {
+void MasterController::process_recovery() {
 	if (recover_snapshot_id <= recovered_snapshot_id) {
 		// Nothing to do.
 		return;
@@ -1058,67 +1045,23 @@ void MasterController::compute_server_discrepancy() {
 		return;
 	}
 
-	Transform server_transform = node->get_player()->get_global_transform();
-	if (node->get_check_state_position_only()) {
-		ERR_FAIL_COND(recover_state_data.get_type() != Variant::VECTOR3);
-		server_transform.origin = recover_state_data;
-	} else {
-		ERR_FAIL_COND(recover_state_data.get_type() != Variant::TRANSFORM);
-		server_transform = recover_state_data;
-	}
-
-	const real_t delta = node->get_physics_process_delta_time();
-	const Transform unrecovered_transform = node->get_player()->get_global_transform();
-	const Transform delta_transform = fs.character_transform.inverse() * server_transform;
-
-	if (delta_transform.origin.length_squared() > CMP_EPSILON || delta_transform.basis.get_euler().length_squared() > CMP_EPSILON) {
-		// Calculates the discrepancy motion by rewinding all inputs.
-		node->get_player()->set_global_transform(server_transform);
-
-		for (size_t i = 0; i < frames_snapshot.size(); i += 1) {
-
-			// Set snapshot inputs.
-			node->set_inputs_buffer(frames_snapshot[i].inputs_buffer);
-
-			node->get_script_instance()->call("step_player", delta);
-
-			// Update snapshot transform
-			frames_snapshot[i].character_transform = node->get_player()->get_global_transform();
-		}
-
-		const Transform recovered_transform = node->get_player()->get_global_transform();
-		delta_discrepancy = unrecovered_transform.inverse() * recovered_transform;
-
-		// Sets the unrecovered transform so we can interpolate the discrepancy
-		// and make this transition a bit more soft.
-		node->get_player()->set_global_transform(unrecovered_transform);
-	}
-
 	recovered_snapshot_id = recover_snapshot_id;
+
+	node->get_script_instance()->call("process_recovery", recover_state_data, fs.custom_data);
 }
 
-void MasterController::recover_server_discrepancy(real_t p_delta) {
-	Transform recovered_transform = node->get_player()->get_global_transform();
+void MasterController::replay_snapshots() {
+	const real_t delta = node->get_physics_process_delta_time();
+	for (size_t i = 0; i < frames_snapshot.size(); i += 1) {
 
-	const real_t rlen = delta_discrepancy.origin.length();
-	if (rlen > CMP_EPSILON) {
-		const Vector3 frame_recover =
-				(delta_discrepancy.origin / rlen) *
-				MIN(rlen * p_delta * node->get_discrepancy_recover_velocity(), rlen);
+		// Set snapshot inputs.
+		node->set_inputs_buffer(frames_snapshot[i].inputs_buffer);
 
-		delta_discrepancy.origin -= frame_recover;
-		recovered_transform.origin += frame_recover;
-	} else if (node->get_check_state_position_only()) {
-		return;
+		node->get_script_instance()->call("step_player", delta);
+
+		// Update snapshot transform
+		frames_snapshot[i].custom_data = node->get_script_instance()->call("create_snapshot");
 	}
-
-	if (node->get_check_state_position_only() == false) {
-		// TODO please recover rotation.
-		recovered_transform.basis *= delta_discrepancy.basis;
-		delta_discrepancy.basis = Basis();
-	}
-
-	node->get_player()->set_global_transform(recovered_transform);
 }
 
 void MasterController::receive_tick_additional_speed(int p_speed) {
@@ -1155,8 +1098,7 @@ void PuppetController::physics_process(real_t p_delta) {
 	if (is_new_input) {
 		master_controller.create_snapshot(server_controller.current_packet_id);
 	}
-	master_controller.compute_server_discrepancy();
-	master_controller.recover_server_discrepancy(p_delta);
+	master_controller.process_recovery();
 }
 
 void PuppetController::receive_snapshots(PoolVector<uint8_t> p_data) {
@@ -1188,22 +1130,24 @@ void PuppetController::close_flow() {
 }
 
 void PuppetController::hard_reset_to_server_state() {
-	// Teleport to server location
-	if (node->get_check_state_position_only()) {
-		ERR_FAIL_COND(master_controller.recover_state_data.get_type() != Variant::VECTOR3);
-		Transform new_transform = node->get_player()->get_global_transform();
-		new_transform.origin = master_controller.recover_state_data;
-		node->get_player()->set_global_transform(new_transform);
-	} else {
-		ERR_FAIL_COND(master_controller.recover_state_data.get_type() != Variant::TRANSFORM);
-		node->get_player()->set_global_transform(master_controller.recover_state_data);
-	}
+	// TODO redo this please
 
-	// Discart all the old inputs
-	server_controller.current_packet_id = master_controller.recover_snapshot_id - 1;
-	if (server_controller.snapshots.size() > 0) {
-		// Consume all old inputs
-		while (master_controller.recover_snapshot_id > server_controller.snapshots.front().id)
-			server_controller.snapshots.pop_front();
-	}
+	// Teleport to server location
+	//if (node->get_check_state_position_only()) {
+	//	ERR_FAIL_COND(master_controller.recover_state_data.get_type() != Variant::VECTOR3);
+	//	Transform new_transform = node->get_player()->get_global_transform();
+	//	new_transform.origin = master_controller.recover_state_data;
+	//	node->get_player()->set_global_transform(new_transform);
+	//} else {
+	//	ERR_FAIL_COND(master_controller.recover_state_data.get_type() != Variant::TRANSFORM);
+	//	node->get_player()->set_global_transform(master_controller.recover_state_data);
+	//}
+
+	//// Discart all the old inputs
+	//server_controller.current_packet_id = master_controller.recover_snapshot_id - 1;
+	//if (server_controller.snapshots.size() > 0) {
+	//	// Consume all old inputs
+	//	while (master_controller.recover_snapshot_id > server_controller.snapshots.front().id)
+	//		server_controller.snapshots.pop_front();
+	//}
 }
