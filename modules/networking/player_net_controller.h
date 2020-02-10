@@ -339,7 +339,7 @@ struct ServerController : public Controller {
 
 	/// This function is executed on server, and call a client function that
 	/// checks if the player state is consistent between client and server.
-	void check_peers_player_state(real_t p_delta);
+	void check_peers_player_state(real_t p_delta, bool is_new_input);
 };
 
 struct MasterController : public Controller {

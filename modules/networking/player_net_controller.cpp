@@ -478,10 +478,17 @@ ServerController::ServerController(PlayerNetController *p_node) :
 }
 
 void ServerController::physics_process(real_t p_delta) {
-	fetch_next_input();
+	const bool is_new_input = fetch_next_input();
+
+	if (unlikely(current_packet_id == UINT64_MAX)) {
+		// Skip this until the first input arrive.
+		return;
+	}
+
+	print_line(itos(current_packet_id));
 	node->get_script_instance()->call("step_player", p_delta);
 	adjust_master_tick_rate(p_delta);
-	check_peers_player_state(p_delta);
+	check_peers_player_state(p_delta, is_new_input);
 }
 
 bool is_remote_frame_A_older(const FrameSnapshotSkinny &p_snap_a, const FrameSnapshotSkinny &p_snap_b) {
@@ -740,6 +747,8 @@ void ServerController::adjust_master_tick_rate(real_t p_delta) {
 		if (ABS(client_tick_additional_speed_compressed - new_speed) >= TICK_SPEED_CHANGE_NOTIF_THRESHOLD) {
 			client_tick_additional_speed_compressed = new_speed;
 
+			// TODO Send bytes please.
+			// TODO consider to send this unreliably each X sec
 			node->rpc_id(
 					node->get_network_master(),
 					"rpc_master_send_tick_additional_speed",
@@ -748,15 +757,15 @@ void ServerController::adjust_master_tick_rate(real_t p_delta) {
 	}
 }
 
-void ServerController::check_peers_player_state(real_t p_delta) {
+void ServerController::check_peers_player_state(real_t p_delta, bool is_new_input) {
 	if (current_packet_id == UINT64_MAX) {
 		// Skip this until the first input arrive.
 		return;
 	}
 
 	peers_state_checker_time += p_delta;
-	if (peers_state_checker_time < node->get_state_notify_interval()) {
-		// Not yet the time to check
+	if (peers_state_checker_time < node->get_state_notify_interval() || is_new_input == false) {
+		// Not yet the time to check.
 		return;
 	}
 
@@ -777,7 +786,6 @@ void ServerController::check_peers_player_state(real_t p_delta) {
 		const int peer_id = peers[i];
 
 		// TODO please don't use variant and encode everything inside a more tiny packet.
-		// TODO Please make sure to notify the puppets only when they require it!
 		// Notify the puppets.
 		node->rpc_id(
 				peer_id,
@@ -787,7 +795,6 @@ void ServerController::check_peers_player_state(real_t p_delta) {
 	}
 
 	// TODO please don't use variant and encode everything inside a more tiny packet.
-	// TODO Please make sure to notify the puppets only when they require it!
 	// Notify the master
 	node->rpc_id(
 			node->get_network_master(),
@@ -811,7 +818,7 @@ void MasterController::physics_process(real_t p_delta) {
 	// generation, for this reason here I'm performing a sub tick.
 	// Also keep in mind that we are just pretending that the time
 	// is advancing faster, for this reason we are still using
-	// delta to move the player.
+	// `delta` to move the player.
 
 	// Unreachable
 	CRASH_COND(node->get_script_instance() == NULL);
@@ -824,15 +831,17 @@ void MasterController::physics_process(real_t p_delta) {
 
 	while (sub_ticks > 0) {
 		sub_ticks -= 1;
-		// The frame snapshot array is full only when the server connection is
-		// bad.
-		// Is better to not accumulate any other input, in this cases so to avoid
-		// difer too much from the server.
+
+		// We need to know if we can accept a new input because in case of bad
+		// internet connection we can't keep accumulates inputs up to infinite
+		// otherwise the server will difer too much from the client and we
+		// introduce virtual lag.
 		const bool accept_new_inputs = frames_snapshot.size() < static_cast<size_t>(node->get_master_snapshot_storage_size());
 
 		if (accept_new_inputs) {
 			node->get_script_instance()->call("collect_inputs");
 		} else {
+			// Zeros all inputs so the `step_player` will run with 0 inputs.
 			node->get_inputs_buffer_mut().zero();
 		}
 
@@ -1037,7 +1046,7 @@ void MasterController::compute_server_discrepancy() {
 	FrameSnapshot fs;
 	fs.id = 0;
 
-	// Takes the snapshot that we have to recover and remove all the old snapshots.
+	// Pop the snapshots until we arrive to the `recover_snapshot_id`
 	while (frames_snapshot.empty() == false && frames_snapshot.front().id <= recover_snapshot_id) {
 		fs = frames_snapshot.front();
 		frames_snapshot.pop_front();
@@ -1058,7 +1067,7 @@ void MasterController::compute_server_discrepancy() {
 		server_transform = recover_state_data;
 	}
 
-	const real_t delta = 1.0 / Engine::get_singleton()->get_iterations_per_second();
+	const real_t delta = node->get_physics_process_delta_time();
 	const Transform unrecovered_transform = node->get_player()->get_global_transform();
 	const Transform delta_transform = fs.character_transform.inverse() * server_transform;
 
@@ -1091,14 +1100,16 @@ void MasterController::compute_server_discrepancy() {
 void MasterController::recover_server_discrepancy(real_t p_delta) {
 	Transform recovered_transform = node->get_player()->get_global_transform();
 
-	{
-		const real_t rlen = delta_discrepancy.origin.length();
+	const real_t rlen = delta_discrepancy.origin.length();
+	if (rlen > CMP_EPSILON) {
 		const Vector3 frame_recover =
-				delta_discrepancy.origin.normalized() *
+				(delta_discrepancy.origin / rlen) *
 				MIN(rlen * p_delta * node->get_discrepancy_recover_velocity(), rlen);
 
 		delta_discrepancy.origin -= frame_recover;
 		recovered_transform.origin += frame_recover;
+	} else if (node->get_check_state_position_only()) {
+		return;
 	}
 
 	if (node->get_check_state_position_only() == false) {
@@ -1113,6 +1124,7 @@ void MasterController::recover_server_discrepancy(real_t p_delta) {
 void MasterController::receive_tick_additional_speed(int p_speed) {
 	tick_additional_speed = (static_cast<real_t>(p_speed) / 100.0) * MAX_ADDITIONAL_TICK_SPEED;
 	tick_additional_speed = CLAMP(tick_additional_speed, -MAX_ADDITIONAL_TICK_SPEED, MAX_ADDITIONAL_TICK_SPEED);
+	// TODO print_line(rtos(tick_additional_speed));
 }
 
 PuppetController::PuppetController(PlayerNetController *p_node) :
