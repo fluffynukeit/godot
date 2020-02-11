@@ -1129,9 +1129,7 @@ void PuppetController::close_flow() {
 void PuppetController::hard_reset_to_server_state() {
 	// Discart all the old inputs
 	server_controller.current_packet_id = master_controller.recover_snapshot_id - 1;
-	if (server_controller.snapshots.size() > 0) {
-		// Consume all old inputs
-		while (master_controller.recover_snapshot_id > server_controller.snapshots.front().id)
-			server_controller.snapshots.pop_front();
-	}
+	// Consume all old inputs
+	while (server_controller.snapshots.size() > 0 && master_controller.recover_snapshot_id > server_controller.snapshots.front().id)
+		server_controller.snapshots.pop_front();
 }
