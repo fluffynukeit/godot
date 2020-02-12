@@ -401,12 +401,6 @@ void PlayerNetController::rpc_send_player_state(uint64_t p_snapshot_id, Variant 
 void PlayerNetController::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
-			ERR_FAIL_NULL_MSG(get_script_instance(), "You Must have a script to use correctly the `PlayerNetController`.");
-			ERR_FAIL_COND_MSG(get_script_instance()->has_method("collect_inputs") == false, "In your script you must inherit the virtual method `collect_inputs` to correctly use the `PlayerNetController`.");
-			ERR_FAIL_COND_MSG(get_script_instance()->has_method("step_player") == false, "In your script you must inherit the virtual method `step_player` to correctly use the `PlayerNetController`.");
-			ERR_FAIL_COND_MSG(get_script_instance()->has_method("are_inputs_different") == false, "In your script you must inherit the virtual method `are_inputs_different` to correctly use the `PlayerNetController`.");
-			ERR_FAIL_COND_MSG(get_script_instance()->has_method("create_snapshot") == false, "In your script you must inherit the virtual method `create_snapshot` to correctly use the `PlayerNetController`.");
-			ERR_FAIL_COND_MSG(get_script_instance()->has_method("process_recovery") == false, "In your script you must inherit the virtual method `process_recovery` to correctly use the `PlayerNetController`.");
 			ERR_FAIL_NULL_MSG(get_player(), "The `player_node_path` must point to a valid `Spatial` node.");
 
 			inputs_buffer.init_buffer();
@@ -435,6 +429,11 @@ void PlayerNetController::_notification(int p_what) {
 			set_physics_process_internal(true);
 			cached_player = Object::cast_to<Spatial>(get_node(player_node_path));
 
+			ERR_FAIL_COND_MSG(has_method("collect_inputs") == false, "In your script you must inherit the virtual method `collect_inputs` to correctly use the `PlayerNetController`.");
+			ERR_FAIL_COND_MSG(has_method("step_player") == false, "In your script you must inherit the virtual method `step_player` to correctly use the `PlayerNetController`.");
+			ERR_FAIL_COND_MSG(has_method("are_inputs_different") == false, "In your script you must inherit the virtual method `are_inputs_different` to correctly use the `PlayerNetController`.");
+			ERR_FAIL_COND_MSG(has_method("create_snapshot") == false, "In your script you must inherit the virtual method `create_snapshot` to correctly use the `PlayerNetController`.");
+			ERR_FAIL_COND_MSG(has_method("process_recovery") == false, "In your script you must inherit the virtual method `process_recovery` to correctly use the `PlayerNetController`.");
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
 			if (Engine::get_singleton()->is_editor_hint())
@@ -471,7 +470,7 @@ void ServerController::physics_process(real_t p_delta) {
 		return;
 	}
 
-	node->get_script_instance()->call("step_player", p_delta);
+	node->call("step_player", p_delta);
 	adjust_master_tick_rate(p_delta);
 	check_peers_player_state(p_delta, is_new_input);
 }
@@ -571,9 +570,6 @@ void ServerController::replay_snapshots() {
 
 bool ServerController::fetch_next_input() {
 	bool is_new_input = true;
-
-	// Unreachable
-	CRASH_COND(node->get_script_instance() == NULL);
 
 	if (unlikely(current_packet_id == UINT64_MAX)) {
 		// As initial packet, anything is good.
@@ -675,7 +671,7 @@ bool ServerController::fetch_next_input() {
 
 						pir_B.set_inputs_buffer(pi.inputs_buffer);
 
-						const bool is_meaningful = node->get_script_instance()->call("are_inputs_different", &pir_A, &pir_B);
+						const bool is_meaningful = node->call("are_inputs_different", &pir_A, &pir_B);
 
 						if (is_meaningful) {
 							break;
@@ -760,7 +756,7 @@ void ServerController::check_peers_player_state(real_t p_delta, bool is_new_inpu
 
 	peers_state_checker_time = 0.0;
 
-	Variant data = node->get_script_instance()->call("create_snapshot");
+	Variant data = node->call("create_snapshot");
 
 	// Notify the active puppets.
 	const Vector<int> &peers = node->get_active_puppets();
@@ -804,9 +800,6 @@ void MasterController::physics_process(real_t p_delta) {
 	// is advancing faster, for this reason we are still using
 	// `delta` to move the player.
 
-	// Unreachable
-	CRASH_COND(node->get_script_instance() == NULL);
-
 	const real_t pretended_delta = get_pretended_delta();
 
 	time_bank += p_delta;
@@ -823,7 +816,7 @@ void MasterController::physics_process(real_t p_delta) {
 		const bool accept_new_inputs = frames_snapshot.size() < static_cast<size_t>(node->get_master_snapshot_storage_size());
 
 		if (accept_new_inputs) {
-			node->get_script_instance()->call("collect_inputs");
+			node->call("collect_inputs");
 		} else {
 			// Zeros all inputs so the `step_player` will run with 0 inputs.
 			node->get_inputs_buffer_mut().zero();
@@ -831,7 +824,7 @@ void MasterController::physics_process(real_t p_delta) {
 
 		// The physics process is always emitted, because we still need to simulate
 		// the character motion even if we don't store the player inputs.
-		node->get_script_instance()->call("step_player", p_delta);
+		node->call("step_player", p_delta);
 
 		if (accept_new_inputs) {
 
@@ -866,10 +859,10 @@ void MasterController::replay_snapshots() {
 		// Set snapshot inputs.
 		node->set_inputs_buffer(frames_snapshot[i].inputs_buffer);
 
-		node->get_script_instance()->call("step_player", delta);
+		node->call("step_player", delta);
 
 		// Update snapshot transform
-		frames_snapshot[i].custom_data = node->get_script_instance()->call("create_snapshot");
+		frames_snapshot[i].custom_data = node->call("create_snapshot");
 	}
 }
 
@@ -881,7 +874,7 @@ void MasterController::create_snapshot(uint64_t p_id) {
 	FrameSnapshot inputs;
 	inputs.id = p_id;
 	inputs.inputs_buffer = node->get_inputs_buffer().get_buffer();
-	inputs.custom_data = node->get_script_instance()->call("create_snapshot");
+	inputs.custom_data = node->call("create_snapshot");
 	inputs.similarity = UINT64_MAX;
 	frames_snapshot.push_back(inputs);
 }
@@ -894,9 +887,6 @@ void MasterController::send_frame_snapshots_to_server() {
 	// - Array of snapshots:
 	// |-- First byte the amount of times this snapshot is duplicated in the packet.
 	// |-- snapshot inputs buffer.
-
-	// Unreachable
-	CRASH_COND(node->get_script_instance() == NULL);
 
 	const size_t snapshots_count = MIN(frames_snapshot.size(), static_cast<size_t>(node->get_max_redundant_inputs() + 1));
 	ERR_FAIL_COND_MSG(snapshots_count >= UINT8_MAX, "Is not allow to send more than 254 redundant packets.");
@@ -954,7 +944,7 @@ void MasterController::send_frame_snapshots_to_server() {
 					if (frames_snapshot[i].similarity == UINT64_MAX) {
 						// This snapshot was never compared, let's do it now.
 						pir_B.set_inputs_buffer(frames_snapshot[i].inputs_buffer);
-						const bool are_different = node->get_script_instance()->call("are_inputs_different", &pir_A, &pir_B);
+						const bool are_different = node->call("are_inputs_different", &pir_A, &pir_B);
 						is_similar = are_different == false;
 
 					} else if (frames_snapshot[i].similarity == previous_snapshot_similarity) {
@@ -1055,7 +1045,7 @@ void MasterController::process_recovery() {
 
 	recovered_snapshot_id = recover_snapshot_id;
 
-	node->get_script_instance()->call("process_recovery", recover_snapshot_id, recover_state_data, fs.custom_data);
+	node->call("process_recovery", recover_snapshot_id, recover_state_data, fs.custom_data);
 }
 
 void MasterController::receive_tick_additional_speed(int p_speed) {
@@ -1087,7 +1077,7 @@ void PuppetController::physics_process(real_t p_delta) {
 	}
 
 	const bool is_new_input = server_controller.fetch_next_input();
-	node->get_script_instance()->call("step_player", p_delta);
+	node->call("step_player", p_delta);
 	if (is_new_input) {
 		master_controller.create_snapshot(server_controller.current_packet_id);
 	}
