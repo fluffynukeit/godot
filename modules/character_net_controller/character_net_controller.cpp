@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  player_net_controller.cpp                                            */
+/*  character_net_controller.cpp                                         */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,7 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#include "player_net_controller.h"
+#include "character_net_controller.h"
 
 #include "core/engine.h"
 #include "core/io/marshalls.h"
@@ -72,7 +72,7 @@ void PlayerInputsReference::set_inputs_buffer(const BitArray &p_new_buffer) {
 	inputs_buffer.get_buffer_mut().get_bytes_mut() = p_new_buffer.get_bytes();
 }
 
-void PlayerNetController::_bind_methods() {
+void CharacterNetController::_bind_methods() {
 
 	BIND_CONSTANT(INPUT_DATA_TYPE_BOOL);
 	BIND_CONSTANT(INPUT_DATA_TYPE_INT);
@@ -84,53 +84,49 @@ void PlayerNetController::_bind_methods() {
 	BIND_CONSTANT(INPUT_COMPRESSION_LEVEL_2);
 	BIND_CONSTANT(INPUT_COMPRESSION_LEVEL_3);
 
-	ClassDB::bind_method(D_METHOD("set_player_node_path", "player_node_path"), &PlayerNetController::set_player_node_path);
-	ClassDB::bind_method(D_METHOD("get_player_node_path"), &PlayerNetController::get_player_node_path);
-	ClassDB::bind_method(D_METHOD("get_player"), &PlayerNetController::get_player);
+	ClassDB::bind_method(D_METHOD("set_master_snapshot_storage_size", "size"), &CharacterNetController::set_master_snapshot_storage_size);
+	ClassDB::bind_method(D_METHOD("get_master_snapshot_storage_size"), &CharacterNetController::get_master_snapshot_storage_size);
 
-	ClassDB::bind_method(D_METHOD("set_master_snapshot_storage_size", "size"), &PlayerNetController::set_master_snapshot_storage_size);
-	ClassDB::bind_method(D_METHOD("get_master_snapshot_storage_size"), &PlayerNetController::get_master_snapshot_storage_size);
+	ClassDB::bind_method(D_METHOD("set_network_traced_frames", "size"), &CharacterNetController::set_network_traced_frames);
+	ClassDB::bind_method(D_METHOD("get_network_traced_frames"), &CharacterNetController::get_network_traced_frames);
 
-	ClassDB::bind_method(D_METHOD("set_network_traced_frames", "size"), &PlayerNetController::set_network_traced_frames);
-	ClassDB::bind_method(D_METHOD("get_network_traced_frames"), &PlayerNetController::get_network_traced_frames);
+	ClassDB::bind_method(D_METHOD("set_max_redundant_inputs", "max_redundand_inputs"), &CharacterNetController::set_max_redundant_inputs);
+	ClassDB::bind_method(D_METHOD("get_max_redundant_inputs"), &CharacterNetController::get_max_redundant_inputs);
 
-	ClassDB::bind_method(D_METHOD("set_max_redundant_inputs", "max_redundand_inputs"), &PlayerNetController::set_max_redundant_inputs);
-	ClassDB::bind_method(D_METHOD("get_max_redundant_inputs"), &PlayerNetController::get_max_redundant_inputs);
+	ClassDB::bind_method(D_METHOD("set_server_snapshot_storage_size", "size"), &CharacterNetController::set_server_snapshot_storage_size);
+	ClassDB::bind_method(D_METHOD("get_server_snapshot_storage_size"), &CharacterNetController::get_server_snapshot_storage_size);
 
-	ClassDB::bind_method(D_METHOD("set_server_snapshot_storage_size", "size"), &PlayerNetController::set_server_snapshot_storage_size);
-	ClassDB::bind_method(D_METHOD("get_server_snapshot_storage_size"), &PlayerNetController::get_server_snapshot_storage_size);
+	ClassDB::bind_method(D_METHOD("set_optimal_size_acceleration", "acceleration"), &CharacterNetController::set_optimal_size_acceleration);
+	ClassDB::bind_method(D_METHOD("get_optimal_size_acceleration"), &CharacterNetController::get_optimal_size_acceleration);
 
-	ClassDB::bind_method(D_METHOD("set_optimal_size_acceleration", "acceleration"), &PlayerNetController::set_optimal_size_acceleration);
-	ClassDB::bind_method(D_METHOD("get_optimal_size_acceleration"), &PlayerNetController::get_optimal_size_acceleration);
+	ClassDB::bind_method(D_METHOD("set_missing_snapshots_max_tollerance", "tollerance"), &CharacterNetController::set_missing_snapshots_max_tollerance);
+	ClassDB::bind_method(D_METHOD("get_missing_snapshots_max_tollerance"), &CharacterNetController::get_missing_snapshots_max_tollerance);
 
-	ClassDB::bind_method(D_METHOD("set_missing_snapshots_max_tollerance", "tollerance"), &PlayerNetController::set_missing_snapshots_max_tollerance);
-	ClassDB::bind_method(D_METHOD("get_missing_snapshots_max_tollerance"), &PlayerNetController::get_missing_snapshots_max_tollerance);
+	ClassDB::bind_method(D_METHOD("set_tick_acceleration", "acceleration"), &CharacterNetController::set_tick_acceleration);
+	ClassDB::bind_method(D_METHOD("get_tick_acceleration"), &CharacterNetController::get_tick_acceleration);
 
-	ClassDB::bind_method(D_METHOD("set_tick_acceleration", "acceleration"), &PlayerNetController::set_tick_acceleration);
-	ClassDB::bind_method(D_METHOD("get_tick_acceleration"), &PlayerNetController::get_tick_acceleration);
+	ClassDB::bind_method(D_METHOD("set_state_notify_interval", "interval"), &CharacterNetController::set_state_notify_interval);
+	ClassDB::bind_method(D_METHOD("get_state_notify_interval"), &CharacterNetController::get_state_notify_interval);
 
-	ClassDB::bind_method(D_METHOD("set_state_notify_interval", "interval"), &PlayerNetController::set_state_notify_interval);
-	ClassDB::bind_method(D_METHOD("get_state_notify_interval"), &PlayerNetController::get_state_notify_interval);
+	ClassDB::bind_method(D_METHOD("input_buffer_add_data_type", "type", "compression"), &CharacterNetController::input_buffer_add_data_type, DEFVAL(InputsBuffer::COMPRESSION_LEVEL_2));
+	ClassDB::bind_method(D_METHOD("input_buffer_ready"), &CharacterNetController::input_buffer_ready);
 
-	ClassDB::bind_method(D_METHOD("input_buffer_add_data_type", "type", "compression"), &PlayerNetController::input_buffer_add_data_type, DEFVAL(InputsBuffer::COMPRESSION_LEVEL_2));
-	ClassDB::bind_method(D_METHOD("input_buffer_ready"), &PlayerNetController::input_buffer_ready);
+	ClassDB::bind_method(D_METHOD("input_buffer_set_bool", "index", "bool"), &CharacterNetController::input_buffer_set_bool);
+	ClassDB::bind_method(D_METHOD("input_buffer_get_bool", "index"), &CharacterNetController::input_buffer_get_bool);
 
-	ClassDB::bind_method(D_METHOD("input_buffer_set_bool", "index", "bool"), &PlayerNetController::input_buffer_set_bool);
-	ClassDB::bind_method(D_METHOD("input_buffer_get_bool", "index"), &PlayerNetController::input_buffer_get_bool);
+	ClassDB::bind_method(D_METHOD("input_buffer_set_int", "index", "int"), &CharacterNetController::input_buffer_set_int);
+	ClassDB::bind_method(D_METHOD("input_buffer_get_int", "index"), &CharacterNetController::input_buffer_get_int);
 
-	ClassDB::bind_method(D_METHOD("input_buffer_set_int", "index", "int"), &PlayerNetController::input_buffer_set_int);
-	ClassDB::bind_method(D_METHOD("input_buffer_get_int", "index"), &PlayerNetController::input_buffer_get_int);
+	ClassDB::bind_method(D_METHOD("input_buffer_set_unit_real", "index", "unit_real"), &CharacterNetController::input_buffer_set_unit_real);
+	ClassDB::bind_method(D_METHOD("input_buffer_get_unit_real", "index"), &CharacterNetController::input_buffer_get_unit_real);
 
-	ClassDB::bind_method(D_METHOD("input_buffer_set_unit_real", "index", "unit_real"), &PlayerNetController::input_buffer_set_unit_real);
-	ClassDB::bind_method(D_METHOD("input_buffer_get_unit_real", "index"), &PlayerNetController::input_buffer_get_unit_real);
+	ClassDB::bind_method(D_METHOD("input_buffer_set_normalized_vector", "index", "vector"), &CharacterNetController::input_buffer_set_normalized_vector);
+	ClassDB::bind_method(D_METHOD("input_buffer_get_normalized_vector", "index"), &CharacterNetController::input_buffer_get_normalized_vector);
 
-	ClassDB::bind_method(D_METHOD("input_buffer_set_normalized_vector", "index", "vector"), &PlayerNetController::input_buffer_set_normalized_vector);
-	ClassDB::bind_method(D_METHOD("input_buffer_get_normalized_vector", "index"), &PlayerNetController::input_buffer_get_normalized_vector);
+	ClassDB::bind_method(D_METHOD("set_puppet_active", "peer_id", "active"), &CharacterNetController::set_puppet_active);
+	ClassDB::bind_method(D_METHOD("_on_peer_connection_change", "peer_id"), &CharacterNetController::on_peer_connection_change);
 
-	ClassDB::bind_method(D_METHOD("set_puppet_active", "peer_id", "active"), &PlayerNetController::set_puppet_active);
-	ClassDB::bind_method(D_METHOD("_on_peer_connection_change", "peer_id"), &PlayerNetController::on_peer_connection_change);
-
-	ClassDB::bind_method(D_METHOD("replay_snapshots"), &PlayerNetController::replay_snapshots);
+	ClassDB::bind_method(D_METHOD("replay_snapshots"), &CharacterNetController::replay_snapshots);
 
 	BIND_VMETHOD(MethodInfo("collect_inputs"));
 	BIND_VMETHOD(MethodInfo("step_player", PropertyInfo(Variant::REAL, "delta")));
@@ -139,17 +135,17 @@ void PlayerNetController::_bind_methods() {
 	BIND_VMETHOD(MethodInfo("process_recovery", PropertyInfo(Variant::INT, "snapshot_id"), PropertyInfo(Variant::ARRAY, "server_snapshot"), PropertyInfo(Variant::ARRAY, "client_snapshot")))
 
 	// Rpc to server
-	ClassDB::bind_method(D_METHOD("rpc_server_send_frames_snapshot", "data"), &PlayerNetController::rpc_server_send_frames_snapshot);
+	ClassDB::bind_method(D_METHOD("rpc_server_send_frames_snapshot", "data"), &CharacterNetController::rpc_server_send_frames_snapshot);
 
 	// Rpc to master
-	ClassDB::bind_method(D_METHOD("rpc_master_send_tick_additional_speed", "tick_speed"), &PlayerNetController::rpc_master_send_tick_additional_speed);
+	ClassDB::bind_method(D_METHOD("rpc_master_send_tick_additional_speed", "tick_speed"), &CharacterNetController::rpc_master_send_tick_additional_speed);
 
 	// Rpc to puppets
-	ClassDB::bind_method(D_METHOD("rpc_puppet_send_frames_snapshot", "data"), &PlayerNetController::rpc_puppet_send_frames_snapshot);
-	ClassDB::bind_method(D_METHOD("rpc_puppet_notify_connection_status", "is_open"), &PlayerNetController::rpc_puppet_notify_connection_status);
+	ClassDB::bind_method(D_METHOD("rpc_puppet_send_frames_snapshot", "data"), &CharacterNetController::rpc_puppet_send_frames_snapshot);
+	ClassDB::bind_method(D_METHOD("rpc_puppet_notify_connection_status", "is_open"), &CharacterNetController::rpc_puppet_notify_connection_status);
 
 	// Rpc to master and puppets
-	ClassDB::bind_method(D_METHOD("rpc_send_player_state", "snapshot_id", "data"), &PlayerNetController::rpc_send_player_state);
+	ClassDB::bind_method(D_METHOD("rpc_send_player_state", "snapshot_id", "data"), &CharacterNetController::rpc_send_player_state);
 
 	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "player_node_path"), "set_player_node_path", "get_player_node_path");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "input_storage_size", PROPERTY_HINT_RANGE, "100,2000,1"), "set_master_snapshot_storage_size", "get_master_snapshot_storage_size");
@@ -166,7 +162,7 @@ void PlayerNetController::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("puppet_server_comunication_closed"));
 }
 
-PlayerNetController::PlayerNetController() :
+CharacterNetController::CharacterNetController() :
 		player_node_path(NodePath("../")),
 		master_snapshot_storage_size(300),
 		network_traced_frames(1200),
@@ -176,8 +172,7 @@ PlayerNetController::PlayerNetController() :
 		missing_snapshots_max_tollerance(4),
 		tick_acceleration(2.0),
 		state_notify_interval(1.0),
-		controller(NULL),
-		cached_player(NULL) {
+		controller(NULL) {
 
 	rpc_config("rpc_server_send_frames_snapshot", MultiplayerAPI::RPC_MODE_REMOTE);
 
@@ -189,124 +184,111 @@ PlayerNetController::PlayerNetController() :
 	rpc_config("rpc_send_player_state", MultiplayerAPI::RPC_MODE_REMOTE);
 }
 
-void PlayerNetController::set_player_node_path(NodePath p_path) {
-	player_node_path = p_path;
-	cached_player = Object::cast_to<Spatial>(get_node(player_node_path));
-}
-
-NodePath PlayerNetController::get_player_node_path() const {
-	return player_node_path;
-}
-
-Spatial *PlayerNetController::get_player() const {
-	return cached_player;
-}
-
-void PlayerNetController::set_master_snapshot_storage_size(int p_size) {
+void CharacterNetController::set_master_snapshot_storage_size(int p_size) {
 	master_snapshot_storage_size = p_size;
 }
 
-int PlayerNetController::get_master_snapshot_storage_size() const {
+int CharacterNetController::get_master_snapshot_storage_size() const {
 	return master_snapshot_storage_size;
 }
 
-void PlayerNetController::set_network_traced_frames(int p_size) {
+void CharacterNetController::set_network_traced_frames(int p_size) {
 	network_traced_frames = p_size;
 }
 
-int PlayerNetController::get_network_traced_frames() const {
+int CharacterNetController::get_network_traced_frames() const {
 	return network_traced_frames;
 }
 
-void PlayerNetController::set_max_redundant_inputs(int p_max) {
+void CharacterNetController::set_max_redundant_inputs(int p_max) {
 	max_redundant_inputs = p_max;
 }
 
-int PlayerNetController::get_max_redundant_inputs() const {
+int CharacterNetController::get_max_redundant_inputs() const {
 	return max_redundant_inputs;
 }
 
-void PlayerNetController::set_server_snapshot_storage_size(int p_size) {
+void CharacterNetController::set_server_snapshot_storage_size(int p_size) {
 	server_snapshot_storage_size = p_size;
 }
 
-int PlayerNetController::get_server_snapshot_storage_size() const {
+int CharacterNetController::get_server_snapshot_storage_size() const {
 	return server_snapshot_storage_size;
 }
 
-void PlayerNetController::set_optimal_size_acceleration(real_t p_acceleration) {
+void CharacterNetController::set_optimal_size_acceleration(real_t p_acceleration) {
 	optimal_size_acceleration = p_acceleration;
 }
 
-real_t PlayerNetController::get_optimal_size_acceleration() const {
+real_t CharacterNetController::get_optimal_size_acceleration() const {
 	return optimal_size_acceleration;
 }
 
-void PlayerNetController::set_missing_snapshots_max_tollerance(int p_tollerance) {
+void CharacterNetController::set_missing_snapshots_max_tollerance(int p_tollerance) {
 	missing_snapshots_max_tollerance = p_tollerance;
 }
 
-int PlayerNetController::get_missing_snapshots_max_tollerance() const {
+int CharacterNetController::get_missing_snapshots_max_tollerance() const {
 	return missing_snapshots_max_tollerance;
 }
 
-void PlayerNetController::set_tick_acceleration(real_t p_acceleration) {
+void CharacterNetController::set_tick_acceleration(real_t p_acceleration) {
 	tick_acceleration = p_acceleration;
 }
 
-real_t PlayerNetController::get_tick_acceleration() const {
+real_t CharacterNetController::get_tick_acceleration() const {
 	return tick_acceleration;
 }
 
-void PlayerNetController::set_state_notify_interval(real_t p_interval) {
+void CharacterNetController::set_state_notify_interval(real_t p_interval) {
 	state_notify_interval = p_interval;
 }
 
-real_t PlayerNetController::get_state_notify_interval() const {
+real_t CharacterNetController::get_state_notify_interval() const {
 	return state_notify_interval;
 }
 
-int PlayerNetController::input_buffer_add_data_type(InputDataType p_type, InputCompressionLevel p_compression) {
+int CharacterNetController::input_buffer_add_data_type(InputDataType p_type, InputCompressionLevel p_compression) {
 	return inputs_buffer.add_data_type((InputsBuffer::DataType)p_type, (InputsBuffer::CompressionLevel)p_compression);
 }
 
-void PlayerNetController::input_buffer_ready() {
+void CharacterNetController::input_buffer_ready() {
 	inputs_buffer.init_buffer();
 }
 
-bool PlayerNetController::input_buffer_set_bool(int p_index, bool p_input) {
+bool CharacterNetController::input_buffer_set_bool(int p_index, bool p_input) {
 	return inputs_buffer.set_bool(p_index, p_input);
 }
 
-bool PlayerNetController::input_buffer_get_bool(int p_index) const {
+bool CharacterNetController::input_buffer_get_bool(int p_index) const {
 	return inputs_buffer.get_bool(p_index);
 }
 
-int64_t PlayerNetController::input_buffer_set_int(int p_index, int64_t p_input) {
+int64_t CharacterNetController::input_buffer_set_int(int p_index, int64_t p_input) {
 	return inputs_buffer.set_int(p_index, p_input);
 }
 
-int64_t PlayerNetController::input_buffer_get_int(int p_index) const {
+int64_t CharacterNetController::input_buffer_get_int(int p_index) const {
 	return inputs_buffer.get_int(p_index);
 }
 
-real_t PlayerNetController::input_buffer_set_unit_real(int p_index, real_t p_input) {
+real_t CharacterNetController::input_buffer_set_unit_real(int p_index, real_t p_input) {
 	return inputs_buffer.set_unit_real(p_index, p_input);
 }
 
-real_t PlayerNetController::input_buffer_get_unit_real(int p_index) const {
+real_t CharacterNetController::input_buffer_get_unit_real(int p_index) const {
 	return inputs_buffer.get_unit_real(p_index);
 }
 
-Vector2 PlayerNetController::input_buffer_set_normalized_vector(int p_index, Vector2 p_input) {
+Vector2 CharacterNetController::input_buffer_set_normalized_vector(int p_index, Vector2 p_input) {
 	return inputs_buffer.set_normalized_vector(p_index, p_input);
 }
 
-Vector2 PlayerNetController::input_buffer_get_normalized_vector(int p_index) const {
+Vector2 CharacterNetController::input_buffer_get_normalized_vector(int p_index) const {
 	return inputs_buffer.get_normalized_vector(p_index);
 }
 
-void PlayerNetController::set_puppet_active(int p_peer_id, bool p_active) {
+void CharacterNetController::set_puppet_active(int p_peer_id, bool p_active) {
 	ERR_FAIL_COND_MSG(get_tree()->is_network_server() == false, "You can set puppet activation only on server");
 	ERR_FAIL_COND_MSG(p_peer_id == get_network_master(), "This `peer_id` is equals to the Master `peer_id`, so it's not allowed.");
 
@@ -326,15 +308,15 @@ void PlayerNetController::set_puppet_active(int p_peer_id, bool p_active) {
 	}
 }
 
-const Vector<int> &PlayerNetController::get_active_puppets() const {
+const Vector<int> &CharacterNetController::get_active_puppets() const {
 	return active_puppets;
 }
 
-void PlayerNetController::on_peer_connection_change(int p_peer_id) {
+void CharacterNetController::on_peer_connection_change(int p_peer_id) {
 	update_active_puppets();
 }
 
-void PlayerNetController::update_active_puppets() {
+void CharacterNetController::update_active_puppets() {
 	// Unreachable
 	CRASH_COND(get_tree()->is_network_server() == false);
 	active_puppets.clear();
@@ -347,15 +329,15 @@ void PlayerNetController::update_active_puppets() {
 	}
 }
 
-void PlayerNetController::replay_snapshots() {
+void CharacterNetController::replay_snapshots() {
 	controller->replay_snapshots();
 }
 
-void PlayerNetController::set_inputs_buffer(const BitArray &p_new_buffer) {
+void CharacterNetController::set_inputs_buffer(const BitArray &p_new_buffer) {
 	inputs_buffer.get_buffer_mut().get_bytes_mut() = p_new_buffer.get_bytes();
 }
 
-void PlayerNetController::rpc_server_send_frames_snapshot(PoolVector<uint8_t> p_data) {
+void CharacterNetController::rpc_server_send_frames_snapshot(PoolVector<uint8_t> p_data) {
 	ERR_FAIL_COND(get_tree()->is_network_server() == false);
 
 	const Vector<int> &peers = get_active_puppets();
@@ -369,19 +351,19 @@ void PlayerNetController::rpc_server_send_frames_snapshot(PoolVector<uint8_t> p_
 	controller->receive_snapshots(p_data);
 }
 
-void PlayerNetController::rpc_master_send_tick_additional_speed(int p_additional_tick_speed) {
+void CharacterNetController::rpc_master_send_tick_additional_speed(int p_additional_tick_speed) {
 	ERR_FAIL_COND(is_network_master() == false);
 
 	static_cast<MasterController *>(controller)->receive_tick_additional_speed(p_additional_tick_speed);
 }
 
-void PlayerNetController::rpc_puppet_send_frames_snapshot(PoolVector<uint8_t> p_data) {
+void CharacterNetController::rpc_puppet_send_frames_snapshot(PoolVector<uint8_t> p_data) {
 	ERR_FAIL_COND(get_tree()->is_network_server() == true);
 	ERR_FAIL_COND(is_network_master() == true);
 
 	controller->receive_snapshots(p_data);
 }
-void PlayerNetController::rpc_puppet_notify_connection_status(bool p_open) {
+void CharacterNetController::rpc_puppet_notify_connection_status(bool p_open) {
 	ERR_FAIL_COND(get_tree()->is_network_server() == true);
 	ERR_FAIL_COND(is_network_master() == true);
 
@@ -392,17 +374,15 @@ void PlayerNetController::rpc_puppet_notify_connection_status(bool p_open) {
 	}
 }
 
-void PlayerNetController::rpc_send_player_state(uint64_t p_snapshot_id, Variant p_data) {
+void CharacterNetController::rpc_send_player_state(uint64_t p_snapshot_id, Variant p_data) {
 	ERR_FAIL_COND(get_tree()->is_network_server() == true);
 
 	controller->player_state_check(p_snapshot_id, p_data);
 }
 
-void PlayerNetController::_notification(int p_what) {
+void CharacterNetController::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
-			ERR_FAIL_NULL_MSG(get_player(), "The `player_node_path` must point to a valid `Spatial` node.");
-
 			inputs_buffer.init_buffer();
 			controller->physics_process(get_physics_process_delta_time());
 			emit_signal("control_process_done");
@@ -427,7 +407,6 @@ void PlayerNetController::_notification(int p_what) {
 			}
 
 			set_physics_process_internal(true);
-			cached_player = Object::cast_to<Spatial>(get_node(player_node_path));
 
 			ERR_FAIL_COND_MSG(has_method("collect_inputs") == false, "In your script you must inherit the virtual method `collect_inputs` to correctly use the `PlayerNetController`.");
 			ERR_FAIL_COND_MSG(has_method("step_player") == false, "In your script you must inherit the virtual method `step_player` to correctly use the `PlayerNetController`.");
@@ -451,7 +430,7 @@ void PlayerNetController::_notification(int p_what) {
 	}
 }
 
-ServerController::ServerController(PlayerNetController *p_node) :
+ServerController::ServerController(CharacterNetController *p_node) :
 		Controller(p_node),
 		current_packet_id(UINT64_MAX),
 		ghost_input_count(0),
@@ -783,7 +762,7 @@ void ServerController::check_peers_player_state(real_t p_delta, bool is_new_inpu
 			data);
 }
 
-MasterController::MasterController(PlayerNetController *p_node) :
+MasterController::MasterController(CharacterNetController *p_node) :
 		Controller(p_node),
 		time_bank(0.0),
 		tick_additional_speed(0.0),
@@ -1053,7 +1032,7 @@ void MasterController::receive_tick_additional_speed(int p_speed) {
 	tick_additional_speed = CLAMP(tick_additional_speed, -MAX_ADDITIONAL_TICK_SPEED, MAX_ADDITIONAL_TICK_SPEED);
 }
 
-PuppetController::PuppetController(PlayerNetController *p_node) :
+PuppetController::PuppetController(CharacterNetController *p_node) :
 		Controller(p_node),
 		server_controller(p_node),
 		master_controller(p_node),

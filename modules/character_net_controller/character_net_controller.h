@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  player_net_controller.h                                              */
+/*  character_net_controller.h                                           */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -36,8 +36,8 @@
 #include "net_utilities.h"
 #include <deque>
 
-#ifndef PLAYERPNETCONTROLLER_H
-#define PLAYERPNETCONTROLLER_H
+#ifndef CHARACTER_NET_CONTROLLER_H
+#define CHARACTER_NET_CONTROLLER_H
 
 struct Controller;
 class Spatial;
@@ -62,8 +62,8 @@ public:
 	void set_inputs_buffer(const BitArray &p_new_buffer);
 };
 
-class PlayerNetController : public Node {
-	GDCLASS(PlayerNetController, Node);
+class CharacterNetController : public Node {
+	GDCLASS(CharacterNetController, Node);
 
 public:
 	enum InputDataType {
@@ -142,8 +142,6 @@ private:
 	Controller *controller;
 	InputsBuffer inputs_buffer;
 
-	Spatial *cached_player;
-
 	Vector<int> active_puppets;
 	// Disabled peers is used to stop informatino propagation to a particular pear.
 	Vector<int> disabled_puppets;
@@ -152,13 +150,7 @@ public:
 	static void _bind_methods();
 
 public:
-	PlayerNetController();
-
-	void set_player_node_path(NodePath p_path);
-	NodePath get_player_node_path() const;
-
-	// Returns the valid pointer of the player.
-	Spatial *get_player() const;
+	CharacterNetController();
 
 	void set_master_snapshot_storage_size(int p_size);
 	int get_master_snapshot_storage_size() const;
@@ -261,8 +253,8 @@ private:
 	virtual void _notification(int p_what);
 };
 
-VARIANT_ENUM_CAST(PlayerNetController::InputDataType)
-VARIANT_ENUM_CAST(PlayerNetController::InputCompressionLevel)
+VARIANT_ENUM_CAST(CharacterNetController::InputDataType)
+VARIANT_ENUM_CAST(CharacterNetController::InputCompressionLevel)
 
 struct FrameSnapshotSkinny {
 	uint64_t id;
@@ -277,9 +269,9 @@ struct FrameSnapshot {
 };
 
 struct Controller {
-	PlayerNetController *node;
+	CharacterNetController *node;
 
-	Controller(PlayerNetController *p_node) :
+	Controller(CharacterNetController *p_node) :
 			node(p_node) {}
 
 	virtual ~Controller() {}
@@ -305,7 +297,7 @@ struct ServerController : public Controller {
 	int client_tick_additional_speed_compressed;
 	real_t peers_state_checker_time;
 
-	ServerController(PlayerNetController *p_node);
+	ServerController(CharacterNetController *p_node);
 
 	virtual void physics_process(real_t p_delta);
 	virtual void receive_snapshots(PoolVector<uint8_t> p_data);
@@ -343,7 +335,7 @@ struct MasterController : public Controller {
 	uint64_t recovered_snapshot_id;
 	Variant recover_state_data;
 
-	MasterController(PlayerNetController *p_node);
+	MasterController(CharacterNetController *p_node);
 
 	virtual void physics_process(real_t p_delta);
 	virtual void receive_snapshots(PoolVector<uint8_t> p_data);
@@ -378,7 +370,7 @@ struct PuppetController : public Controller {
 	bool is_server_state_update_received;
 	bool is_flow_open;
 
-	PuppetController(PlayerNetController *p_node);
+	PuppetController(CharacterNetController *p_node);
 
 	virtual void physics_process(real_t p_delta);
 	virtual void receive_snapshots(PoolVector<uint8_t> p_data);

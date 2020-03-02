@@ -28,5 +28,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-void register_networking_types();
-void unregister_networking_types();
+#include "register_types.h"
+
+#include "character_net_controller.h"
+
+void register_character_net_controller_types() {
+
+	ClassDB::register_class<PlayerInputsReference>();
+	ClassDB::register_class<CharacterNetController>();
+}
+
+void unregister_character_net_controller_types() {
+}
