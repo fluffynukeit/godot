@@ -147,7 +147,6 @@ void CharacterNetController::_bind_methods() {
 	// Rpc to master and puppets
 	ClassDB::bind_method(D_METHOD("rpc_send_player_state", "snapshot_id", "data"), &CharacterNetController::rpc_send_player_state);
 
-	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "player_node_path"), "set_player_node_path", "get_player_node_path");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "input_storage_size", PROPERTY_HINT_RANGE, "100,2000,1"), "set_master_snapshot_storage_size", "get_master_snapshot_storage_size");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "network_traced_frames", PROPERTY_HINT_RANGE, "100,10000,1"), "set_network_traced_frames", "get_network_traced_frames");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "max_redundant_inputs", PROPERTY_HINT_RANGE, "0,254,1"), "set_max_redundant_inputs", "get_max_redundant_inputs");
