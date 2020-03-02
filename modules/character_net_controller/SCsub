@@ -4,5 +4,4 @@ Import('env_modules')
 
 env_networking = env_modules.Clone()
 
-#env_networking.add_source_files(env.modules_sources, 'thirdparty/circular_buffer/include/boost/CircularBuffer.cpp')
 env_networking.add_source_files(env.modules_sources, '*.cpp')
