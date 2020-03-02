@@ -44,40 +44,7 @@
 // 2%
 #define TICK_SPEED_CHANGE_NOTIF_THRESHOLD 4
 
-void PlayerInputsReference::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("get_bool", "index"), &PlayerInputsReference::get_bool);
-	ClassDB::bind_method(D_METHOD("get_int", "index"), &PlayerInputsReference::get_int);
-	ClassDB::bind_method(D_METHOD("get_unit_real", "index"), &PlayerInputsReference::get_unit_real);
-	ClassDB::bind_method(D_METHOD("get_normalized_vector", "index"), &PlayerInputsReference::get_normalized_vector);
-}
-
-bool PlayerInputsReference::get_bool(int p_index) const {
-	return inputs_buffer.get_bool(p_index);
-}
-
-int64_t PlayerInputsReference::get_int(int p_index) const {
-	return inputs_buffer.get_int(p_index);
-}
-
-real_t PlayerInputsReference::get_unit_real(int p_index) const {
-
-	return inputs_buffer.get_unit_real(p_index);
-}
-
-Vector2 PlayerInputsReference::get_normalized_vector(int p_index) const {
-	return inputs_buffer.get_normalized_vector(p_index);
-}
-
-void PlayerInputsReference::set_inputs_buffer(const BitArray &p_new_buffer) {
-	inputs_buffer.get_buffer_mut().get_bytes_mut() = p_new_buffer.get_bytes();
-}
-
 void CharacterNetController::_bind_methods() {
-
-	BIND_CONSTANT(INPUT_DATA_TYPE_BOOL);
-	BIND_CONSTANT(INPUT_DATA_TYPE_INT);
-	BIND_CONSTANT(INPUT_DATA_TYPE_UNIT_REAL);
-	BIND_CONSTANT(INPUT_DATA_TYPE_NORMALIZED_VECTOR2);
 
 	BIND_CONSTANT(INPUT_COMPRESSION_LEVEL_0);
 	BIND_CONSTANT(INPUT_COMPRESSION_LEVEL_1);
@@ -108,20 +75,17 @@ void CharacterNetController::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_state_notify_interval", "interval"), &CharacterNetController::set_state_notify_interval);
 	ClassDB::bind_method(D_METHOD("get_state_notify_interval"), &CharacterNetController::get_state_notify_interval);
 
-	ClassDB::bind_method(D_METHOD("input_buffer_add_data_type", "type", "compression"), &CharacterNetController::input_buffer_add_data_type, DEFVAL(InputsBuffer::COMPRESSION_LEVEL_2));
-	ClassDB::bind_method(D_METHOD("input_buffer_ready"), &CharacterNetController::input_buffer_ready);
+	ClassDB::bind_method(D_METHOD("input_buffer_add_bool", "bool", "compression_level"), &CharacterNetController::input_buffer_add_bool, DEFVAL(InputCompressionLevel::INPUT_COMPRESSION_LEVEL_1));
+	ClassDB::bind_method(D_METHOD("input_buffer_read_bool", "compression_level"), &CharacterNetController::input_buffer_read_bool, DEFVAL(InputCompressionLevel::INPUT_COMPRESSION_LEVEL_1));
 
-	ClassDB::bind_method(D_METHOD("input_buffer_set_bool", "index", "bool"), &CharacterNetController::input_buffer_set_bool);
-	ClassDB::bind_method(D_METHOD("input_buffer_get_bool", "index"), &CharacterNetController::input_buffer_get_bool);
+	ClassDB::bind_method(D_METHOD("input_buffer_add_int", "int", "compression_level"), &CharacterNetController::input_buffer_add_int, DEFVAL(InputCompressionLevel::INPUT_COMPRESSION_LEVEL_1));
+	ClassDB::bind_method(D_METHOD("input_buffer_read_int", "compression_level"), &CharacterNetController::input_buffer_read_int, DEFVAL(InputCompressionLevel::INPUT_COMPRESSION_LEVEL_1));
 
-	ClassDB::bind_method(D_METHOD("input_buffer_set_int", "index", "int"), &CharacterNetController::input_buffer_set_int);
-	ClassDB::bind_method(D_METHOD("input_buffer_get_int", "index"), &CharacterNetController::input_buffer_get_int);
+	ClassDB::bind_method(D_METHOD("input_buffer_add_unit_real", "unit_real", "compression_level"), &CharacterNetController::input_buffer_add_unit_real, DEFVAL(InputCompressionLevel::INPUT_COMPRESSION_LEVEL_1));
+	ClassDB::bind_method(D_METHOD("input_buffer_read_unit_real", "compression_level"), &CharacterNetController::input_buffer_read_unit_real, DEFVAL(InputCompressionLevel::INPUT_COMPRESSION_LEVEL_1));
 
-	ClassDB::bind_method(D_METHOD("input_buffer_set_unit_real", "index", "unit_real"), &CharacterNetController::input_buffer_set_unit_real);
-	ClassDB::bind_method(D_METHOD("input_buffer_get_unit_real", "index"), &CharacterNetController::input_buffer_get_unit_real);
-
-	ClassDB::bind_method(D_METHOD("input_buffer_set_normalized_vector", "index", "vector"), &CharacterNetController::input_buffer_set_normalized_vector);
-	ClassDB::bind_method(D_METHOD("input_buffer_get_normalized_vector", "index"), &CharacterNetController::input_buffer_get_normalized_vector);
+	ClassDB::bind_method(D_METHOD("input_buffer_add_normalized_vector", "vector", "compression_level"), &CharacterNetController::input_buffer_add_normalized_vector, DEFVAL(InputCompressionLevel::INPUT_COMPRESSION_LEVEL_1));
+	ClassDB::bind_method(D_METHOD("input_buffer_read_normalized_vector", "compression_level"), &CharacterNetController::input_buffer_read_normalized_vector, DEFVAL(InputCompressionLevel::INPUT_COMPRESSION_LEVEL_1));
 
 	ClassDB::bind_method(D_METHOD("set_puppet_active", "peer_id", "active"), &CharacterNetController::set_puppet_active);
 	ClassDB::bind_method(D_METHOD("_on_peer_connection_change", "peer_id"), &CharacterNetController::on_peer_connection_change);
@@ -131,6 +95,7 @@ void CharacterNetController::_bind_methods() {
 	BIND_VMETHOD(MethodInfo("collect_inputs"));
 	BIND_VMETHOD(MethodInfo("step_player", PropertyInfo(Variant::REAL, "delta")));
 	BIND_VMETHOD(MethodInfo(Variant::BOOL, "are_inputs_different", PropertyInfo(Variant::OBJECT, "inputs_A", PROPERTY_HINT_TYPE_STRING, "PlayerInputsReference"), PropertyInfo(Variant::OBJECT, "inputs_B", PROPERTY_HINT_TYPE_STRING, "PlayerInputsReference")));
+	BIND_VMETHOD(MethodInfo(Variant::INT, "count_inputs_size", PropertyInfo(Variant::OBJECT, "inputs", PROPERTY_HINT_TYPE_STRING, "PlayerInputsReference")));
 	BIND_VMETHOD(MethodInfo(Variant::ARRAY, "create_snapshot"));
 	BIND_VMETHOD(MethodInfo("process_recovery", PropertyInfo(Variant::INT, "snapshot_id"), PropertyInfo(Variant::ARRAY, "server_snapshot"), PropertyInfo(Variant::ARRAY, "client_snapshot")))
 
@@ -149,7 +114,7 @@ void CharacterNetController::_bind_methods() {
 
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "input_storage_size", PROPERTY_HINT_RANGE, "100,2000,1"), "set_master_snapshot_storage_size", "get_master_snapshot_storage_size");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "network_traced_frames", PROPERTY_HINT_RANGE, "100,10000,1"), "set_network_traced_frames", "get_network_traced_frames");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "max_redundant_inputs", PROPERTY_HINT_RANGE, "0,254,1"), "set_max_redundant_inputs", "get_max_redundant_inputs");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "max_redundant_inputs", PROPERTY_HINT_RANGE, "0,1000,1"), "set_max_redundant_inputs", "get_max_redundant_inputs");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "server_snapshot_storage_size", PROPERTY_HINT_RANGE, "10,100,1"), "set_server_snapshot_storage_size", "get_server_snapshot_storage_size");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "optimal_size_acceleration", PROPERTY_HINT_RANGE, "0.1,20.0,0.01"), "set_optimal_size_acceleration", "get_optimal_size_acceleration");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "missing_snapshots_max_tollerance", PROPERTY_HINT_RANGE, "3,50,1"), "set_missing_snapshots_max_tollerance", "get_missing_snapshots_max_tollerance");
@@ -247,44 +212,36 @@ real_t CharacterNetController::get_state_notify_interval() const {
 	return state_notify_interval;
 }
 
-int CharacterNetController::input_buffer_add_data_type(InputDataType p_type, InputCompressionLevel p_compression) {
-	return inputs_buffer.add_data_type((InputsBuffer::DataType)p_type, (InputsBuffer::CompressionLevel)p_compression);
+bool CharacterNetController::input_buffer_add_bool(bool p_input, InputCompressionLevel _p_compression) {
+	return inputs_buffer.add_bool(p_input);
 }
 
-void CharacterNetController::input_buffer_ready() {
-	inputs_buffer.init_buffer();
+bool CharacterNetController::input_buffer_read_bool(InputCompressionLevel _p_compression) {
+	return inputs_buffer.read_bool();
 }
 
-bool CharacterNetController::input_buffer_set_bool(int p_index, bool p_input) {
-	return inputs_buffer.set_bool(p_index, p_input);
+int64_t CharacterNetController::input_buffer_add_int(int64_t p_input, InputCompressionLevel p_compression) {
+	return inputs_buffer.add_int(p_input, static_cast<InputsBuffer::CompressionLevel>(p_compression));
 }
 
-bool CharacterNetController::input_buffer_get_bool(int p_index) const {
-	return inputs_buffer.get_bool(p_index);
+int64_t CharacterNetController::input_buffer_read_int(InputCompressionLevel p_compression) {
+	return inputs_buffer.read_int(static_cast<InputsBuffer::CompressionLevel>(p_compression));
 }
 
-int64_t CharacterNetController::input_buffer_set_int(int p_index, int64_t p_input) {
-	return inputs_buffer.set_int(p_index, p_input);
+real_t CharacterNetController::input_buffer_add_unit_real(real_t p_input, InputCompressionLevel p_compression) {
+	return inputs_buffer.add_unit_real(p_input, static_cast<InputsBuffer::CompressionLevel>(p_compression));
 }
 
-int64_t CharacterNetController::input_buffer_get_int(int p_index) const {
-	return inputs_buffer.get_int(p_index);
+real_t CharacterNetController::input_buffer_read_unit_real(InputCompressionLevel p_compression) {
+	return inputs_buffer.read_unit_real(static_cast<InputsBuffer::CompressionLevel>(p_compression));
 }
 
-real_t CharacterNetController::input_buffer_set_unit_real(int p_index, real_t p_input) {
-	return inputs_buffer.set_unit_real(p_index, p_input);
+Vector2 CharacterNetController::input_buffer_add_normalized_vector(Vector2 p_input, InputCompressionLevel p_compression) {
+	return inputs_buffer.add_normalized_vector(p_input, static_cast<InputsBuffer::CompressionLevel>(p_compression));
 }
 
-real_t CharacterNetController::input_buffer_get_unit_real(int p_index) const {
-	return inputs_buffer.get_unit_real(p_index);
-}
-
-Vector2 CharacterNetController::input_buffer_set_normalized_vector(int p_index, Vector2 p_input) {
-	return inputs_buffer.set_normalized_vector(p_index, p_input);
-}
-
-Vector2 CharacterNetController::input_buffer_get_normalized_vector(int p_index) const {
-	return inputs_buffer.get_normalized_vector(p_index);
+Vector2 CharacterNetController::input_buffer_read_normalized_vector(InputCompressionLevel p_compression) {
+	return inputs_buffer.read_normalized_vector(static_cast<InputsBuffer::CompressionLevel>(p_compression));
 }
 
 void CharacterNetController::set_puppet_active(int p_peer_id, bool p_active) {
@@ -381,7 +338,6 @@ void CharacterNetController::rpc_send_player_state(uint64_t p_snapshot_id, Varia
 void CharacterNetController::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
-			inputs_buffer.init_buffer();
 			controller->physics_process(get_physics_process_delta_time());
 			emit_signal("control_process_done");
 
@@ -409,6 +365,7 @@ void CharacterNetController::_notification(int p_what) {
 			ERR_FAIL_COND_MSG(has_method("collect_inputs") == false, "In your script you must inherit the virtual method `collect_inputs` to correctly use the `PlayerNetController`.");
 			ERR_FAIL_COND_MSG(has_method("step_player") == false, "In your script you must inherit the virtual method `step_player` to correctly use the `PlayerNetController`.");
 			ERR_FAIL_COND_MSG(has_method("are_inputs_different") == false, "In your script you must inherit the virtual method `are_inputs_different` to correctly use the `PlayerNetController`.");
+			ERR_FAIL_COND_MSG(has_method("count_inputs_size") == false, "In your script you must inherit the virtual method `count_inputs_size` to correctly use the `PlayerNetController`.");
 			ERR_FAIL_COND_MSG(has_method("create_snapshot") == false, "In your script you must inherit the virtual method `create_snapshot` to correctly use the `PlayerNetController`.");
 			ERR_FAIL_COND_MSG(has_method("process_recovery") == false, "In your script you must inherit the virtual method `process_recovery` to correctly use the `PlayerNetController`.");
 		} break;
@@ -426,6 +383,87 @@ void CharacterNetController::_notification(int p_what) {
 			}
 		} break;
 	}
+}
+
+void PlayerInputsReference::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("read_bool", "compression_level"), &PlayerInputsReference::read_bool, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
+	ClassDB::bind_method(D_METHOD("read_int", "compression_level"), &PlayerInputsReference::read_int, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
+	ClassDB::bind_method(D_METHOD("read_unit_real", "compression_level"), &PlayerInputsReference::read_unit_real, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
+	ClassDB::bind_method(D_METHOD("read_normalized_vector", "compression_level"), &PlayerInputsReference::read_normalized_vector, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
+
+	ClassDB::bind_method(D_METHOD("skip_bool", "compression_level"), &PlayerInputsReference::skip_bool, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
+	ClassDB::bind_method(D_METHOD("skip_int", "compression_level"), &PlayerInputsReference::skip_int, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
+	ClassDB::bind_method(D_METHOD("skip_unit_real", "compression_level"), &PlayerInputsReference::skip_unit_real, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
+	ClassDB::bind_method(D_METHOD("skip_normalized_vector", "compression_level"), &PlayerInputsReference::skip_normalized_vector, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
+
+	ClassDB::bind_method(D_METHOD("get_bool_size", "compression_level"), &PlayerInputsReference::get_bool_size, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
+	ClassDB::bind_method(D_METHOD("get_int_size", "compression_level"), &PlayerInputsReference::get_int_size, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
+	ClassDB::bind_method(D_METHOD("get_unit_real_size", "compression_level"), &PlayerInputsReference::get_unit_real_size, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
+	ClassDB::bind_method(D_METHOD("get_normalized_vector_size", "compression_level"), &PlayerInputsReference::get_normalized_vector_size, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
+}
+
+int PlayerInputsReference::get_size() const {
+	return inputs_buffer.get_buffer_size();
+}
+
+bool PlayerInputsReference::read_bool(CharacterNetController::InputCompressionLevel _p_compression) {
+	return inputs_buffer.read_bool();
+}
+
+int64_t PlayerInputsReference::read_int(CharacterNetController::InputCompressionLevel p_compression) {
+	return inputs_buffer.read_int(static_cast<InputsBuffer::CompressionLevel>(p_compression));
+}
+
+real_t PlayerInputsReference::read_unit_real(CharacterNetController::InputCompressionLevel p_compression) {
+	return inputs_buffer.read_unit_real(static_cast<InputsBuffer::CompressionLevel>(p_compression));
+}
+
+Vector2 PlayerInputsReference::read_normalized_vector(CharacterNetController::InputCompressionLevel p_compression) {
+	return inputs_buffer.read_normalized_vector(static_cast<InputsBuffer::CompressionLevel>(p_compression));
+}
+
+void PlayerInputsReference::skip_bool(CharacterNetController::InputCompressionLevel p_compression) {
+	const int bits = get_bool_size(p_compression);
+	inputs_buffer.skip(bits);
+}
+
+void PlayerInputsReference::skip_int(CharacterNetController::InputCompressionLevel p_compression) {
+	const int bits = get_int_size(p_compression);
+	inputs_buffer.skip(bits);
+}
+
+void PlayerInputsReference::skip_unit_real(CharacterNetController::InputCompressionLevel p_compression) {
+	const int bits = get_unit_real_size(p_compression);
+	inputs_buffer.skip(bits);
+}
+
+void PlayerInputsReference::skip_normalized_vector(CharacterNetController::InputCompressionLevel p_compression) {
+	const int bits = get_normalized_vector_size(p_compression);
+	inputs_buffer.skip(bits);
+}
+
+int PlayerInputsReference::get_bool_size(CharacterNetController::InputCompressionLevel p_compression) const {
+	return InputsBuffer::get_bit_taken(InputsBuffer::DATA_TYPE_BOOL, static_cast<InputsBuffer::CompressionLevel>(p_compression));
+}
+
+int PlayerInputsReference::get_int_size(CharacterNetController::InputCompressionLevel p_compression) const {
+	return InputsBuffer::get_bit_taken(InputsBuffer::DATA_TYPE_INT, static_cast<InputsBuffer::CompressionLevel>(p_compression));
+}
+
+int PlayerInputsReference::get_unit_real_size(CharacterNetController::InputCompressionLevel p_compression) const {
+	return InputsBuffer::get_bit_taken(InputsBuffer::DATA_TYPE_UNIT_REAL, static_cast<InputsBuffer::CompressionLevel>(p_compression));
+}
+
+int PlayerInputsReference::get_normalized_vector_size(CharacterNetController::InputCompressionLevel p_compression) const {
+	return InputsBuffer::get_bit_taken(InputsBuffer::DATA_TYPE_NORMALIZED_VECTOR2, static_cast<InputsBuffer::CompressionLevel>(p_compression));
+}
+
+void PlayerInputsReference::begin() {
+	inputs_buffer.begin_read();
+}
+
+void PlayerInputsReference::set_inputs_buffer(const BitArray &p_new_buffer) {
+	inputs_buffer.get_buffer_mut().get_bytes_mut() = p_new_buffer.get_bytes();
 }
 
 ServerController::ServerController(CharacterNetController *p_node) :
@@ -447,6 +485,7 @@ void ServerController::physics_process(real_t p_delta) {
 		return;
 	}
 
+	node->get_inputs_buffer_mut().begin_read();
 	node->call("step_player", p_delta);
 	adjust_master_tick_rate(p_delta);
 	check_peers_player_state(p_delta, is_new_input);
@@ -459,7 +498,6 @@ bool is_remote_frame_A_older(const FrameSnapshotSkinny &p_snap_a, const FrameSna
 void ServerController::receive_snapshots(PoolVector<uint8_t> p_data) {
 
 	// The packet is composed as follow:
-	// - First byte the quantity of sent snapshots.
 	// - The following four bytes for the first snapshot ID.
 	// - Array of snapshots:
 	// |-- First byte the amount of times this snapshot is duplicated in the packet.
@@ -469,45 +507,40 @@ void ServerController::receive_snapshots(PoolVector<uint8_t> p_data) {
 
 	const int data_len = p_data.size();
 
-	if (data_len < 1)
-		// Just discard, the packet is corrupted.
-		// TODO Measure internet connection status here?
-		return;
-
-	const int buffer_size = node->get_inputs_buffer().get_buffer_size();
-
 	PoolVector<uint8_t>::Read r = p_data.read();
 	int ofs = 0;
 
-	const int snapshots_count = r[ofs];
-	ofs += 1;
-
-	const int packet_size = 0
-							// First byte is to store the size of the shapshots_count
-							+ sizeof(uint8_t)
-							// Then, the first snapshot id in the packet.
-							+ sizeof(uint32_t)
-							// Array of snapshots.
-							+ (sizeof(uint8_t) + buffer_size) * snapshots_count;
-
-	if (packet_size != data_len)
-		// Just discard, the packet is corrupted.
-		// TODO Measure internet connection status here?
-		return;
-
-	// Received data seems fine, let's decode.
-
+	ERR_FAIL_COND(data_len < 4);
 	const uint32_t first_snapshot_id = decode_uint32(r.ptr() + ofs);
 	ofs += 4;
 
 	uint64_t inserted_snapshot_count = 0;
 
-	for (int i = 0; i < snapshots_count; i += 1) {
+	BitArray bit_array;
+	bit_array.resize_in_bytes(data_len);
+	copymem(bit_array.get_bytes_mut().ptrw(), p_data.read().ptr(), data_len);
 
+	// Contains the entire packet and in turn it will be seek to specific location
+	// so I will not need to copy chunk of the packet data.
+	PlayerInputsReference pir;
+	pir.set_inputs_buffer(bit_array);
+
+	while (ofs < data_len) {
+
+		ERR_FAIL_COND_MSG(ofs + 1 > data_len, "The arrived packet size doesn't meet the expected size.")
 		// First byte is used for the duplication count.
 		const uint8_t duplication = r[ofs];
 		ofs += 1;
 
+		// Validate snapshot
+		pir.inputs_buffer.seek(ofs * 8);
+		const int snapshot_size_in_bits = node->call("count_inputs_size", &pir);
+		// Pad to 8 bits.
+		const int snapshot_size =
+				Math::ceil((static_cast<float>(snapshot_size_in_bits)) / 8.0);
+		ERR_FAIL_COND_MSG(ofs + snapshot_size > data_len, "The arrived packet size doesn't meet the expected size.");
+
+		// The input is valid, populate the buffer.
 		for (int sub = 0; sub <= duplication; sub += 1) {
 
 			const uint64_t snapshot_id = first_snapshot_id + inserted_snapshot_count;
@@ -519,11 +552,18 @@ void ServerController::receive_snapshots(PoolVector<uint8_t> p_data) {
 			FrameSnapshotSkinny rfs;
 			rfs.id = snapshot_id;
 
-			const bool found = std::binary_search(snapshots.begin(), snapshots.end(), rfs, is_remote_frame_A_older);
+			const bool found = std::binary_search(
+					snapshots.begin(),
+					snapshots.end(),
+					rfs,
+					is_remote_frame_A_older);
 
 			if (!found) {
-				rfs.inputs_buffer.get_bytes_mut().resize(buffer_size);
-				copymem(rfs.inputs_buffer.get_bytes_mut().ptrw(), r.ptr() + ofs, buffer_size);
+				rfs.inputs_buffer.get_bytes_mut().resize(snapshot_size);
+				copymem(
+						rfs.inputs_buffer.get_bytes_mut().ptrw(),
+						r.ptr() + ofs,
+						snapshot_size);
 
 				snapshots.push_back(rfs);
 
@@ -533,8 +573,10 @@ void ServerController::receive_snapshots(PoolVector<uint8_t> p_data) {
 		}
 
 		// We can now advance the offset.
-		ofs += buffer_size;
+		ofs += snapshot_size;
 	}
+
+	ERR_FAIL_COND_MSG(ofs != data_len, "At the end was detected that the arrived packet has an unexpected size.");
 }
 
 void ServerController::player_state_check(uint64_t p_id, Variant p_data) {
@@ -628,7 +670,7 @@ bool ServerController::fetch_next_input() {
 				bool recovered = false;
 				FrameSnapshotSkinny pi;
 
-				const PlayerInputsReference pir_A(node->get_inputs_buffer());
+				PlayerInputsReference pir_A(node->get_inputs_buffer());
 				// Copy from the node inputs so to copy the data info
 				PlayerInputsReference pir_B(node->get_inputs_buffer());
 
@@ -648,7 +690,10 @@ bool ServerController::fetch_next_input() {
 
 						pir_B.set_inputs_buffer(pi.inputs_buffer);
 
-						const bool is_meaningful = node->call("are_inputs_different", &pir_A, &pir_B);
+						pir_A.begin();
+						pir_B.begin();
+
+						const bool is_meaningful = pir_A.get_size() != pir_B.get_size() || node->call("are_inputs_different", &pir_A, &pir_B);
 
 						if (is_meaningful) {
 							break;
@@ -793,11 +838,12 @@ void MasterController::physics_process(real_t p_delta) {
 		const bool accept_new_inputs = frames_snapshot.size() < static_cast<size_t>(node->get_master_snapshot_storage_size());
 
 		if (accept_new_inputs) {
+			node->get_inputs_buffer_mut().begin_write();
 			node->call("collect_inputs");
-		} else {
-			// Zeros all inputs so the `step_player` will run with 0 inputs.
-			node->get_inputs_buffer_mut().zero();
 		}
+
+		node->get_inputs_buffer_mut().dry();
+		node->get_inputs_buffer_mut().begin_read();
 
 		// The physics process is always emitted, because we still need to simulate
 		// the character motion even if we don't store the player inputs.
@@ -831,6 +877,8 @@ void MasterController::player_state_check(uint64_t p_snapshot_id, Variant p_data
 
 void MasterController::replay_snapshots() {
 	const real_t delta = node->get_physics_process_delta_time();
+	node->get_inputs_buffer_mut().begin_read();
+
 	for (size_t i = 0; i < frames_snapshot.size(); i += 1) {
 
 		// Set snapshot inputs.
@@ -859,146 +907,133 @@ void MasterController::create_snapshot(uint64_t p_id) {
 void MasterController::send_frame_snapshots_to_server() {
 
 	// The packet is composed as follow:
-	// - First byte the quantity of sent snapshots.
 	// - The following four bytes for the first snapshot ID.
 	// - Array of snapshots:
 	// |-- First byte the amount of times this snapshot is duplicated in the packet.
 	// |-- snapshot inputs buffer.
 
 	const size_t snapshots_count = MIN(frames_snapshot.size(), static_cast<size_t>(node->get_max_redundant_inputs() + 1));
-	ERR_FAIL_COND_MSG(snapshots_count >= UINT8_MAX, "Is not allow to send more than 254 redundant packets.");
 	CRASH_COND(snapshots_count < 1); // Unreachable
 
-	const int buffer_size = node->get_inputs_buffer().get_buffer_size();
+#define MAKE_ROOM(p_size)                                              \
+	if (cached_packet_data.size() < static_cast<size_t>(ofs + p_size)) \
+		cached_packet_data.resize(ofs + p_size);
 
-	const int packet_size = 0
-							// First byte is to store the size of the shapshots_count
-							+ sizeof(uint8_t)
-							// Then, the first snapshot id in the packet.
-							+ sizeof(uint32_t)
-							// Array of snapshots.
-							+ (sizeof(uint8_t) + buffer_size) * snapshots_count;
+	int ofs = 0;
 
-	int final_packet_size = 0;
+	// Let's store the ID of the first snapshot.
+	MAKE_ROOM(4);
+	const uint64_t first_snapshot_id = frames_snapshot[frames_snapshot.size() - snapshots_count].id;
+	ofs += encode_uint32(first_snapshot_id, cached_packet_data.data() + ofs);
 
-	if (cached_packet_data.size() < packet_size)
-		cached_packet_data.resize(packet_size);
+	uint64_t previous_snapshot_id = UINT64_MAX;
+	uint64_t previous_snapshot_similarity = UINT64_MAX;
+	int previous_buffer_size = 0;
+	uint8_t duplication_count = 0;
 
-	{
-		PoolVector<uint8_t>::Write w = cached_packet_data.write();
+	PlayerInputsReference pir_A(node->get_inputs_buffer());
+	// Copy from the node inputs so to copy the data info.
+	PlayerInputsReference pir_B(node->get_inputs_buffer());
 
-		int ofs = 0;
+	// Compose the packets
+	for (size_t i = frames_snapshot.size() - snapshots_count; i < frames_snapshot.size(); i += 1) {
 
-		// The Array of snapshot size is written at the end.
-		ofs += 1;
+		bool is_similar = false;
 
-		// Let's store the ID of the first snapshot.
-		const uint64_t first_snapshot_id = frames_snapshot[frames_snapshot.size() - snapshots_count].id;
-		ofs += encode_uint32(first_snapshot_id, w.ptr() + ofs);
+		if (previous_snapshot_id == UINT64_MAX) {
+			// This happens for the first snapshot of the packet.
+			// Just write it.
+			is_similar = false;
+		} else if (duplication_count == UINT8_MAX) {
+			// Prevent to overflow the `uint8_t`.
+			is_similar = false;
+		} else {
+			if (frames_snapshot[i].similarity != previous_snapshot_id) {
+				if (frames_snapshot[i].similarity == UINT64_MAX) {
+					// This snapshot was never compared, let's do it now.
+					pir_B.set_inputs_buffer(frames_snapshot[i].inputs_buffer);
 
-		uint8_t in_packet_snapshots = 0;
-		uint64_t previous_snapshot_id = UINT64_MAX;
-		uint64_t previous_snapshot_similarity = UINT64_MAX;
-		uint8_t duplication_count = 0;
+					pir_A.begin();
+					pir_B.begin();
 
-		PlayerInputsReference pir_A(node->get_inputs_buffer());
-		// Copy from the node inputs so to copy the data info.
-		PlayerInputsReference pir_B(node->get_inputs_buffer());
+					const bool are_different = pir_A.get_size() != pir_B.get_size() || node->call("are_inputs_different", &pir_A, &pir_B);
+					is_similar = are_different == false;
 
-		// Compose the packets
-		for (size_t i = frames_snapshot.size() - snapshots_count; i < frames_snapshot.size(); i += 1) {
-			// Unreachable.
-			CRASH_COND(frames_snapshot[i].inputs_buffer.get_bytes().size() != buffer_size);
-
-			bool is_similar = false;
-
-			if (previous_snapshot_id == UINT64_MAX) {
-				// This happens for the first snapshot of the packet.
-				// Just write it.
-				is_similar = false;
-			} else {
-				if (frames_snapshot[i].similarity != previous_snapshot_id) {
-					if (frames_snapshot[i].similarity == UINT64_MAX) {
-						// This snapshot was never compared, let's do it now.
-						pir_B.set_inputs_buffer(frames_snapshot[i].inputs_buffer);
-						const bool are_different = node->call("are_inputs_different", &pir_A, &pir_B);
-						is_similar = are_different == false;
-
-					} else if (frames_snapshot[i].similarity == previous_snapshot_similarity) {
-						// This snapshot is similar to the previous one, the thing is
-						// that the similarity check was done on an older snapshot.
-						// Fortunatelly we are able to compare the similarity id
-						// and detect its similarity correctly.
-						is_similar = true;
-
-					} else {
-						// This snapshot is simply different from the previous one.
-						is_similar = false;
-					}
-				} else {
-					// These are the same, let's save some space.
+				} else if (frames_snapshot[i].similarity == previous_snapshot_similarity) {
+					// This snapshot is similar to the previous one, the thing is
+					// that the similarity check was done on an older snapshot.
+					// Fortunatelly we are able to compare the similarity id
+					// and detect its similarity correctly.
 					is_similar = true;
-				}
-			}
-
-			if (is_similar) {
-				duplication_count += 1;
-				// In this way, the frame we don't need to compare this again.
-				frames_snapshot[i].similarity = previous_snapshot_id;
-
-			} else {
-				if (previous_snapshot_id == UINT64_MAX) {
-					// The first snapshot is special
-					// Nothing to do
 				} else {
-					// We can finally write the duplicated snapshots count.
-					w[ofs - buffer_size - 1] = duplication_count;
+					// This snapshot is simply different from the previous one.
+					is_similar = false;
 				}
-
-				// Resets the duplication count.
-				duplication_count = 0;
-
-				// Writes the duplication_count, now is simply 0.
-				w[ofs] = 0;
-				ofs += 1;
-
-				// Write the inputs
-				copymem(w.ptr() + ofs, frames_snapshot[i].inputs_buffer.get_bytes().ptr(), buffer_size);
-				ofs += buffer_size;
-
-				in_packet_snapshots += 1;
-
-				// Let's see if we can duplicate this snapshot.
-				previous_snapshot_id = frames_snapshot[i].id;
-				previous_snapshot_similarity = frames_snapshot[i].similarity;
-				pir_A.set_inputs_buffer(frames_snapshot[i].inputs_buffer);
+			} else {
+				// These are the same, let's save some space.
+				is_similar = true;
 			}
 		}
 
-		// Write the last duplication count
-		w[ofs - buffer_size - 1] = duplication_count;
+		if (is_similar) {
+			// This snapshot is similar to the previous one, so just duplicate it.
+			duplication_count += 1;
+			// In this way, we don't need to compare these frames again.
+			frames_snapshot[i].similarity = previous_snapshot_id;
 
-		// Write the snapshot array size.
-		w[0] = in_packet_snapshots;
+		} else {
+			// This snapshot is different from the previous one, so let's
+			// finalize the previous and start another one.
 
-		// Size after the compression.
-		final_packet_size = 0
-							// First byte is to store the size of the shapshots_count
-							+ sizeof(uint8_t)
-							// Then, the first snapshot id in the packet.
-							+ sizeof(uint32_t)
-							// Array of snapshots.
-							+ (sizeof(uint8_t) + buffer_size) * in_packet_snapshots;
+			if (previous_snapshot_id != UINT64_MAX) {
+				// We can finally finalize the previous snapshot
+				cached_packet_data[ofs - previous_buffer_size - 1] = duplication_count;
+			}
 
-		// Unreachable.
-		CRASH_COND(ofs != final_packet_size);
+			// Resets the duplication count.
+			duplication_count = 0;
+
+			// Writes the duplication_count for this new input
+			MAKE_ROOM(1);
+			cached_packet_data[ofs] = 0;
+			ofs += 1;
+
+			// Write the inputs
+			const int buffer_size = frames_snapshot[i].inputs_buffer.get_bytes().size();
+			MAKE_ROOM(buffer_size);
+			copymem(
+					cached_packet_data.data() + ofs,
+					frames_snapshot[i].inputs_buffer.get_bytes().ptr(),
+					buffer_size);
+			ofs += buffer_size;
+
+			// Let's see if we can duplicate this snapshot.
+			previous_snapshot_id = frames_snapshot[i].id;
+			previous_snapshot_similarity = frames_snapshot[i].similarity;
+			previous_buffer_size = buffer_size;
+
+			pir_A.set_inputs_buffer(frames_snapshot[i].inputs_buffer);
+		}
 	}
 
-	// TODO this MUST not resize the vector.
-	cached_packet_data.resize(final_packet_size);
+	// Finalize the last added input_buffer.
+	cached_packet_data[ofs - previous_buffer_size - 1] = duplication_count;
+
+	// Make the packet data.
+	PoolByteArray packet_data;
+	// TODO cache this?
+	packet_data.resize(ofs);
+
+	{
+		PoolVector<uint8_t>::Write w = packet_data.write();
+		copymem(
+				w.ptr(),
+				cached_packet_data.data(),
+				ofs);
+	}
 
 	const int server_peer_id = 1;
-	node->rpc_unreliable_id(server_peer_id, "rpc_server_send_frames_snapshot", cached_packet_data);
+	node->rpc_unreliable_id(server_peer_id, "rpc_server_send_frames_snapshot", packet_data);
 }
 
 void MasterController::process_recovery() {
@@ -1056,6 +1091,7 @@ void PuppetController::physics_process(real_t p_delta) {
 	}
 
 	const bool is_new_input = server_controller.fetch_next_input();
+	node->get_inputs_buffer_mut().begin_read();
 	node->call("step_player", p_delta);
 	if (is_new_input) {
 		master_controller.create_snapshot(server_controller.current_packet_id);

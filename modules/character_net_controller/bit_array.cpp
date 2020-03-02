@@ -32,6 +32,14 @@
 
 #include "core/math/math_funcs.h"
 
+void BitArray::resize_in_bytes(int p_bytes) {
+	bytes.resize(p_bytes);
+}
+
+int BitArray::size_in_bytes() const {
+	return bytes.size();
+}
+
 void BitArray::resize_in_bits(int p_bits) {
 	const int min_size = Math::ceil((static_cast<float>(p_bits)) / 8);
 	bytes.resize(min_size);
@@ -77,6 +85,8 @@ uint64_t BitArray::read_bits(int p_bit_offset, int p_bits) const {
 	int bit_offset = p_bit_offset;
 	uint64_t val = 0;
 
+	const uint8_t *bytes_ptr = bytes.ptr();
+
 	int val_bits_to_jump = 0;
 	while (bits > 0) {
 		const int bits_to_read = MIN(bits, 8 - bit_offset % 8);
@@ -87,7 +97,7 @@ uint64_t BitArray::read_bits(int p_bit_offset, int p_bits) const {
 		uint8_t byte_mask = 0xFF >> bits_to_jump;
 		byte_mask = byte_mask << (bits_to_skip + bits_to_jump);
 		byte_mask = byte_mask >> bits_to_skip;
-		const uint64_t byte_val = static_cast<uint64_t>((bytes[byte_offset] & byte_mask) >> bits_to_jump);
+		const uint64_t byte_val = static_cast<uint64_t>((bytes_ptr[byte_offset] & byte_mask) >> bits_to_jump);
 		val |= byte_val << val_bits_to_jump;
 
 		bits -= bits_to_read;

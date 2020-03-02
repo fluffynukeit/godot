@@ -34,66 +34,62 @@
 #include <stdint.h>
 
 InputsBuffer::InputsBuffer() :
-		init_phase(true) {}
-
-int InputsBuffer::add_data_type(DataType p_type, CompressionLevel p_compression) {
-	ERR_FAIL_COND_V(init_phase == false, -1);
-
-	const int index = buffer_info.size();
-
-	InputDataMeta m;
-	m.type = p_type;
-	m.compression = p_compression;
-	buffer_info.push_back(m);
-
-	return index;
-}
-
-void InputsBuffer::init_buffer() {
-	if (!init_phase)
-		return;
-	init_phase = false;
-
-	int bits = 0;
-	for (int i = 0; i < buffer_info.size(); i += 1) {
-		buffer_info.write[i].bit_offset = bits;
-		bits += get_bit_taken(i);
-	}
-
-	buffer.resize_in_bits(bits);
-}
+		bit_offset(0), is_reading(true) {}
 
 int InputsBuffer::get_buffer_size() const {
-	ERR_FAIL_COND_V_MSG(init_phase != false, 0, "The buffer must be initialized to retrieve this information");
 	return buffer.get_bytes().size();
 }
 
-bool InputsBuffer::set_bool(int p_index, bool p_input) {
-	ERR_FAIL_INDEX_V(p_index, buffer_info.size(), false);
-	ERR_FAIL_COND_V(buffer_info[p_index].type != DATA_TYPE_BOOL, false);
+void InputsBuffer::begin_write() {
+	bit_offset = 0;
+	is_reading = false;
+}
 
-	init_buffer();
+void InputsBuffer::dry() {
+	buffer.resize_in_bits(bit_offset);
+}
 
-	buffer.store_bits(buffer_info[p_index].bit_offset, p_input, 1);
+void InputsBuffer::seek(int p_bits) {
+	ERR_FAIL_COND(buffer.size_in_bits() < p_bits);
+	bit_offset = p_bits;
+}
+
+void InputsBuffer::skip(int p_bits) {
+	ERR_FAIL_COND(buffer.size_in_bits() < bit_offset + p_bits);
+	bit_offset += p_bits;
+}
+
+void InputsBuffer::begin_read() {
+	bit_offset = 0;
+	is_reading = true;
+}
+
+bool InputsBuffer::add_bool(bool p_input) {
+	ERR_FAIL_COND_V(is_reading == true, p_input);
+
+	const int bits = get_bit_taken(DATA_TYPE_BOOL, COMPRESSION_LEVEL_0);
+
+	make_room_in_bits(bits);
+	buffer.store_bits(bit_offset, p_input, bits);
+	bit_offset += bits;
 
 	return p_input;
 }
 
-bool InputsBuffer::get_bool(int p_index) const {
-	ERR_FAIL_COND_V(init_phase != false, false);
-	ERR_FAIL_INDEX_V(p_index, buffer_info.size(), false);
-	ERR_FAIL_COND_V(buffer_info[p_index].type != DATA_TYPE_BOOL, false);
+bool InputsBuffer::read_bool() {
+	ERR_FAIL_COND_V(is_reading == false, false);
 
-	return buffer.read_bits(buffer_info[p_index].bit_offset, 1);
+	const int bits = get_bit_taken(DATA_TYPE_BOOL, COMPRESSION_LEVEL_0);
+	const bool d = buffer.read_bits(bit_offset, bits);
+	bit_offset += bits;
+	return d;
 }
 
-int64_t InputsBuffer::set_int(int p_index, int64_t p_input) {
-	ERR_FAIL_INDEX_V(p_index, buffer_info.size(), 0);
-	ERR_FAIL_COND_V(buffer_info[p_index].type != DATA_TYPE_INT, 0);
+int64_t InputsBuffer::add_int(int64_t p_input, CompressionLevel p_compression_level) {
+	ERR_FAIL_COND_V(is_reading == true, p_input);
 
-	init_buffer();
+	const int bits = get_bit_taken(DATA_TYPE_INT, p_compression_level);
 
-	const int bits = get_bit_taken(p_index);
 	int64_t value = p_input;
 
 	if (bits == 8) {
@@ -106,7 +102,9 @@ int64_t InputsBuffer::set_int(int p_index, int64_t p_input) {
 		// Nothing to do here
 	}
 
-	buffer.store_bits(buffer_info[p_index].bit_offset, value, bits);
+	make_room_in_bits(bits);
+	buffer.store_bits(bit_offset, value, bits);
+	bit_offset += bits;
 
 	if (bits == 8) {
 		return static_cast<int8_t>(value);
@@ -119,13 +117,13 @@ int64_t InputsBuffer::set_int(int p_index, int64_t p_input) {
 	}
 }
 
-int64_t InputsBuffer::get_int(int p_index) const {
-	ERR_FAIL_COND_V(init_phase != false, 0);
-	ERR_FAIL_INDEX_V(p_index, buffer_info.size(), 0);
-	ERR_FAIL_COND_V(buffer_info[p_index].type != DATA_TYPE_INT, 0);
+int64_t InputsBuffer::read_int(CompressionLevel p_compression_level) {
+	ERR_FAIL_COND_V(is_reading == false, 0);
 
-	const int bits = get_bit_taken(p_index);
-	const uint64_t value = buffer.read_bits(buffer_info[p_index].bit_offset, bits);
+	const int bits = get_bit_taken(DATA_TYPE_INT, p_compression_level);
+
+	const uint64_t value = buffer.read_bits(bit_offset, bits);
+	bit_offset += bits;
 
 	if (bits == 8) {
 		return static_cast<int8_t>(value);
@@ -138,51 +136,53 @@ int64_t InputsBuffer::get_int(int p_index) const {
 	}
 }
 
-real_t InputsBuffer::set_unit_real(int p_index, real_t p_input) {
-	ERR_FAIL_INDEX_V(p_index, buffer_info.size(), 0);
-	ERR_FAIL_COND_V(buffer_info[p_index].type != DATA_TYPE_UNIT_REAL, 0);
+real_t InputsBuffer::add_unit_real(real_t p_input, CompressionLevel p_compression_level) {
+	ERR_FAIL_COND_V(is_reading == true, p_input);
 
-	init_buffer();
+	const int bits = get_bit_taken(DATA_TYPE_UNIT_REAL, p_compression_level);
 
-	const int bits = get_bit_taken(p_index);
 	const double max_value = ~(0xFFFFFFFF << bits);
 
 	const uint64_t compressed_val = compress_unit_float(p_input, max_value);
-	buffer.store_bits(buffer_info[p_index].bit_offset, compressed_val, bits);
+
+	make_room_in_bits(bits);
+	buffer.store_bits(bit_offset, compressed_val, bits);
+	bit_offset += bits;
 
 	return decompress_unit_float(compressed_val, max_value);
 }
 
-real_t InputsBuffer::get_unit_real(int p_index) const {
-	ERR_FAIL_COND_V(init_phase != false, 0);
-	ERR_FAIL_INDEX_V(p_index, buffer_info.size(), 0);
-	ERR_FAIL_COND_V(buffer_info[p_index].type != DATA_TYPE_UNIT_REAL, 0);
+real_t InputsBuffer::read_unit_real(CompressionLevel p_compression_level) {
+	ERR_FAIL_COND_V(is_reading == false, 0.0);
 
-	const int bits = get_bit_taken(p_index);
+	const int bits = get_bit_taken(DATA_TYPE_UNIT_REAL, p_compression_level);
+
 	const double max_value = ~(0xFFFFFFFF << bits);
 
-	const uint64_t compressed_val = buffer.read_bits(buffer_info[p_index].bit_offset, bits);
+	const uint64_t compressed_val = buffer.read_bits(bit_offset, bits);
+	bit_offset += bits;
 
 	return decompress_unit_float(compressed_val, max_value);
 }
 
-Vector2 InputsBuffer::set_normalized_vector(int p_index, Vector2 p_input) {
-	ERR_FAIL_INDEX_V(p_index, buffer_info.size(), Vector2());
-	ERR_FAIL_COND_V(buffer_info[p_index].type != DATA_TYPE_NORMALIZED_VECTOR2, Vector2());
+Vector2 InputsBuffer::add_normalized_vector(Vector2 p_input, CompressionLevel p_compression_level) {
+	ERR_FAIL_COND_V(is_reading == true, p_input);
 
-	init_buffer();
+	const int bits = get_bit_taken(DATA_TYPE_NORMALIZED_VECTOR2, p_compression_level);
+	const int bits_for_the_angle = bits - 1;
+	const int bits_for_is_zero = 1;
 
 	const double angle = p_input.angle();
 	const uint32_t is_not_zero = p_input.length_squared() > CMP_EPSILON;
 
-	const int bits_for_the_angle = get_bit_taken(p_index) - 1;
-	const int bits_for_is_zero = 1;
 	const double max_value = ~(0xFFFFFFFF << bits_for_the_angle);
 
 	const uint64_t compressed_angle = compress_unit_float((angle + Math_PI) / Math_TAU, max_value);
 
-	buffer.store_bits(buffer_info[p_index].bit_offset, is_not_zero, bits_for_is_zero);
-	buffer.store_bits(buffer_info[p_index].bit_offset + 1, compressed_angle, bits_for_the_angle);
+	make_room_in_bits(bits);
+	buffer.store_bits(bit_offset, is_not_zero, bits_for_is_zero);
+	buffer.store_bits(bit_offset + 1, compressed_angle, bits_for_the_angle);
+	bit_offset += bits;
 
 	const real_t decompressed_angle = (decompress_unit_float(compressed_angle, max_value) * Math_TAU) - Math_PI;
 	const real_t x = Math::cos(decompressed_angle);
@@ -191,17 +191,18 @@ Vector2 InputsBuffer::set_normalized_vector(int p_index, Vector2 p_input) {
 	return Vector2(x, y) * is_not_zero;
 }
 
-Vector2 InputsBuffer::get_normalized_vector(int p_index) const {
-	ERR_FAIL_COND_V(init_phase != false, Vector2());
-	ERR_FAIL_INDEX_V(p_index, buffer_info.size(), Vector2());
-	ERR_FAIL_COND_V(buffer_info[p_index].type != DATA_TYPE_NORMALIZED_VECTOR2, Vector2());
+Vector2 InputsBuffer::read_normalized_vector(CompressionLevel p_compression_level) {
+	ERR_FAIL_COND_V(is_reading == false, Vector2());
 
-	const int bits_for_the_angle = get_bit_taken(p_index) - 1;
+	const int bits = get_bit_taken(DATA_TYPE_NORMALIZED_VECTOR2, p_compression_level);
+	const int bits_for_the_angle = bits - 1;
 	const int bits_for_is_zero = 1;
+
 	const double max_value = ~(0xFFFFFFFF << bits_for_the_angle);
 
-	const real_t is_not_zero = buffer.read_bits(buffer_info[p_index].bit_offset, bits_for_is_zero);
-	const uint64_t compressed_angle = buffer.read_bits(buffer_info[p_index].bit_offset + 1, bits_for_the_angle);
+	const real_t is_not_zero = buffer.read_bits(bit_offset, bits_for_is_zero);
+	const uint64_t compressed_angle = buffer.read_bits(bit_offset + 1, bits_for_the_angle);
+	bit_offset += bits;
 
 	const real_t decompressed_angle = (decompress_unit_float(compressed_angle, max_value) * Math_TAU) - Math_PI;
 	const real_t x = Math::cos(decompressed_angle);
@@ -214,21 +215,13 @@ void InputsBuffer::zero() {
 	buffer.zero();
 }
 
-uint64_t InputsBuffer::compress_unit_float(double p_value, double p_scale_factor) {
-	return MIN(p_value * p_scale_factor, p_scale_factor);
-}
-
-double InputsBuffer::decompress_unit_float(uint64_t p_value, double p_scale_factor) {
-	return static_cast<double>(p_value) / p_scale_factor;
-}
-
-int InputsBuffer::get_bit_taken(int p_input_data_index) const {
-	switch (buffer_info[p_input_data_index].type) {
+int InputsBuffer::get_bit_taken(DataType p_data_type, CompressionLevel p_compression) {
+	switch (p_data_type) {
 		case DATA_TYPE_BOOL:
 			// No matter what, 1 bit.
 			return 1;
 		case DATA_TYPE_INT: {
-			switch (buffer_info[p_input_data_index].compression) {
+			switch (p_compression) {
 				case COMPRESSION_LEVEL_0:
 					return 64;
 				case COMPRESSION_LEVEL_1:
@@ -243,7 +236,7 @@ int InputsBuffer::get_bit_taken(int p_input_data_index) const {
 			}
 		} break;
 		case DATA_TYPE_UNIT_REAL: {
-			switch (buffer_info[p_input_data_index].compression) {
+			switch (p_compression) {
 				case COMPRESSION_LEVEL_0:
 					// Max loss ~0.09%
 					return 10;
@@ -263,7 +256,7 @@ int InputsBuffer::get_bit_taken(int p_input_data_index) const {
 		} break;
 		case DATA_TYPE_NORMALIZED_VECTOR2: {
 			// +1 bit to know if the vector is 0 or a direction
-			switch (buffer_info[p_input_data_index].compression) {
+			switch (p_compression) {
 				case CompressionLevel::COMPRESSION_LEVEL_0:
 					// Max loss 0.17°
 					return 11 + 1;
@@ -285,4 +278,18 @@ int InputsBuffer::get_bit_taken(int p_input_data_index) const {
 
 	// Unreachable
 	CRASH_NOW_MSG("Was not possible to obtain the bit taken by this input data.");
+}
+
+uint64_t InputsBuffer::compress_unit_float(double p_value, double p_scale_factor) {
+	return MIN(p_value * p_scale_factor, p_scale_factor);
+}
+
+double InputsBuffer::decompress_unit_float(uint64_t p_value, double p_scale_factor) {
+	return static_cast<double>(p_value) / p_scale_factor;
+}
+
+void InputsBuffer::make_room_in_bits(int p_dim) {
+	const int array_min_dim = bit_offset + p_dim;
+	if (array_min_dim > buffer.size_in_bits())
+		buffer.resize_in_bits(array_min_dim);
 }

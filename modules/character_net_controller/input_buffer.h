@@ -78,22 +78,13 @@ public:
 		COMPRESSION_LEVEL_3
 	};
 
-	struct InputDataMeta {
-		DataType type;
-		CompressionLevel compression;
-		int bit_offset;
-	};
-
 private:
-	bool init_phase;
-	Vector<InputDataMeta> buffer_info;
+	int bit_offset;
+	bool is_reading;
 	BitArray buffer;
 
 public:
 	InputsBuffer();
-
-	int add_data_type(DataType p_type, CompressionLevel p_compression);
-	void init_buffer();
 
 	const BitArray &get_buffer() const {
 		return buffer;
@@ -106,52 +97,66 @@ public:
 	// Returns the buffer size in bytes
 	int get_buffer_size() const;
 
-	/// Set bool
+	/// Begin write.
+	void begin_write();
+
+	/// Make sure the buffer takes less space possible.
+	void dry();
+
+	/// Seek to bit.
+	void seek(int p_bits);
+
+	/// Skip n bits.
+	void skip(int p_bits);
+
+	/// Begin read.
+	void begin_read();
+
+	/// Add a boolean to the buffer.
 	/// Returns the same data.
-	bool set_bool(int p_index, bool p_input);
+	bool add_bool(bool p_input);
 
-	/// Get boolean value
-	bool get_bool(int p_index) const;
+	/// Parse the next data as boolean.
+	bool read_bool();
 
-	/// Set integer
-	///
-	/// Returns the stored values, you can store up to the max value for the
-	/// compression.
-	int64_t set_int(int p_index, int64_t p_input);
+	/// Add the next data as int.
+	int64_t add_int(int64_t p_input, CompressionLevel p_compression_level);
 
-	/// Get integer
-	int64_t get_int(int p_index) const;
+	/// Parse the next data as int.
+	int64_t read_int(CompressionLevel p_compression_level);
 
-	/// Set the unit real.
+	/// Add a unit real into the buffer.
 	///
 	/// **Note:** Not unitary values lead to unexpected behaviour.
 	///
 	/// Returns the compressed value so both the client and the peers can use
 	/// the same data.
-	real_t set_unit_real(int p_index, real_t p_input);
+	real_t add_unit_real(real_t p_input, CompressionLevel p_compression_level);
 
-	/// Returns the unit real
-	real_t get_unit_real(int p_index) const;
+	/// Returns the unit real.
+	real_t read_unit_real(CompressionLevel p_compression_level);
 
-	/// Set a normalized vector.
+	/// Add a normalized vector into the buffer.
 	/// Note: The compression algorithm rely on the fact that this is a
 	/// normalized vector. The behaviour is unexpected for not normalized vectors.
 	///
 	/// Returns the decompressed vector so both the client and the peers can use
 	/// the same data.
-	Vector2 set_normalized_vector(int p_index, Vector2 p_input);
+	Vector2 add_normalized_vector(Vector2 p_input, CompressionLevel p_compression_level);
 
-	/// Get the normalized vector from the input buffer.
-	Vector2 get_normalized_vector(int p_index) const;
+	/// Parse next data as normalized vector from the input buffer.
+	Vector2 read_normalized_vector(CompressionLevel p_compression_level);
 
 	// Puts all the bytes to 0.
 	void zero();
+
+	static int get_bit_taken(DataType p_data_type, CompressionLevel p_compression);
 
 private:
 	static uint64_t compress_unit_float(double p_value, double p_scale_factor);
 	static double decompress_unit_float(uint64_t p_value, double p_scale_factor);
 
-	int get_bit_taken(int p_input_data_index) const;
+	void make_room_in_bits(int p_dim);
 };
 
 #endif

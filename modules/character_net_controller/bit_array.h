@@ -45,6 +45,9 @@ public:
 		return bytes;
 	}
 
+	void resize_in_bytes(int p_bits);
+	int size_in_bytes() const;
+
 	void resize_in_bits(int p_bits);
 	int size_in_bits() const;
 

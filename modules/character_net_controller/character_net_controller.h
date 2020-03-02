@@ -35,6 +35,7 @@
 #include "input_buffer.h"
 #include "net_utilities.h"
 #include <deque>
+#include <vector>
 
 #ifndef CHARACTER_NET_CONTROLLER_H
 #define CHARACTER_NET_CONTROLLER_H
@@ -42,37 +43,10 @@
 struct Controller;
 class Spatial;
 
-class PlayerInputsReference : public Object {
-	GDCLASS(PlayerInputsReference, Object);
-
-public:
-	InputsBuffer inputs_buffer;
-
-	static void _bind_methods();
-
-	PlayerInputsReference() {}
-	PlayerInputsReference(const InputsBuffer &p_ib) :
-			inputs_buffer(p_ib) {}
-
-	bool get_bool(int p_index) const;
-	int64_t get_int(int p_index) const;
-	real_t get_unit_real(int p_index) const;
-	Vector2 get_normalized_vector(int p_index) const;
-
-	void set_inputs_buffer(const BitArray &p_new_buffer);
-};
-
 class CharacterNetController : public Node {
 	GDCLASS(CharacterNetController, Node);
 
 public:
-	enum InputDataType {
-		INPUT_DATA_TYPE_BOOL = InputsBuffer::DATA_TYPE_BOOL,
-		INPUT_DATA_TYPE_INT = InputsBuffer::DATA_TYPE_INT,
-		INPUT_DATA_TYPE_UNIT_REAL = InputsBuffer::DATA_TYPE_UNIT_REAL,
-		INPUT_DATA_TYPE_NORMALIZED_VECTOR2 = InputsBuffer::DATA_TYPE_NORMALIZED_VECTOR2
-	};
-
 	enum InputCompressionLevel {
 		INPUT_COMPRESSION_LEVEL_0 = InputsBuffer::COMPRESSION_LEVEL_0,
 		INPUT_COMPRESSION_LEVEL_1 = InputsBuffer::COMPRESSION_LEVEL_1,
@@ -176,24 +150,21 @@ public:
 	void set_state_notify_interval(real_t p_interval);
 	real_t get_state_notify_interval() const;
 
-	int input_buffer_add_data_type(InputDataType p_type, InputCompressionLevel p_compression = INPUT_COMPRESSION_LEVEL_2);
-	void input_buffer_ready();
-
 	/// Set bool
 	/// Returns the same data.
-	bool input_buffer_set_bool(int p_index, bool p_input);
+	bool input_buffer_add_bool(bool p_input, InputCompressionLevel p_compression = INPUT_COMPRESSION_LEVEL_1);
 
 	/// Get boolean value
-	bool input_buffer_get_bool(int p_index) const;
+	bool input_buffer_read_bool(InputCompressionLevel p_compression = INPUT_COMPRESSION_LEVEL_1);
 
 	/// Set integer
 	///
 	/// Returns the stored values, you can store up to the max value for the
 	/// compression.
-	int64_t input_buffer_set_int(int p_index, int64_t p_input);
+	int64_t input_buffer_add_int(int64_t p_input, InputCompressionLevel p_compression = INPUT_COMPRESSION_LEVEL_1);
 
 	/// Get integer
-	int64_t input_buffer_get_int(int p_index) const;
+	int64_t input_buffer_read_int(InputCompressionLevel p_compression = INPUT_COMPRESSION_LEVEL_1);
 
 	/// Set the unit real.
 	///
@@ -201,10 +172,10 @@ public:
 	///
 	/// Returns the compressed value so both the client and the peers can use
 	/// the same data.
-	real_t input_buffer_set_unit_real(int p_index, real_t p_input);
+	real_t input_buffer_add_unit_real(real_t p_input, InputCompressionLevel p_compression = INPUT_COMPRESSION_LEVEL_1);
 
 	/// Returns the unit real
-	real_t input_buffer_get_unit_real(int p_index) const;
+	real_t input_buffer_read_unit_real(InputCompressionLevel p_compression = INPUT_COMPRESSION_LEVEL_1);
 
 	/// Set a normalized vector.
 	/// Note: The compression algorithm rely on the fact that this is a
@@ -212,10 +183,10 @@ public:
 	///
 	/// Returns the decompressed vector so both the client and the peers can use
 	/// the same data.
-	Vector2 input_buffer_set_normalized_vector(int p_index, Vector2 p_input);
+	Vector2 input_buffer_add_normalized_vector(Vector2 p_input, InputCompressionLevel p_compression = INPUT_COMPRESSION_LEVEL_1);
 
 	/// Get the normalized vector from the input buffer.
-	Vector2 input_buffer_get_normalized_vector(int p_index) const;
+	Vector2 input_buffer_read_normalized_vector(InputCompressionLevel p_compression = INPUT_COMPRESSION_LEVEL_1);
 
 	const InputsBuffer &get_inputs_buffer() const {
 		return inputs_buffer;
@@ -253,8 +224,40 @@ private:
 	virtual void _notification(int p_what);
 };
 
-VARIANT_ENUM_CAST(CharacterNetController::InputDataType)
 VARIANT_ENUM_CAST(CharacterNetController::InputCompressionLevel)
+
+class PlayerInputsReference : public Object {
+	GDCLASS(PlayerInputsReference, Object);
+
+public:
+	InputsBuffer inputs_buffer;
+
+	static void _bind_methods();
+
+	PlayerInputsReference() {}
+	PlayerInputsReference(const InputsBuffer &p_ib) :
+			inputs_buffer(p_ib) {}
+
+	int get_size() const;
+
+	bool read_bool(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1);
+	int64_t read_int(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1);
+	real_t read_unit_real(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1);
+	Vector2 read_normalized_vector(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1);
+
+	void skip_bool(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1);
+	void skip_int(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1);
+	void skip_unit_real(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1);
+	void skip_normalized_vector(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1);
+
+	int get_bool_size(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1) const;
+	int get_int_size(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1) const;
+	int get_unit_real_size(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1) const;
+	int get_normalized_vector_size(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1) const;
+
+	void begin();
+	void set_inputs_buffer(const BitArray &p_new_buffer);
+};
 
 struct FrameSnapshotSkinny {
 	uint64_t id;
@@ -330,7 +333,7 @@ struct MasterController : public Controller {
 	real_t tick_additional_speed;
 	uint64_t snapshot_counter;
 	std::deque<FrameSnapshot> frames_snapshot;
-	PoolVector<uint8_t> cached_packet_data;
+	std::vector<uint8_t> cached_packet_data;
 	uint64_t recover_snapshot_id;
 	uint64_t recovered_snapshot_id;
 	Variant recover_state_data;
