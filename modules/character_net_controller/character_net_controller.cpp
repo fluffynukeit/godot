@@ -344,8 +344,7 @@ void CharacterNetController::rpc_server_send_frames_snapshot(PoolVector<uint8_t>
 	for (int i = 0; i < peers.size(); i += 1) {
 		// This is an active puppet, Let's send the data.
 		const int peer_id = peers[i];
-		const bool unreliable = true;
-		get_multiplayer()->send_bytes_to(this, peer_id, unreliable, "rpc_puppet_send_frames_snapshot", p_data);
+		rpc_unreliable_id(peer_id, "rpc_puppet_send_frames_snapshot", p_data);
 	}
 
 	controller->receive_snapshots(p_data);
@@ -996,9 +995,11 @@ void MasterController::send_frame_snapshots_to_server() {
 		CRASH_COND(ofs != final_packet_size);
 	}
 
+	// TODO this MUST not resize the vector.
+	cached_packet_data.resize(final_packet_size);
+
 	const int server_peer_id = 1;
-	const bool unreliable = true;
-	node->get_multiplayer()->send_bytes_to(node, server_peer_id, unreliable, "rpc_server_send_frames_snapshot", cached_packet_data, final_packet_size);
+	node->rpc_unreliable_id(server_peer_id, "rpc_server_send_frames_snapshot", cached_packet_data);
 }
 
 void MasterController::process_recovery() {
