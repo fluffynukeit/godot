@@ -50,6 +50,7 @@ int BitArray::size_in_bits() const {
 }
 
 void BitArray::store_bits(int p_bit_offset, uint64_t p_value, int p_bits) {
+	ERR_FAIL_COND_MSG(p_bit_offset + p_bits > size_in_bits(), "The bit array is smaller than the bits that you are trying to write.");
 
 	int bits = p_bits;
 	int bit_offset = p_bit_offset;
@@ -81,6 +82,8 @@ void BitArray::store_bits(int p_bit_offset, uint64_t p_value, int p_bits) {
 }
 
 uint64_t BitArray::read_bits(int p_bit_offset, int p_bits) const {
+	ERR_FAIL_COND_V_MSG(p_bit_offset + p_bits > size_in_bits(), 0, "The bit array is smaller than the bits that you are trying to read.");
+
 	int bits = p_bits;
 	int bit_offset = p_bit_offset;
 	uint64_t val = 0;

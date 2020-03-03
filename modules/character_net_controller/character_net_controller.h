@@ -55,9 +55,6 @@ public:
 	};
 
 private:
-	/// The controlled player node path
-	NodePath player_node_path;
-
 	/// The snapshot storage size is used to cap the amount of inputs collected by
 	/// the `Master`.
 	///
@@ -117,7 +114,7 @@ private:
 	InputsBuffer inputs_buffer;
 
 	Vector<int> active_puppets;
-	// Disabled peers is used to stop informatino propagation to a particular pear.
+	// Disabled peers is used to stop information propagation to a particular pear.
 	Vector<int> disabled_puppets;
 
 public:
@@ -177,16 +174,27 @@ public:
 	/// Returns the unit real
 	real_t input_buffer_read_unit_real(InputCompressionLevel p_compression = INPUT_COMPRESSION_LEVEL_1);
 
-	/// Set a normalized vector.
+	/// Add a normalized vector2 into the buffer.
 	/// Note: The compression algorithm rely on the fact that this is a
 	/// normalized vector. The behaviour is unexpected for not normalized vectors.
 	///
 	/// Returns the decompressed vector so both the client and the peers can use
 	/// the same data.
-	Vector2 input_buffer_add_normalized_vector(Vector2 p_input, InputCompressionLevel p_compression = INPUT_COMPRESSION_LEVEL_1);
+	Vector2 input_buffer_add_normalized_vector2(Vector2 p_input, InputCompressionLevel p_compression = INPUT_COMPRESSION_LEVEL_1);
 
-	/// Get the normalized vector from the input buffer.
-	Vector2 input_buffer_read_normalized_vector(InputCompressionLevel p_compression = INPUT_COMPRESSION_LEVEL_1);
+	/// Read a normalized vector2 from the input buffer.
+	Vector2 input_buffer_read_normalized_vector2(InputCompressionLevel p_compression = INPUT_COMPRESSION_LEVEL_1);
+
+	/// Add a normalized vector3 into the buffer.
+	/// Note: The compression algorithm rely on the fact that this is a
+	/// normalized vector. The behaviour is unexpected for not normalized vectors.
+	///
+	/// Returns the decompressed vector so both the client and the peers can use
+	/// the same data.
+	Vector3 input_buffer_add_normalized_vector3(Vector3 p_input, InputCompressionLevel p_compression = INPUT_COMPRESSION_LEVEL_1);
+
+	/// Read a normalized vector3 from the input buffer.
+	Vector3 input_buffer_read_normalized_vector3(InputCompressionLevel p_compression = INPUT_COMPRESSION_LEVEL_1);
 
 	const InputsBuffer &get_inputs_buffer() const {
 		return inputs_buffer;
@@ -243,17 +251,20 @@ public:
 	bool read_bool(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1);
 	int64_t read_int(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1);
 	real_t read_unit_real(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1);
-	Vector2 read_normalized_vector(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1);
+	Vector2 read_normalized_vector2(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1);
+	Vector3 read_normalized_vector3(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1);
 
 	void skip_bool(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1);
 	void skip_int(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1);
 	void skip_unit_real(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1);
-	void skip_normalized_vector(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1);
+	void skip_normalized_vector2(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1);
+	void skip_normalized_vector3(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1);
 
 	int get_bool_size(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1) const;
 	int get_int_size(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1) const;
 	int get_unit_real_size(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1) const;
-	int get_normalized_vector_size(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1) const;
+	int get_normalized_vector2_size(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1) const;
+	int get_normalized_vector3_size(CharacterNetController::InputCompressionLevel p_compression = CharacterNetController::INPUT_COMPRESSION_LEVEL_1) const;
 
 	void begin();
 	void set_inputs_buffer(const BitArray &p_new_buffer);

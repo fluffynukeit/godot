@@ -84,8 +84,11 @@ void CharacterNetController::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("input_buffer_add_unit_real", "unit_real", "compression_level"), &CharacterNetController::input_buffer_add_unit_real, DEFVAL(InputCompressionLevel::INPUT_COMPRESSION_LEVEL_1));
 	ClassDB::bind_method(D_METHOD("input_buffer_read_unit_real", "compression_level"), &CharacterNetController::input_buffer_read_unit_real, DEFVAL(InputCompressionLevel::INPUT_COMPRESSION_LEVEL_1));
 
-	ClassDB::bind_method(D_METHOD("input_buffer_add_normalized_vector", "vector", "compression_level"), &CharacterNetController::input_buffer_add_normalized_vector, DEFVAL(InputCompressionLevel::INPUT_COMPRESSION_LEVEL_1));
-	ClassDB::bind_method(D_METHOD("input_buffer_read_normalized_vector", "compression_level"), &CharacterNetController::input_buffer_read_normalized_vector, DEFVAL(InputCompressionLevel::INPUT_COMPRESSION_LEVEL_1));
+	ClassDB::bind_method(D_METHOD("input_buffer_add_normalized_vector2", "vector", "compression_level"), &CharacterNetController::input_buffer_add_normalized_vector2, DEFVAL(InputCompressionLevel::INPUT_COMPRESSION_LEVEL_1));
+	ClassDB::bind_method(D_METHOD("input_buffer_read_normalized_vector2", "compression_level"), &CharacterNetController::input_buffer_read_normalized_vector2, DEFVAL(InputCompressionLevel::INPUT_COMPRESSION_LEVEL_1));
+
+	ClassDB::bind_method(D_METHOD("input_buffer_add_normalized_vector3", "vector", "compression_level"), &CharacterNetController::input_buffer_add_normalized_vector3, DEFVAL(InputCompressionLevel::INPUT_COMPRESSION_LEVEL_1));
+	ClassDB::bind_method(D_METHOD("input_buffer_read_normalized_vector3", "compression_level"), &CharacterNetController::input_buffer_read_normalized_vector3, DEFVAL(InputCompressionLevel::INPUT_COMPRESSION_LEVEL_1));
 
 	ClassDB::bind_method(D_METHOD("set_puppet_active", "peer_id", "active"), &CharacterNetController::set_puppet_active);
 	ClassDB::bind_method(D_METHOD("_on_peer_connection_change", "peer_id"), &CharacterNetController::on_peer_connection_change);
@@ -127,7 +130,6 @@ void CharacterNetController::_bind_methods() {
 }
 
 CharacterNetController::CharacterNetController() :
-		player_node_path(NodePath("../")),
 		master_snapshot_storage_size(300),
 		network_traced_frames(1200),
 		max_redundant_inputs(50),
@@ -236,12 +238,20 @@ real_t CharacterNetController::input_buffer_read_unit_real(InputCompressionLevel
 	return inputs_buffer.read_unit_real(static_cast<InputsBuffer::CompressionLevel>(p_compression));
 }
 
-Vector2 CharacterNetController::input_buffer_add_normalized_vector(Vector2 p_input, InputCompressionLevel p_compression) {
-	return inputs_buffer.add_normalized_vector(p_input, static_cast<InputsBuffer::CompressionLevel>(p_compression));
+Vector2 CharacterNetController::input_buffer_add_normalized_vector2(Vector2 p_input, InputCompressionLevel p_compression) {
+	return inputs_buffer.add_normalized_vector2(p_input, static_cast<InputsBuffer::CompressionLevel>(p_compression));
 }
 
-Vector2 CharacterNetController::input_buffer_read_normalized_vector(InputCompressionLevel p_compression) {
-	return inputs_buffer.read_normalized_vector(static_cast<InputsBuffer::CompressionLevel>(p_compression));
+Vector2 CharacterNetController::input_buffer_read_normalized_vector2(InputCompressionLevel p_compression) {
+	return inputs_buffer.read_normalized_vector2(static_cast<InputsBuffer::CompressionLevel>(p_compression));
+}
+
+Vector3 CharacterNetController::input_buffer_add_normalized_vector3(Vector3 p_input, InputCompressionLevel p_compression) {
+	return inputs_buffer.add_normalized_vector3(p_input, static_cast<InputsBuffer::CompressionLevel>(p_compression));
+}
+
+Vector3 CharacterNetController::input_buffer_read_normalized_vector3(InputCompressionLevel p_compression) {
+	return inputs_buffer.read_normalized_vector3(static_cast<InputsBuffer::CompressionLevel>(p_compression));
 }
 
 void CharacterNetController::set_puppet_active(int p_peer_id, bool p_active) {
@@ -389,17 +399,20 @@ void PlayerInputsReference::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("read_bool", "compression_level"), &PlayerInputsReference::read_bool, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
 	ClassDB::bind_method(D_METHOD("read_int", "compression_level"), &PlayerInputsReference::read_int, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
 	ClassDB::bind_method(D_METHOD("read_unit_real", "compression_level"), &PlayerInputsReference::read_unit_real, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
-	ClassDB::bind_method(D_METHOD("read_normalized_vector", "compression_level"), &PlayerInputsReference::read_normalized_vector, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
+	ClassDB::bind_method(D_METHOD("read_normalized_vector2", "compression_level"), &PlayerInputsReference::read_normalized_vector2, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
+	ClassDB::bind_method(D_METHOD("read_normalized_vector3", "compression_level"), &PlayerInputsReference::read_normalized_vector3, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
 
 	ClassDB::bind_method(D_METHOD("skip_bool", "compression_level"), &PlayerInputsReference::skip_bool, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
 	ClassDB::bind_method(D_METHOD("skip_int", "compression_level"), &PlayerInputsReference::skip_int, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
 	ClassDB::bind_method(D_METHOD("skip_unit_real", "compression_level"), &PlayerInputsReference::skip_unit_real, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
-	ClassDB::bind_method(D_METHOD("skip_normalized_vector", "compression_level"), &PlayerInputsReference::skip_normalized_vector, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
+	ClassDB::bind_method(D_METHOD("skip_normalized_vector2", "compression_level"), &PlayerInputsReference::skip_normalized_vector2, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
+	ClassDB::bind_method(D_METHOD("skip_normalized_vector3", "compression_level"), &PlayerInputsReference::skip_normalized_vector3, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
 
 	ClassDB::bind_method(D_METHOD("get_bool_size", "compression_level"), &PlayerInputsReference::get_bool_size, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
 	ClassDB::bind_method(D_METHOD("get_int_size", "compression_level"), &PlayerInputsReference::get_int_size, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
 	ClassDB::bind_method(D_METHOD("get_unit_real_size", "compression_level"), &PlayerInputsReference::get_unit_real_size, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
-	ClassDB::bind_method(D_METHOD("get_normalized_vector_size", "compression_level"), &PlayerInputsReference::get_normalized_vector_size, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
+	ClassDB::bind_method(D_METHOD("get_normalized_vector2_size", "compression_level"), &PlayerInputsReference::get_normalized_vector2_size, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
+	ClassDB::bind_method(D_METHOD("get_normalized_vector3_size", "compression_level"), &PlayerInputsReference::get_normalized_vector3_size, DEFVAL(CharacterNetController::INPUT_COMPRESSION_LEVEL_1));
 }
 
 int PlayerInputsReference::get_size() const {
@@ -418,8 +431,12 @@ real_t PlayerInputsReference::read_unit_real(CharacterNetController::InputCompre
 	return inputs_buffer.read_unit_real(static_cast<InputsBuffer::CompressionLevel>(p_compression));
 }
 
-Vector2 PlayerInputsReference::read_normalized_vector(CharacterNetController::InputCompressionLevel p_compression) {
-	return inputs_buffer.read_normalized_vector(static_cast<InputsBuffer::CompressionLevel>(p_compression));
+Vector2 PlayerInputsReference::read_normalized_vector2(CharacterNetController::InputCompressionLevel p_compression) {
+	return inputs_buffer.read_normalized_vector2(static_cast<InputsBuffer::CompressionLevel>(p_compression));
+}
+
+Vector3 PlayerInputsReference::read_normalized_vector3(CharacterNetController::InputCompressionLevel p_compression) {
+	return inputs_buffer.read_normalized_vector3(static_cast<InputsBuffer::CompressionLevel>(p_compression));
 }
 
 void PlayerInputsReference::skip_bool(CharacterNetController::InputCompressionLevel p_compression) {
@@ -437,8 +454,13 @@ void PlayerInputsReference::skip_unit_real(CharacterNetController::InputCompress
 	inputs_buffer.skip(bits);
 }
 
-void PlayerInputsReference::skip_normalized_vector(CharacterNetController::InputCompressionLevel p_compression) {
-	const int bits = get_normalized_vector_size(p_compression);
+void PlayerInputsReference::skip_normalized_vector2(CharacterNetController::InputCompressionLevel p_compression) {
+	const int bits = get_normalized_vector2_size(p_compression);
+	inputs_buffer.skip(bits);
+}
+
+void PlayerInputsReference::skip_normalized_vector3(CharacterNetController::InputCompressionLevel p_compression) {
+	const int bits = get_normalized_vector3_size(p_compression);
 	inputs_buffer.skip(bits);
 }
 
@@ -454,8 +476,12 @@ int PlayerInputsReference::get_unit_real_size(CharacterNetController::InputCompr
 	return InputsBuffer::get_bit_taken(InputsBuffer::DATA_TYPE_UNIT_REAL, static_cast<InputsBuffer::CompressionLevel>(p_compression));
 }
 
-int PlayerInputsReference::get_normalized_vector_size(CharacterNetController::InputCompressionLevel p_compression) const {
+int PlayerInputsReference::get_normalized_vector2_size(CharacterNetController::InputCompressionLevel p_compression) const {
 	return InputsBuffer::get_bit_taken(InputsBuffer::DATA_TYPE_NORMALIZED_VECTOR2, static_cast<InputsBuffer::CompressionLevel>(p_compression));
+}
+
+int PlayerInputsReference::get_normalized_vector3_size(CharacterNetController::InputCompressionLevel p_compression) const {
+	return InputsBuffer::get_bit_taken(InputsBuffer::DATA_TYPE_NORMALIZED_VECTOR3, static_cast<InputsBuffer::CompressionLevel>(p_compression));
 }
 
 void PlayerInputsReference::begin() {

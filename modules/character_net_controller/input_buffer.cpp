@@ -165,12 +165,12 @@ real_t InputsBuffer::read_unit_real(CompressionLevel p_compression_level) {
 	return decompress_unit_float(compressed_val, max_value);
 }
 
-Vector2 InputsBuffer::add_normalized_vector(Vector2 p_input, CompressionLevel p_compression_level) {
+Vector2 InputsBuffer::add_normalized_vector2(Vector2 p_input, CompressionLevel p_compression_level) {
 	ERR_FAIL_COND_V(is_reading == true, p_input);
 
 	const int bits = get_bit_taken(DATA_TYPE_NORMALIZED_VECTOR2, p_compression_level);
 	const int bits_for_the_angle = bits - 1;
-	const int bits_for_is_zero = 1;
+	const int bits_for_zero = 1;
 
 	const double angle = p_input.angle();
 	const uint32_t is_not_zero = p_input.length_squared() > CMP_EPSILON;
@@ -180,7 +180,7 @@ Vector2 InputsBuffer::add_normalized_vector(Vector2 p_input, CompressionLevel p_
 	const uint64_t compressed_angle = compress_unit_float((angle + Math_PI) / Math_TAU, max_value);
 
 	make_room_in_bits(bits);
-	buffer.store_bits(bit_offset, is_not_zero, bits_for_is_zero);
+	buffer.store_bits(bit_offset, is_not_zero, bits_for_zero);
 	buffer.store_bits(bit_offset + 1, compressed_angle, bits_for_the_angle);
 	bit_offset += bits;
 
@@ -191,16 +191,16 @@ Vector2 InputsBuffer::add_normalized_vector(Vector2 p_input, CompressionLevel p_
 	return Vector2(x, y) * is_not_zero;
 }
 
-Vector2 InputsBuffer::read_normalized_vector(CompressionLevel p_compression_level) {
+Vector2 InputsBuffer::read_normalized_vector2(CompressionLevel p_compression_level) {
 	ERR_FAIL_COND_V(is_reading == false, Vector2());
 
 	const int bits = get_bit_taken(DATA_TYPE_NORMALIZED_VECTOR2, p_compression_level);
 	const int bits_for_the_angle = bits - 1;
-	const int bits_for_is_zero = 1;
+	const int bits_for_zero = 1;
 
 	const double max_value = ~(0xFFFFFFFF << bits_for_the_angle);
 
-	const real_t is_not_zero = buffer.read_bits(bit_offset, bits_for_is_zero);
+	const real_t is_not_zero = buffer.read_bits(bit_offset, bits_for_zero);
 	const uint64_t compressed_angle = buffer.read_bits(bit_offset + 1, bits_for_the_angle);
 	bit_offset += bits;
 
@@ -209,6 +209,54 @@ Vector2 InputsBuffer::read_normalized_vector(CompressionLevel p_compression_leve
 	const real_t y = Math::sin(decompressed_angle);
 
 	return Vector2(x, y) * is_not_zero;
+}
+
+Vector3 InputsBuffer::add_normalized_vector3(Vector3 p_input, CompressionLevel p_compression_level) {
+	ERR_FAIL_COND_V(is_reading == true, p_input);
+
+	const int bits = get_bit_taken(DATA_TYPE_NORMALIZED_VECTOR3, p_compression_level);
+	const int bits_for_the_axis = bits / 3;
+
+	const double max_value = ~(0xFFFFFFFF << bits_for_the_axis);
+
+	const uint64_t compressed_x_axis = compress_unit_float(p_input[0], max_value);
+	const uint64_t compressed_y_axis = compress_unit_float(p_input[1], max_value);
+	const uint64_t compressed_z_axis = compress_unit_float(p_input[2], max_value);
+
+	make_room_in_bits(bits);
+
+	buffer.store_bits(bit_offset, compressed_x_axis, bits_for_the_axis);
+	bit_offset += bits_for_the_axis;
+
+	buffer.store_bits(bit_offset, compressed_y_axis, bits_for_the_axis);
+	bit_offset += bits_for_the_axis;
+
+	buffer.store_bits(bit_offset, compressed_z_axis, bits_for_the_axis);
+	bit_offset += bits_for_the_axis;
+
+	const real_t decompressed_x_axis = decompress_unit_float(compressed_x_axis, max_value);
+	const real_t decompressed_y_axis = decompress_unit_float(compressed_y_axis, max_value);
+	const real_t decompressed_z_axis = decompress_unit_float(compressed_z_axis, max_value);
+
+	return Vector3(decompressed_x_axis, decompressed_y_axis, decompressed_z_axis);
+}
+
+Vector3 InputsBuffer::read_normalized_vector3(CompressionLevel p_compression_level) {
+	ERR_FAIL_COND_V(is_reading == false, Vector3());
+
+	const int bits = get_bit_taken(DATA_TYPE_NORMALIZED_VECTOR3, p_compression_level);
+	const int bits_for_the_axis = bits / 3;
+
+	const double max_value = ~(0xFFFFFFFF << bits_for_the_axis);
+
+	const real_t decompressed_x_axis = decompress_unit_float(buffer.read_bits(bit_offset, bits_for_the_axis), max_value);
+	bit_offset += bits_for_the_axis;
+	const real_t decompressed_y_axis = decompress_unit_float(buffer.read_bits(bit_offset, bits_for_the_axis), max_value);
+	bit_offset += bits_for_the_axis;
+	const real_t decompressed_z_axis = decompress_unit_float(buffer.read_bits(bit_offset, bits_for_the_axis), max_value);
+	bit_offset += bits_for_the_axis;
+
+	return Vector3(decompressed_x_axis, decompressed_y_axis, decompressed_z_axis);
 }
 
 void InputsBuffer::zero() {
@@ -269,6 +317,22 @@ int InputsBuffer::get_bit_taken(DataType p_data_type, CompressionLevel p_compres
 				case CompressionLevel::COMPRESSION_LEVEL_3:
 					// Max loss 1.1°
 					return 8 + 1;
+			}
+		} break;
+		case DATA_TYPE_NORMALIZED_VECTOR3: {
+			switch (p_compression) {
+				case CompressionLevel::COMPRESSION_LEVEL_0:
+					// Max loss 0.02% per axis
+					return 11 * 3;
+				case CompressionLevel::COMPRESSION_LEVEL_1:
+					// Max loss 0.09% per axis
+					return 10 * 3;
+				case CompressionLevel::COMPRESSION_LEVEL_2:
+					// Max loss 0.3% per axis
+					return 8 * 3;
+				case CompressionLevel::COMPRESSION_LEVEL_3:
+					// Max loss 3.2% per axis;
+					return 6 * 3;
 			}
 		} break;
 		default:
